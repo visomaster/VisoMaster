@@ -4,7 +4,7 @@ from App.Helpers import MiscHelpers as misc_helpers
 import os
 import cv2
 
-class VideoLoaderWorker(qtc.QThread):
+class TargetMediaLoaderWorker(qtc.QThread):
     # Define signals to emit when loading is done or if there are updates
     thumbnail_ready = qtc.Signal(str, QPixmap)  # Signal with video path and QPixmap
     finished = qtc.Signal()  # Signal to indicate completion
@@ -18,8 +18,7 @@ class VideoLoaderWorker(qtc.QThread):
         self.finished.emit()
 
     def load_video_images_from_folder(self, folder_name):
-        print("Hello", folder_name)
-        video_files = [f for f in misc_helpers.absoluteFilePaths(folder_name) if f.endswith(('.mp4', '.avi', '.mov', '.mkv', '.png'))]
+        video_files = misc_helpers.get_video_files(folder_name)
 
         for video_file in video_files:
             video_path = os.path.join(folder_name, video_file)
@@ -37,7 +36,7 @@ class VideoLoaderWorker(qtc.QThread):
             bytes_per_line = 3 * width
             q_img = QImage(frame.data, width, height, bytes_per_line, QImage.Format.Format_RGB888).rgbSwapped()
             pixmap = QPixmap.fromImage(q_img)
-            pixmap = pixmap.scaled(60, 60, Qt.AspectRatioMode.KeepAspectRatio)  # Adjust size as needed
+            pixmap = pixmap.scaled(70, 70, Qt.AspectRatioMode.KeepAspectRatio)  # Adjust size as needed
             cap.release()
             return pixmap
         cap.release()

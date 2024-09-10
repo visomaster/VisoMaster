@@ -21,6 +21,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.timer = qtc.QTimer()
         self.timer.timeout.connect(partial(WidgetActions.update_frame, self))
 
+
+        self.media_capture = False
+
     def initialize_widgets(self):
         # Initialize QListWidget for target media
         self.targetVideosList.setFlow(QtWidgets.QListWidget.LeftToRight)
@@ -49,5 +52,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def resizeEvent(self, event: QtGui.QResizeEvent):
         super().resizeEvent(event)
         # Call the method to fit the image to the view whenever the window resizes
+        print('self.scene.items()',self.scene.items())
         if self.scene.items():
-            self.fit_image_to_view(self.scene.items()[0])
+            WidgetActions.fit_image_to_view(self, self.scene.items()[0])
+            print("HEllo")
