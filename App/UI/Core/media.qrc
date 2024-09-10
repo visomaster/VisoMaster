@@ -1,0 +1,43 @@
+<RCC>
+  <qresource prefix="media">
+    <file>Media/add_marker_hover.png</file>
+    <file>Media/add_marker_off.png</file>
+    <file>Media/audio_off.png</file>
+    <file>Media/audio_on.png</file>
+    <file>Media/marker.png</file>
+    <file>Media/marker_save.png</file>
+    <file>Media/next_marker_hover.png</file>
+    <file>Media/next_marker_off.png</file>
+    <file>Media/OffState.png</file>
+    <file>Media/OnState.png</file>
+    <file>Media/play_hover.png</file>
+    <file>Media/play_off.png</file>
+    <file>Media/play_on.png</file>
+    <file>Media/previous_marker_hover.png</file>
+    <file>Media/previous_marker_off.png</file>
+    <file>Media/rec_hover.png</file>
+    <file>Media/rec_off.png</file>
+    <file>Media/rec_on.png</file>
+    <file>Media/remove_marker_hover.png</file>
+    <file>Media/remove_marker_off.png</file>
+    <file>Media/rope.ico</file>
+    <file>Media/rope.png</file>
+    <file>Media/rope_logo.jpg</file>
+    <file>Media/save.png</file>
+    <file>Media/splash.png</file>
+    <file>Media/splash_next.png</file>
+    <file>Media/stop_hover.png</file>
+    <file>Media/stop_off.png</file>
+    <file>Media/stop_on.png</file>
+    <file>Media/tl_beg_hover.png</file>
+    <file>Media/tl_beg_off.png</file>
+    <file>Media/tl_beg_on.png</file>
+    <file>Media/tl_left_hover.png</file>
+    <file>Media/tl_left_off.png</file>
+    <file>Media/tl_left_on.png</file>
+    <file>Media/tl_right_hover.png</file>
+    <file>Media/tl_right_off.png</file>
+    <file>Media/tl_right_on.png</file>
+    <file>Media/webcam.png</file>
+  </qresource>
+</RCC>
