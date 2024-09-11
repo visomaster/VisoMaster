@@ -1,6 +1,7 @@
+
 from PySide6 import QtCore as qtc
 from PySide6.QtGui import QPixmap, QImage, Qt
-from App.Helpers import MiscHelpers as misc_helpers
+from App.Helpers import Misc_Helpers as misc_helpers
 import os
 import cv2
 
