@@ -5,6 +5,7 @@ import time
 import App.Helpers.Misc_Helpers as misc_helpers 
 import App.Workers.UI_Workers as ui_workers
 from App.UI.Widgets.WidgetComponents import TargetMediaCardButton
+import App.Helpers.UI_Helpers as ui_helpers 
 from functools import partial
 def scale_pixmap_to_view(view, pixmap):
     # Get the size of the view
@@ -71,3 +72,14 @@ def add_video_thumbnail_to_list(main_window, media_path, pixmap):
     list_item = QtWidgets.QListWidgetItem(main_window.targetVideosList)
     list_item.setSizeHint(pixmap.size() + qtc.QSize(10, 10))  # Add padding for spacing
     main_window.targetVideosList.setItemWidget(list_item, button)
+
+
+# from App.UI.MainUI import Ui_MainWindow
+def update_graphics_view(main_window , pixmap, current_frame_number):
+    main_window.videoSeekSlider.setValue(current_frame_number)
+    # print(main_window.graphicsViewFrame.scene, pixmap)
+    main_window.graphicsViewFrame.scene().clear()
+    pixmap_item = QtWidgets.QGraphicsPixmapItem(pixmap)
+    main_window.graphicsViewFrame.scene().addItem(pixmap_item)
+    # Optionally fit the image to the view
+    ui_helpers.fit_image_to_view(main_window, pixmap_item)

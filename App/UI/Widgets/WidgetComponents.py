@@ -14,33 +14,19 @@ class TargetMediaCardButton(QPushButton):
         self.clicked.connect(self.loadMediaOnClick)
         self.setStyleSheet("""QToolTip { color: #ffffff; background-color: #000000; border: 0px; }");""")
 
-    # def toggle_state(self):
-    #     if self.isChecked():
-    #         self.setStyleSheet("""
-    #             QPushButton {
-    #                 background-color: lightblue;
-    #                 border: 2px solid blue;
-    #                 border-radius: 5px;
-    #             }
-    #         """)
-    #     else:
-    #         self.setStyleSheet("""
-    #             QPushButton {
-    #                 background-color: lightgray;
-    #                 border: 2px solid gray;
-    #                 border-radius: 5px;
-    #             }
-    #         """)
-
     def loadMediaOnClick(self):
         main_window = self.window()
+        main_window.video_processor.stop_processing()
+        main_window.video_processor.current_frame_number = 0
         print(self.media_path)
         media_capture = cv2.VideoCapture(self.media_path)
         media_capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
-        # main_window.video_processor.media_capture = cv2.VideoCapture(self.media_path)
-        # main_window.video_processor.media_capture.set(cv2.CAP_PROP_POS_FRAMES, 1)
-        # ret, frame = main_window.video_processor.media_capture.read()
-        ret, frame = media_capture.read()
+        main_window.video_processor.media_capture = cv2.VideoCapture(self.media_path)
+        main_window.video_processor.media_capture.set(cv2.CAP_PROP_POS_FRAMES, 1)
+        max_frames_number = int(media_capture.get(cv2.CAP_PROP_FRAME_COUNT))
+        main_window.videoSeekSlider.setMaximum(max_frames_number)
+        ret, frame = main_window.video_processor.media_capture.read()
+        # ret, frame = media_capture.read()
         if ret:
             # Convert the frame to QPixmap
             height, width, channel = frame.shape
@@ -59,3 +45,16 @@ class TargetMediaCardButton(QPushButton):
             ui_helpers.fit_image_to_view(main_window, pixmap_item)
         main_window.videoSeekSlider.setValue(0)
         # main_window.video_processor.media_capture.release()  # Release the video capture object
+
+
+class GraphicsViewEventFilter(qtc.QObject):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+    def eventFilter(self, graphics_object, event):
+        if event.type() == qtc.QEvent.Type.MouseButtonPress:
+            if event.button() == qtc.Qt.MouseButton.LeftButton:
+                graphics_object.window().video_processor.process_video()
+                # You can emit a signal or call another function here
+                return True  # Mark the event as handled
+        return False  # Pass the event to the original handler
