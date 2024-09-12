@@ -22,19 +22,17 @@ def scale_pixmap_to_view(view, pixmap):
         pixmap_size.height() * scale_factor,
         qtc.Qt.AspectRatioMode.KeepAspectRatio
     )
-
     return scaled_pixmap
 
-
 def fit_image_to_view(main_window, pixmap_item):
+    graphicsViewFrame = main_window.graphicsViewFrame
     # Reset the transform to ensure no previous transformations affect the new fit
-    main_window.graphicsViewFrame.resetTransform()
+    graphicsViewFrame.resetTransform()
     # Set the scene rectangle to the bounding rectangle of the pixmap item
-    main_window.graphicsViewFrame.setSceneRect(pixmap_item.boundingRect())
-
+    graphicsViewFrame.setSceneRect(pixmap_item.boundingRect())
     # Fit the image to the view, keeping the aspect ratio
-    main_window.graphicsViewFrame.fitInView(pixmap_item, qtc.Qt.AspectRatioMode.KeepAspectRatio)
-    main_window.graphicsViewFrame.update()
+    graphicsViewFrame.fitInView(pixmap_item, qtc.Qt.AspectRatioMode.KeepAspectRatio)
+    graphicsViewFrame.update()
 
 def clear_stop_loading_media(main_window):
     if main_window.video_loader_worker:
@@ -56,13 +54,14 @@ def onClickSelectTargetVideos(main_window):
     main_window.video_loader_worker.start()
 @qtc.Slot()
 def OnChangeSlider(main_window, new_position=0):
-    main_window.video_processor.stop_processing()
-    main_window.video_processor.current_frame_number = new_position
-    if main_window.video_processor.media_capture:
-        main_window.video_processor.media_capture.set(cv2.CAP_PROP_POS_FRAMES, new_position)
-    main_window.video_processor.processing = True
-    main_window.video_processor.process_next_frame()
-    main_window.video_processor.processing = False
+    video_processor = main_window.video_processor
+    video_processor.stop_processing()
+    video_processor.current_frame_number = new_position
+    if video_processor.media_capture:
+        video_processor.media_capture.set(cv2.CAP_PROP_POS_FRAMES, new_position)
+    video_processor.processing = True
+    video_processor.process_next_frame()
+    video_processor.processing = False
 
 
 @qtc.Slot(str, QtGui.QPixmap)
@@ -73,6 +72,7 @@ def add_video_thumbnail_to_list(main_window, media_path, pixmap):
     button.setIconSize(button_size - qtc.QSize(10, 10))  # Slightly smaller than the button size to add some margin
     button.setFixedSize(button_size)
 
+    targetVideosList = main_window.targetVideosList
     # Create a QListWidgetItem and set the button as its widget
     list_item = QtWidgets.QListWidgetItem(main_window.targetVideosList)
     list_item.setSizeHint(button_size)
@@ -80,19 +80,16 @@ def add_video_thumbnail_to_list(main_window, media_path, pixmap):
     # Align the item to center
     list_item.setTextAlignment(qtc.Qt.AlignmentFlag.AlignCenter)
 
-    main_window.targetVideosList.setItemWidget(list_item, button)
+    targetVideosList.setItemWidget(list_item, button)
     # Adjust the QListWidget properties to handle the grid layout
     grid_size_with_padding = button_size + qtc.QSize(7, 7)  # Add padding around the buttons
-    main_window.targetVideosList.setGridSize(grid_size_with_padding)  # Set grid size with padding
-    main_window.targetVideosList.setWrapping(True)  # Enable wrapping to have items in rows
-    main_window.targetVideosList.setFlow(QtWidgets.QListView.LeftToRight)  # Set flow direction
-    main_window.targetVideosList.setResizeMode(QtWidgets.QListView.Adjust)  # Adjust layout automatically
-
+    targetVideosList.setGridSize(grid_size_with_padding)  # Set grid size with padding
+    targetVideosList.setWrapping(True)  # Enable wrapping to have items in rows
+    targetVideosList.setFlow(QtWidgets.QListView.LeftToRight)  # Set flow direction
+    targetVideosList.setResizeMode(QtWidgets.QListView.Adjust)  # Adjust layout automatically
     # Optionally, you can hide the scrollbars for a cleaner look
-    main_window.targetVideosList.setVerticalScrollBarPolicy(qtc.Qt.ScrollBarAlwaysOff)
-    main_window.targetVideosList.setHorizontalScrollBarPolicy(qtc.Qt.ScrollBarAlwaysOff)
-
-
+    targetVideosList.setVerticalScrollBarPolicy(qtc.Qt.ScrollBarAlwaysOff)
+    targetVideosList.setHorizontalScrollBarPolicy(qtc.Qt.ScrollBarAlwaysOff)
 
 
 # from App.UI.MainUI import Ui_MainWindow
