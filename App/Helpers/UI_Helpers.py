@@ -29,15 +29,12 @@ def scale_pixmap_to_view(view, pixmap):
 def fit_image_to_view(main_window, pixmap_item):
     # Reset the transform to ensure no previous transformations affect the new fit
     main_window.graphicsViewFrame.resetTransform()
-
     # Set the scene rectangle to the bounding rectangle of the pixmap item
     main_window.graphicsViewFrame.setSceneRect(pixmap_item.boundingRect())
 
     # Fit the image to the view, keeping the aspect ratio
     main_window.graphicsViewFrame.fitInView(pixmap_item, qtc.Qt.AspectRatioMode.KeepAspectRatio)
-
     main_window.graphicsViewFrame.update()
-
 
 def clear_stop_loading_media(main_window):
     if main_window.video_loader_worker:
@@ -58,14 +55,14 @@ def onClickSelectTargetVideos(main_window):
         # main_window.video_loader_worker.finished.connect(partial(on_load_finished, main_window))
     main_window.video_loader_worker.start()
 @qtc.Slot()
-def OnChangeSlider(main_window, temp=False):
-    # print("cur pos", main_window.videoSeekSlider.value())
-    # main_window.video_processor.stop_processing()
-    return
-    main_window.video_processor.current_frame_number = main_window.videoSeekSlider.value()
-    # media_capture = main_window.video_processor.media_capture.copy()
-    # main_window.video_processor.media_capture.set(cv2.CAP_PROP_POS_FRAMES, main_window.video_processor.current_frame_number)
-    # main_window.video_processor.process_next_frame()
+def OnChangeSlider(main_window, new_position=0):
+    main_window.video_processor.stop_processing()
+    main_window.video_processor.current_frame_number = new_position
+    if main_window.video_processor.media_capture:
+        main_window.video_processor.media_capture.set(cv2.CAP_PROP_POS_FRAMES, new_position)
+    main_window.video_processor.processing = True
+    main_window.video_processor.process_next_frame()
+    main_window.video_processor.processing = False
 
 
 @qtc.Slot(str, QtGui.QPixmap)
@@ -83,7 +80,10 @@ def add_video_thumbnail_to_list(main_window, media_path, pixmap):
 
 # from App.UI.MainUI import Ui_MainWindow
 def update_graphics_view(main_window , pixmap, current_frame_number):
+
+    main_window.videoSeekSlider.blockSignals(True)
     main_window.videoSeekSlider.setValue(current_frame_number)
+    main_window.videoSeekSlider.blockSignals(False)
     # print(main_window.graphicsViewFrame.scene, pixmap)
     main_window.graphicsViewFrame.scene().clear()
     pixmap_item = QtWidgets.QGraphicsPixmapItem(pixmap)

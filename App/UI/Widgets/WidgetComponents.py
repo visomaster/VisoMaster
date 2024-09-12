@@ -20,6 +20,11 @@ class TargetMediaCardButton(QPushButton):
         main_window.video_processor.current_frame_number = 0
         print(self.media_path)
         main_window.video_processor.media_path = self.media_path
+
+        if main_window.video_processor.media_capture:
+            main_window.video_processor.media_capture.release()  # Release the video capture object
+
+
         media_capture = cv2.VideoCapture(self.media_path)
         media_capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
         max_frames_number = int(media_capture.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -43,7 +48,6 @@ class TargetMediaCardButton(QPushButton):
         main_window.video_processor.media_capture = media_capture
         main_window.videoSeekSlider.setMaximum(max_frames_number)
         main_window.videoSeekSlider.setValue(0)
-        # main_window.video_processor.media_capture.release()  # Release the video capture object
 
 
 class GraphicsViewEventFilter(qtc.QObject):
