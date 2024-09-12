@@ -24,7 +24,6 @@ class TargetMediaCardButton(QPushButton):
         media_capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
         max_frames_number = int(media_capture.get(cv2.CAP_PROP_FRAME_COUNT))
         ret, frame = media_capture.read()
-        # ret, frame = media_capture.read()
         if ret:
             # Convert the frame to QPixmap
             height, width, channel = frame.shape

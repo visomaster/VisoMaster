@@ -61,6 +61,7 @@ def onClickSelectTargetVideos(main_window):
 def OnChangeSlider(main_window, temp=False):
     # print("cur pos", main_window.videoSeekSlider.value())
     # main_window.video_processor.stop_processing()
+    return
     main_window.video_processor.current_frame_number = main_window.videoSeekSlider.value()
     # media_capture = main_window.video_processor.media_capture.copy()
     # main_window.video_processor.media_capture.set(cv2.CAP_PROP_POS_FRAMES, main_window.video_processor.current_frame_number)
