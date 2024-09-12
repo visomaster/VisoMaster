@@ -67,15 +67,25 @@ def OnChangeSlider(main_window, new_position=0):
 
 @qtc.Slot(str, QtGui.QPixmap)
 def add_video_thumbnail_to_list(main_window, media_path, pixmap):
+    button_size = qtc.QSize(70, 70)  # Set a fixed size for the buttons
+
     button = TargetMediaCardButton(media_path=media_path)
     button.setIcon(QtGui.QIcon(pixmap))
-    button.setIconSize(pixmap.size())
-    button.setFixedSize(pixmap.size())
+    button.setIconSize(button_size - qtc.QSize(10, 10))  # Slightly smaller than the button size to add some margin
+    button.setFixedSize(button_size)
 
     # Create a QListWidgetItem and set the button as its widget
     list_item = QtWidgets.QListWidgetItem(main_window.targetVideosList)
-    list_item.setSizeHint(pixmap.size() + qtc.QSize(10, 10))  # Add padding for spacing
+    list_item.setSizeHint(button_size)
     main_window.targetVideosList.setItemWidget(list_item, button)
+
+    # Adjust the QListWidget properties to handle the grid layout
+    main_window.targetVideosList.setGridSize(button_size)  # Set grid size with padding
+    main_window.targetVideosList.setWrapping(True)  # Enable wrapping to have items in rows
+    main_window.targetVideosList.setFlow(QtWidgets.QListView.LeftToRight)  # Set flow direction
+    main_window.targetVideosList.setResizeMode(QtWidgets.QListView.Adjust)  # Adjust layout automatically
+
+
 
 
 # from App.UI.MainUI import Ui_MainWindow
