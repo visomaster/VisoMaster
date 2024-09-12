@@ -19,13 +19,11 @@ class TargetMediaCardButton(QPushButton):
         main_window.video_processor.stop_processing()
         main_window.video_processor.current_frame_number = 0
         print(self.media_path)
+        main_window.video_processor.media_path = self.media_path
         media_capture = cv2.VideoCapture(self.media_path)
         media_capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
-        main_window.video_processor.media_capture = cv2.VideoCapture(self.media_path)
-        main_window.video_processor.media_capture.set(cv2.CAP_PROP_POS_FRAMES, 1)
         max_frames_number = int(media_capture.get(cv2.CAP_PROP_FRAME_COUNT))
-        main_window.videoSeekSlider.setMaximum(max_frames_number)
-        ret, frame = main_window.video_processor.media_capture.read()
+        ret, frame = media_capture.read()
         # ret, frame = media_capture.read()
         if ret:
             # Convert the frame to QPixmap
@@ -43,6 +41,8 @@ class TargetMediaCardButton(QPushButton):
             
             # Fit the image to the view
             ui_helpers.fit_image_to_view(main_window, pixmap_item)
+        main_window.video_processor.media_capture = media_capture
+        main_window.videoSeekSlider.setMaximum(max_frames_number)
         main_window.videoSeekSlider.setValue(0)
         # main_window.video_processor.media_capture.release()  # Release the video capture object
 
@@ -55,6 +55,19 @@ class GraphicsViewEventFilter(qtc.QObject):
         if event.type() == qtc.QEvent.Type.MouseButtonPress:
             if event.button() == qtc.Qt.MouseButton.LeftButton:
                 graphics_object.window().video_processor.process_video()
+                # You can emit a signal or call another function here
+                return True  # Mark the event as handled
+        return False  # Pass the event to the original handler
+    
+class SliderEventFilter(qtc.QObject):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+    def eventFilter(self, slider_object, event):
+        if event.type() == qtc.QEvent.Type.MouseButtonPress:
+            if event.button() == qtc.Qt.MouseButton.LeftButton:
+                super().eventFilter(slider_object, event)
+                ui_helpers.OnChangeSlider(slider_object.window())
                 # You can emit a signal or call another function here
                 return True  # Mark the event as handled
         return False  # Pass the event to the original handler

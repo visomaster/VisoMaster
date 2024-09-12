@@ -7,6 +7,7 @@ import App.Workers.UI_Workers as ui_workers
 from App.UI.Widgets.WidgetComponents import TargetMediaCardButton
 import App.Helpers.UI_Helpers as ui_helpers 
 from functools import partial
+import cv2
 def scale_pixmap_to_view(view, pixmap):
     # Get the size of the view
     view_size = view.viewport().size()
@@ -57,9 +58,14 @@ def onClickSelectTargetVideos(main_window):
         # main_window.video_loader_worker.finished.connect(partial(on_load_finished, main_window))
     main_window.video_loader_worker.start()
 @qtc.Slot()
-def getSliderCurrentPos(main_window, temp=False):
+def OnChangeSlider(main_window, temp=False):
     # print("cur pos", main_window.videoSeekSlider.value())
-    main_window.current_frame_index = main_window.videoSeekSlider.value()
+    # main_window.video_processor.stop_processing()
+    main_window.video_processor.current_frame_number = main_window.videoSeekSlider.value()
+    # media_capture = main_window.video_processor.media_capture.copy()
+    # main_window.video_processor.media_capture.set(cv2.CAP_PROP_POS_FRAMES, main_window.video_processor.current_frame_number)
+    # main_window.video_processor.process_next_frame()
+
 
 @qtc.Slot(str, QtGui.QPixmap)
 def add_video_thumbnail_to_list(main_window, media_path, pixmap):
@@ -83,3 +89,12 @@ def update_graphics_view(main_window , pixmap, current_frame_number):
     main_window.graphicsViewFrame.scene().addItem(pixmap_item)
     # Optionally fit the image to the view
     ui_helpers.fit_image_to_view(main_window, pixmap_item)
+
+
+def get_pixmap_from_frame(main_window, frame):
+    height, width, channel = frame.shape
+    bytes_per_line = 3 * width
+    q_img = QtGui.QImage(frame.data, width, height, bytes_per_line, QtGui.QImage.Format.Format_RGB888).rgbSwapped()
+    pixmap = QtGui.QPixmap.fromImage(q_img)
+    scaled_pixmap = ui_helpers.scale_pixmap_to_view(main_window.graphicsViewFrame, pixmap)
+    return scaled_pixmap

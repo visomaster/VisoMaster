@@ -1,4 +1,4 @@
-from PySide6.QtCore import QRunnable
+from PySide6.QtCore import QRunnable,QTimer
 from PySide6.QtGui import QImage, QPixmap, QPainter, QColor
 from PySide6.QtWidgets import QGraphicsPixmapItem
 import cv2
@@ -13,11 +13,10 @@ class FrameWorker(QRunnable):
         # self.graphicsViewFrame = graphicsViewFrame
 
     def run(self):
-        import time
         # Convert the frame (which is a NumPy array) to QImage
-        height, width, channel = self.frame.shape
-        bytes_per_line = 3 * width
-        q_img = QImage(self.frame.data, width, height, bytes_per_line, QImage.Format.Format_RGB888).rgbSwapped()
-        pixmap = QPixmap.fromImage(q_img)
-        scaled_pixmap = ui_helpers.scale_pixmap_to_view(self.main_window.graphicsViewFrame, pixmap)
+        scaled_pixmap = ui_helpers.get_pixmap_from_frame(self.main_window, self.frame)
+        # q_img = QImage(self.frame.data, width, height, bytes_per_line, QImage.Format.Format_RGB888).rgbSwapped()
+        # pixmap = QPixmap.fromImage(q_img)
+        # scaled_pixmap = ui_helpers.scale_pixmap_to_view(self.main_window.graphicsViewFrame, pixmap)
         self.main_window.update_frame_signal.emit(self.main_window, scaled_pixmap, self.current_frame_number)
+        # self.main_window.update_frame_signal.emit(self.main_window, scaled_pixmap, self.current_frame_number)

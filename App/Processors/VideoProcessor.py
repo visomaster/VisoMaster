@@ -1,7 +1,9 @@
-from PySide6.QtCore import QRunnable, QThreadPool, Signal, QObject
+from PySide6.QtCore import QRunnable, QThreadPool, Signal, QObject, QTimer
 import cv2
 from App.Workers.Frame_Worker import FrameWorker
 
+import threading
+lock = threading.Lock()
 class VideoProcessingWorker(QRunnable):
     def __init__(self, frame, main_window, current_frame_number):
         super().__init__()
@@ -22,11 +24,11 @@ class VideoProcessor(QObject):
         super().__init__()
         self.main_window = main_window
         self.thread_pool = QThreadPool()
-        # self.thread_pool.setMaxThreadCount(1)  # Adjust as needed
+        self.thread_pool.setMaxThreadCount(2)  # Adjust as needed
         self.media_capture = None
         self.processing = False
         self.current_frame_number = 0
-
+        self.media_path = None
 
     def process_video(self):
         if self.processing:
@@ -47,16 +49,19 @@ class VideoProcessor(QObject):
         if self.current_frame_number >= self.max_frame_number:
             self.stop_processing()
             return
-        ret, frame = self.media_capture.read()
+        with lock:
+            ret, frame = self.media_capture.read()
+
         if ret:
             worker = VideoProcessingWorker(frame, self.main_window, self.current_frame_number)
             self.thread_pool.start(worker)
 
             # Process the next frame after the current frame is processed
-            self.current_frame_number += 1
-            self.main_window.thread_pool.start(self.process_next_frame)  # Add to QThreadPool to avoid recursion
         else:
-            print("Error reading frame")
+            print("Error reading frame", print(frame, self.current_frame_number))
+        self.current_frame_number += 1
+        self.main_window.thread_pool.start(self.process_next_frame) # Add to QThreadPool to avoid recursion
+
 
     def stop_processing(self):
         self.processing = False
