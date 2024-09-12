@@ -16,6 +16,8 @@ class TargetMediaCardButton(QPushButton):
 
     def loadMediaOnClick(self):
         main_window = self.window()
+        if main_window.parent():
+            main_window = main_window.parent()
         if main_window.selected_video_buttons:
             main_window.selected_video_buttons[0].toggle()
             main_window.selected_video_buttons.pop(0)
@@ -62,7 +64,12 @@ class GraphicsViewEventFilter(qtc.QObject):
     def eventFilter(self, graphics_object, event):
         if event.type() == qtc.QEvent.Type.MouseButtonPress:
             if event.button() == qtc.Qt.MouseButton.LeftButton:
-                graphics_object.window().video_processor.process_video()
+                # Check if it is a docked window of main_window
+                if graphics_object.window().parent():
+                    video_processor = graphics_object.window().parent().video_processor
+                else:
+                    video_processor = graphics_object.window().video_processor
+                video_processor.process_video()
                 # You can emit a signal or call another function here
                 return True  # Mark the event as handled
         return False  # Pass the event to the original handler

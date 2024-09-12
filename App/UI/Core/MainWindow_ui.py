@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (QApplication, QDockWidget, QGraphicsView, QGridLa
     QListWidgetItem, QMainWindow, QPushButton, QSizePolicy,
     QSlider, QSpacerItem, QTabWidget, QVBoxLayout,
     QWidget)
-from App.UI.Core import media_rc
+import media_rc
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
