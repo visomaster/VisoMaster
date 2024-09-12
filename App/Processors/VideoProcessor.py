@@ -37,14 +37,14 @@ class VideoProcessor(QObject):
         if self.processing:
             self.stop_processing()
             return
-        
-        if not self.media_capture.isOpened():
-            print("Error: Cannot open video")
-            return
+        if self.media_capture:
+            if not self.media_capture.isOpened():
+                print("Error: Cannot open video")
+                return
 
-        self.processing = True
-        self.max_frame_number = int(self.media_capture.get(cv2.CAP_PROP_FRAME_COUNT))
-        self.timer.start(self.media_capture.get(cv2.CAP_PROP_FPS))  # Start processing at video's fps
+            self.processing = True
+            self.max_frame_number = int(self.media_capture.get(cv2.CAP_PROP_FRAME_COUNT))
+            self.timer.start(1000/self.media_capture.get(cv2.CAP_PROP_FPS))  # Start processing at video's fps
 
     def process_next_frame(self):
         if not self.processing:

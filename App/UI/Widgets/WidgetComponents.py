@@ -9,10 +9,8 @@ class TargetMediaCardButton(QPushButton):
         super().__init__(*args, **kwargs)
         self.media_path = media_path
         self.setCheckable(True)
-        self.setStyleSheet("background-color: yellow;")  # Default color for unselected state
         self.setToolTip(media_path)
         self.clicked.connect(self.loadMediaOnClick)
-        self.setStyleSheet("""QToolTip { color: #ffffff; background-color: #000000; border: 0px; }");""")
 
     def loadMediaOnClick(self):
         main_window = self.window()
