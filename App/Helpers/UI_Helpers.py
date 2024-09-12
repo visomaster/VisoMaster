@@ -88,8 +88,8 @@ def add_video_thumbnail_to_list(main_window, media_path, pixmap):
     targetVideosList.setFlow(QtWidgets.QListView.LeftToRight)  # Set flow direction
     targetVideosList.setResizeMode(QtWidgets.QListView.Adjust)  # Adjust layout automatically
     # Optionally, you can hide the scrollbars for a cleaner look
-    targetVideosList.setVerticalScrollBarPolicy(qtc.Qt.ScrollBarAlwaysOff)
-    targetVideosList.setHorizontalScrollBarPolicy(qtc.Qt.ScrollBarAlwaysOff)
+    # targetVideosList.setVerticalScrollBarPolicy(qtc.Qt.ScrollBarAlwaysOff)
+    # targetVideosList.setHorizontalScrollBarPolicy(qtc.Qt.ScrollBarAlwaysOff)
 
 
 # from App.UI.MainUI import Ui_MainWindow

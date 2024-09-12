@@ -17,6 +17,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.selected_video_buttons = []
 
     def initialize_widgets(self):
+
+        self.input_Target_DockWidget.setWindowTitle('Target Videos and Input Faces')
+        self.controlOptionsDockWidget.setWindowTitle('Control Options')
         # Initialize QListWidget for target media
         self.targetVideosList.setFlow(QtWidgets.QListWidget.LeftToRight)
         self.targetVideosList.setWrapping(True)
