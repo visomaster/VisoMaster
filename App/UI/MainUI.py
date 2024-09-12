@@ -6,6 +6,7 @@ from functools import partial
 from App.Processors.VideoProcessor import VideoProcessor
 from App.UI.Widgets.WidgetComponents import GraphicsViewEventFilter, SliderEventFilter
 
+
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     update_frame_signal = qtc.Signal(Ui_MainWindow, QtGui.QPixmap, int)
 
@@ -13,6 +14,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.video_loader_worker = False
         self.video_processor = VideoProcessor(self)
         self.thread_pool = qtc.QThreadPool()
+        self.selected_video_buttons = []
 
     def initialize_widgets(self):
         # Initialize QListWidget for target media

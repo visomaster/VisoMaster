@@ -1,0 +1,99 @@
+/* Base button style */
+TargetMediaCardButton {
+    background-color: #2c3e50;  /* Dark blue background */
+    border-radius: 5px;        /* Rounded corners */
+    border: 1px solid #34495e;  /* Slightly darker border */
+    color: white;               /* White text color */
+    padding: 10px;              /* Padding around the icon */
+    font-size: 14px;            /* Default font size */
+}
+
+/* Icon inside the button */
+TargetMediaCardButton::icon {
+    margin: 5px;               /* Spacing around the icon */
+}
+
+/* Hover state */
+TargetMediaCardButton:hover {
+    background-color: #34495e;  /* Slightly lighter on hover */
+    border: 1px solid #1abc9c;  /* Turquoise border on hover */
+}
+
+/* Pressed state */
+TargetMediaCardButton:pressed {
+    background-color: #1abc9c;  /* Turquoise background when pressed */
+    border: 1px solid #16a085;  /* Darker turquoise border */
+}
+
+/* Disabled state */
+TargetMediaCardButton:disabled {
+    background-color: #95a5a6;  /* Gray background when disabled */
+    border: 1px solid #7f8c8d;  /* Darker gray border */
+    color: #bdc3c7;             /* Lighter gray text color */
+}
+
+/* Focused state */
+TargetMediaCardButton:focus {
+    outline: none;              /* Remove the default focus outline */
+    border: 2px solid #1abc9c;  /* Thicker turquoise border on focus */
+}
+
+
+/* QSlider --------------------------------------  */
+QSlider::groove:horizontal {
+    border-radius: 10px;              /* Rounded corners to match the button */
+    height: 8px;                      /* Increase groove thickness */
+    margin: 0px;
+    background-color: #34495e;        /* Background groove color (slightly lighter blue) */
+}
+
+QSlider::groove:horizontal:hover {
+    background-color: #1abc9c;        /* Turquoise color on hover */
+}
+
+QSlider::sub-page:horizontal {
+    background-color: #1abc9c;        /* Turquoise for completed part */
+    border-radius: 10px;              /* Rounded corners */
+    height: 8px;
+}
+
+QSlider::sub-page:horizontal:hover {
+    background-color: #16a085;        /* Darker turquoise on hover */
+}
+
+QSlider::add-page:horizontal {
+    background-color: #2c3e50;        /* Dark blue for uncompleted part */
+    border-radius: 10px;
+    height: 8px;
+}
+
+QSlider::handle:horizontal {
+    background-color: #bdc3c7;        /* Lighter gray handle color */
+    border: 1px solid #7f8c8d;        /* Darker gray border */
+    height: 20px;                     /* Handle height */
+    width: 20px;                      /* Handle width */
+    margin: -6px 0;                   /* Adjust handle position */
+    border-radius: 10px;              /* Rounded handle */
+}
+
+QSlider::handle:horizontal:hover {
+    background-color: #1abc9c;        /* Turquoise handle on hover */
+}
+
+QSlider::handle:horizontal:pressed {
+    background-color: #16a085;        /* Darker turquoise when pressed */
+}
+
+/* Disabled state */
+QSlider::handle:horizontal:disabled {
+    background-color: #95a5a6;        /* Gray background when disabled */
+    border: 1px solid #7f8c8d;        /* Darker gray border */
+}
+
+QSlider::groove:horizontal:disabled {
+    background-color: #7f8c8d;        /* Dark gray groove when disabled */
+}
+
+QSlider::sub-page:horizontal:disabled {
+    background-color: #bdc3c7;        /* Lighter gray completed part when disabled */
+}

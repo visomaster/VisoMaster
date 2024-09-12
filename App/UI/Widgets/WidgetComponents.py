@@ -4,6 +4,8 @@ import App.Helpers.UI_Helpers as ui_helpers
 import PySide6.QtCore as qtc
 import cv2
 
+from PySide6.QtWidgets import QPushButton
+
 class TargetMediaCardButton(QPushButton):
     def __init__(self, media_path, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -14,6 +16,9 @@ class TargetMediaCardButton(QPushButton):
 
     def loadMediaOnClick(self):
         main_window = self.window()
+        if main_window.selected_video_buttons:
+            main_window.selected_video_buttons[0].toggle()
+            main_window.selected_video_buttons.pop(0)
         main_window.video_processor.stop_processing()
         main_window.video_processor.current_frame_number = 0
         print(self.media_path)
@@ -46,6 +51,8 @@ class TargetMediaCardButton(QPushButton):
         main_window.video_processor.media_capture = media_capture
         main_window.videoSeekSlider.setMaximum(max_frames_number)
         main_window.videoSeekSlider.setValue(0)
+        # Append video button to main_window selected videos list
+        main_window.selected_video_buttons.append(self)
 
 
 class GraphicsViewEventFilter(qtc.QObject):

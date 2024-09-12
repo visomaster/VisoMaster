@@ -46,7 +46,7 @@ def clear_stop_loading_media(main_window):
 @qtc.Slot()
 def onClickSelectTargetVideos(main_window):
     folder_name = QtWidgets.QFileDialog.getExistingDirectory()
-
+    main_window.selected_video_buttons = []
     main_window.labelTargetVideosPath.setText(misc_helpers.truncate_text(folder_name))
     main_window.labelTargetVideosPath.setToolTip(folder_name)
     clear_stop_loading_media(main_window)
@@ -68,7 +68,6 @@ def OnChangeSlider(main_window, new_position=0):
 @qtc.Slot(str, QtGui.QPixmap)
 def add_video_thumbnail_to_list(main_window, media_path, pixmap):
     button_size = qtc.QSize(70, 70)  # Set a fixed size for the buttons
-
     button = TargetMediaCardButton(media_path=media_path)
     button.setIcon(QtGui.QIcon(pixmap))
     button.setIconSize(button_size - qtc.QSize(10, 10))  # Slightly smaller than the button size to add some margin
@@ -77,13 +76,21 @@ def add_video_thumbnail_to_list(main_window, media_path, pixmap):
     # Create a QListWidgetItem and set the button as its widget
     list_item = QtWidgets.QListWidgetItem(main_window.targetVideosList)
     list_item.setSizeHint(button_size)
-    main_window.targetVideosList.setItemWidget(list_item, button)
 
+    # Align the item to center
+    list_item.setTextAlignment(qtc.Qt.AlignmentFlag.AlignCenter)
+
+    main_window.targetVideosList.setItemWidget(list_item, button)
     # Adjust the QListWidget properties to handle the grid layout
-    main_window.targetVideosList.setGridSize(button_size)  # Set grid size with padding
+    grid_size_with_padding = button_size + qtc.QSize(7, 7)  # Add padding around the buttons
+    main_window.targetVideosList.setGridSize(grid_size_with_padding)  # Set grid size with padding
     main_window.targetVideosList.setWrapping(True)  # Enable wrapping to have items in rows
     main_window.targetVideosList.setFlow(QtWidgets.QListView.LeftToRight)  # Set flow direction
     main_window.targetVideosList.setResizeMode(QtWidgets.QListView.Adjust)  # Adjust layout automatically
+
+    # Optionally, you can hide the scrollbars for a cleaner look
+    main_window.targetVideosList.setVerticalScrollBarPolicy(qtc.Qt.ScrollBarAlwaysOff)
+    main_window.targetVideosList.setHorizontalScrollBarPolicy(qtc.Qt.ScrollBarAlwaysOff)
 
 
 
