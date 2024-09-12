@@ -109,9 +109,9 @@
      <item row="0" column="0">
       <widget class="QGroupBox" name="group_Input_FIles">
        <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
          <horstretch>1</horstretch>
-         <verstretch>0</verstretch>
+         <verstretch>1</verstretch>
         </sizepolicy>
        </property>
        <property name="font">
@@ -208,23 +208,32 @@
         </font>
        </property>
        <property name="layoutDirection">
-        <enum>Qt::LayoutDirection::RightToLeft</enum>
+        <enum>Qt::LayoutDirection::LeftToRight</enum>
        </property>
        <property name="tabPosition">
         <enum>QTabWidget::TabPosition::North</enum>
        </property>
        <property name="currentIndex">
-        <number>1</number>
+        <number>0</number>
        </property>
-       <widget class="QWidget" name="settings_tab">
+       <property name="tabsClosable">
+        <bool>false</bool>
+       </property>
+       <property name="movable">
+        <bool>true</bool>
+       </property>
+       <property name="tabBarAutoHide">
+        <bool>false</bool>
+       </property>
+       <widget class="QWidget" name="face_swap_tab">
         <attribute name="title">
-         <string>Settings</string>
+         <string>Face Swap</string>
         </attribute>
-        <layout class="QVBoxLayout" name="verticalLayout_2">
+        <layout class="QVBoxLayout" name="verticalLayout_4">
          <item>
-          <widget class="QLabel" name="label_tab1">
+          <widget class="QLabel" name="label_tab3">
            <property name="text">
-            <string>Settings</string>
+            <string>Face Swap</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -265,15 +274,15 @@
          </item>
         </layout>
        </widget>
-       <widget class="QWidget" name="face_swap_tab">
+       <widget class="QWidget" name="settings_tab">
         <attribute name="title">
-         <string>Face Swap</string>
+         <string>Settings</string>
         </attribute>
-        <layout class="QVBoxLayout" name="verticalLayout_4">
+        <layout class="QVBoxLayout" name="verticalLayout_2">
          <item>
-          <widget class="QLabel" name="label_tab3">
+          <widget class="QLabel" name="label_tab1">
            <property name="text">
-            <string>Face Swap</string>
+            <string>Settings</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignmentFlag::AlignCenter</set>
