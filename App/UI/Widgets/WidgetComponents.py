@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QPushButton, QGraphicsPixmapItem, QVBoxLayout, QProgressDialog
 from PySide6.QtGui import QImage, QPixmap
-import App.Helpers.UI_Helpers as ui_helpers
+import App.UI.Widgets.WidgetActions as ui_helpers
 import PySide6.QtCore as qtc
 import cv2
 

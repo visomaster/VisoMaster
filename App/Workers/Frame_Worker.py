@@ -2,7 +2,7 @@ from PySide6.QtCore import QRunnable,QTimer
 from PySide6.QtGui import QImage, QPixmap, QPainter, QColor
 from PySide6.QtWidgets import QGraphicsPixmapItem
 import cv2
-import App.Helpers.UI_Helpers as ui_helpers
+import App.UI.Widgets.WidgetActions as ui_helpers
 import numpy
 
 class FrameWorker(QRunnable):

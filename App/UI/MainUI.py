@@ -1,7 +1,7 @@
 from App.UI.Core.MainWindow import Ui_MainWindow
 from PySide6 import QtWidgets, QtGui
 from PySide6 import QtCore as qtc
-import App.Helpers.UI_Helpers as ui_helpers
+import App.UI.Widgets.WidgetActions as ui_helpers
 from functools import partial
 from App.Processors.VideoProcessor import VideoProcessor
 from App.UI.Widgets.WidgetComponents import GraphicsViewEventFilter

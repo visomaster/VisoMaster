@@ -5,7 +5,7 @@ import time
 import App.Helpers.Misc_Helpers as misc_helpers 
 import App.Workers.UI_Workers as ui_workers
 from App.UI.Widgets.WidgetComponents import TargetMediaCardButton, ProgressDialog
-import App.Helpers.UI_Helpers as ui_helpers 
+import App.UI.Widgets.WidgetActions as ui_helpers 
 from functools import partial
 import cv2
 from App.UI.Core import media_rc
