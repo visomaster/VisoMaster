@@ -72,35 +72,8 @@
               <iconset resource="media.qrc">
                <normaloff>:/media/Media/play_off.png</normaloff>:/media/Media/play_off.png</iconset>
              </property>
-             <property name="flat">
+             <property name="checkable">
               <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <spacer name="horizontalSpacer_3">
-             <property name="orientation">
-              <enum>Qt::Orientation::Horizontal</enum>
-             </property>
-             <property name="sizeType">
-              <enum>QSizePolicy::Policy::Fixed</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>20</width>
-               <height>10</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item>
-            <widget class="QPushButton" name="buttonMediaStop">
-             <property name="text">
-              <string/>
-             </property>
-             <property name="icon">
-              <iconset resource="media.qrc">
-               <normaloff>:/media/Media/stop_off.png</normaloff>:/media/Media/stop_off.png</iconset>
              </property>
              <property name="flat">
               <bool>true</bool>
@@ -186,6 +159,16 @@
         </widget>
        </item>
        <item>
+        <widget class="QLineEdit" name="targetVideosSearchBox">
+         <property name="text">
+          <string/>
+         </property>
+         <property name="placeholderText">
+          <string>Search Videos/Images</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QListWidget" name="targetVideosList"/>
        </item>
        <item>
@@ -223,6 +206,13 @@
            </widget>
           </item>
          </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="inputFacesSearchBox">
+         <property name="placeholderText">
+          <string>Search Faces</string>
+         </property>
         </widget>
        </item>
        <item>

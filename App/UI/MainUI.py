@@ -41,8 +41,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # seek_slider_event_filter = SliderEventFilter(self.videoSeekSlider)
         # self.videoSeekSlider.installEventFilter(seek_slider_event_filter)
 
-        self.buttonMediaPlay.clicked.connect(partial(self.video_processor.process_video))
-        self.buttonMediaStop.clicked.connect(partial(self.video_processor.stop_processing))
+        self.buttonMediaPlay.clicked.connect(partial(ui_helpers.OnClickPlayButton, self))
+        # self.buttonMediaStop.clicked.connect(partial(self.video_processor.stop_processing))
 
         self.update_frame_signal.connect(ui_helpers.update_graphics_view)
     def __init__(self):

@@ -56,7 +56,6 @@ class TargetMediaCardButton(QPushButton):
         # Append video button to main_window selected videos list
         main_window.selected_video_buttons.append(self)
 
-
 class GraphicsViewEventFilter(qtc.QObject):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -66,10 +65,10 @@ class GraphicsViewEventFilter(qtc.QObject):
             if event.button() == qtc.Qt.MouseButton.LeftButton:
                 # Check if it is a docked window of main_window
                 if graphics_object.window().parent():
-                    video_processor = graphics_object.window().parent().video_processor
+                    main_window = graphics_object.window().parent()
                 else:
-                    video_processor = graphics_object.window().video_processor
-                video_processor.process_video()
+                    main_window = graphics_object.window()
+                main_window.buttonMediaPlay.click()
                 # You can emit a signal or call another function here
                 return True  # Mark the event as handled
         return False  # Pass the event to the original handler

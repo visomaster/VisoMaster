@@ -8,6 +8,7 @@ from App.UI.Widgets.WidgetComponents import TargetMediaCardButton
 import App.Helpers.UI_Helpers as ui_helpers 
 from functools import partial
 import cv2
+from App.UI.Core import media_rc
 def scale_pixmap_to_view(view, pixmap):
     # Get the size of the view
     view_size = view.viewport().size()
@@ -113,3 +114,11 @@ def get_pixmap_from_frame(main_window, frame):
     pixmap = QtGui.QPixmap.fromImage(q_img)
     scaled_pixmap = ui_helpers.scale_pixmap_to_view(main_window.graphicsViewFrame, pixmap)
     return scaled_pixmap
+
+def OnClickPlayButton(main_window):
+    if main_window.buttonMediaPlay.isChecked(): 
+        main_window.buttonMediaPlay.setIcon(QtGui.QIcon(":/media/Media/play_on.png"))
+    else:
+        main_window.buttonMediaPlay.setIcon(QtGui.QIcon(":/media/Media/play_off.png"))
+
+    main_window.video_processor.process_video()

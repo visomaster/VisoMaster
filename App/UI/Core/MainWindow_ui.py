@@ -17,10 +17,10 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
     QPainter, QPalette, QPixmap, QRadialGradient,
     QTransform)
 from PySide6.QtWidgets import (QApplication, QDockWidget, QGraphicsView, QGridLayout,
-    QGroupBox, QHBoxLayout, QLabel, QListWidget,
-    QListWidgetItem, QMainWindow, QPushButton, QSizePolicy,
-    QSlider, QSpacerItem, QTabWidget, QVBoxLayout,
-    QWidget)
+    QGroupBox, QHBoxLayout, QLabel, QLineEdit,
+    QListWidget, QListWidgetItem, QMainWindow, QPushButton,
+    QSizePolicy, QSlider, QSpacerItem, QTabWidget,
+    QVBoxLayout, QWidget)
 import media_rc
 
 class Ui_MainWindow(object):
@@ -73,22 +73,10 @@ class Ui_MainWindow(object):
         icon1 = QIcon()
         icon1.addFile(u":/media/Media/play_off.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.buttonMediaPlay.setIcon(icon1)
+        self.buttonMediaPlay.setCheckable(True)
         self.buttonMediaPlay.setFlat(True)
 
         self.horizontalLayoutMediaButtons.addWidget(self.buttonMediaPlay)
-
-        self.horizontalSpacer_3 = QSpacerItem(20, 10, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
-
-        self.horizontalLayoutMediaButtons.addItem(self.horizontalSpacer_3)
-
-        self.buttonMediaStop = QPushButton(self.widget)
-        self.buttonMediaStop.setObjectName(u"buttonMediaStop")
-        icon2 = QIcon()
-        icon2.addFile(u":/media/Media/stop_off.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.buttonMediaStop.setIcon(icon2)
-        self.buttonMediaStop.setFlat(True)
-
-        self.horizontalLayoutMediaButtons.addWidget(self.buttonMediaStop)
 
         self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
 
@@ -134,6 +122,11 @@ class Ui_MainWindow(object):
 
         self.vboxLayout.addWidget(self.groupBox_TargetVideos_Select)
 
+        self.targetVideosSearchBox = QLineEdit(self.dockWidgetContents)
+        self.targetVideosSearchBox.setObjectName(u"targetVideosSearchBox")
+
+        self.vboxLayout.addWidget(self.targetVideosSearchBox)
+
         self.targetVideosList = QListWidget(self.dockWidgetContents)
         self.targetVideosList.setObjectName(u"targetVideosList")
 
@@ -165,6 +158,11 @@ class Ui_MainWindow(object):
 
 
         self.vboxLayout.addWidget(self.groupBox_InputFaces_Select)
+
+        self.inputFacesSearchBox = QLineEdit(self.dockWidgetContents)
+        self.inputFacesSearchBox.setObjectName(u"inputFacesSearchBox")
+
+        self.vboxLayout.addWidget(self.inputFacesSearchBox)
 
         self.inputFacesList = QListWidget(self.dockWidgetContents)
         self.inputFacesList.setObjectName(u"inputFacesList")
@@ -262,16 +260,18 @@ class Ui_MainWindow(object):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"Rope-Live 0.1a", None))
         self.actionExit.setText(QCoreApplication.translate("MainWindow", u"Exit", None))
         self.buttonMediaPlay.setText("")
-        self.buttonMediaStop.setText("")
         self.input_Target_DockWidget.setWindowTitle(QCoreApplication.translate("MainWindow", u"Target Videos and Input Faces", None))
         self.groupBox_TargetVideos_Select.setTitle(QCoreApplication.translate("MainWindow", u"Target Videos/Images", None))
         self.buttonSelectTargetVideos.setText(QCoreApplication.translate("MainWindow", u"Select Folder", None))
         self.labelTargetVideosPath.setText(QCoreApplication.translate("MainWindow", u"Select Videos/Images Path", None))
+        self.targetVideosSearchBox.setText("")
+        self.targetVideosSearchBox.setPlaceholderText(QCoreApplication.translate("MainWindow", u"Search Videos/Images", None))
         self.groupBox_InputFaces_Select.setTitle(QCoreApplication.translate("MainWindow", u"Input Faces", None))
         self.labelInputFacesPath.setText(QCoreApplication.translate("MainWindow", u"  Face Images Path ", None))
         self.buttonSelectInputFaces.setText(QCoreApplication.translate("MainWindow", u"Select Images Folder", None))
         self.buttonSelectInputEmbeddings.setText(QCoreApplication.translate("MainWindow", u"Select Embeddings File", None))
         self.labelEmbeddingsPath.setText(QCoreApplication.translate("MainWindow", u"  Embeddings Path", None))
+        self.inputFacesSearchBox.setPlaceholderText(QCoreApplication.translate("MainWindow", u"Search Faces", None))
         self.controlOptionsDockWidget.setWindowTitle(QCoreApplication.translate("MainWindow", u"Control Options", None))
         self.label_tab3.setText(QCoreApplication.translate("MainWindow", u"Face Swap", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.face_swap_tab), QCoreApplication.translate("MainWindow", u"Face Swap", None))
