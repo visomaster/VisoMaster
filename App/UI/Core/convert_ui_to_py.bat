@@ -1,12 +1,12 @@
 call conda activate pyside_test
-pyside6-uic MainWindow.ui -o MainWindow.py
-pyside6-rcc media.qrc -o media_rc.py
+pyside6-uic C:\Users\argen\Documents\Rope-PySide\App\UI\Core\MainWindow.ui -o C:\Users\argen\Documents\Rope-PySide\App\UI\Core\MainWindow.py
+pyside6-rcc C:\Users\argen\Documents\Rope-PySide\App\UI\Core\media.qrc -o C:\Users\argen\Documents\Rope-PySide\App\UI\Core\media_rc.py
 
 @echo off
 setlocal enabledelayedexpansion
 
 :: Define file paths and strings
-set "filePath=MainWindow.py"
+set "filePath=C:\Users\argen\Documents\Rope-PySide\App\UI\Core\MainWindow.py"
 set "searchString=import media_rc"
 set "replaceString=from App.UI.Core import media_rc"
 

@@ -69,7 +69,7 @@ def add_video_thumbnail_to_list(main_window, media_path, pixmap):
     button_size = qtc.QSize(70, 70)  # Set a fixed size for the buttons
     button = TargetMediaCardButton(media_path=media_path)
     button.setIcon(QtGui.QIcon(pixmap))
-    button.setIconSize(button_size - qtc.QSize(10, 10))  # Slightly smaller than the button size to add some margin
+    button.setIconSize(button_size - qtc.QSize(3, 3))  # Slightly smaller than the button size to add some margin
     button.setFixedSize(button_size)
 
     targetVideosList = main_window.targetVideosList
@@ -82,7 +82,7 @@ def add_video_thumbnail_to_list(main_window, media_path, pixmap):
 
     targetVideosList.setItemWidget(list_item, button)
     # Adjust the QListWidget properties to handle the grid layout
-    grid_size_with_padding = button_size + qtc.QSize(7, 7)  # Add padding around the buttons
+    grid_size_with_padding = button_size + qtc.QSize(4, 4)  # Add padding around the buttons
     targetVideosList.setGridSize(grid_size_with_padding)  # Set grid size with padding
     targetVideosList.setWrapping(True)  # Enable wrapping to have items in rows
     targetVideosList.setFlow(QtWidgets.QListView.LeftToRight)  # Set flow direction
