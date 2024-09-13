@@ -5,7 +5,7 @@ import time
 import App.Helpers.Misc_Helpers as misc_helpers 
 import App.Workers.UI_Workers as ui_workers
 from App.UI.Widgets.WidgetComponents import TargetMediaCardButton, ProgressDialog
-import App.UI.Widgets.WidgetActions as ui_helpers 
+import App.UI.Widgets.WidgetActions as widget_actions 
 from functools import partial
 import cv2
 from App.UI.Core import media_rc
@@ -74,7 +74,7 @@ def OnChangeSlider(main_window, new_position=0):
     video_processor.processing = True
     video_processor.process_next_frame()
     video_processor.processing = False
-    ui_helpers.resetMediaButtons(main_window)
+    widget_actions.resetMediaButtons(main_window)
 
 
 @qtc.Slot(str, QtGui.QPixmap)
@@ -116,7 +116,7 @@ def update_graphics_view(main_window , pixmap, current_frame_number):
     pixmap_item = QtWidgets.QGraphicsPixmapItem(pixmap)
     main_window.graphicsViewFrame.scene().addItem(pixmap_item)
     # Optionally fit the image to the view
-    ui_helpers.fit_image_to_view(main_window, pixmap_item)
+    widget_actions.fit_image_to_view(main_window, pixmap_item)
 
 
 def get_pixmap_from_frame(main_window, frame):
@@ -124,7 +124,7 @@ def get_pixmap_from_frame(main_window, frame):
     bytes_per_line = 3 * width
     q_img = QtGui.QImage(frame.data, width, height, bytes_per_line, QtGui.QImage.Format.Format_RGB888).rgbSwapped()
     pixmap = QtGui.QPixmap.fromImage(q_img)
-    scaled_pixmap = ui_helpers.scale_pixmap_to_view(main_window.graphicsViewFrame, pixmap)
+    scaled_pixmap = widget_actions.scale_pixmap_to_view(main_window.graphicsViewFrame, pixmap)
     return scaled_pixmap
 
 def resetMediaButtons(main_window):

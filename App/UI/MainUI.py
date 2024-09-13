@@ -1,7 +1,7 @@
 from App.UI.Core.MainWindow import Ui_MainWindow
 from PySide6 import QtWidgets, QtGui
 from PySide6 import QtCore as qtc
-import App.UI.Widgets.WidgetActions as ui_helpers
+import App.UI.Widgets.WidgetActions as widget_actions
 from functools import partial
 from App.Processors.VideoProcessor import VideoProcessor
 from App.UI.Widgets.WidgetComponents import GraphicsViewEventFilter
@@ -35,15 +35,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         graphics_event_filter = GraphicsViewEventFilter(self.graphicsViewFrame)
         self.graphicsViewFrame.installEventFilter(graphics_event_filter)
 
-        self.buttonSelectTargetVideos.clicked.connect(partial(ui_helpers.onClickSelectTargetVideosFolder, self))
-        self.buttonSelectTargetVideoFiles.clicked.connect(partial(ui_helpers.onClickSelectTargetVideosFiles, self))
+        self.buttonSelectTargetVideos.clicked.connect(partial(widget_actions.onClickSelectTargetVideosFolder, self))
+        self.buttonSelectTargetVideoFiles.clicked.connect(partial(widget_actions.onClickSelectTargetVideosFiles, self))
 
-        self.videoSeekSlider.valueChanged.connect(partial(ui_helpers.OnChangeSlider, self))
+        self.videoSeekSlider.valueChanged.connect(partial(widget_actions.OnChangeSlider, self))
 
-        self.buttonMediaPlay.clicked.connect(partial(ui_helpers.OnClickPlayButton, self))
+        self.buttonMediaPlay.clicked.connect(partial(widget_actions.OnClickPlayButton, self))
         # self.buttonMediaStop.clicked.connect(partial(self.video_processor.stop_processing))
 
-        self.update_frame_signal.connect(ui_helpers.update_graphics_view)
+        self.update_frame_signal.connect(widget_actions.update_graphics_view)
     def __init__(self):
         super(MainWindow, self).__init__()
         self.setupUi(self)
@@ -54,4 +54,4 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         super().resizeEvent(event)
         # Call the method to fit the image to the view whenever the window resizes
         if self.scene.items():
-            ui_helpers.fit_image_to_view(self, self.scene.items()[0])
+            widget_actions.fit_image_to_view(self, self.scene.items()[0])

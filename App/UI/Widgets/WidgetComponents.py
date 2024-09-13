@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QPushButton, QGraphicsPixmapItem, QVBoxLayout, QProgressDialog
 from PySide6.QtGui import QImage, QPixmap
-import App.UI.Widgets.WidgetActions as ui_helpers
+import App.UI.Widgets.WidgetActions as widget_actions
 import PySide6.QtCore as qtc
 import cv2
 
@@ -52,15 +52,15 @@ class TargetMediaCardButton(QPushButton):
             pixmap = QPixmap.fromImage(q_img)
 
             # Scale the pixmap if necessary
-            scaled_pixmap = ui_helpers.scale_pixmap_to_view(main_window.graphicsViewFrame, pixmap)
+            scaled_pixmap = widget_actions.scale_pixmap_to_view(main_window.graphicsViewFrame, pixmap)
             pixmap_item = QGraphicsPixmapItem(scaled_pixmap)
 
             main_window.scene.clear()
             main_window.scene.addItem(pixmap_item)
             
             # Fit the image to the view
-            ui_helpers.fit_image_to_view(main_window, pixmap_item)
-        ui_helpers.resetMediaButtons(main_window)
+            widget_actions.fit_image_to_view(main_window, pixmap_item)
+        widget_actions.resetMediaButtons(main_window)
         main_window.video_processor.file_type = self.file_type
         main_window.videoSeekSlider.setMaximum(max_frames_number)
         main_window.videoSeekSlider.setValue(0)
