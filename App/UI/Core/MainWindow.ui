@@ -48,6 +48,22 @@
          <item>
           <layout class="QHBoxLayout" name="horizontalLayoutMediaButtons">
            <item>
+            <spacer name="horizontalSpacer">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+             <property name="sizeType">
+              <enum>QSizePolicy::Policy::Preferred</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
             <widget class="QPushButton" name="buttonMediaPlay">
              <property name="text">
               <string/>
@@ -62,6 +78,22 @@
             </widget>
            </item>
            <item>
+            <spacer name="horizontalSpacer_3">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+             <property name="sizeType">
+              <enum>QSizePolicy::Policy::Fixed</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>10</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
             <widget class="QPushButton" name="buttonMediaStop">
              <property name="text">
               <string/>
@@ -74,6 +106,22 @@
               <bool>true</bool>
              </property>
             </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_2">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+             <property name="sizeType">
+              <enum>QSizePolicy::Policy::Preferred</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
            </item>
           </layout>
          </item>
@@ -101,6 +149,9 @@
    </layout>
   </widget>
   <widget class="QDockWidget" name="input_Target_DockWidget">
+   <property name="windowTitle">
+    <string>Target Videos and Input Faces</string>
+   </property>
    <attribute name="dockWidgetArea">
     <number>1</number>
    </attribute>
@@ -111,7 +162,7 @@
        <item>
         <widget class="QGroupBox" name="groupBox_TargetVideos_Select">
          <property name="title">
-          <string>Target Videos</string>
+          <string>Target Videos/Images</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_3">
           <item row="0" column="0">
@@ -124,7 +175,7 @@
           <item row="1" column="0">
            <widget class="QLabel" name="labelTargetVideosPath">
             <property name="text">
-             <string>Select Videos Path</string>
+             <string>Select Videos/Images Path</string>
             </property>
             <property name="wordWrap">
              <bool>false</bool>
@@ -143,17 +194,31 @@
           <string>Input Faces</string>
          </property>
          <layout class="QGridLayout" name="gridLayout">
-          <item row="0" column="0">
-           <widget class="QPushButton" name="buttonSelectInputFaces">
-            <property name="text">
-             <string>Select Folder</string>
-            </property>
-           </widget>
-          </item>
           <item row="1" column="0">
            <widget class="QLabel" name="labelInputFacesPath">
             <property name="text">
-             <string>Select Faces Path </string>
+             <string>  Face Images Path </string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QPushButton" name="buttonSelectInputFaces">
+            <property name="text">
+             <string>Select Images Folder</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QPushButton" name="buttonSelectInputEmbeddings">
+            <property name="text">
+             <string>Select Embeddings File</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLabel" name="labelEmbeddingsPath">
+            <property name="text">
+             <string>  Embeddings Path</string>
             </property>
            </widget>
           </item>
@@ -163,12 +228,18 @@
        <item>
         <widget class="QListWidget" name="inputFacesList"/>
        </item>
+       <item>
+        <widget class="QListWidget" name="inputEmbeddingsList"/>
+       </item>
       </layout>
      </item>
     </layout>
    </widget>
   </widget>
   <widget class="QDockWidget" name="controlOptionsDockWidget">
+   <property name="windowTitle">
+    <string>Control Options</string>
+   </property>
    <attribute name="dockWidgetArea">
     <number>2</number>
    </attribute>

@@ -64,6 +64,10 @@ class Ui_MainWindow(object):
 
         self.horizontalLayoutMediaButtons = QHBoxLayout()
         self.horizontalLayoutMediaButtons.setObjectName(u"horizontalLayoutMediaButtons")
+        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayoutMediaButtons.addItem(self.horizontalSpacer)
+
         self.buttonMediaPlay = QPushButton(self.widget)
         self.buttonMediaPlay.setObjectName(u"buttonMediaPlay")
         icon1 = QIcon()
@@ -73,6 +77,10 @@ class Ui_MainWindow(object):
 
         self.horizontalLayoutMediaButtons.addWidget(self.buttonMediaPlay)
 
+        self.horizontalSpacer_3 = QSpacerItem(20, 10, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayoutMediaButtons.addItem(self.horizontalSpacer_3)
+
         self.buttonMediaStop = QPushButton(self.widget)
         self.buttonMediaStop.setObjectName(u"buttonMediaStop")
         icon2 = QIcon()
@@ -81,6 +89,10 @@ class Ui_MainWindow(object):
         self.buttonMediaStop.setFlat(True)
 
         self.horizontalLayoutMediaButtons.addWidget(self.buttonMediaStop)
+
+        self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayoutMediaButtons.addItem(self.horizontalSpacer_2)
 
 
         self.verticalLayoutMediaControls.addLayout(self.horizontalLayoutMediaButtons)
@@ -131,15 +143,25 @@ class Ui_MainWindow(object):
         self.groupBox_InputFaces_Select.setObjectName(u"groupBox_InputFaces_Select")
         self.gridLayout = QGridLayout(self.groupBox_InputFaces_Select)
         self.gridLayout.setObjectName(u"gridLayout")
+        self.labelInputFacesPath = QLabel(self.groupBox_InputFaces_Select)
+        self.labelInputFacesPath.setObjectName(u"labelInputFacesPath")
+
+        self.gridLayout.addWidget(self.labelInputFacesPath, 1, 0, 1, 1)
+
         self.buttonSelectInputFaces = QPushButton(self.groupBox_InputFaces_Select)
         self.buttonSelectInputFaces.setObjectName(u"buttonSelectInputFaces")
 
         self.gridLayout.addWidget(self.buttonSelectInputFaces, 0, 0, 1, 1)
 
-        self.labelInputFacesPath = QLabel(self.groupBox_InputFaces_Select)
-        self.labelInputFacesPath.setObjectName(u"labelInputFacesPath")
+        self.buttonSelectInputEmbeddings = QPushButton(self.groupBox_InputFaces_Select)
+        self.buttonSelectInputEmbeddings.setObjectName(u"buttonSelectInputEmbeddings")
 
-        self.gridLayout.addWidget(self.labelInputFacesPath, 1, 0, 1, 1)
+        self.gridLayout.addWidget(self.buttonSelectInputEmbeddings, 0, 1, 1, 1)
+
+        self.labelEmbeddingsPath = QLabel(self.groupBox_InputFaces_Select)
+        self.labelEmbeddingsPath.setObjectName(u"labelEmbeddingsPath")
+
+        self.gridLayout.addWidget(self.labelEmbeddingsPath, 1, 1, 1, 1)
 
 
         self.vboxLayout.addWidget(self.groupBox_InputFaces_Select)
@@ -148,6 +170,11 @@ class Ui_MainWindow(object):
         self.inputFacesList.setObjectName(u"inputFacesList")
 
         self.vboxLayout.addWidget(self.inputFacesList)
+
+        self.inputEmbeddingsList = QListWidget(self.dockWidgetContents)
+        self.inputEmbeddingsList.setObjectName(u"inputEmbeddingsList")
+
+        self.vboxLayout.addWidget(self.inputEmbeddingsList)
 
 
         self.gridLayout_4.addLayout(self.vboxLayout, 0, 0, 1, 1)
@@ -236,12 +263,16 @@ class Ui_MainWindow(object):
         self.actionExit.setText(QCoreApplication.translate("MainWindow", u"Exit", None))
         self.buttonMediaPlay.setText("")
         self.buttonMediaStop.setText("")
-        self.groupBox_TargetVideos_Select.setTitle(QCoreApplication.translate("MainWindow", u"Target Videos", None))
+        self.input_Target_DockWidget.setWindowTitle(QCoreApplication.translate("MainWindow", u"Target Videos and Input Faces", None))
+        self.groupBox_TargetVideos_Select.setTitle(QCoreApplication.translate("MainWindow", u"Target Videos/Images", None))
         self.buttonSelectTargetVideos.setText(QCoreApplication.translate("MainWindow", u"Select Folder", None))
-        self.labelTargetVideosPath.setText(QCoreApplication.translate("MainWindow", u"Select Videos Path", None))
+        self.labelTargetVideosPath.setText(QCoreApplication.translate("MainWindow", u"Select Videos/Images Path", None))
         self.groupBox_InputFaces_Select.setTitle(QCoreApplication.translate("MainWindow", u"Input Faces", None))
-        self.buttonSelectInputFaces.setText(QCoreApplication.translate("MainWindow", u"Select Folder", None))
-        self.labelInputFacesPath.setText(QCoreApplication.translate("MainWindow", u"Select Faces Path ", None))
+        self.labelInputFacesPath.setText(QCoreApplication.translate("MainWindow", u"  Face Images Path ", None))
+        self.buttonSelectInputFaces.setText(QCoreApplication.translate("MainWindow", u"Select Images Folder", None))
+        self.buttonSelectInputEmbeddings.setText(QCoreApplication.translate("MainWindow", u"Select Embeddings File", None))
+        self.labelEmbeddingsPath.setText(QCoreApplication.translate("MainWindow", u"  Embeddings Path", None))
+        self.controlOptionsDockWidget.setWindowTitle(QCoreApplication.translate("MainWindow", u"Control Options", None))
         self.label_tab3.setText(QCoreApplication.translate("MainWindow", u"Face Swap", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.face_swap_tab), QCoreApplication.translate("MainWindow", u"Face Swap", None))
         self.label_tab2.setText(QCoreApplication.translate("MainWindow", u"Face Editor", None))
