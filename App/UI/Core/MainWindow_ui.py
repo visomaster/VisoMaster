@@ -64,21 +64,62 @@ class Ui_MainWindow(object):
 
         self.horizontalLayoutMediaButtons = QHBoxLayout()
         self.horizontalLayoutMediaButtons.setObjectName(u"horizontalLayoutMediaButtons")
-        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
+        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Minimum)
 
         self.horizontalLayoutMediaButtons.addItem(self.horizontalSpacer)
 
+        self.pushButton = QPushButton(self.widget)
+        self.pushButton.setObjectName(u"pushButton")
+        sizePolicy1 = QSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Fixed)
+        sizePolicy1.setHorizontalStretch(0)
+        sizePolicy1.setVerticalStretch(0)
+        sizePolicy1.setHeightForWidth(self.pushButton.sizePolicy().hasHeightForWidth())
+        self.pushButton.setSizePolicy(sizePolicy1)
+        self.pushButton.setMaximumSize(QSize(100, 16777215))
+        icon1 = QIcon()
+        icon1.addFile(u":/media/Media/previous_marker_off.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.pushButton.setIcon(icon1)
+        self.pushButton.setFlat(True)
+
+        self.horizontalLayoutMediaButtons.addWidget(self.pushButton)
+
+        self.horizontalSpacer_3 = QSpacerItem(40, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayoutMediaButtons.addItem(self.horizontalSpacer_3)
+
         self.buttonMediaPlay = QPushButton(self.widget)
         self.buttonMediaPlay.setObjectName(u"buttonMediaPlay")
-        icon1 = QIcon()
-        icon1.addFile(u":/media/Media/play_off.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.buttonMediaPlay.setIcon(icon1)
+        sizePolicy2 = QSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Minimum)
+        sizePolicy2.setHorizontalStretch(0)
+        sizePolicy2.setVerticalStretch(0)
+        sizePolicy2.setHeightForWidth(self.buttonMediaPlay.sizePolicy().hasHeightForWidth())
+        self.buttonMediaPlay.setSizePolicy(sizePolicy2)
+        self.buttonMediaPlay.setMaximumSize(QSize(100, 16777215))
+        icon2 = QIcon()
+        icon2.addFile(u":/media/Media/play_off.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.buttonMediaPlay.setIcon(icon2)
         self.buttonMediaPlay.setCheckable(True)
         self.buttonMediaPlay.setFlat(True)
 
         self.horizontalLayoutMediaButtons.addWidget(self.buttonMediaPlay)
 
-        self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
+        self.horizontalSpacer_4 = QSpacerItem(40, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayoutMediaButtons.addItem(self.horizontalSpacer_4)
+
+        self.pushButton_2 = QPushButton(self.widget)
+        self.pushButton_2.setObjectName(u"pushButton_2")
+        sizePolicy1.setHeightForWidth(self.pushButton_2.sizePolicy().hasHeightForWidth())
+        self.pushButton_2.setSizePolicy(sizePolicy1)
+        self.pushButton_2.setMaximumSize(QSize(100, 16777215))
+        icon3 = QIcon()
+        icon3.addFile(u":/media/Media/next_marker_off.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.pushButton_2.setIcon(icon3)
+        self.pushButton_2.setFlat(True)
+
+        self.horizontalLayoutMediaButtons.addWidget(self.pushButton_2)
+
+        self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Minimum)
 
         self.horizontalLayoutMediaButtons.addItem(self.horizontalSpacer_2)
 
@@ -91,6 +132,17 @@ class Ui_MainWindow(object):
         self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Preferred)
 
         self.verticalLayout.addItem(self.verticalSpacer)
+
+        self.listWidget = QListWidget(self.widget)
+        self.listWidget.setObjectName(u"listWidget")
+        sizePolicy3 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        sizePolicy3.setHorizontalStretch(0)
+        sizePolicy3.setVerticalStretch(0)
+        sizePolicy3.setHeightForWidth(self.listWidget.sizePolicy().hasHeightForWidth())
+        self.listWidget.setSizePolicy(sizePolicy3)
+        self.listWidget.setMaximumSize(QSize(16777215, 125))
+
+        self.verticalLayout.addWidget(self.listWidget)
 
 
         self.horizontalLayout.addWidget(self.widget)
@@ -119,10 +171,10 @@ class Ui_MainWindow(object):
 
         self.gridLayout_3.addWidget(self.buttonSelectTargetVideos, 0, 0, 1, 1)
 
-        self.buttonSelectTargetVideoFile = QPushButton(self.groupBox_TargetVideos_Select)
-        self.buttonSelectTargetVideoFile.setObjectName(u"buttonSelectTargetVideoFile")
+        self.buttonSelectTargetVideoFiles = QPushButton(self.groupBox_TargetVideos_Select)
+        self.buttonSelectTargetVideoFiles.setObjectName(u"buttonSelectTargetVideoFiles")
 
-        self.gridLayout_3.addWidget(self.buttonSelectTargetVideoFile, 0, 1, 1, 1)
+        self.gridLayout_3.addWidget(self.buttonSelectTargetVideoFiles, 0, 1, 1, 1)
 
 
         self.vboxLayout.addWidget(self.groupBox_TargetVideos_Select)
@@ -192,11 +244,11 @@ class Ui_MainWindow(object):
         self.gridLayout_5.setObjectName(u"gridLayout_5")
         self.tabWidget = QTabWidget(self.dockWidgetContents_2)
         self.tabWidget.setObjectName(u"tabWidget")
-        sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        sizePolicy1.setHorizontalStretch(1)
-        sizePolicy1.setVerticalStretch(0)
-        sizePolicy1.setHeightForWidth(self.tabWidget.sizePolicy().hasHeightForWidth())
-        self.tabWidget.setSizePolicy(sizePolicy1)
+        sizePolicy4 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        sizePolicy4.setHorizontalStretch(1)
+        sizePolicy4.setVerticalStretch(0)
+        sizePolicy4.setHeightForWidth(self.tabWidget.sizePolicy().hasHeightForWidth())
+        self.tabWidget.setSizePolicy(sizePolicy4)
         font1 = QFont()
         font1.setFamilies([u"Segoe UI Semibold"])
         font1.setPointSize(10)
@@ -225,11 +277,11 @@ class Ui_MainWindow(object):
         self.label_tab2 = QLabel(self.face_editor_tab)
         self.label_tab2.setObjectName(u"label_tab2")
         self.label_tab2.setEnabled(True)
-        sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Preferred)
-        sizePolicy2.setHorizontalStretch(0)
-        sizePolicy2.setVerticalStretch(0)
-        sizePolicy2.setHeightForWidth(self.label_tab2.sizePolicy().hasHeightForWidth())
-        self.label_tab2.setSizePolicy(sizePolicy2)
+        sizePolicy5 = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Preferred)
+        sizePolicy5.setHorizontalStretch(0)
+        sizePolicy5.setVerticalStretch(0)
+        sizePolicy5.setHeightForWidth(self.label_tab2.sizePolicy().hasHeightForWidth())
+        self.label_tab2.setSizePolicy(sizePolicy5)
         self.label_tab2.setMaximumSize(QSize(16777215, 16777215))
         self.label_tab2.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
@@ -264,12 +316,14 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"Rope-Live 0.1a", None))
         self.actionExit.setText(QCoreApplication.translate("MainWindow", u"Exit", None))
+        self.pushButton.setText("")
         self.buttonMediaPlay.setText("")
+        self.pushButton_2.setText("")
         self.input_Target_DockWidget.setWindowTitle(QCoreApplication.translate("MainWindow", u"Target Videos and Input Faces", None))
         self.groupBox_TargetVideos_Select.setTitle(QCoreApplication.translate("MainWindow", u"Target Videos/Images", None))
         self.labelTargetVideosPath.setText(QCoreApplication.translate("MainWindow", u"Select Videos/Images Path", None))
         self.buttonSelectTargetVideos.setText(QCoreApplication.translate("MainWindow", u"Select Folder", None))
-        self.buttonSelectTargetVideoFile.setText(QCoreApplication.translate("MainWindow", u"Select File", None))
+        self.buttonSelectTargetVideoFiles.setText(QCoreApplication.translate("MainWindow", u"Select Files", None))
         self.targetVideosSearchBox.setText("")
         self.targetVideosSearchBox.setPlaceholderText(QCoreApplication.translate("MainWindow", u"Search Videos/Images", None))
         self.groupBox_InputFaces_Select.setTitle(QCoreApplication.translate("MainWindow", u"Input Faces", None))

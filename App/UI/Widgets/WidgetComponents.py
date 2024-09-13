@@ -38,6 +38,8 @@ class TargetMediaCardButton(QPushButton):
             max_frames_number = int(media_capture.get(cv2.CAP_PROP_FRAME_COUNT))
             ret, frame = media_capture.read()
             main_window.video_processor.media_capture = media_capture
+            main_window.video_processor.max_frame_number = max_frames_number
+
 
         elif self.file_type=='image':
             frame = cv2.imread(self.media_path)
@@ -92,18 +94,6 @@ class GraphicsViewEventFilter(qtc.QObject):
                 # You can emit a signal or call another function here
                 return True  # Mark the event as handled
         return False  # Pass the event to the original handler
-    
-class SliderEventFilter(qtc.QObject):
-    def __init__(self, parent=None):
-        super().__init__(parent)
 
-    def eventFilter(self, slider_object, event):
-        if event.type() == qtc.QEvent.Type.MouseButtonPress:
-            if event.button() == qtc.Qt.MouseButton.LeftButton:
-                super().eventFilter(slider_object, event)
-                ui_helpers.OnChangeSlider(slider_object.window())
-                # You can emit a signal or call another function here
-                return True  # Mark the event as handled
-        return False  # Pass the event to the original handler
     
 

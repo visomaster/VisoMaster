@@ -45,7 +45,6 @@ class VideoProcessor(QObject):
                     return
 
                 self.processing = True
-                self.max_frame_number = int(self.media_capture.get(cv2.CAP_PROP_FRAME_COUNT))
                 self.timer.start(1000/self.media_capture.get(cv2.CAP_PROP_FPS))  # Start processing at video's fps
 
         elif self.file_type=='image':

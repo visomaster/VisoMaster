@@ -4,7 +4,7 @@ from PySide6 import QtCore as qtc
 import App.Helpers.UI_Helpers as ui_helpers
 from functools import partial
 from App.Processors.VideoProcessor import VideoProcessor
-from App.UI.Widgets.WidgetComponents import GraphicsViewEventFilter, SliderEventFilter
+from App.UI.Widgets.WidgetComponents import GraphicsViewEventFilter
 
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
@@ -35,12 +35,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         graphics_event_filter = GraphicsViewEventFilter(self.graphicsViewFrame)
         self.graphicsViewFrame.installEventFilter(graphics_event_filter)
 
-        self.buttonSelectTargetVideos.clicked.connect(partial(ui_helpers.onClickSelectTargetVideos, self))
-        self.buttonSelectTargetVideoFile.clicked.connect(partial(ui_helpers.onClickSelectTargetVideoFiles, self))
+        self.buttonSelectTargetVideos.clicked.connect(partial(ui_helpers.onClickSelectTargetVideosFolder, self))
+        self.buttonSelectTargetVideoFiles.clicked.connect(partial(ui_helpers.onClickSelectTargetVideosFiles, self))
 
         self.videoSeekSlider.valueChanged.connect(partial(ui_helpers.OnChangeSlider, self))
-        # seek_slider_event_filter = SliderEventFilter(self.videoSeekSlider)
-        # self.videoSeekSlider.installEventFilter(seek_slider_event_filter)
 
         self.buttonMediaPlay.clicked.connect(partial(ui_helpers.OnClickPlayButton, self))
         # self.buttonMediaStop.clicked.connect(partial(self.video_processor.stop_processing))

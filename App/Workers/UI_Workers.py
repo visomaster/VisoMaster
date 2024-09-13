@@ -10,13 +10,16 @@ class TargetMediaLoaderWorker(qtc.QThread):
     thumbnail_ready = qtc.Signal(str, QPixmap, str)  # Signal with media path and QPixmap and file_type
     finished = qtc.Signal()  # Signal to indicate completion
 
-    def __init__(self, folder_name=False, parent=None):
+    def __init__(self, folder_name=False, files_list=[],  parent=None):
         super().__init__(parent)
         self.folder_name = folder_name
+        self.files_list = files_list
 
     def run(self):
         if self.folder_name:
             self.load_videos_and_images_from_folder(self.folder_name)
+        if self.files_list:
+            self.load_videos_and_images_from_files_list(self.files_list)
         self.finished.emit()
 
     def load_videos_and_images_from_folder(self, folder_name):
@@ -26,6 +29,15 @@ class TargetMediaLoaderWorker(qtc.QThread):
         media_files = video_files + image_files
         for media_file in media_files:
             media_file_path = os.path.join(folder_name, media_file)
+            file_type = misc_helpers.get_file_type(media_file_path)
+            pixmap = self.extract_frame_as_pixmap(media_file_path, file_type)
+            if pixmap:
+                # Emit the signal to update GUI
+                self.thumbnail_ready.emit(media_file_path, pixmap, file_type)
+
+    def load_videos_and_images_from_files_list(self, files_list):
+        media_files = files_list
+        for media_file_path in media_files:
             file_type = misc_helpers.get_file_type(media_file_path)
             pixmap = self.extract_frame_as_pixmap(media_file_path, file_type)
             if pixmap:
