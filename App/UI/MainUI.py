@@ -36,6 +36,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.graphicsViewFrame.installEventFilter(graphics_event_filter)
 
         self.buttonSelectTargetVideos.clicked.connect(partial(ui_helpers.onClickSelectTargetVideos, self))
+        self.buttonSelectTargetVideoFile.clicked.connect(partial(ui_helpers.onClickSelectTargetVideoFiles, self))
 
         self.videoSeekSlider.valueChanged.connect(partial(ui_helpers.OnChangeSlider, self))
         # seek_slider_event_filter = SliderEventFilter(self.videoSeekSlider)

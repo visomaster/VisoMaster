@@ -4,7 +4,7 @@ from PySide6 import QtWidgets, QtGui
 import time
 import App.Helpers.Misc_Helpers as misc_helpers 
 import App.Workers.UI_Workers as ui_workers
-from App.UI.Widgets.WidgetComponents import TargetMediaCardButton
+from App.UI.Widgets.WidgetComponents import TargetMediaCardButton, ProgressDialog
 import App.Helpers.UI_Helpers as ui_helpers 
 from functools import partial
 import cv2
@@ -50,9 +50,15 @@ def onClickSelectTargetVideos(main_window):
     main_window.labelTargetVideosPath.setToolTip(folder_name)
     clear_stop_loading_media(main_window)
     main_window.video_loader_worker = ui_workers.TargetMediaLoaderWorker(folder_name)
-    main_window.video_loader_worker.thumbnail_ready.connect(partial(add_video_thumbnail_to_list, main_window))
+    main_window.video_loader_worker.thumbnail_ready.connect(partial(add_media_thumbnail_to_list, main_window))
         # main_window.video_loader_worker.finished.connect(partial(on_load_finished, main_window))
     main_window.video_loader_worker.start()
+
+@qtc.Slot()
+def onClickSelectTargetVideoFiles(main_window):
+    file_names = QtWidgets.QFileDialog.getOpenFileNames()
+    print(file_names[0])
+    print(type(file_names[0]))
 @qtc.Slot()
 def OnChangeSlider(main_window, new_position=0):
     video_processor = main_window.video_processor
@@ -63,12 +69,13 @@ def OnChangeSlider(main_window, new_position=0):
     video_processor.processing = True
     video_processor.process_next_frame()
     video_processor.processing = False
+    ui_helpers.resetMediaButtons(main_window)
 
 
 @qtc.Slot(str, QtGui.QPixmap)
-def add_video_thumbnail_to_list(main_window, media_path, pixmap):
+def add_media_thumbnail_to_list(main_window, media_path, pixmap, file_type):
     button_size = qtc.QSize(70, 70)  # Set a fixed size for the buttons
-    button = TargetMediaCardButton(media_path=media_path)
+    button = TargetMediaCardButton(media_path=media_path, file_type=file_type)
     button.setIcon(QtGui.QIcon(pixmap))
     button.setIconSize(button_size - qtc.QSize(3, 3))  # Slightly smaller than the button size to add some margin
     button.setFixedSize(button_size)
@@ -115,10 +122,26 @@ def get_pixmap_from_frame(main_window, frame):
     scaled_pixmap = ui_helpers.scale_pixmap_to_view(main_window.graphicsViewFrame, pixmap)
     return scaled_pixmap
 
-def OnClickPlayButton(main_window):
+def resetMediaButtons(main_window):
+    main_window.buttonMediaPlay.setChecked(False)
+    setPlayButtonIcon(main_window)
+
+def setPlayButtonIcon(main_window):
     if main_window.buttonMediaPlay.isChecked(): 
         main_window.buttonMediaPlay.setIcon(QtGui.QIcon(":/media/Media/play_on.png"))
     else:
         main_window.buttonMediaPlay.setIcon(QtGui.QIcon(":/media/Media/play_off.png"))
+
+def OnClickPlayButton(main_window):
+
+    # progress_dialog = ProgressDialog("Processing...", "Cancel", 0, 100, main_window)
+    # progress_dialog.setWindowModality(qtc.Qt.ApplicationModal)
+    # progress_dialog.setMinimumDuration(10000)
+    # progress_dialog.setWindowTitle("Progress")
+    # progress_dialog.setAutoClose(True)  # Close the dialog when finished
+    # progress_dialog.exec_()
+    setPlayButtonIcon(main_window)
+
+
 
     main_window.video_processor.process_video()

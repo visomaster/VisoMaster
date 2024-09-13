@@ -138,13 +138,6 @@
           <string>Target Videos/Images</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_3">
-          <item row="0" column="0">
-           <widget class="QPushButton" name="buttonSelectTargetVideos">
-            <property name="text">
-             <string>Select Folder</string>
-            </property>
-           </widget>
-          </item>
           <item row="1" column="0">
            <widget class="QLabel" name="labelTargetVideosPath">
             <property name="text">
@@ -152,6 +145,20 @@
             </property>
             <property name="wordWrap">
              <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QPushButton" name="buttonSelectTargetVideos">
+            <property name="text">
+             <string>Select Folder</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QPushButton" name="buttonSelectTargetVideoFile">
+            <property name="text">
+             <string>Select File</string>
             </property>
            </widget>
           </item>

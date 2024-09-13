@@ -26,6 +26,7 @@ class VideoProcessor(QObject):
         self.thread_pool = QThreadPool()
         self.thread_pool.setMaxThreadCount(2)  # Adjust as needed
         self.media_capture = None
+        self.file_type = None
         self.processing = False
         self.current_frame_number = 0
         self.max_frame_number = 0
@@ -37,36 +38,47 @@ class VideoProcessor(QObject):
         if self.processing:
             self.stop_processing()
             return
-        if self.media_capture:
-            if not self.media_capture.isOpened():
-                print("Error: Cannot open video")
-                return
+        if self.file_type=='video':
+            if self.media_capture:
+                if not self.media_capture.isOpened():
+                    print("Error: Cannot open video")
+                    return
 
+                self.processing = True
+                self.max_frame_number = int(self.media_capture.get(cv2.CAP_PROP_FRAME_COUNT))
+                self.timer.start(1000/self.media_capture.get(cv2.CAP_PROP_FPS))  # Start processing at video's fps
+
+        elif self.file_type=='image':
             self.processing = True
-            self.max_frame_number = int(self.media_capture.get(cv2.CAP_PROP_FRAME_COUNT))
-            self.timer.start(1000/self.media_capture.get(cv2.CAP_PROP_FPS))  # Start processing at video's fps
+            self.max_frame_number = 1
+            self.timer.start(10)  # Start processing at video's fps
 
     def process_next_frame(self):
         if not self.processing:
             return
 
-        if self.current_frame_number >= self.max_frame_number:
-            self.stop_processing()
-            return
+        if self.file_type=='video' and self.media_capture:
+            if self.current_frame_number >= self.max_frame_number:
+                self.stop_processing()
+                return
 
-        with lock:
-            ret, frame = self.media_capture.read()
-
-            if not ret:
-                self.media_capture.release()
-                self.media_capture = cv2.VideoCapture(self.media_path)
+            with lock:
                 ret, frame = self.media_capture.read()
 
-            if ret:
-                worker = VideoProcessingWorker(frame, self.main_window, self.current_frame_number)
-                self.thread_pool.start(worker)
-            else:
-                print(f"Error reading frame at position {self.current_frame_number}")
+                if not ret:
+                    self.media_capture.release()
+                    self.media_capture = cv2.VideoCapture(self.media_path)
+                    ret, frame = self.media_capture.read()
+
+                if ret:
+                    worker = VideoProcessingWorker(frame, self.main_window, self.current_frame_number)
+                    self.thread_pool.start(worker)
+                else:
+                    print(f"Error reading frame at position {self.current_frame_number}")
+        elif self.file_type=='image':
+            frame = cv2.imread(self.media_path)
+            worker = VideoProcessingWorker(frame, self.main_window, self.current_frame_number)
+            self.thread_pool.start(worker)
 
         self.current_frame_number += 1
 

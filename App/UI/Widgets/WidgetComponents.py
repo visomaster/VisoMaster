@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QPushButton, QGraphicsPixmapItem
+from PySide6.QtWidgets import QPushButton, QGraphicsPixmapItem, QVBoxLayout, QProgressDialog
 from PySide6.QtGui import QImage, QPixmap
 import App.Helpers.UI_Helpers as ui_helpers
 import PySide6.QtCore as qtc
@@ -7,8 +7,9 @@ import cv2
 from PySide6.QtWidgets import QPushButton
 
 class TargetMediaCardButton(QPushButton):
-    def __init__(self, media_path, *args, **kwargs):
+    def __init__(self, media_path, file_type, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.file_type = file_type
         self.media_path = media_path
         self.setCheckable(True)
         self.setToolTip(media_path)
@@ -16,6 +17,7 @@ class TargetMediaCardButton(QPushButton):
 
     def loadMediaOnClick(self):
         main_window = self.window()
+        # Check if it is docked or not 
         if main_window.parent():
             main_window = main_window.parent()
         if main_window.selected_video_buttons:
@@ -29,12 +31,18 @@ class TargetMediaCardButton(QPushButton):
         if main_window.video_processor.media_capture:
             main_window.video_processor.media_capture.release()  # Release the video capture object
 
+        frame = False
+        if self.file_type=='video':
+            media_capture = cv2.VideoCapture(self.media_path)
+            media_capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            max_frames_number = int(media_capture.get(cv2.CAP_PROP_FRAME_COUNT))
+            ret, frame = media_capture.read()
+            main_window.video_processor.media_capture = media_capture
 
-        media_capture = cv2.VideoCapture(self.media_path)
-        media_capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
-        max_frames_number = int(media_capture.get(cv2.CAP_PROP_FRAME_COUNT))
-        ret, frame = media_capture.read()
-        if ret:
+        elif self.file_type=='image':
+            frame = cv2.imread(self.media_path)
+            max_frames_number = 1
+        if not isinstance(frame,bool):
             # Convert the frame to QPixmap
             height, width, channel = frame.shape
             bytes_per_line = 3 * width
@@ -50,11 +58,23 @@ class TargetMediaCardButton(QPushButton):
             
             # Fit the image to the view
             ui_helpers.fit_image_to_view(main_window, pixmap_item)
-        main_window.video_processor.media_capture = media_capture
+        ui_helpers.resetMediaButtons(main_window)
+        main_window.video_processor.file_type = self.file_type
         main_window.videoSeekSlider.setMaximum(max_frames_number)
         main_window.videoSeekSlider.setValue(0)
         # Append video button to main_window selected videos list
         main_window.selected_video_buttons.append(self)
+
+
+# Custom progress dialog
+class ProgressDialog(QProgressDialog):
+    pass
+
+        # # Worker thread to simulate a task
+        # self.worker = WorkerThread()
+        # self.worker.update_progress.connect(self.progress_bar.setValue)
+        # self.worker.finished.connect(self.accept)  # Close the dialog when the task is finished
+
 
 class GraphicsViewEventFilter(qtc.QObject):
     def __init__(self, parent=None):
@@ -85,3 +105,5 @@ class SliderEventFilter(qtc.QObject):
                 # You can emit a signal or call another function here
                 return True  # Mark the event as handled
         return False  # Pass the event to the original handler
+    
+
