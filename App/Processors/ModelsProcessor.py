@@ -52,7 +52,8 @@ class ModelsProcessor(QObject):
     def load_model_and_show_progress_bar(self, model_name):
         model_load_worker = ModelLoaderWorker(model_name, self, self.providers)
         self.model_loaded.connect(partial(widget_actions.hideModelLoadProgressBar, self.main_window))
-        self.thread_pool.start(model_load_worker)
         widget_actions.showModelLoadingProgressBar(self.main_window)
+
+        self.thread_pool.start(model_load_worker)
 
 
