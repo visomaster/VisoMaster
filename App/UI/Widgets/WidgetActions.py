@@ -151,7 +151,8 @@ def showModelLoadingProgressBar(main_window):
     progress_dialog.setMinimumDuration(2000)
     progress_dialog.setWindowTitle("Progress")
     progress_dialog.setAutoClose(True)  # Close the dialog when finished
+    main_window.model_load_dialog = progress_dialog
     progress_dialog.exec_()
 
 def hideModelLoadProgressBar(main_window):
-    main_window.progress_dialog.close()
+    main_window.model_load_dialog.close()
