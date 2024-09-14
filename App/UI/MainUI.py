@@ -4,6 +4,7 @@ from PySide6 import QtCore as qtc
 import App.UI.Widgets.WidgetActions as widget_actions
 from functools import partial
 from App.Processors.VideoProcessor import VideoProcessor
+from App.Processors.ModelsProcessor import ModelsProcessor
 from App.UI.Widgets.WidgetComponents import GraphicsViewEventFilter
 
 
@@ -13,6 +14,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def initialize_variables(self):
         self.video_loader_worker = False
         self.video_processor = VideoProcessor(self)
+        self.models_processor = ModelsProcessor(self)
         self.thread_pool = qtc.QThreadPool()
         self.selected_video_buttons = []
 

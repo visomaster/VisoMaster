@@ -2,8 +2,11 @@
 from PySide6 import QtCore as qtc
 from PySide6.QtGui import QPixmap, QImage, Qt
 from App.Helpers import Misc_Helpers as misc_helpers
+from App.UI.Widgets import WidgetActions as widget_actions
 import os
 import cv2
+import onnxruntime
+
 
 class TargetMediaLoaderWorker(qtc.QThread):
     # Define signals to emit when loading is done or if there are updates
@@ -62,3 +65,4 @@ class TargetMediaLoaderWorker(qtc.QThread):
             pixmap = pixmap.scaled(70, 70, Qt.AspectRatioMode.KeepAspectRatio)  # Adjust size as needed
             return pixmap
         return None
+    
