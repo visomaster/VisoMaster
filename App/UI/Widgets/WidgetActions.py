@@ -138,21 +138,9 @@ def setPlayButtonIcon(main_window):
         main_window.buttonMediaPlay.setIcon(QtGui.QIcon(":/media/Media/play_off.png"))
 
 def OnClickPlayButton(main_window):
-    main_window.models_processor.test_run_model_function()
+    main_window.models_processor.test_run_model_function('inswapper_128')
     setPlayButtonIcon(main_window)
 
 
 
     main_window.video_processor.process_video()
-
-def showModelLoadingProgressBar(main_window):
-    progress_dialog = ProgressDialog("Processing...", "Cancel", 0, 100, main_window)
-    progress_dialog.setWindowModality(qtc.Qt.ApplicationModal)
-    progress_dialog.setMinimumDuration(2000)
-    progress_dialog.setWindowTitle("Progress")
-    progress_dialog.setAutoClose(True)  # Close the dialog when finished
-    main_window.model_load_dialog = progress_dialog
-    progress_dialog.exec_()
-
-def hideModelLoadProgressBar(main_window):
-    main_window.model_load_dialog.close()
