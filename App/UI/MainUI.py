@@ -20,9 +20,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def initialize_widgets(self):
 
-        # self.input_Target_DockWidget.setWindowTitle('Target Videos and Input Faces')
-        # self.controlOptionsDockWidget.setWindowTitle('Control Options')
         # Initialize QListWidget for target media
+
         self.targetVideosList.setFlow(QtWidgets.QListWidget.LeftToRight)
         self.targetVideosList.setWrapping(True)
         self.targetVideosList.setResizeMode(QtWidgets.QListWidget.Adjust)
@@ -32,6 +31,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.inputFacesList.setWrapping(True)
         self.inputFacesList.setResizeMode(QtWidgets.QListWidget.Adjust)
 
+        # Initialize graphics frame to view frames
         self.scene = QtWidgets.QGraphicsScene()
         self.graphicsViewFrame.setScene(self.scene)
         graphics_event_filter = GraphicsViewEventFilter(self.graphicsViewFrame)
@@ -39,9 +39,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.buttonSelectTargetVideos.clicked.connect(partial(widget_actions.onClickSelectTargetVideosFolder, self))
         self.buttonSelectTargetVideoFiles.clicked.connect(partial(widget_actions.onClickSelectTargetVideosFiles, self))
-
         self.videoSeekSlider.valueChanged.connect(partial(widget_actions.OnChangeSlider, self))
-
         self.buttonMediaPlay.clicked.connect(partial(widget_actions.OnClickPlayButton, self))
         # self.buttonMediaStop.clicked.connect(partial(self.video_processor.stop_processing))
 

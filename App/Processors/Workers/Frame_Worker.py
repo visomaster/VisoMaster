@@ -4,7 +4,7 @@ from PySide6.QtWidgets import QGraphicsPixmapItem
 import cv2
 import App.UI.Widgets.WidgetActions as widget_actions
 import numpy
-
+import torch
 class FrameWorker(QRunnable):
     def __init__(self, frame, main_window, current_frame_number):
         super().__init__()
@@ -20,5 +20,6 @@ class FrameWorker(QRunnable):
         self.main_window.update_frame_signal.emit(self.main_window, scaled_pixmap, self.current_frame_number)
 
     def process_swap_on_frame(self):
-        frame = self.frame
-        return numpy.ascontiguousarray(frame)
+        image = torch.from_numpy(self.frame).to('cuda')
+        image = image.cpu().numpy()
+        return image

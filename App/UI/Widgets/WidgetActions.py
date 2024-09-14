@@ -3,7 +3,7 @@ import PySide6.QtCore as qtc
 from PySide6 import QtWidgets, QtGui
 import time
 import App.Helpers.Misc_Helpers as misc_helpers 
-import App.Workers.UI_Workers as ui_workers
+import App.Processors.Workers.UI_Workers as ui_workers
 from App.UI.Widgets.WidgetComponents import TargetMediaCardButton, ProgressDialog
 import App.UI.Widgets.WidgetActions as widget_actions 
 from functools import partial
@@ -138,7 +138,6 @@ def setPlayButtonIcon(main_window):
         main_window.buttonMediaPlay.setIcon(QtGui.QIcon(":/media/Media/play_off.png"))
 
 def OnClickPlayButton(main_window):
-    main_window.models_processor.test_run_model_function('inswapper_128')
     setPlayButtonIcon(main_window)
 
 

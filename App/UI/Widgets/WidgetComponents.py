@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QPushButton, QGraphicsPixmapItem, QVBoxLayout, QProgressDialog
+from PySide6.QtWidgets import QPushButton, QGraphicsPixmapItem, QVBoxLayout, QProgressDialog, QHBoxLayout, QWidget, QStyle
 from PySide6.QtGui import QImage, QPixmap
 import App.UI.Widgets.WidgetActions as widget_actions
 import PySide6.QtCore as qtc
@@ -94,6 +94,3 @@ class GraphicsViewEventFilter(qtc.QObject):
                 # You can emit a signal or call another function here
                 return True  # Mark the event as handled
         return False  # Pass the event to the original handler
-
-    
-

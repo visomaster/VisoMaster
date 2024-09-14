@@ -1,6 +1,6 @@
 from PySide6.QtCore import QRunnable, QThreadPool, Signal, QObject, QTimer
 import cv2
-from App.Workers.Frame_Worker import FrameWorker
+from App.Processors.Workers.Frame_Worker import FrameWorker
 import threading
 
 lock = threading.Lock()
