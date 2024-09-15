@@ -16,8 +16,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.video_processor = VideoProcessor(self)
         self.models_processor = ModelsProcessor(self)
         self.thread_pool = qtc.QThreadPool()
-        self.selected_video_buttons = []
-
+        self.target_videos = []
+        self.selected_video_buttons = [] #Contains list of buttons linked to videos/images
+        self.parameters = {}
     def initialize_widgets(self):
 
         # Initialize QListWidget for target media
@@ -42,6 +43,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.videoSeekSlider.valueChanged.connect(partial(widget_actions.OnChangeSlider, self))
         self.buttonMediaPlay.clicked.connect(partial(widget_actions.OnClickPlayButton, self))
         # self.buttonMediaStop.clicked.connect(partial(self.video_processor.stop_processing))
+
+        self.targetVideosSearchBox.textChanged.connect(partial(widget_actions.filterTargetVideos, self))
 
         self.update_frame_signal.connect(widget_actions.update_graphics_view)
     def __init__(self):

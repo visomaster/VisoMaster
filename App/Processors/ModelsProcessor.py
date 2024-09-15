@@ -54,7 +54,8 @@ class ModelsProcessor(QObject):
             ('CPUExecutionProvider')
         ]
         self.models = {
-            'Inswapper128': {'model_path': './App/ONNXModels/inswapper_128.fp16.onnx', 'model_instance': None}
+            'Inswapper128': {'model_path': './App/ONNXModels/inswapper_128.fp16.onnx', 'model_instance': None},
+            'Retinaface': {'model_path'}
         }
         self.current_loading_model = False
         self.model_loaded.connect(self.hideModelLoadProgressBar)

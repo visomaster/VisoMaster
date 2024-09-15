@@ -3,7 +3,7 @@ import PySide6.QtCore as qtc
 from PySide6 import QtWidgets, QtGui
 import time
 import App.Helpers.Misc_Helpers as misc_helpers 
-import App.Processors.Workers.UI_Workers as ui_workers
+import App.UI.Widgets.UI_Workers as ui_workers
 from App.UI.Widgets.WidgetComponents import TargetMediaCardButton, ProgressDialog
 import App.UI.Widgets.WidgetActions as widget_actions 
 from functools import partial
@@ -46,6 +46,7 @@ def clear_stop_loading_media(main_window):
 def onClickSelectTargetVideosFolder(main_window):
     folder_name = QtWidgets.QFileDialog.getExistingDirectory()
     main_window.selected_video_buttons = []
+    main_window.target_videos = []
     main_window.labelTargetVideosPath.setText(misc_helpers.truncate_text(folder_name))
     main_window.labelTargetVideosPath.setToolTip(folder_name)
     clear_stop_loading_media(main_window)
@@ -57,6 +58,7 @@ def onClickSelectTargetVideosFolder(main_window):
 def onClickSelectTargetVideosFiles(main_window):
     files_list = QtWidgets.QFileDialog.getOpenFileNames()[0]
     main_window.selected_video_buttons = []
+    main_window.target_videos = []
     main_window.labelTargetVideosPath.setText('Selected Files')
     main_window.labelTargetVideosPath.setToolTip('Selected Files')
     clear_stop_loading_media(main_window)
@@ -84,7 +86,7 @@ def add_media_thumbnail_to_list(main_window, media_path, pixmap, file_type):
     button.setIcon(QtGui.QIcon(pixmap))
     button.setIconSize(button_size - qtc.QSize(3, 3))  # Slightly smaller than the button size to add some margin
     button.setFixedSize(button_size)
-
+    main_window.target_videos.append(button)
     targetVideosList = main_window.targetVideosList
     # Create a QListWidgetItem and set the button as its widget
     list_item = QtWidgets.QListWidgetItem(main_window.targetVideosList)
@@ -139,7 +141,21 @@ def setPlayButtonIcon(main_window):
 
 def OnClickPlayButton(main_window):
     setPlayButtonIcon(main_window)
-
-
-
     main_window.video_processor.process_video()
+
+def filterTargetVideos(main_window, search_text):
+    # QtWidgets.QListWidgetItem.hide
+    search_text = search_text.lower()
+    if search_text:
+        for i in range(main_window.targetVideosList.count()):
+            list_item = main_window.targetVideosList.item(i)
+            if search_text not in main_window.target_videos[i].media_path.lower():
+                list_item.setHidden(True)
+
+            else:
+                list_item.setHidden(False)
+
+
+    else:
+        for i in range(main_window.targetVideosList.count()):
+            main_window.targetVideosList.item(i).setHidden(False)
