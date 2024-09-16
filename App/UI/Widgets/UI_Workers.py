@@ -33,7 +33,7 @@ class TargetMediaLoaderWorker(qtc.QThread):
         for media_file in media_files:
             media_file_path = os.path.join(folder_name, media_file)
             file_type = misc_helpers.get_file_type(media_file_path)
-            pixmap = self.extract_frame_as_pixmap(media_file_path, file_type)
+            pixmap = widget_actions.extract_frame_as_pixmap(media_file_path, file_type)
             if pixmap:
                 # Emit the signal to update GUI
                 self.thumbnail_ready.emit(media_file_path, pixmap, file_type)
@@ -42,27 +42,10 @@ class TargetMediaLoaderWorker(qtc.QThread):
         media_files = files_list
         for media_file_path in media_files:
             file_type = misc_helpers.get_file_type(media_file_path)
-            pixmap = self.extract_frame_as_pixmap(media_file_path, file_type)
+            pixmap = widget_actions.extract_frame_as_pixmap(media_file_path, file_type)
             if pixmap:
                 # Emit the signal to update GUI
                 self.thumbnail_ready.emit(media_file_path, pixmap, file_type)
 
-    def extract_frame_as_pixmap(self, media_file_path, file_type):
-        frame = False
-        if file_type=='image':
-            frame = cv2.imread(media_file_path)
-        elif file_type=='video':    
-            cap = cv2.VideoCapture(media_file_path)
-            ret, frame = cap.read()
-            cap.release()
 
-        if not isinstance(frame, bool):
-            # Convert the frame to QPixmap
-            height, width, channel = frame.shape
-            bytes_per_line = 3 * width
-            q_img = QImage(frame.data, width, height, bytes_per_line, QImage.Format.Format_RGB888).rgbSwapped()
-            pixmap = QPixmap.fromImage(q_img)
-            pixmap = pixmap.scaled(70, 70, Qt.AspectRatioMode.KeepAspectRatio)  # Adjust size as needed
-            return pixmap
-        return None
     

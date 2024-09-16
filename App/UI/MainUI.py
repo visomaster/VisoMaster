@@ -10,13 +10,14 @@ from App.UI.Widgets.WidgetComponents import GraphicsViewEventFilter
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     update_frame_signal = qtc.Signal(Ui_MainWindow, QtGui.QPixmap, int)
-
     def initialize_variables(self):
         self.video_loader_worker = False
         self.video_processor = VideoProcessor(self)
         self.models_processor = ModelsProcessor(self)
         self.thread_pool = qtc.QThreadPool()
         self.target_videos = []
+        self.target_faces = []
+        self.selected_target_face_buttons = []
         self.selected_video_buttons = [] #Contains list of buttons linked to videos/images
         self.parameters = {}
     def initialize_widgets(self):
@@ -43,10 +44,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.videoSeekSlider.valueChanged.connect(partial(widget_actions.OnChangeSlider, self))
         self.buttonMediaPlay.clicked.connect(partial(widget_actions.OnClickPlayButton, self))
         # self.buttonMediaStop.clicked.connect(partial(self.video_processor.stop_processing))
-
+        self.findTargetFacesButton.clicked.connect(partial(widget_actions.find_target_faces, self))
+        self.clearTargetFacesButton.clicked.connect(partial(widget_actions.clear_target_faces, self))
         self.targetVideosSearchBox.textChanged.connect(partial(widget_actions.filterTargetVideos, self))
 
         self.update_frame_signal.connect(widget_actions.update_graphics_view)
+
+        widget_actions.initializeModelLoadDialog(self)
     def __init__(self):
         super(MainWindow, self).__init__()
         self.setupUi(self)

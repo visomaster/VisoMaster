@@ -16,19 +16,28 @@ import torchvision
 from torchvision.transforms import v2
 import numpy as np
 
+models_dir = './App/ONNXModels'
+
+models_list = [
+    {'Inswapper128': f'{models_dir}/inswapper_128.fp16.onnx', },
+    {'Retinaface': f'{models_dir}/det_10g.onnx', 'model_instance': None},
+    {'Webface600k': f'{models_dir}/w600k_r50.onnx', 'model_instance': None},
+]
+
 class Worker(QObject):
     finished = Signal()
 
-    def __init__(self, model_name, models, providers):
+    def __init__(self, model_name, models, models_path, providers):
         super().__init__()
         self.model_name = model_name
         self.models = models
+        self.models_path = models_path
         self.providers = providers
 
     def run(self):
         time.sleep(0.5)
-        self.models[self.model_name]['model_instance'] = onnxruntime.InferenceSession(
-            self.models[self.model_name]['model_path'], providers=self.providers,
+        self.models[self.model_name] = onnxruntime.InferenceSession(
+            self.models_path[self.model_name]['model_path'], providers=self.providers,
         )
         self.finished.emit()  # Signal that loading is complete
 
@@ -53,60 +62,26 @@ class ModelsProcessor(QObject):
             ('CUDAExecutionProvider'),
             ('CPUExecutionProvider')
         ]
-        self.models = {
-            'Inswapper128': {'model_path': './App/ONNXModels/inswapper_128.fp16.onnx', 'model_instance': None},
-            'Retinaface': {'model_path'}
-        }
-        self.current_loading_model = False
-        self.model_loaded.connect(self.hideModelLoadProgressBar)
+        # Initialize models and models_path
+        self.models = {}
+        self.models_path = {}
+        for model_data in models_list:
+            model_name, model_path = list(model_data.items())[0]
+            self.models[model_name] = None #Model Instance
+            self.models_path[model_name] = model_path
 
+        self.syncvec = torch.empty((1,1), dtype=torch.float32, device='cuda:0')
+        self.arcface_dst = np.array( [[38.2946, 51.6963], [73.5318, 51.5014], [56.0252, 71.7366], [41.5493, 92.3655], [70.7299, 92.2041]], dtype=np.float32)
 
-    def test_run_model_function(self, model_name, *args):
-        if not self.models[model_name]['model_instance']:
-            self.load_model_and_exec(model_name, self.test_run_model_function, model_name, *args)
-        else:
-            print("Success", self.models['Inswapper128'])
-
-    def load_model_and_exec(self, model_name, exec_func: callable, *args):
-        self.showModelLoadingProgressBar()
-        # Create worker and thread
-        self.worker = Worker(model_name, self.models, self.providers)
-        self.worker_thread = QThread()
-        self.worker.moveToThread(self.worker_thread)
-        # Connect signals
-        self.worker.finished.connect(self.on_model_load_finished)
-        self.worker_thread.started.connect(self.worker.run)
-        # Start the thread
-        self.worker_thread.start()
-        
-        # Initialize and start the timer for checking the loading status
-        self.model_load_timer = QTimer()
-        self.model_load_timer.timeout.connect(partial(self.check_model_loaded, model_name, exec_func, *args))
-        self.model_load_timer.start(100)  # Check every 100ms
-
-    def on_model_load_finished(self):
-        self.worker_thread.quit()
-        self.worker_thread.wait()
-        self.model_loaded.emit()
-        self.model_load_timer.stop()  # Stop checking once the model is loaded
-
-    def check_model_loaded(self, model_name, exec_func: callable, *args):
-        if not self.models[model_name]['model_instance']:
-            QCoreApplication.processEvents()
-        else:
-            self.model_load_timer.stop()  # Stop checking once the model is loaded
-            self.model_loaded.emit()
-            exec_func(*args)  # Execute the next function
+    def load_model(self, model_name):
+        # self.showModelLoadingProgressBar()
+        time.sleep(0.5)
+        model_instance = onnxruntime.InferenceSession(self.models_path[model_name], providers=self.providers)
+        # model_instance = 'FAsfd'
+        # self.hideModelLoadProgressBar()
+        return model_instance
 
     def showModelLoadingProgressBar(self):
-        self.main_window.model_load_dialog = ProgressDialog("Loading Models...This is gonna take a while.", "Cancel", 0, 100, self.main_window)
-        self.main_window.model_load_dialog.setWindowModality(qtc.Qt.ApplicationModal)
-        self.main_window.model_load_dialog.setMinimumDuration(2000)
-        self.main_window.model_load_dialog.setWindowTitle("Loading Models")
-        self.main_window.model_load_dialog.setAutoClose(True)  # Close the dialog when finished
-        self.main_window.model_load_dialog.setCancelButton(None)
-        self.main_window.model_load_dialog.setWindowFlag(qtc.Qt.WindowCloseButtonHint, False)
-        self.main_window.model_load_dialog.setValue(0)
         self.main_window.model_load_dialog.show()
 
     def hideModelLoadProgressBar(self):
@@ -119,28 +94,28 @@ class ModelsProcessor(QObject):
         kpss = []
 
         if detect_mode=='Retinaface':
-            if not self.retinaface_model:
-                self.retinaface_model = onnxruntime.InferenceSession('./models/det_10g.onnx', providers=self.providers)
-
+            if not self.models['Retinaface']:
+                self.models['Retinaface'] = self.load_model('Retinaface')
+            
             bboxes, kpss_5, kpss = self.detect_retinaface(img, max_num=max_num, score=score, use_landmark_detection=use_landmark_detection, landmark_detect_mode=landmark_detect_mode, landmark_score=landmark_score, from_points=from_points, rotation_angles=rotation_angles)
 
-        elif detect_mode=='SCRDF':
-            if not self.scrdf_model:
-                self.scrdf_model = onnxruntime.InferenceSession('./models/scrfd_2.5g_bnkps.onnx', providers=self.providers)
+        # elif detect_mode=='SCRDF':
+        #     if not self.scrdf_model:
+        #         self.scrdf_model = onnxruntime.InferenceSession('./models/scrfd_2.5g_bnkps.onnx', providers=self.providers)
 
-            bboxes, kpss_5, kpss = self.detect_scrdf(img, max_num=max_num, score=score, use_landmark_detection=use_landmark_detection, landmark_detect_mode=landmark_detect_mode, landmark_score=landmark_score, from_points=from_points, rotation_angles=rotation_angles)
+        #     bboxes, kpss_5, kpss = self.detect_scrdf(img, max_num=max_num, score=score, use_landmark_detection=use_landmark_detection, landmark_detect_mode=landmark_detect_mode, landmark_score=landmark_score, from_points=from_points, rotation_angles=rotation_angles)
 
-        elif detect_mode=='Yolov8':
-            if not self.yoloface_model:
-                self.yoloface_model = onnxruntime.InferenceSession('./models/yoloface_8n.onnx', providers=self.providers)
+        # elif detect_mode=='Yolov8':
+        #     if not self.yoloface_model:
+        #         self.yoloface_model = onnxruntime.InferenceSession('./models/yoloface_8n.onnx', providers=self.providers)
 
-            bboxes, kpss_5, kpss = self.detect_yoloface(img, max_num=max_num, score=score, use_landmark_detection=use_landmark_detection, landmark_detect_mode=landmark_detect_mode, landmark_score=landmark_score, from_points=from_points, rotation_angles=rotation_angles)
+        #     bboxes, kpss_5, kpss = self.detect_yoloface(img, max_num=max_num, score=score, use_landmark_detection=use_landmark_detection, landmark_detect_mode=landmark_detect_mode, landmark_score=landmark_score, from_points=from_points, rotation_angles=rotation_angles)
 
-        elif detect_mode=='Yunet':
-            if not self.yunet_model:
-                self.yunet_model = onnxruntime.InferenceSession('./models/yunet_n_640_640.onnx', providers=self.providers)
+        # elif detect_mode=='Yunet':
+        #     if not self.yunet_model:
+        #         self.yunet_model = onnxruntime.InferenceSession('./models/yunet_n_640_640.onnx', providers=self.providers)
 
-            bboxes, kpss_5, kpss = self.detect_yunet(img, max_num=max_num, score=score, use_landmark_detection=use_landmark_detection, landmark_detect_mode=landmark_detect_mode, landmark_score=landmark_score, from_points=from_points, rotation_angles=rotation_angles)
+        #     bboxes, kpss_5, kpss = self.detect_yunet(img, max_num=max_num, score=score, use_landmark_detection=use_landmark_detection, landmark_detect_mode=landmark_detect_mode, landmark_score=landmark_score, from_points=from_points, rotation_angles=rotation_angles)
 
         return bboxes, kpss_5, kpss
     
@@ -197,7 +172,7 @@ class ModelsProcessor(QObject):
                 IM = None
                 aimg = torch.unsqueeze(det_img, 0).contiguous()
 
-            io_binding = self.retinaface_model.io_binding()
+            io_binding = self.models['Retinaface'].io_binding()
             io_binding.bind_input(name='input.1', device_type='cuda', device_id=0, element_type=np.float32,  shape=aimg.size(), buffer_ptr=aimg.data_ptr())
 
             io_binding.bind_output('448', 'cuda')
@@ -211,8 +186,7 @@ class ModelsProcessor(QObject):
             io_binding.bind_output('500', 'cuda')
 
             # Sync and run model
-            syncvec = self.syncvec.cpu()
-            self.retinaface_model.run_with_iobinding(io_binding)
+            self.models['Retinaface'].run_with_iobinding(io_binding)
 
             net_outs = io_binding.copy_outputs_to_cpu()
 
@@ -403,21 +377,21 @@ class ModelsProcessor(QObject):
 
     def run_recognize(self, img, kps, similarity_type='Opal', face_swapper_model='Inswapper128'):
         if face_swapper_model == 'Inswapper128':
-            if not self.recognition_model:
-                self.recognition_model = onnxruntime.InferenceSession('./models/w600k_r50.onnx', providers=self.providers)
+            if not self.models['Webface600k']:
+                self.models['Webface600k'] = self.load_model('Webface600k')
 
-            embedding, cropped_image = self.recognize(self.recognition_model, img, kps, similarity_type=similarity_type)
-        elif face_swapper_model == 'SimSwap512':
-            if not self.recognition_simswap_model:
-                self.recognition_simswap_model = onnxruntime.InferenceSession('./models/simswap_arcface_model.onnx', providers=self.providers)
+            embedding, cropped_image = self.recognize(self.models['Webface600k'], img, kps, similarity_type=similarity_type)
+        # elif face_swapper_model == 'SimSwap512':
+        #     if not self.recognition_simswap_model:
+        #         self.recognition_simswap_model = onnxruntime.InferenceSession('./models/simswap_arcface_model.onnx', providers=self.providers)
 
-            embedding, cropped_image = self.recognize(self.recognition_simswap_model, img, kps, similarity_type=similarity_type)
+        #     embedding, cropped_image = self.recognize(self.recognition_simswap_model, img, kps, similarity_type=similarity_type)
 
-        elif face_swapper_model == 'GhostFace-v1' or face_swapper_model == 'GhostFace-v2' or face_swapper_model == 'GhostFace-v3':
-            if not self.recognition_ghost_model:
-                self.recognition_ghost_model = onnxruntime.InferenceSession('./models/ghost_arcface_backbone.onnx', providers=self.providers)
+        # elif face_swapper_model == 'GhostFace-v1' or face_swapper_model == 'GhostFace-v2' or face_swapper_model == 'GhostFace-v3':
+        #     if not self.recognition_ghost_model:
+        #         self.recognition_ghost_model = onnxruntime.InferenceSession('./models/ghost_arcface_backbone.onnx', providers=self.providers)
 
-            embedding, cropped_image = self.recognize(self.recognition_ghost_model, img, kps, similarity_type=similarity_type)
+        #     embedding, cropped_image = self.recognize(self.recognition_ghost_model, img, kps, similarity_type=similarity_type)
 
         return embedding, cropped_image
 
@@ -446,7 +420,7 @@ class ModelsProcessor(QObject):
             img = v2.functional.affine(img, tform.rotation*57.2958, (tform.translation[0], tform.translation[1]) , tform.scale, 0, center = (0,0) )
             img = v2.functional.crop(img, 0,0, 112, 112)
 
-        if recognition_model == self.recognition_model or recognition_model == self.recognition_simswap_model:
+        if recognition_model:
             # Switch to BGR and normalize
             img = img.permute(1,2,0) #112,112,3
             cropped_image = img
@@ -481,3 +455,10 @@ class ModelsProcessor(QObject):
 
         # Return embedding
         return np.array(io_binding.copy_outputs_to_cpu()).flatten(), cropped_image
+    
+
+    def findCosineDistance(self, vector1, vector2):
+        vector1 = vector1.ravel()
+        vector2 = vector2.ravel()
+        cos_dist = 1 - np.dot(vector1, vector2)/(np.linalg.norm(vector1)*np.linalg.norm(vector2)) # 2..0
+        return 100-cos_dist*50

@@ -11,9 +11,11 @@ class TargetMediaCardButton(QPushButton):
         super().__init__(*args, **kwargs)
         self.file_type = file_type
         self.media_path = media_path
+        self.list_item = None
         self.setCheckable(True)
         self.setToolTip(media_path)
         self.clicked.connect(self.loadMediaOnClick)
+
 
     def loadMediaOnClick(self):
         main_window = self.window()
@@ -66,6 +68,17 @@ class TargetMediaCardButton(QPushButton):
         main_window.videoSeekSlider.setValue(0)
         # Append video button to main_window selected videos list
         main_window.selected_video_buttons.append(self)
+
+class TargetFaceCardButton(QPushButton):
+    def __init__(self, cropped_face, embedding, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.cropped_face = cropped_face
+        self.embedding = embedding
+        self.setCheckable(True)
+        self.clicked.connect(self.loadTargetFace)
+
+    def loadTargetFace(self,test=False):
+        print(self)
 
 
 # Custom progress dialog

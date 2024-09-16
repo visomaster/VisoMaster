@@ -4,11 +4,13 @@ from PySide6 import QtWidgets, QtGui
 import time
 import App.Helpers.Misc_Helpers as misc_helpers 
 import App.UI.Widgets.UI_Workers as ui_workers
-from App.UI.Widgets.WidgetComponents import TargetMediaCardButton, ProgressDialog
+from App.UI.Widgets.WidgetComponents import TargetMediaCardButton, ProgressDialog, TargetFaceCardButton
 import App.UI.Widgets.WidgetActions as widget_actions 
 from functools import partial
 import cv2
 from App.UI.Core import media_rc
+import torch
+import numpy
 def scale_pixmap_to_view(view, pixmap):
     # Get the size of the view
     view_size = view.viewport().size()
@@ -50,8 +52,9 @@ def onClickSelectTargetVideosFolder(main_window):
     main_window.labelTargetVideosPath.setText(misc_helpers.truncate_text(folder_name))
     main_window.labelTargetVideosPath.setToolTip(folder_name)
     clear_stop_loading_media(main_window)
+    clear_target_faces(main_window)
     main_window.video_loader_worker = ui_workers.TargetMediaLoaderWorker(folder_name=folder_name)
-    main_window.video_loader_worker.thumbnail_ready.connect(partial(add_media_thumbnail_to_list, main_window))
+    main_window.video_loader_worker.thumbnail_ready.connect(partial(add_media_thumbnail_to_target_videos_list, main_window))
     main_window.video_loader_worker.start()
 
 @qtc.Slot()
@@ -62,9 +65,11 @@ def onClickSelectTargetVideosFiles(main_window):
     main_window.labelTargetVideosPath.setText('Selected Files')
     main_window.labelTargetVideosPath.setToolTip('Selected Files')
     clear_stop_loading_media(main_window)
+    clear_target_faces(main_window)
     main_window.video_loader_worker = ui_workers.TargetMediaLoaderWorker(files_list=files_list)
-    main_window.video_loader_worker.thumbnail_ready.connect(partial(add_media_thumbnail_to_list, main_window))
+    main_window.video_loader_worker.thumbnail_ready.connect(partial(add_media_thumbnail_to_target_videos_list, main_window))
     main_window.video_loader_worker.start()
+
     
 @qtc.Slot()
 def OnChangeSlider(main_window, new_position=0):
@@ -80,17 +85,19 @@ def OnChangeSlider(main_window, new_position=0):
 
 
 @qtc.Slot(str, QtGui.QPixmap)
-def add_media_thumbnail_to_list(main_window, media_path, pixmap, file_type):
+def add_media_thumbnail_to_target_videos_list(main_window, media_path, pixmap, file_type):
     button_size = qtc.QSize(70, 70)  # Set a fixed size for the buttons
     button = TargetMediaCardButton(media_path=media_path, file_type=file_type)
     button.setIcon(QtGui.QIcon(pixmap))
     button.setIconSize(button_size - qtc.QSize(3, 3))  # Slightly smaller than the button size to add some margin
     button.setFixedSize(button_size)
+    button.setCheckable(True)
     main_window.target_videos.append(button)
     targetVideosList = main_window.targetVideosList
     # Create a QListWidgetItem and set the button as its widget
     list_item = QtWidgets.QListWidgetItem(main_window.targetVideosList)
     list_item.setSizeHint(button_size)
+    button.list_item = list_item
 
     # Align the item to center
     list_item.setTextAlignment(qtc.Qt.AlignmentFlag.AlignCenter)
@@ -102,10 +109,53 @@ def add_media_thumbnail_to_list(main_window, media_path, pixmap, file_type):
     targetVideosList.setWrapping(True)  # Enable wrapping to have items in rows
     targetVideosList.setFlow(QtWidgets.QListView.LeftToRight)  # Set flow direction
     targetVideosList.setResizeMode(QtWidgets.QListView.Adjust)  # Adjust layout automatically
-    # Optionally, you can hide the scrollbars for a cleaner look
-    # targetVideosList.setVerticalScrollBarPolicy(qtc.Qt.ScrollBarAlwaysOff)
-    # targetVideosList.setHorizontalScrollBarPolicy(qtc.Qt.ScrollBarAlwaysOff)
 
+
+@qtc.Slot()
+def add_media_thumbnail_to_target_faces_list(main_window, cropped_face, embedding, pixmap):
+    button_size = qtc.QSize(70, 70)  # Set a fixed size for the buttons
+    button = TargetFaceCardButton(cropped_face, embedding)
+    button.setIcon(QtGui.QIcon(pixmap))
+    button.setIconSize(button_size - qtc.QSize(3, 3))  # Slightly smaller than the button size to add some margin
+    button.setFixedSize(button_size)
+    button.setCheckable(True)
+    main_window.target_faces.append(button)
+    targetFacesList = main_window.targetFacesList
+    # Create a QListWidgetItem and set the button as its widget
+    list_item = QtWidgets.QListWidgetItem(targetFacesList)
+    list_item.setSizeHint(button_size)
+    button.list_item = list_item
+
+    # Align the item to center
+    list_item.setTextAlignment(qtc.Qt.AlignmentFlag.AlignCenter)
+
+    targetFacesList.setItemWidget(list_item, button)
+    # Adjust the QListWidget properties to handle the grid layout
+    grid_size_with_padding = button_size + qtc.QSize(4, 4)  # Add padding around the buttons
+    targetFacesList.setGridSize(grid_size_with_padding)  # Set grid size with padding
+    targetFacesList.setWrapping(True)  # Enable wrapping to have items in rows
+    targetFacesList.setFlow(QtWidgets.QListView.LeftToRight)  # Set flow direction
+    targetFacesList.setResizeMode(QtWidgets.QListView.Adjust)  # Adjust layout automatically
+
+
+def extract_frame_as_pixmap(media_file_path, file_type):
+    frame = False
+    if file_type=='image':
+        frame = cv2.imread(media_file_path)
+    elif file_type=='video':    
+        cap = cv2.VideoCapture(media_file_path)
+        ret, frame = cap.read()
+        cap.release()
+
+    if not isinstance(frame, bool):
+        # Convert the frame to QPixmap
+        height, width, channel = frame.shape
+        bytes_per_line = 3 * width
+        q_img = QtGui.QImage(frame.data, width, height, bytes_per_line, QtGui.QImage.Format.Format_RGB888).rgbSwapped()
+        pixmap = QtGui.QPixmap.fromImage(q_img)
+        pixmap = pixmap.scaled(70, 70, qtc.Qt.AspectRatioMode.KeepAspectRatio)  # Adjust size as needed
+        return pixmap
+    return None
 
 # from App.UI.MainUI import Ui_MainWindow
 def update_graphics_view(main_window , pixmap, current_frame_number):
@@ -121,13 +171,15 @@ def update_graphics_view(main_window , pixmap, current_frame_number):
     widget_actions.fit_image_to_view(main_window, pixmap_item)
 
 
-def get_pixmap_from_frame(main_window, frame):
+def get_pixmap_from_frame(main_window, frame, scale=True):
     height, width, channel = frame.shape
     bytes_per_line = 3 * width
     q_img = QtGui.QImage(frame.data, width, height, bytes_per_line, QtGui.QImage.Format.Format_RGB888).rgbSwapped()
     pixmap = QtGui.QPixmap.fromImage(q_img)
-    scaled_pixmap = widget_actions.scale_pixmap_to_view(main_window.graphicsViewFrame, pixmap)
-    return scaled_pixmap
+
+    if scale:
+        pixmap = widget_actions.scale_pixmap_to_view(main_window.graphicsViewFrame, pixmap)
+    return pixmap
 
 def resetMediaButtons(main_window):
     main_window.buttonMediaPlay.setChecked(False)
@@ -159,3 +211,62 @@ def filterTargetVideos(main_window, search_text):
     else:
         for i in range(main_window.targetVideosList.count()):
             main_window.targetVideosList.item(i).setHidden(False)
+
+def initializeModelLoadDialog(main_window):
+    main_window.model_load_dialog = ProgressDialog("Loading Models...This is gonna take a while.", "Cancel", 0, 100, main_window)
+    main_window.model_load_dialog.setWindowModality(qtc.Qt.ApplicationModal)
+    main_window.model_load_dialog.setMinimumDuration(2000)
+    main_window.model_load_dialog.setWindowTitle("Loading Models")
+    main_window.model_load_dialog.setAutoClose(True)  # Close the dialog when finished
+    main_window.model_load_dialog.setCancelButton(None)
+    main_window.model_load_dialog.setWindowFlag(qtc.Qt.WindowCloseButtonHint, False)
+    main_window.model_load_dialog.setValue(0)
+    main_window.model_load_dialog.close()
+
+def find_target_faces(main_window):
+    video_processor = main_window.video_processor
+    if video_processor.media_path:
+        print(video_processor.media_capture)
+        if video_processor.file_type=='image':
+            frame = cv2.imread(video_processor.media_path)
+        elif video_processor.file_type=='video' and video_processor.media_capture:
+            media_capture = cv2.VideoCapture(video_processor.media_path)
+            media_capture.set(cv2.CAP_PROP_POS_FRAMES, video_processor.current_frame_number)
+            ret,frame = media_capture.read()
+        
+        # print(frame)
+        img = torch.from_numpy(frame.astype('uint8')).to('cuda')
+        img = img.permute(2,0,1)
+        bboxes, kpss_5, _ = main_window.models_processor.run_detect(img,max_num=50)
+
+        print(len(kpss_5))
+        ret = []
+        for face_kps in kpss_5:
+            face_emb, cropped_img = main_window.models_processor.run_recognize(img, face_kps)
+            ret.append([face_kps, face_emb, cropped_img])
+
+        if ret:
+            # Apply threshold tolerence
+            threshhold = 50
+            # if self.parameters["ThresholdState"]:
+            if 1:
+                threshhold = 60
+
+            # Loop through all faces in video frame
+            for face in ret:
+                found = False
+                # Check if this face has already been found
+                for target_face in main_window.target_faces:
+                    if main_window.models_processor.findCosineDistance(target_face.embedding, face[1]) >= threshhold:
+                        found = True
+                        break
+                if not found:
+                    face_img = numpy.ascontiguousarray(face[2].cpu().numpy())
+                    # crop = cv2.resize(face[2].cpu().numpy(), (82, 82))
+                    pixmap = get_pixmap_from_frame(main_window, face_img)
+                    add_media_thumbnail_to_target_faces_list(main_window, face_img, face[1], pixmap)
+
+def clear_target_faces(main_window):
+    main_window.targetFacesList.clear()
+    main_window.target_faces = []
+    main_window.selected_target_faces = []
