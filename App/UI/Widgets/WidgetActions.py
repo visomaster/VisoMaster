@@ -106,84 +106,45 @@ def OnChangeSlider(main_window, new_position=0):
 
 @qtc.Slot(str, QtGui.QPixmap)
 def add_media_thumbnail_to_target_videos_list(main_window, media_path, pixmap, file_type):
-    button_size = qtc.QSize(70, 70)  # Set a fixed size for the buttons
-    button = TargetMediaCardButton(media_path=media_path, file_type=file_type)
-    button.setIcon(QtGui.QIcon(pixmap))
-    button.setIconSize(button_size - qtc.QSize(3, 3))  # Slightly smaller than the button size to add some margin
-    button.setFixedSize(button_size)
-    button.setCheckable(True)
-    main_window.target_videos.append(button)
-    targetVideosList = main_window.targetVideosList
-    # Create a QListWidgetItem and set the button as its widget
-    list_item = QtWidgets.QListWidgetItem(main_window.targetVideosList)
-    list_item.setSizeHint(button_size)
-    button.list_item = list_item
-
-    # Align the item to center
-    list_item.setTextAlignment(qtc.Qt.AlignmentFlag.AlignCenter)
-
-    targetVideosList.setItemWidget(list_item, button)
-    # Adjust the QListWidget properties to handle the grid layout
-    grid_size_with_padding = button_size + qtc.QSize(4, 4)  # Add padding around the buttons
-    targetVideosList.setGridSize(grid_size_with_padding)  # Set grid size with padding
-    targetVideosList.setWrapping(True)  # Enable wrapping to have items in rows
-    targetVideosList.setFlow(QtWidgets.QListView.LeftToRight)  # Set flow direction
-    targetVideosList.setResizeMode(QtWidgets.QListView.Adjust)  # Adjust layout automatically
+    add_media_thumbnail_button(TargetMediaCardButton, main_window.targetVideosList, main_window.target_videos, pixmap, media_path=media_path, file_type=file_type)
 
 
 @qtc.Slot()
 def add_media_thumbnail_to_target_faces_list(main_window, cropped_face, embedding, pixmap):
-    button_size = qtc.QSize(70, 70)  # Set a fixed size for the buttons
-    button = TargetFaceCardButton(cropped_face, embedding)
-    button.setIcon(QtGui.QIcon(pixmap))
-    button.setIconSize(button_size - qtc.QSize(3, 3))  # Slightly smaller than the button size to add some margin
-    button.setFixedSize(button_size)
-    button.setCheckable(True)
-    main_window.target_faces.append(button)
-    targetFacesList = main_window.targetFacesList
-    # Create a QListWidgetItem and set the button as its widget
-    list_item = QtWidgets.QListWidgetItem(targetFacesList)
-    list_item.setSizeHint(button_size)
-    button.list_item = list_item
-
-    # Align the item to center
-    list_item.setTextAlignment(qtc.Qt.AlignmentFlag.AlignCenter)
-
-    targetFacesList.setItemWidget(list_item, button)
-    # Adjust the QListWidget properties to handle the grid layout
-    grid_size_with_padding = button_size + qtc.QSize(4, 4)  # Add padding around the buttons
-    targetFacesList.setGridSize(grid_size_with_padding)  # Set grid size with padding
-    targetFacesList.setWrapping(True)  # Enable wrapping to have items in rows
-    targetFacesList.setFlow(QtWidgets.QListView.LeftToRight)  # Set flow direction
-    targetFacesList.setResizeMode(QtWidgets.QListView.Adjust)  # Adjust layout automatically
+    add_media_thumbnail_button(TargetFaceCardButton, main_window.targetFacesList, main_window.target_faces, pixmap, cropped_face=cropped_face, embedding=embedding )
 
 @qtc.Slot()
 def add_media_thumbnail_to_source_faces_list(main_window, cropped_face, embedding, pixmap):
-    print(pixmap)
+    add_media_thumbnail_button(InputFaceCardButton, main_window.inputFacesList, main_window.input_faces, pixmap, cropped_face=cropped_face, embedding=embedding )
+
+
+def add_media_thumbnail_button(buttonClass:QtWidgets.QPushButton, listWidget, buttons_list, pixmap, **kwargs):
+    if buttonClass==TargetMediaCardButton:
+        constructor_args = (kwargs.get('media_path'), kwargs.get('file_type'))
+    elif buttonClass in (TargetFaceCardButton, InputFaceCardButton):
+        constructor_args = (kwargs.get('cropped_face'), kwargs.get('embedding'))
     button_size = qtc.QSize(70, 70)  # Set a fixed size for the buttons
-    button = InputFaceCardButton(cropped_face, embedding)
+    button = buttonClass(*constructor_args)
     button.setIcon(QtGui.QIcon(pixmap))
     button.setIconSize(button_size - qtc.QSize(3, 3))  # Slightly smaller than the button size to add some margin
     button.setFixedSize(button_size)
     button.setCheckable(True)
-    main_window.input_faces.append(button)
-    inputFacesList = main_window.inputFacesList
+    buttons_list.append(button)
     # Create a QListWidgetItem and set the button as its widget
-    list_item = QtWidgets.QListWidgetItem(inputFacesList)
+    list_item = QtWidgets.QListWidgetItem(listWidget)
     list_item.setSizeHint(button_size)
     button.list_item = list_item
 
     # Align the item to center
     list_item.setTextAlignment(qtc.Qt.AlignmentFlag.AlignCenter)
 
-    inputFacesList.setItemWidget(list_item, button)
+    listWidget.setItemWidget(list_item, button)
     # Adjust the QListWidget properties to handle the grid layout
     grid_size_with_padding = button_size + qtc.QSize(4, 4)  # Add padding around the buttons
-    inputFacesList.setGridSize(grid_size_with_padding)  # Set grid size with padding
-    inputFacesList.setWrapping(True)  # Enable wrapping to have items in rows
-    inputFacesList.setFlow(QtWidgets.QListView.LeftToRight)  # Set flow direction
-    inputFacesList.setResizeMode(QtWidgets.QListView.Adjust)  # Adjust layout automatically
-
+    listWidget.setGridSize(grid_size_with_padding)  # Set grid size with padding
+    listWidget.setWrapping(True)  # Enable wrapping to have items in rows
+    listWidget.setFlow(QtWidgets.QListView.LeftToRight)  # Set flow direction
+    listWidget.setResizeMode(QtWidgets.QListView.Adjust)  # Adjust layout automatically
 
 def extract_frame_as_pixmap(media_file_path, file_type):
     frame = False
