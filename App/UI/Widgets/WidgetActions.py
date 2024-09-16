@@ -4,7 +4,7 @@ from PySide6 import QtWidgets, QtGui
 import time
 import App.Helpers.Misc_Helpers as misc_helpers 
 import App.UI.Widgets.UI_Workers as ui_workers
-from App.UI.Widgets.WidgetComponents import TargetMediaCardButton, ProgressDialog, TargetFaceCardButton
+from App.UI.Widgets.WidgetComponents import TargetMediaCardButton, ProgressDialog, TargetFaceCardButton, InputFaceCardButton
 import App.UI.Widgets.WidgetActions as widget_actions 
 from functools import partial
 import cv2
@@ -37,7 +37,7 @@ def fit_image_to_view(main_window, pixmap_item):
     graphicsViewFrame.fitInView(pixmap_item, qtc.Qt.AspectRatioMode.KeepAspectRatio)
     graphicsViewFrame.update()
 
-def clear_stop_loading_media(main_window):
+def clear_stop_loading_target_media(main_window):
     if main_window.video_loader_worker:
         main_window.video_loader_worker.terminate()
         main_window.video_loader_worker = False
@@ -51,7 +51,7 @@ def onClickSelectTargetVideosFolder(main_window):
     main_window.target_videos = []
     main_window.labelTargetVideosPath.setText(misc_helpers.truncate_text(folder_name))
     main_window.labelTargetVideosPath.setToolTip(folder_name)
-    clear_stop_loading_media(main_window)
+    clear_stop_loading_target_media(main_window)
     clear_target_faces(main_window)
     main_window.video_loader_worker = ui_workers.TargetMediaLoaderWorker(folder_name=folder_name)
     main_window.video_loader_worker.thumbnail_ready.connect(partial(add_media_thumbnail_to_target_videos_list, main_window))
@@ -64,11 +64,31 @@ def onClickSelectTargetVideosFiles(main_window):
     main_window.target_videos = []
     main_window.labelTargetVideosPath.setText('Selected Files')
     main_window.labelTargetVideosPath.setToolTip('Selected Files')
-    clear_stop_loading_media(main_window)
+    clear_stop_loading_target_media(main_window)
     clear_target_faces(main_window)
     main_window.video_loader_worker = ui_workers.TargetMediaLoaderWorker(files_list=files_list)
     main_window.video_loader_worker.thumbnail_ready.connect(partial(add_media_thumbnail_to_target_videos_list, main_window))
     main_window.video_loader_worker.start()
+
+
+def clear_stop_loading_input_media(main_window):
+    if main_window.input_faces_loader_worker:
+        main_window.input_faces_loader_worker.terminate()
+        main_window.input_faces_loader_worker = False
+        time.sleep(0.5)
+        main_window.inputFacesList.clear()
+
+@qtc.Slot()
+def onClickSelectInputImagesFolder(main_window):
+    folder_name = QtWidgets.QFileDialog.getExistingDirectory()
+    main_window.selected_input_face_buttons = []
+    main_window.labelInputFacesPath.setText(misc_helpers.truncate_text(folder_name))
+    main_window.labelInputFacesPath.setToolTip(folder_name)
+    clear_stop_loading_input_media(main_window)
+    clear_input_faces(main_window)
+    main_window.input_faces_loader_worker = ui_workers.InputFacesLoaderWorker(main_window=main_window, folder_name=folder_name)
+    main_window.input_faces_loader_worker.thumbnail_ready.connect(partial(add_media_thumbnail_to_source_faces_list, main_window))
+    main_window.input_faces_loader_worker.start()
 
     
 @qtc.Slot()
@@ -136,6 +156,33 @@ def add_media_thumbnail_to_target_faces_list(main_window, cropped_face, embeddin
     targetFacesList.setWrapping(True)  # Enable wrapping to have items in rows
     targetFacesList.setFlow(QtWidgets.QListView.LeftToRight)  # Set flow direction
     targetFacesList.setResizeMode(QtWidgets.QListView.Adjust)  # Adjust layout automatically
+
+@qtc.Slot()
+def add_media_thumbnail_to_source_faces_list(main_window, cropped_face, embedding, pixmap):
+    print(pixmap)
+    button_size = qtc.QSize(70, 70)  # Set a fixed size for the buttons
+    button = InputFaceCardButton(cropped_face, embedding)
+    button.setIcon(QtGui.QIcon(pixmap))
+    button.setIconSize(button_size - qtc.QSize(3, 3))  # Slightly smaller than the button size to add some margin
+    button.setFixedSize(button_size)
+    button.setCheckable(True)
+    main_window.input_faces.append(button)
+    inputFacesList = main_window.inputFacesList
+    # Create a QListWidgetItem and set the button as its widget
+    list_item = QtWidgets.QListWidgetItem(inputFacesList)
+    list_item.setSizeHint(button_size)
+    button.list_item = list_item
+
+    # Align the item to center
+    list_item.setTextAlignment(qtc.Qt.AlignmentFlag.AlignCenter)
+
+    inputFacesList.setItemWidget(list_item, button)
+    # Adjust the QListWidget properties to handle the grid layout
+    grid_size_with_padding = button_size + qtc.QSize(4, 4)  # Add padding around the buttons
+    inputFacesList.setGridSize(grid_size_with_padding)  # Set grid size with padding
+    inputFacesList.setWrapping(True)  # Enable wrapping to have items in rows
+    inputFacesList.setFlow(QtWidgets.QListView.LeftToRight)  # Set flow direction
+    inputFacesList.setResizeMode(QtWidgets.QListView.Adjust)  # Adjust layout automatically
 
 
 def extract_frame_as_pixmap(media_file_path, file_type):
@@ -233,13 +280,13 @@ def find_target_faces(main_window):
             media_capture = cv2.VideoCapture(video_processor.media_path)
             media_capture.set(cv2.CAP_PROP_POS_FRAMES, video_processor.current_frame_number)
             ret,frame = media_capture.read()
+            media_capture.release()
         
         # print(frame)
         img = torch.from_numpy(frame.astype('uint8')).to('cuda')
         img = img.permute(2,0,1)
         bboxes, kpss_5, _ = main_window.models_processor.run_detect(img,max_num=50)
 
-        print(len(kpss_5))
         ret = []
         for face_kps in kpss_5:
             face_emb, cropped_img = main_window.models_processor.run_recognize(img, face_kps)
@@ -268,5 +315,14 @@ def find_target_faces(main_window):
 
 def clear_target_faces(main_window):
     main_window.targetFacesList.clear()
+    for target_face in main_window.target_faces:
+        del target_face
     main_window.target_faces = []
-    main_window.selected_target_faces = []
+    main_window.selected_target_face_buttons = []
+
+def clear_input_faces(main_window):
+    main_window.inputFacesList.clear()
+    for target_face in main_window.input_faces:
+        del target_face
+    main_window.input_faces = []
+    main_window.selected_input_face_buttons = []

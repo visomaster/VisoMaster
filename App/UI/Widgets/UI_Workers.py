@@ -5,8 +5,8 @@ from App.Helpers import Misc_Helpers as misc_helpers
 from App.UI.Widgets import WidgetActions as widget_actions
 import os
 import cv2
-import onnxruntime
-
+import torch
+import numpy
 
 class TargetMediaLoaderWorker(qtc.QThread):
     # Define signals to emit when loading is done or if there are updates
@@ -48,4 +48,39 @@ class TargetMediaLoaderWorker(qtc.QThread):
                 self.thumbnail_ready.emit(media_file_path, pixmap, file_type)
 
 
-    
+class InputFacesLoaderWorker(qtc.QThread):
+    # Define signals to emit when loading is done or if there are updates
+    thumbnail_ready = qtc.Signal(numpy.ndarray, numpy.ndarray, QPixmap)  # Signal with media path and QPixmap and file_type
+    finished = qtc.Signal()  # Signal to indicate completion
+    def __init__(self, main_window, folder_name=False, files_list=[],  parent=None):
+        super().__init__(parent)
+        self.main_window = main_window
+        self.folder_name = folder_name
+        self.files_list = files_list
+
+    def run(self):
+        if self.folder_name:
+            self.load_faces_from_folder(self.folder_name)
+
+    def load_faces_from_folder(self, folder_name):
+        image_files = misc_helpers.get_image_files(self.folder_name)
+        for image_file in image_files:
+            image_file_path = os.path.join(folder_name, image_file)
+            frame = cv2.imread(image_file_path)
+            img = torch.from_numpy(frame.astype('uint8')).to('cuda')
+            img = img.permute(2,0,1)
+            bboxes, kpss_5, _ = self.main_window.models_processor.run_detect(img,max_num=1,)
+
+            # If atleast one face is found
+            found_face = []
+            face_kps = False
+            try:
+                face_kps = kpss_5[0]
+            except:
+                return
+            if face_kps.any():
+                face_emb, cropped_img = self.main_window.models_processor.run_recognize(img, face_kps)
+                face_img = numpy.ascontiguousarray(cropped_img.cpu().numpy())
+                # crop = cv2.resize(face[2].cpu().numpy(), (82, 82))
+                pixmap = widget_actions.get_pixmap_from_frame(self.main_window, face_img)
+                self.thumbnail_ready.emit(face_img, face_emb, pixmap)

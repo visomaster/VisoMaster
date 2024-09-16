@@ -12,12 +12,16 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     update_frame_signal = qtc.Signal(Ui_MainWindow, QtGui.QPixmap, int)
     def initialize_variables(self):
         self.video_loader_worker = False
+        self.input_faces_loader_worker = False
         self.video_processor = VideoProcessor(self)
         self.models_processor = ModelsProcessor(self)
         self.thread_pool = qtc.QThreadPool()
-        self.target_videos = []
-        self.target_faces = []
-        self.selected_target_face_buttons = []
+        self.target_videos = [] #Contains button objects if target videos
+        self.target_faces = [] #Contains button objects if target faces
+        self.input_faces = [] #Contains button objects if source faces (images)
+        self.selected_target_face_buttons = [] 
+        self.selected_input_face_buttons = []
+        self.selected_input_emb_buttons = []
         self.selected_video_buttons = [] #Contains list of buttons linked to videos/images
         self.parameters = {}
     def initialize_widgets(self):
@@ -41,6 +45,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.buttonSelectTargetVideos.clicked.connect(partial(widget_actions.onClickSelectTargetVideosFolder, self))
         self.buttonSelectTargetVideoFiles.clicked.connect(partial(widget_actions.onClickSelectTargetVideosFiles, self))
+        self.buttonSelectInputFaces.clicked.connect(partial(widget_actions.onClickSelectInputImagesFolder, self))
         self.videoSeekSlider.valueChanged.connect(partial(widget_actions.OnChangeSlider, self))
         self.buttonMediaPlay.clicked.connect(partial(widget_actions.OnClickPlayButton, self))
         # self.buttonMediaStop.clicked.connect(partial(self.video_processor.stop_processing))

@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QPushButton, QGraphicsPixmapItem, QVBoxLayout, QProgressDialog, QHBoxLayout, QWidget, QStyle
+from PySide6.QtWidgets import QPushButton, QGraphicsPixmapItem, QVBoxLayout, QProgressDialog, QHBoxLayout, QWidget, QStyle, QApplication
 from PySide6.QtGui import QImage, QPixmap
 import App.UI.Widgets.WidgetActions as widget_actions
 import PySide6.QtCore as qtc
@@ -25,6 +25,7 @@ class TargetMediaCardButton(QPushButton):
         if main_window.selected_video_buttons:
             main_window.selected_video_buttons[0].toggle()
             main_window.selected_video_buttons.pop(0)
+
         main_window.video_processor.stop_processing()
         main_window.video_processor.current_frame_number = 0
         print(self.media_path)
@@ -77,18 +78,44 @@ class TargetFaceCardButton(QPushButton):
         self.setCheckable(True)
         self.clicked.connect(self.loadTargetFace)
 
-    def loadTargetFace(self,test=False):
-        print(self)
+    def loadTargetFace(self):
+        main_window = self.window()
+        # Check if it is docked or not 
+        if main_window.parent():
+            main_window = main_window.parent()
+
+        if main_window.selected_target_face_buttons:
+            if main_window.selected_target_face_buttons[0]!=self:
+                main_window.selected_target_face_buttons[0].toggle()
+            main_window.selected_target_face_buttons.pop(0)
+        if self.isChecked():
+            main_window.selected_target_face_buttons.append(self)
 
 
+class InputFaceCardButton(QPushButton):
+    def __init__(self, cropped_face, embedding, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.cropped_face = cropped_face
+        self.embedding = embedding
+        self.setCheckable(True)
+        self.clicked.connect(self.loadInputFace)
+
+    def loadInputFace(self):
+        main_window = self.window()
+        # Check if it is docked or not 
+        if main_window.parent():
+            main_window = main_window.parent()
+        # When not holding ctrl key
+        if not QApplication.keyboardModifiers() == qtc.Qt.ControlModifier:
+            for i in range(len(main_window.selected_input_face_buttons)-1, -1, -1):
+                if main_window.selected_input_face_buttons[i]!=self:
+                    main_window.selected_input_face_buttons[i].toggle()
+                main_window.selected_input_face_buttons.pop(i)
+        if self.isChecked():
+            main_window.selected_input_face_buttons.append(self)
 # Custom progress dialog
 class ProgressDialog(QProgressDialog):
     pass
-
-        # # Worker thread to simulate a task
-        # self.worker = WorkerThread()
-        # self.worker.update_progress.connect(self.progress_bar.setValue)
-        # self.worker.finished.connect(self.accept)  # Close the dialog when the task is finished
 
 
 class GraphicsViewEventFilter(qtc.QObject):

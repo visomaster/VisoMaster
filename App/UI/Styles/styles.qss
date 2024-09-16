@@ -1,5 +1,5 @@
 /* Base button style */
-TargetMediaCardButton {
+TargetMediaCardButton, TargetFaceCardButton, InputFaceCardButton {
     background-color: #141516;  /* Dark blue background */
     border-radius: 5px;        /* Rounded corners */
     border: 1px solid #34495e;  /* Slightly darker border */
@@ -9,12 +9,12 @@ TargetMediaCardButton {
 }
 
 /* Icon inside the button */
-TargetMediaCardButton::icon {
+TargetMediaCardButton::icon, TargetFaceCardButton::icon, InputFaceCardButton:icon {
     margin: 5px;           /* Spacing around the icon */
 }
 
 /* Hover state */
-TargetMediaCardButton:hover {
+TargetMediaCardButton:hover, TargetFaceCardButton:hover, InputFaceCardButton:hover {
     background-color: #34495e;  /* Slightly lighter on hover */
     border: 1px solid #1abc9c;  /* Turquoise border on hover */
 }
@@ -25,8 +25,13 @@ TargetMediaCardButton:pressed {
     border: 1px solid #16a085;  /* Darker turquoise border */
 }
 
+/* Pressed state */
+TargetMediaCardButton:checked, TargetFaceCardButton:checked, InputFaceCardButton:checked {
+    border: 1px solid #1abc9c;  /* Darker turquoise border */
+}
+
 /* Disabled state */
-TargetMediaCardButton:disabled {
+TargetMediaCardButton:disabled, TargetFaceCardButton:disabled, InputFaceCardButton:disabled {
     background-color: #95a5a6;  /* Gray background when disabled */
     border: 1px solid #7f8c8d;  /* Darker gray border */
     color: #bdc3c7;             /* Lighter gray text color */
