@@ -1,4 +1,4 @@
-from PySide6.QtCore import QRunnable,QTimer
+from PySide6.QtCore import QRunnable,QTimer, QThread
 from PySide6.QtGui import QImage, QPixmap, QPainter, QColor
 from PySide6.QtWidgets import QGraphicsPixmapItem
 import cv2
@@ -12,7 +12,7 @@ import numpy as np
 from App.Processors.Utils import FaceUtil as faceutil
 import threading
 lock = threading.Lock()
-class FrameWorker(QRunnable):
+class FrameWorker(QThread):
     def __init__(self, frame, main_window, current_frame_number):
         super().__init__()
         self.current_frame_number = current_frame_number

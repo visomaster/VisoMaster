@@ -28,7 +28,6 @@ class TargetMediaCardButton(QPushButton):
 
         main_window.video_processor.stop_processing()
         main_window.video_processor.current_frame_number = 0
-        print(self.media_path)
         main_window.video_processor.media_path = self.media_path
 
         if main_window.video_processor.media_capture:
