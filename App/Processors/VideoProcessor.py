@@ -24,7 +24,8 @@ class VideoProcessor(QObject):
         super().__init__()
         self.main_window = main_window
         self.thread_pool = QThreadPool()
-        self.thread_pool.setMaxThreadCount(2)  # Adjust as needed
+        self.thread_pool.setMaxThreadCount(5)  # Adjust as needed
+        self.workers = []
         self.media_capture = None
         self.file_type = None
         self.processing = False
@@ -45,12 +46,12 @@ class VideoProcessor(QObject):
                     return
 
                 self.processing = True
-                self.timer.start(1000/self.media_capture.get(cv2.CAP_PROP_FPS))  # Start processing at video's fps
-
+                # self.timer.start(1000/self.media_capture.get(cv2.CAP_PROP_FPS))  # Start processing at video's fps
+                self.timer.start(5)
         elif self.file_type=='image':
             self.processing = True
             self.max_frame_number = 1
-            self.timer.start(10)  # Start processing at video's fps
+            self.timer.start(10) 
 
     def process_next_frame(self):
         if not self.processing:
@@ -69,8 +70,11 @@ class VideoProcessor(QObject):
                     self.media_capture = cv2.VideoCapture(self.media_path)
                     ret, frame = self.media_capture.read()
 
+
                 if ret:
                     worker = VideoProcessingWorker(frame, self.main_window, self.current_frame_number)
+                    self.workers.append(worker)
+                    print(self.workers)
                     self.thread_pool.start(worker)
                 else:
                     print(f"Error reading frame at position {self.current_frame_number}")
@@ -86,3 +90,4 @@ class VideoProcessor(QObject):
         self.timer.stop()
         self.thread_pool.waitForDone()  # Wait for all threads to finish
         self.processing_complete.emit()  # Emit signal when processing is complete
+

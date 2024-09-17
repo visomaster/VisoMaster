@@ -167,7 +167,7 @@ def extract_frame_as_pixmap(media_file_path, file_type):
 
 # from App.UI.MainUI import Ui_MainWindow
 def update_graphics_view(main_window , pixmap, current_frame_number):
-
+    print(current_frame_number)
     main_window.videoSeekSlider.blockSignals(True)
     main_window.videoSeekSlider.setValue(current_frame_number)
     main_window.videoSeekSlider.blockSignals(False)

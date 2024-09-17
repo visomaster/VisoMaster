@@ -24,10 +24,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.selected_input_emb_buttons = []
         self.selected_video_buttons = [] #Contains list of buttons linked to videos/images
         self.parameters = {}
+
     def initialize_widgets(self):
-
         # Initialize QListWidget for target media
-
         self.targetVideosList.setFlow(QtWidgets.QListWidget.LeftToRight)
         self.targetVideosList.setWrapping(True)
         self.targetVideosList.setResizeMode(QtWidgets.QListWidget.Adjust)

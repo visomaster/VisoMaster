@@ -15,7 +15,9 @@ from skimage import transform as trans
 import torchvision
 from torchvision.transforms import v2
 import numpy as np
+from numpy.linalg import norm as l2norm
 
+import onnx
 models_dir = './App/ONNXModels'
 
 models_list = [
@@ -88,6 +90,34 @@ class ModelsProcessor(QObject):
         if self.main_window.model_load_dialog:
             self.main_window.model_load_dialog.close()
 
+
+    def calc_swapper_latent(self, source_embedding):
+        if not self.models['Inswapper128']:
+            graph = onnx.load(self.models_path['Inswapper128']).graph
+            self.emap = onnx.numpy_helper.to_array(graph.initializer[-1])
+
+        n_e = source_embedding / l2norm(source_embedding)
+        latent = n_e.reshape((1,-1))
+        latent = np.dot(latent, self.emap)
+        latent /= np.linalg.norm(latent)
+        return latent
+    
+    def run_swapper(self, image, embedding, output):
+        if not self.models['Inswapper128']:
+            cuda_options = {"arena_extend_strategy": "kSameAsRequested", 'cudnn_conv_algo_search': 'DEFAULT'}
+            sess_options = onnxruntime.SessionOptions()
+            sess_options.enable_cpu_mem_arena = False
+
+            self.models['Inswapper128'] = self.load_model('Inswapper128')
+
+        io_binding = self.models['Inswapper128'].io_binding()
+        io_binding.bind_input(name='target', device_type='cuda', device_id=0, element_type=np.float32, shape=(1,3,128,128), buffer_ptr=image.data_ptr())
+        io_binding.bind_input(name='source', device_type='cuda', device_id=0, element_type=np.float32, shape=(1,512), buffer_ptr=embedding.data_ptr())
+        io_binding.bind_output(name='output', device_type='cuda', device_id=0, element_type=np.float32, shape=(1,3,128,128), buffer_ptr=output.data_ptr())
+
+        self.syncvec.cpu()
+        self.models['Inswapper128'].run_with_iobinding(io_binding)
+    
     def run_detect(self, img, detect_mode='Retinaface', max_num=1, score=0.5, use_landmark_detection=False, landmark_detect_mode='203', landmark_score=0.5, from_points=False, rotation_angles:list[int]=[0]):
         bboxes = []
         kpss_5 = []
