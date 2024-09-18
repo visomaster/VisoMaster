@@ -59,13 +59,18 @@ class InputFacesLoaderWorker(qtc.QThread):
         self.files_list = files_list
 
     def run(self):
-        if self.folder_name:
-            self.load_faces_from_folder(self.folder_name)
+        if self.folder_name or self.files_list:
+            self.load_faces(self.folder_name, self.files_list)
 
-    def load_faces_from_folder(self, folder_name):
-        image_files = misc_helpers.get_image_files(self.folder_name)
-        for image_file in image_files:
-            image_file_path = os.path.join(folder_name, image_file)
+    def load_faces(self, folder_name=False, files_list=[]):
+        if folder_name:
+            image_files = misc_helpers.get_image_files(self.folder_name)
+        elif files_list:
+            image_files = files_list
+
+        for image_file_path in image_files:
+            if folder_name:
+                image_file_path = os.path.join(folder_name, image_file_path)
             frame = cv2.imread(image_file_path)
             img = torch.from_numpy(frame.astype('uint8')).to('cuda')
             img = img.permute(2,0,1)

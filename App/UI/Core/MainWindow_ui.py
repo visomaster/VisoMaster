@@ -146,12 +146,6 @@ class Ui_MainWindow(object):
         self.gridGroupBox.setCheckable(False)
         self.gridLayout_2 = QGridLayout(self.gridGroupBox)
         self.gridLayout_2.setObjectName(u"gridLayout_2")
-        self.targetFacesList = QListWidget(self.gridGroupBox)
-        self.targetFacesList.setObjectName(u"targetFacesList")
-        self.targetFacesList.setAutoFillBackground(True)
-
-        self.gridLayout_2.addWidget(self.targetFacesList, 0, 1, 1, 1)
-
         self.widget_2 = QWidget(self.gridGroupBox)
         self.widget_2.setObjectName(u"widget_2")
         sizePolicy4 = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Preferred)
@@ -191,7 +185,28 @@ class Ui_MainWindow(object):
         self.verticalLayout_8.addWidget(self.pushButton_6)
 
 
-        self.gridLayout_2.addWidget(self.widget_2, 0, 0, 1, 1)
+        self.gridLayout_2.addWidget(self.widget_2, 1, 0, 1, 1)
+
+        self.targetFacesList = QListWidget(self.gridGroupBox)
+        self.targetFacesList.setObjectName(u"targetFacesList")
+        self.targetFacesList.setAutoFillBackground(True)
+
+        self.gridLayout_2.addWidget(self.targetFacesList, 1, 1, 1, 1)
+
+        self.inputEmbeddingsList = QListWidget(self.gridGroupBox)
+        self.inputEmbeddingsList.setObjectName(u"inputEmbeddingsList")
+        sizePolicy5 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+        sizePolicy5.setHorizontalStretch(0)
+        sizePolicy5.setVerticalStretch(0)
+        sizePolicy5.setHeightForWidth(self.inputEmbeddingsList.sizePolicy().hasHeightForWidth())
+        self.inputEmbeddingsList.setSizePolicy(sizePolicy5)
+
+        self.gridLayout_2.addWidget(self.inputEmbeddingsList, 1, 2, 1, 1)
+
+        self.inputEmbeddingsSearchBox = QLineEdit(self.gridGroupBox)
+        self.inputEmbeddingsSearchBox.setObjectName(u"inputEmbeddingsSearchBox")
+
+        self.gridLayout_2.addWidget(self.inputEmbeddingsSearchBox, 0, 2, 1, 1)
 
 
         self.verticalLayout.addWidget(self.gridGroupBox)
@@ -255,15 +270,10 @@ class Ui_MainWindow(object):
 
         self.gridLayout.addWidget(self.buttonSelectInputFaces, 0, 0, 1, 1)
 
-        self.buttonSelectInputEmbeddings = QPushButton(self.groupBox_InputFaces_Select)
-        self.buttonSelectInputEmbeddings.setObjectName(u"buttonSelectInputEmbeddings")
+        self.buttonSelectInputFacesFiles = QPushButton(self.groupBox_InputFaces_Select)
+        self.buttonSelectInputFacesFiles.setObjectName(u"buttonSelectInputFacesFiles")
 
-        self.gridLayout.addWidget(self.buttonSelectInputEmbeddings, 0, 1, 1, 1)
-
-        self.labelEmbeddingsPath = QLabel(self.groupBox_InputFaces_Select)
-        self.labelEmbeddingsPath.setObjectName(u"labelEmbeddingsPath")
-
-        self.gridLayout.addWidget(self.labelEmbeddingsPath, 1, 1, 1, 1)
+        self.gridLayout.addWidget(self.buttonSelectInputFacesFiles, 0, 1, 1, 1)
 
 
         self.vboxLayout.addWidget(self.groupBox_InputFaces_Select)
@@ -278,11 +288,6 @@ class Ui_MainWindow(object):
 
         self.vboxLayout.addWidget(self.inputFacesList)
 
-        self.inputEmbeddingsList = QListWidget(self.dockWidgetContents)
-        self.inputEmbeddingsList.setObjectName(u"inputEmbeddingsList")
-
-        self.vboxLayout.addWidget(self.inputEmbeddingsList)
-
 
         self.gridLayout_4.addLayout(self.vboxLayout, 0, 0, 1, 1)
 
@@ -296,11 +301,11 @@ class Ui_MainWindow(object):
         self.gridLayout_5.setObjectName(u"gridLayout_5")
         self.tabWidget = QTabWidget(self.dockWidgetContents_2)
         self.tabWidget.setObjectName(u"tabWidget")
-        sizePolicy5 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        sizePolicy5.setHorizontalStretch(1)
-        sizePolicy5.setVerticalStretch(0)
-        sizePolicy5.setHeightForWidth(self.tabWidget.sizePolicy().hasHeightForWidth())
-        self.tabWidget.setSizePolicy(sizePolicy5)
+        sizePolicy6 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        sizePolicy6.setHorizontalStretch(1)
+        sizePolicy6.setVerticalStretch(0)
+        sizePolicy6.setHeightForWidth(self.tabWidget.sizePolicy().hasHeightForWidth())
+        self.tabWidget.setSizePolicy(sizePolicy6)
         font1 = QFont()
         font1.setFamilies([u"Segoe UI Semibold"])
         font1.setPointSize(10)
@@ -373,18 +378,18 @@ class Ui_MainWindow(object):
         self.clearTargetFacesButton.setText(QCoreApplication.translate("MainWindow", u"Clear Faces", None))
         self.pushButton_4.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
         self.pushButton_6.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
+        self.inputEmbeddingsSearchBox.setPlaceholderText(QCoreApplication.translate("MainWindow", u"Search Embeddings", None))
         self.input_Target_DockWidget.setWindowTitle(QCoreApplication.translate("MainWindow", u"Target Videos and Input Faces", None))
         self.groupBox_TargetVideos_Select.setTitle(QCoreApplication.translate("MainWindow", u"Target Videos/Images", None))
         self.labelTargetVideosPath.setText(QCoreApplication.translate("MainWindow", u"Select Videos/Images Path", None))
         self.buttonSelectTargetVideos.setText(QCoreApplication.translate("MainWindow", u"Select Folder", None))
-        self.buttonSelectTargetVideoFiles.setText(QCoreApplication.translate("MainWindow", u"Select Files", None))
+        self.buttonSelectTargetVideoFiles.setText(QCoreApplication.translate("MainWindow", u"   Select Files     ", None))
         self.targetVideosSearchBox.setText("")
         self.targetVideosSearchBox.setPlaceholderText(QCoreApplication.translate("MainWindow", u"Search Videos/Images", None))
         self.groupBox_InputFaces_Select.setTitle(QCoreApplication.translate("MainWindow", u"Input Faces", None))
-        self.labelInputFacesPath.setText(QCoreApplication.translate("MainWindow", u"  Face Images Path ", None))
-        self.buttonSelectInputFaces.setText(QCoreApplication.translate("MainWindow", u"Select Images Folder", None))
-        self.buttonSelectInputEmbeddings.setText(QCoreApplication.translate("MainWindow", u"Select Embeddings File", None))
-        self.labelEmbeddingsPath.setText(QCoreApplication.translate("MainWindow", u"  Embeddings Path", None))
+        self.labelInputFacesPath.setText(QCoreApplication.translate("MainWindow", u"Select Face Images Path", None))
+        self.buttonSelectInputFaces.setText(QCoreApplication.translate("MainWindow", u"         Select Folder       ", None))
+        self.buttonSelectInputFacesFiles.setText(QCoreApplication.translate("MainWindow", u"Select Files", None))
         self.inputFacesSearchBox.setPlaceholderText(QCoreApplication.translate("MainWindow", u"Search Faces", None))
         self.controlOptionsDockWidget.setWindowTitle(QCoreApplication.translate("MainWindow", u"Control Options", None))
         self.label_tab3.setText(QCoreApplication.translate("MainWindow", u"Face Swap", None))

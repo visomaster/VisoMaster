@@ -16,7 +16,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.video_processor = VideoProcessor(self)
         self.models_processor = ModelsProcessor(self)
         self.thread_pool = qtc.QThreadPool()
-        self.target_videos = [] #Contains button objects if target videos
+        self.target_videos = [] #Contains button objects if target videos (Set as list instead of single video to support batch processing in future)
         self.target_faces = [] #Contains button objects if target faces
         self.input_faces = [] #Contains button objects if source faces (images)
         self.selected_target_face_buttons = [] 
@@ -43,9 +43,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         graphics_event_filter = GraphicsViewEventFilter(self.graphicsViewFrame)
         self.graphicsViewFrame.installEventFilter(graphics_event_filter)
 
-        self.buttonSelectTargetVideos.clicked.connect(partial(widget_actions.onClickSelectTargetVideosFolder, self))
-        self.buttonSelectTargetVideoFiles.clicked.connect(partial(widget_actions.onClickSelectTargetVideosFiles, self))
-        self.buttonSelectInputFaces.clicked.connect(partial(widget_actions.onClickSelectInputImagesFolder, self))
+        self.buttonSelectTargetVideos.clicked.connect(partial(widget_actions.onClickSelectTargetVideos, self, 'folder'))
+        self.buttonSelectTargetVideoFiles.clicked.connect(partial(widget_actions.onClickSelectTargetVideos, self, 'files'))
+        self.buttonSelectInputFaces.clicked.connect(partial(widget_actions.onClickSelectInputImages, self, 'folder'))
+        self.buttonSelectInputFacesFiles.clicked.connect(partial(widget_actions.onClickSelectInputImages, self, 'files'))
+
         self.videoSeekSlider.valueChanged.connect(partial(widget_actions.OnChangeSlider, self))
         self.buttonMediaPlay.clicked.connect(partial(widget_actions.OnClickPlayButton, self))
         # self.buttonMediaStop.clicked.connect(partial(self.video_processor.stop_processing))

@@ -45,28 +45,20 @@ def clear_stop_loading_target_media(main_window):
         main_window.targetVideosList.clear()
 
 @qtc.Slot()
-def onClickSelectTargetVideosFolder(main_window):
-    folder_name = QtWidgets.QFileDialog.getExistingDirectory()
+def onClickSelectTargetVideos(main_window, source_type='folder', folder_name=False, files_list=[]):
+    if source_type=='folder':
+        folder_name = QtWidgets.QFileDialog.getExistingDirectory()
+        main_window.labelTargetVideosPath.setText(misc_helpers.truncate_text(folder_name))
+        main_window.labelTargetVideosPath.setToolTip(folder_name)
+    elif source_type=='files':
+        files_list = QtWidgets.QFileDialog.getOpenFileNames()[0]
+        main_window.labelTargetVideosPath.setText('Selected Files')
+        main_window.labelTargetVideosPath.setToolTip('Selected Files')
     main_window.selected_video_buttons = []
     main_window.target_videos = []
-    main_window.labelTargetVideosPath.setText(misc_helpers.truncate_text(folder_name))
-    main_window.labelTargetVideosPath.setToolTip(folder_name)
     clear_stop_loading_target_media(main_window)
     clear_target_faces(main_window)
-    main_window.video_loader_worker = ui_workers.TargetMediaLoaderWorker(folder_name=folder_name)
-    main_window.video_loader_worker.thumbnail_ready.connect(partial(add_media_thumbnail_to_target_videos_list, main_window))
-    main_window.video_loader_worker.start()
-
-@qtc.Slot()
-def onClickSelectTargetVideosFiles(main_window):
-    files_list = QtWidgets.QFileDialog.getOpenFileNames()[0]
-    main_window.selected_video_buttons = []
-    main_window.target_videos = []
-    main_window.labelTargetVideosPath.setText('Selected Files')
-    main_window.labelTargetVideosPath.setToolTip('Selected Files')
-    clear_stop_loading_target_media(main_window)
-    clear_target_faces(main_window)
-    main_window.video_loader_worker = ui_workers.TargetMediaLoaderWorker(files_list=files_list)
+    main_window.video_loader_worker = ui_workers.TargetMediaLoaderWorker(folder_name=folder_name, files_list=files_list)
     main_window.video_loader_worker.thumbnail_ready.connect(partial(add_media_thumbnail_to_target_videos_list, main_window))
     main_window.video_loader_worker.start()
 
@@ -79,14 +71,20 @@ def clear_stop_loading_input_media(main_window):
         main_window.inputFacesList.clear()
 
 @qtc.Slot()
-def onClickSelectInputImagesFolder(main_window):
-    folder_name = QtWidgets.QFileDialog.getExistingDirectory()
+def onClickSelectInputImages(main_window, source_type='folder', folder_name=False, files_list=[]):
+    if source_type=='folder':
+        folder_name = QtWidgets.QFileDialog.getExistingDirectory()
+        main_window.labelInputFacesPath.setText(misc_helpers.truncate_text(folder_name))
+        main_window.labelInputFacesPath.setToolTip(folder_name)
+
+    elif source_type=='files':
+        files_list = QtWidgets.QFileDialog.getOpenFileNames()[0]
+        main_window.labelInputFacesPath.setText('Selected Files') #Just a temp text until i think of something better
+        main_window.labelInputFacesPath.setToolTip('Selected Files')
     main_window.selected_input_face_buttons = []
-    main_window.labelInputFacesPath.setText(misc_helpers.truncate_text(folder_name))
-    main_window.labelInputFacesPath.setToolTip(folder_name)
     clear_stop_loading_input_media(main_window)
     clear_input_faces(main_window)
-    main_window.input_faces_loader_worker = ui_workers.InputFacesLoaderWorker(main_window=main_window, folder_name=folder_name)
+    main_window.input_faces_loader_worker = ui_workers.InputFacesLoaderWorker(main_window=main_window, folder_name=folder_name, files_list=files_list)
     main_window.input_faces_loader_worker.thumbnail_ready.connect(partial(add_media_thumbnail_to_source_faces_list, main_window))
     main_window.input_faces_loader_worker.start()
 
