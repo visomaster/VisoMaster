@@ -15,10 +15,8 @@ def scale_pixmap_to_view(view, pixmap):
     # Get the size of the view
     view_size = view.viewport().size()
     pixmap_size = pixmap.size()
-
     # Calculate the scale factor
     scale_factor = min(view_size.width() / pixmap_size.width(), view_size.height() / pixmap_size.height())
-
     # Scale the pixmap
     scaled_pixmap = pixmap.scaled(
         pixmap_size.width() * scale_factor,
@@ -52,7 +50,7 @@ def onClickSelectTargetVideos(main_window, source_type='folder', folder_name=Fal
         main_window.labelTargetVideosPath.setToolTip(folder_name)
     elif source_type=='files':
         files_list = QtWidgets.QFileDialog.getOpenFileNames()[0]
-        main_window.labelTargetVideosPath.setText('Selected Files')
+        main_window.labelTargetVideosPath.setText('Selected Files') #Just a temp text until i think of something better
         main_window.labelTargetVideosPath.setToolTip('Selected Files')
     main_window.selected_video_buttons = []
     main_window.target_videos = []
@@ -61,7 +59,6 @@ def onClickSelectTargetVideos(main_window, source_type='folder', folder_name=Fal
     main_window.video_loader_worker = ui_workers.TargetMediaLoaderWorker(folder_name=folder_name, files_list=files_list)
     main_window.video_loader_worker.thumbnail_ready.connect(partial(add_media_thumbnail_to_target_videos_list, main_window))
     main_window.video_loader_worker.start()
-
 
 def clear_stop_loading_input_media(main_window):
     if main_window.input_faces_loader_worker:
@@ -103,26 +100,25 @@ def OnChangeSlider(main_window, new_position=0):
     video_processor.processing=False
 
 
-
+# Functions to add Buttons with thumbnail for selecting videos/images and faces
 @qtc.Slot(str, QtGui.QPixmap)
 def add_media_thumbnail_to_target_videos_list(main_window, media_path, pixmap, file_type):
     add_media_thumbnail_button(TargetMediaCardButton, main_window.targetVideosList, main_window.target_videos, pixmap, media_path=media_path, file_type=file_type)
-
 
 @qtc.Slot()
 def add_media_thumbnail_to_target_faces_list(main_window, cropped_face, embedding, pixmap):
     add_media_thumbnail_button(TargetFaceCardButton, main_window.targetFacesList, main_window.target_faces, pixmap, cropped_face=cropped_face, embedding=embedding )
 
 @qtc.Slot()
-def add_media_thumbnail_to_source_faces_list(main_window, cropped_face, embedding, pixmap):
-    add_media_thumbnail_button(InputFaceCardButton, main_window.inputFacesList, main_window.input_faces, pixmap, cropped_face=cropped_face, embedding=embedding )
+def add_media_thumbnail_to_source_faces_list(main_window, media_path, cropped_face, embedding, pixmap):
+    add_media_thumbnail_button(InputFaceCardButton, main_window.inputFacesList, main_window.input_faces, pixmap, media_path=media_path, cropped_face=cropped_face, embedding=embedding )
 
 
 def add_media_thumbnail_button(buttonClass:QtWidgets.QPushButton, listWidget, buttons_list, pixmap, **kwargs):
     if buttonClass==TargetMediaCardButton:
         constructor_args = (kwargs.get('media_path'), kwargs.get('file_type'))
     elif buttonClass in (TargetFaceCardButton, InputFaceCardButton):
-        constructor_args = (kwargs.get('cropped_face'), kwargs.get('embedding'))
+        constructor_args = (kwargs.get('media_path',''), kwargs.get('cropped_face'), kwargs.get('embedding'))
     button_size = qtc.QSize(70, 70)  # Set a fixed size for the buttons
     button = buttonClass(*constructor_args)
     button.setIcon(QtGui.QIcon(pixmap))
@@ -134,10 +130,8 @@ def add_media_thumbnail_button(buttonClass:QtWidgets.QPushButton, listWidget, bu
     list_item = QtWidgets.QListWidgetItem(listWidget)
     list_item.setSizeHint(button_size)
     button.list_item = list_item
-
     # Align the item to center
     list_item.setTextAlignment(qtc.Qt.AlignmentFlag.AlignCenter)
-
     listWidget.setItemWidget(list_item, button)
     # Adjust the QListWidget properties to handle the grid layout
     grid_size_with_padding = button_size + qtc.QSize(4, 4)  # Add padding around the buttons
@@ -204,7 +198,6 @@ def OnClickPlayButton(main_window):
     main_window.video_processor.process_video()
 
 def filterTargetVideos(main_window, search_text):
-    # QtWidgets.QListWidgetItem.hide
     search_text = search_text.lower()
     if search_text:
         for i in range(main_window.targetVideosList.count()):
@@ -219,6 +212,22 @@ def filterTargetVideos(main_window, search_text):
     else:
         for i in range(main_window.targetVideosList.count()):
             main_window.targetVideosList.item(i).setHidden(False)
+
+def filterInputFaces(main_window, search_text):
+    search_text = search_text.lower()
+    if search_text:
+        for i in range(main_window.inputFacesList.count()):
+            list_item = main_window.inputFacesList.item(i)
+            if search_text not in main_window.input_faces[i].media_path.lower():
+                list_item.setHidden(True)
+
+            else:
+                list_item.setHidden(False)
+
+
+    else:
+        for i in range(main_window.inputFacesList.count()):
+            main_window.inputFacesList.item(i).setHidden(False)
 
 def initializeModelLoadDialog(main_window):
     main_window.model_load_dialog = ProgressDialog("Loading Models...This is gonna take a while.", "Cancel", 0, 100, main_window)

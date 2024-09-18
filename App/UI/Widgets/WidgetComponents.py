@@ -70,8 +70,9 @@ class TargetMediaCardButton(QPushButton):
         main_window.selected_video_buttons.append(self)
 
 class TargetFaceCardButton(QPushButton):
-    def __init__(self, cropped_face, embedding, *args, **kwargs):
+    def __init__(self, media_path, cropped_face, embedding, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.media_path = media_path
         self.cropped_face = cropped_face
         self.embedding = embedding
         self.setCheckable(True)
@@ -92,11 +93,14 @@ class TargetFaceCardButton(QPushButton):
 
 
 class InputFaceCardButton(QPushButton):
-    def __init__(self, cropped_face, embedding, *args, **kwargs):
+    def __init__(self, media_path, cropped_face, embedding, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.cropped_face = cropped_face
         self.embedding = embedding
+        self.media_path = media_path
+
         self.setCheckable(True)
+        self.setToolTip(media_path)
         self.clicked.connect(self.loadInputFace)
 
     def loadInputFace(self):

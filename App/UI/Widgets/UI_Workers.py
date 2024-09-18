@@ -50,9 +50,9 @@ class TargetMediaLoaderWorker(qtc.QThread):
 
 class InputFacesLoaderWorker(qtc.QThread):
     # Define signals to emit when loading is done or if there are updates
-    thumbnail_ready = qtc.Signal(numpy.ndarray, numpy.ndarray, QPixmap)  # Signal with media path and QPixmap and file_type
+    thumbnail_ready = qtc.Signal(str, numpy.ndarray, numpy.ndarray, QPixmap)
     finished = qtc.Signal()  # Signal to indicate completion
-    def __init__(self, main_window, folder_name=False, files_list=[],  parent=None):
+    def __init__(self, main_window, media_path=False, folder_name=False, files_list=[],  parent=None):
         super().__init__(parent)
         self.main_window = main_window
         self.folder_name = folder_name
@@ -88,4 +88,4 @@ class InputFacesLoaderWorker(qtc.QThread):
                 face_img = numpy.ascontiguousarray(cropped_img.cpu().numpy())
                 # crop = cv2.resize(face[2].cpu().numpy(), (82, 82))
                 pixmap = widget_actions.get_pixmap_from_frame(self.main_window, face_img)
-                self.thumbnail_ready.emit(face_img, face_emb, pixmap)
+                self.thumbnail_ready.emit(image_file_path, face_img, face_emb, pixmap)

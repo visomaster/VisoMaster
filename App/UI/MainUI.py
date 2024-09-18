@@ -54,6 +54,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.findTargetFacesButton.clicked.connect(partial(widget_actions.find_target_faces, self))
         self.clearTargetFacesButton.clicked.connect(partial(widget_actions.clear_target_faces, self))
         self.targetVideosSearchBox.textChanged.connect(partial(widget_actions.filterTargetVideos, self))
+        self.inputFacesSearchBox.textChanged.connect(partial(widget_actions.filterInputFaces, self))
 
         self.update_frame_signal.connect(widget_actions.update_graphics_view)
 
