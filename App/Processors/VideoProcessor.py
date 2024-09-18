@@ -7,7 +7,7 @@ from App.Processors.Workers.Frame_Worker import FrameWorker
 # Lock for synchronizing thread-safe operations
 lock = threading.Lock()
 
-class VideoProcessingWorker(QThread):
+class VideoProcessingWorker(threading.Thread):
     def __init__(self, frame_queue, main_window):
         super().__init__()
         self.frame_queue = frame_queue
@@ -47,9 +47,9 @@ class VideoProcessor(QObject):
         self.timer.timeout.connect(self.process_next_frame)
         self.num_threads = num_threads  # Number of threads for processing
 
-    def create_threads(self):
+    def create_threads(self, threads_count=False):
         """Create and start the worker threads."""
-        for _ in range(self.num_threads):
+        for _ in range(threads_count or self.num_threads):
             thread = VideoProcessingWorker(self.frame_queue, self.main_window)
             thread.start()
             self.threads.append(thread)
@@ -114,7 +114,7 @@ class VideoProcessor(QObject):
 
         # Stop all worker threads
         for thread in self.threads:
-            thread.terminate()
+            thread.stop()
 
         self.threads.clear()
 

@@ -12,7 +12,7 @@ import numpy as np
 from App.Processors.Utils import FaceUtil as faceutil
 import threading
 lock = threading.Lock()
-class FrameWorker(QThread):
+class FrameWorker(threading.Thread):
     def __init__(self, frame, main_window, current_frame_number):
         super().__init__()
         self.current_frame_number = current_frame_number
