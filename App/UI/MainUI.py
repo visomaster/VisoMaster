@@ -39,6 +39,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # Initialize graphics frame to view frames
         self.scene = QtWidgets.QGraphicsScene()
         self.graphicsViewFrame.setScene(self.scene)
+        # Event filter to start playing when clicking on frame
         graphics_event_filter = GraphicsViewEventFilter(self.graphicsViewFrame)
         self.graphicsViewFrame.installEventFilter(graphics_event_filter)
 

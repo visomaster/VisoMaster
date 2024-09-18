@@ -1,13 +1,13 @@
 import threading
 import cv2
 import queue
-from PySide6.QtCore import QObject, QTimer, Signal
+from PySide6.QtCore import QObject, QTimer, Signal, QThread
 from App.Processors.Workers.Frame_Worker import FrameWorker
 
 # Lock for synchronizing thread-safe operations
 lock = threading.Lock()
 
-class VideoProcessingWorker(threading.Thread):
+class VideoProcessingWorker(QThread):
     def __init__(self, frame_queue, main_window):
         super().__init__()
         self.frame_queue = frame_queue
@@ -68,7 +68,8 @@ class VideoProcessor(QObject):
                 
                 self.processing = True
                 self.create_threads()  # Start the worker threads
-                self.timer.start(5)  # Timer to control frame reading pace
+                # self.timer.start(5)
+                self.timer.start(1000/self.media_capture.get(cv2.CAP_PROP_FPS))  # Timer to control frame reading pace
                 
         elif self.file_type == 'image':
             self.processing = True
@@ -113,10 +114,7 @@ class VideoProcessor(QObject):
 
         # Stop all worker threads
         for thread in self.threads:
-            thread.stop()
-
-        for thread in self.threads:
-            thread.join()
+            thread.terminate()
 
         self.threads.clear()
 
@@ -124,4 +122,3 @@ class VideoProcessor(QObject):
         
         with self.frame_queue.mutex:
             self.frame_queue.queue.clear()
-        print()

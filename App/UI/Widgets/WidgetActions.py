@@ -99,7 +99,7 @@ def OnChangeSlider(main_window, new_position=0):
     if video_processor.media_capture:
         video_processor.media_capture.set(cv2.CAP_PROP_POS_FRAMES, new_position)
     video_processor.processing = True
-    video_processor.process_next_frame()
+    # video_processor.process_next_frame()
     video_processor.processing = False
     widget_actions.resetMediaButtons(main_window)
 
