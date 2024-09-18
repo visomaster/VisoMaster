@@ -102,6 +102,8 @@ def OnChangeSlider(main_window, new_position=0):
     video_processor.create_threads(threads_count=1)
     video_processor.process_next_frame()
     widget_actions.resetMediaButtons(main_window)
+    video_processor.processing=False
+
 
 
 @qtc.Slot(str, QtGui.QPixmap)

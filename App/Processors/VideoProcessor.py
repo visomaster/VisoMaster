@@ -3,7 +3,7 @@ import cv2
 import queue
 from PySide6.QtCore import QObject, QTimer, Signal, QThread
 from App.Processors.Workers.Frame_Worker import FrameWorker
-
+from App.UI.Widgets import WidgetActions as widget_actions
 # Lock for synchronizing thread-safe operations
 lock = threading.Lock()
 
@@ -122,3 +122,5 @@ class VideoProcessor(QObject):
         
         with self.frame_queue.mutex:
             self.frame_queue.queue.clear()
+        widget_actions.resetMediaButtons(self.main_window)
+
