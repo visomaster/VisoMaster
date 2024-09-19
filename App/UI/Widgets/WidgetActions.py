@@ -11,7 +11,12 @@ import cv2
 from App.UI.Core import media_rc
 import torch
 import numpy
-def scale_pixmap_to_view(view, pixmap):
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from App.UI.MainUI import MainWindow
+def scale_pixmap_to_view(view: QtWidgets.QGraphicsView, pixmap: QtGui.QPixmap):
     # Get the size of the view
     view_size = view.viewport().size()
     pixmap_size = pixmap.size()
@@ -25,7 +30,7 @@ def scale_pixmap_to_view(view, pixmap):
     )
     return scaled_pixmap
 
-def fit_image_to_view(main_window, pixmap_item):
+def fit_image_to_view(main_window: 'MainWindow', pixmap_item: QtWidgets.QGraphicsPixmapItem):
     graphicsViewFrame = main_window.graphicsViewFrame
     # Reset the transform to ensure no previous transformations affect the new fit
     graphicsViewFrame.resetTransform()
@@ -35,7 +40,7 @@ def fit_image_to_view(main_window, pixmap_item):
     graphicsViewFrame.fitInView(pixmap_item, qtc.Qt.AspectRatioMode.KeepAspectRatio)
     graphicsViewFrame.update()
 
-def clear_stop_loading_target_media(main_window):
+def clear_stop_loading_target_media(main_window: 'MainWindow'):
     if main_window.video_loader_worker:
         main_window.video_loader_worker.terminate()
         main_window.video_loader_worker = False
@@ -43,7 +48,7 @@ def clear_stop_loading_target_media(main_window):
         main_window.targetVideosList.clear()
 
 @qtc.Slot()
-def onClickSelectTargetVideos(main_window, source_type='folder', folder_name=False, files_list=[]):
+def onClickSelectTargetVideos(main_window: 'MainWindow', source_type='folder', folder_name=False, files_list=[]):
     if source_type=='folder':
         folder_name = QtWidgets.QFileDialog.getExistingDirectory()
         main_window.labelTargetVideosPath.setText(misc_helpers.truncate_text(folder_name))
@@ -60,7 +65,7 @@ def onClickSelectTargetVideos(main_window, source_type='folder', folder_name=Fal
     main_window.video_loader_worker.thumbnail_ready.connect(partial(add_media_thumbnail_to_target_videos_list, main_window))
     main_window.video_loader_worker.start()
 
-def clear_stop_loading_input_media(main_window):
+def clear_stop_loading_input_media(main_window: 'MainWindow'):
     if main_window.input_faces_loader_worker:
         main_window.input_faces_loader_worker.terminate()
         main_window.input_faces_loader_worker = False
@@ -68,7 +73,7 @@ def clear_stop_loading_input_media(main_window):
         main_window.inputFacesList.clear()
 
 @qtc.Slot()
-def onClickSelectInputImages(main_window, source_type='folder', folder_name=False, files_list=[]):
+def onClickSelectInputImages(main_window: 'MainWindow', source_type='folder', folder_name=False, files_list=[]):
     if source_type=='folder':
         folder_name = QtWidgets.QFileDialog.getExistingDirectory()
         main_window.labelInputFacesPath.setText(misc_helpers.truncate_text(folder_name))
@@ -87,7 +92,7 @@ def onClickSelectInputImages(main_window, source_type='folder', folder_name=Fals
 
     
 @qtc.Slot()
-def OnChangeSlider(main_window, new_position=0):
+def OnChangeSlider(main_window: 'MainWindow', new_position=0):
     video_processor = main_window.video_processor
     video_processor.stop_processing()
     video_processor.current_frame_number = new_position
@@ -102,19 +107,19 @@ def OnChangeSlider(main_window, new_position=0):
 
 # Functions to add Buttons with thumbnail for selecting videos/images and faces
 @qtc.Slot(str, QtGui.QPixmap)
-def add_media_thumbnail_to_target_videos_list(main_window, media_path, pixmap, file_type):
+def add_media_thumbnail_to_target_videos_list(main_window: 'MainWindow', media_path, pixmap, file_type):
     add_media_thumbnail_button(TargetMediaCardButton, main_window.targetVideosList, main_window.target_videos, pixmap, media_path=media_path, file_type=file_type)
 
 @qtc.Slot()
-def add_media_thumbnail_to_target_faces_list(main_window, cropped_face, embedding, pixmap):
+def add_media_thumbnail_to_target_faces_list(main_window: 'MainWindow', cropped_face, embedding, pixmap):
     add_media_thumbnail_button(TargetFaceCardButton, main_window.targetFacesList, main_window.target_faces, pixmap, cropped_face=cropped_face, embedding=embedding )
 
 @qtc.Slot()
-def add_media_thumbnail_to_source_faces_list(main_window, media_path, cropped_face, embedding, pixmap):
+def add_media_thumbnail_to_source_faces_list(main_window: 'MainWindow', media_path, cropped_face, embedding, pixmap):
     add_media_thumbnail_button(InputFaceCardButton, main_window.inputFacesList, main_window.input_faces, pixmap, media_path=media_path, cropped_face=cropped_face, embedding=embedding )
 
 
-def add_media_thumbnail_button(buttonClass:QtWidgets.QPushButton, listWidget, buttons_list, pixmap, **kwargs):
+def add_media_thumbnail_button(buttonClass:QtWidgets.QPushButton, listWidget:QtWidgets.QListWidget, buttons_list:list, pixmap, **kwargs):
     if buttonClass==TargetMediaCardButton:
         constructor_args = (kwargs.get('media_path'), kwargs.get('file_type'))
     elif buttonClass in (TargetFaceCardButton, InputFaceCardButton):
@@ -160,7 +165,7 @@ def extract_frame_as_pixmap(media_file_path, file_type):
     return None
 
 # from App.UI.MainUI import Ui_MainWindow
-def update_graphics_view(main_window , pixmap, current_frame_number):
+def update_graphics_view(main_window: 'MainWindow' , pixmap, current_frame_number):
     print(current_frame_number)
     main_window.videoSeekSlider.blockSignals(True)
     main_window.videoSeekSlider.setValue(current_frame_number)
@@ -173,7 +178,7 @@ def update_graphics_view(main_window , pixmap, current_frame_number):
     widget_actions.fit_image_to_view(main_window, pixmap_item)
 
 
-def get_pixmap_from_frame(main_window, frame, scale=True):
+def get_pixmap_from_frame(main_window: 'MainWindow', frame, scale=True):
     height, width, channel = frame.shape
     bytes_per_line = 3 * width
     q_img = QtGui.QImage(frame.data, width, height, bytes_per_line, QtGui.QImage.Format.Format_RGB888).rgbSwapped()
@@ -183,21 +188,21 @@ def get_pixmap_from_frame(main_window, frame, scale=True):
         pixmap = widget_actions.scale_pixmap_to_view(main_window.graphicsViewFrame, pixmap)
     return pixmap
 
-def resetMediaButtons(main_window):
+def resetMediaButtons(main_window: 'MainWindow'):
     main_window.buttonMediaPlay.setChecked(False)
     setPlayButtonIcon(main_window)
 
-def setPlayButtonIcon(main_window):
+def setPlayButtonIcon(main_window: 'MainWindow'):
     if main_window.buttonMediaPlay.isChecked(): 
         main_window.buttonMediaPlay.setIcon(QtGui.QIcon(":/media/Media/play_on.png"))
     else:
         main_window.buttonMediaPlay.setIcon(QtGui.QIcon(":/media/Media/play_off.png"))
 
-def OnClickPlayButton(main_window):
+def OnClickPlayButton(main_window: 'MainWindow'):
     setPlayButtonIcon(main_window)
     main_window.video_processor.process_video()
 
-def filterTargetVideos(main_window, search_text):
+def filterTargetVideos(main_window: 'MainWindow', search_text: str):
     search_text = search_text.lower()
     if search_text:
         for i in range(main_window.targetVideosList.count()):
@@ -213,7 +218,7 @@ def filterTargetVideos(main_window, search_text):
         for i in range(main_window.targetVideosList.count()):
             main_window.targetVideosList.item(i).setHidden(False)
 
-def filterInputFaces(main_window, search_text):
+def filterInputFaces(main_window: 'MainWindow', search_text: str):
     search_text = search_text.lower()
     if search_text:
         for i in range(main_window.inputFacesList.count()):
@@ -229,7 +234,7 @@ def filterInputFaces(main_window, search_text):
         for i in range(main_window.inputFacesList.count()):
             main_window.inputFacesList.item(i).setHidden(False)
 
-def initializeModelLoadDialog(main_window):
+def initializeModelLoadDialog(main_window: 'MainWindow'):
     main_window.model_load_dialog = ProgressDialog("Loading Models...This is gonna take a while.", "Cancel", 0, 100, main_window)
     main_window.model_load_dialog.setWindowModality(qtc.Qt.ApplicationModal)
     main_window.model_load_dialog.setMinimumDuration(2000)
@@ -240,7 +245,7 @@ def initializeModelLoadDialog(main_window):
     main_window.model_load_dialog.setValue(0)
     main_window.model_load_dialog.close()
 
-def find_target_faces(main_window):
+def find_target_faces(main_window: 'MainWindow'):
     video_processor = main_window.video_processor
     if video_processor.media_path:
         print(video_processor.media_capture)
@@ -283,14 +288,14 @@ def find_target_faces(main_window):
                     pixmap = get_pixmap_from_frame(main_window, face_img)
                     add_media_thumbnail_to_target_faces_list(main_window, face_img, face[1], pixmap)
 
-def clear_target_faces(main_window):
+def clear_target_faces(main_window: 'MainWindow'):
     main_window.targetFacesList.clear()
     for target_face in main_window.target_faces:
         del target_face
     main_window.target_faces = []
     main_window.selected_target_face_buttons = []
 
-def clear_input_faces(main_window):
+def clear_input_faces(main_window: 'MainWindow'):
     main_window.inputFacesList.clear()
     for target_face in main_window.input_faces:
         del target_face
