@@ -16,9 +16,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.video_processor = VideoProcessor(self)
         self.models_processor = ModelsProcessor(self)
         self.thread_pool = qtc.QThreadPool()
-        self.target_videos = [] #Contains button objects if target videos (Set as list instead of single video to support batch processing in future)
-        self.target_faces = [] #Contains button objects if target faces
-        self.input_faces = [] #Contains button objects if source faces (images)
+        self.target_videos = [] #Contains button objects of target videos (Set as list instead of single video to support batch processing in future)
+        self.target_faces = [] #Contains button objects of target faces
+        self.input_faces = [] #Contains button objects of source faces (images)
         self.selected_target_face_buttons = [] 
         self.selected_input_face_buttons = []
         self.selected_input_emb_buttons = []
