@@ -170,19 +170,19 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_8.addWidget(self.clearTargetFacesButton)
 
-        self.pushButton_4 = QPushButton(self.widget_2)
-        self.pushButton_4.setObjectName(u"pushButton_4")
-        self.pushButton_4.setCheckable(True)
-        self.pushButton_4.setFlat(True)
+        self.swapfacesButton = QPushButton(self.widget_2)
+        self.swapfacesButton.setObjectName(u"swapfacesButton")
+        self.swapfacesButton.setCheckable(True)
+        self.swapfacesButton.setFlat(True)
 
-        self.verticalLayout_8.addWidget(self.pushButton_4)
+        self.verticalLayout_8.addWidget(self.swapfacesButton)
 
-        self.pushButton_6 = QPushButton(self.widget_2)
-        self.pushButton_6.setObjectName(u"pushButton_6")
-        self.pushButton_6.setCheckable(True)
-        self.pushButton_6.setFlat(True)
+        self.editFacesButton = QPushButton(self.widget_2)
+        self.editFacesButton.setObjectName(u"editFacesButton")
+        self.editFacesButton.setCheckable(True)
+        self.editFacesButton.setFlat(True)
 
-        self.verticalLayout_8.addWidget(self.pushButton_6)
+        self.verticalLayout_8.addWidget(self.editFacesButton)
 
 
         self.gridLayout_2.addWidget(self.widget_2, 1, 0, 1, 1)
@@ -320,38 +320,21 @@ class Ui_MainWindow(object):
         self.face_swap_tab.setObjectName(u"face_swap_tab")
         self.verticalLayout_4 = QVBoxLayout(self.face_swap_tab)
         self.verticalLayout_4.setObjectName(u"verticalLayout_4")
-        self.label_tab3 = QLabel(self.face_swap_tab)
-        self.label_tab3.setObjectName(u"label_tab3")
-        self.label_tab3.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.swapWidgetsList = QListWidget(self.face_swap_tab)
+        self.swapWidgetsList.setObjectName(u"swapWidgetsList")
 
-        self.verticalLayout_4.addWidget(self.label_tab3)
+        self.verticalLayout_4.addWidget(self.swapWidgetsList)
 
         self.tabWidget.addTab(self.face_swap_tab, "")
         self.face_editor_tab = QWidget()
         self.face_editor_tab.setObjectName(u"face_editor_tab")
         self.verticalLayout_3 = QVBoxLayout(self.face_editor_tab)
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
-        self.label_tab2 = QLabel(self.face_editor_tab)
-        self.label_tab2.setObjectName(u"label_tab2")
-        self.label_tab2.setEnabled(True)
-        sizePolicy4.setHeightForWidth(self.label_tab2.sizePolicy().hasHeightForWidth())
-        self.label_tab2.setSizePolicy(sizePolicy4)
-        self.label_tab2.setMaximumSize(QSize(16777215, 16777215))
-        self.label_tab2.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        self.verticalLayout_3.addWidget(self.label_tab2)
-
         self.tabWidget.addTab(self.face_editor_tab, "")
         self.settings_tab = QWidget()
         self.settings_tab.setObjectName(u"settings_tab")
         self.verticalLayout_2 = QVBoxLayout(self.settings_tab)
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
-        self.label_tab1 = QLabel(self.settings_tab)
-        self.label_tab1.setObjectName(u"label_tab1")
-        self.label_tab1.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        self.verticalLayout_2.addWidget(self.label_tab1)
-
         self.tabWidget.addTab(self.settings_tab, "")
 
         self.gridLayout_5.addWidget(self.tabWidget, 0, 0, 1, 1)
@@ -361,7 +344,7 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
 
-        self.pushButton_6.setDefault(False)
+        self.editFacesButton.setDefault(False)
         self.tabWidget.setCurrentIndex(0)
 
 
@@ -376,8 +359,8 @@ class Ui_MainWindow(object):
         self.pushButton_2.setText("")
         self.findTargetFacesButton.setText(QCoreApplication.translate("MainWindow", u"Find Faces", None))
         self.clearTargetFacesButton.setText(QCoreApplication.translate("MainWindow", u"Clear Faces", None))
-        self.pushButton_4.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
-        self.pushButton_6.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
+        self.swapfacesButton.setText(QCoreApplication.translate("MainWindow", u"Swap Faces", None))
+        self.editFacesButton.setText(QCoreApplication.translate("MainWindow", u"Edit Faces", None))
         self.inputEmbeddingsSearchBox.setPlaceholderText(QCoreApplication.translate("MainWindow", u"Search Embeddings", None))
         self.input_Target_DockWidget.setWindowTitle(QCoreApplication.translate("MainWindow", u"Target Videos and Input Faces", None))
         self.groupBox_TargetVideos_Select.setTitle(QCoreApplication.translate("MainWindow", u"Target Videos/Images", None))
@@ -392,11 +375,8 @@ class Ui_MainWindow(object):
         self.buttonSelectInputFacesFiles.setText(QCoreApplication.translate("MainWindow", u"Select Files", None))
         self.inputFacesSearchBox.setPlaceholderText(QCoreApplication.translate("MainWindow", u"Search Faces", None))
         self.controlOptionsDockWidget.setWindowTitle(QCoreApplication.translate("MainWindow", u"Control Options", None))
-        self.label_tab3.setText(QCoreApplication.translate("MainWindow", u"Face Swap", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.face_swap_tab), QCoreApplication.translate("MainWindow", u"Face Swap", None))
-        self.label_tab2.setText(QCoreApplication.translate("MainWindow", u"Face Editor", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.face_editor_tab), QCoreApplication.translate("MainWindow", u"Face Editor", None))
-        self.label_tab1.setText(QCoreApplication.translate("MainWindow", u"Settings", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.settings_tab), QCoreApplication.translate("MainWindow", u"Settings", None))
     # retranslateUi
 

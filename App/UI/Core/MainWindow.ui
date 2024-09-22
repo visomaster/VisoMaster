@@ -278,9 +278,9 @@
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="pushButton_4">
+              <widget class="QPushButton" name="swapfacesButton">
                <property name="text">
-                <string>PushButton</string>
+                <string>Swap Faces</string>
                </property>
                <property name="checkable">
                 <bool>true</bool>
@@ -291,9 +291,9 @@
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="pushButton_6">
+              <widget class="QPushButton" name="editFacesButton">
                <property name="text">
-                <string>PushButton</string>
+                <string>Edit Faces</string>
                </property>
                <property name="checkable">
                 <bool>true</bool>
@@ -491,14 +491,7 @@
         </attribute>
         <layout class="QVBoxLayout" name="verticalLayout_4">
          <item>
-          <widget class="QLabel" name="label_tab3">
-           <property name="text">
-            <string>Face Swap</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignmentFlag::AlignCenter</set>
-           </property>
-          </widget>
+          <widget class="QListWidget" name="swapWidgetsList"/>
          </item>
         </layout>
        </widget>
@@ -506,50 +499,13 @@
         <attribute name="title">
          <string>Face Editor</string>
         </attribute>
-        <layout class="QVBoxLayout" name="verticalLayout_3">
-         <item>
-          <widget class="QLabel" name="label_tab2">
-           <property name="enabled">
-            <bool>true</bool>
-           </property>
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>16777215</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>Face Editor</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignmentFlag::AlignCenter</set>
-           </property>
-          </widget>
-         </item>
-        </layout>
+        <layout class="QVBoxLayout" name="verticalLayout_3"/>
        </widget>
        <widget class="QWidget" name="settings_tab">
         <attribute name="title">
          <string>Settings</string>
         </attribute>
-        <layout class="QVBoxLayout" name="verticalLayout_2">
-         <item>
-          <widget class="QLabel" name="label_tab1">
-           <property name="text">
-            <string>Settings</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignmentFlag::AlignCenter</set>
-           </property>
-          </widget>
-         </item>
-        </layout>
+        <layout class="QVBoxLayout" name="verticalLayout_2"/>
        </widget>
       </widget>
      </item>

@@ -4,14 +4,16 @@ from PySide6 import QtWidgets, QtGui
 import time
 import App.Helpers.Misc_Helpers as misc_helpers 
 import App.UI.Widgets.UI_Workers as ui_workers
-from App.UI.Widgets.WidgetComponents import TargetMediaCardButton, ProgressDialog, TargetFaceCardButton, InputFaceCardButton
+from App.UI.Widgets.WidgetComponents import TargetMediaCardButton, ProgressDialog, TargetFaceCardButton, InputFaceCardButton, FormGroupBox, ToggleButton, SelectionBox
+from PySide6.QtWidgets import QComboBox
+
 import App.UI.Widgets.WidgetActions as widget_actions 
 from functools import partial
 import cv2
 from App.UI.Core import media_rc
 import torch
 import numpy
-
+from App.UI.Widgets.LayoutData import SWAPPER_LAYOUT_DATA
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -301,3 +303,93 @@ def clear_input_faces(main_window: 'MainWindow'):
         del target_face
     main_window.input_faces = []
     main_window.selected_input_face_buttons = []
+
+
+# def test_create_gbox(main_window: 'MainWindow'):
+#     group_box = FormGroupBox(main_window=main_window, title="User Details")
+#     main_window.formLayoutSwap.addWidget(group_box)
+
+# def create_and_get_widget(main_window: 'MainWindow', widget_name,  widget_data):
+#     WidgetClass = widget_data['widget_class']
+#     if WidgetClass==ToggleButton:
+#         toggle_button = ToggleButton(widget_name=widget_name)
+#         return toggle_button, WidgetClass
+#     elif WidgetClass==QComboBox:
+#         select_box = QComboBox()
+#         select_box.addItems(widget_data['options'])
+#         return select_box, WidgetClass
+
+# def add_groupbox_and_widgets_from_layout_map(main_window: 'MainWindow',):
+#     for group_name in SWAPPER_LAYOUT_MAP.keys():
+#         group_box = FormGroupBox(main_window=main_window, title=group_name)
+#         group_box.setFlat(True)
+#         row=0
+#         for widget_name in SWAPPER_LAYOUT_MAP[group_name].keys():
+#             label = SWAPPER_LAYOUT_MAP[group_name][widget_name]['label']
+#             widget, WidgetClass = create_and_get_widget(main_window, widget_name=widget_name, widget_data=SWAPPER_LAYOUT_MAP[group_name][widget_name])
+#             if WidgetClass==ToggleButton:
+#                 col1, col2 = 2, 1
+#                 colsp1, colsp2 = 1,2
+
+#             else:
+#                 col1, col2 = 1, 2
+#                 colsp1, colsp2 = 1,1
+#             group_box.grid_layout.addWidget(QtWidgets.QLabel(label), row, col1, 1, colsp1)
+#             group_box.grid_layout.addWidget(widget, row, col2, 1, colsp2)
+#             group_box.grid_layout.setColumnStretch(1, 1)
+#             row+=1
+#         main_window.formLayoutSwap.addWidget(group_box)
+
+def add_parameter_widgets(main_window: 'MainWindow'):
+
+    for category, widgets in SWAPPER_LAYOUT_DATA.items():
+        group_box = FormGroupBox(main_window, title=category)
+        group_box.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
+        category_layout = QtWidgets.QFormLayout()
+        group_box.setLayout(category_layout)
+
+        for widget_name, widget_data in widgets.items():
+            label = QtWidgets.QLabel(widget_data['label'])
+            if 'Toggle' in widget_name:
+                widget = ToggleButton(label=widget_data['label'], widget_name=widget_name, group_layout_data=widgets, label_widget=label, main_window=main_window)
+                widget.setChecked(widget_data['default'])
+            elif 'Selection' in widget_name:
+                widget = SelectionBox(label=widget_data['label'], widget_name=widget_name, group_layout_data=widgets, label_widget=label, main_window=main_window)
+                widget.addItems(widget_data['options'])
+                widget.setCurrentText(widget_data['default'])
+
+            category_layout.addRow(label, widget)
+            spacing_level = widget_data['level']
+            label.setContentsMargins(spacing_level*10, 0, 0, 0)
+            main_window.parameter_widgets[widget_name] = widget
+
+        item = QtWidgets.QListWidgetItem(category)
+        item.setSizeHint(group_box.sizeHint())
+        main_window.swapWidgetsList.addItem(item)
+        main_window.swapWidgetsList.setItemWidget(item, group_box)
+
+def hide_child_elements(main_window: 'MainWindow', parent_widget, parent_widget_name, selectionValue='', toggleValue=None):
+    if main_window.parameter_widgets:
+        group_layout_data = parent_widget.group_layout_data
+        if 'Selection' in  parent_widget_name:
+            for widget_name in group_layout_data.keys():
+                current_widget = main_window.parameter_widgets.get(widget_name, False)
+                if group_layout_data[widget_name].get('parentSelection', '') == parent_widget_name and current_widget:
+                    if group_layout_data[widget_name].get('requiredSelectionValue') != parent_widget.currentText():
+                        current_widget.hide()
+                        current_widget.label_widget.hide()
+
+                    else:
+                        current_widget.show()
+                        current_widget.label_widget.show()
+
+        elif 'Toggle' in parent_widget_name:
+            for widget_name in group_layout_data.keys():
+                current_widget = main_window.parameter_widgets[widget_name]
+                if group_layout_data[widget_name].get('parentToggle', '') == parent_widget_name:
+                    if group_layout_data[widget_name].get('requiredToggleValue') == parent_widget.isChecked():
+                        current_widget.hide()
+                        current_widget.label_widget.hide()
+                    else:
+                        current_widget.show()
+                        current_widget.label_widget.show()

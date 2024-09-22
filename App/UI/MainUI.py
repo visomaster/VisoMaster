@@ -24,6 +24,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.selected_input_emb_buttons = []
         self.selected_video_buttons = [] #Contains list of buttons linked to videos/images
         self.parameters = {}
+        self.parameters_list = {}
+        self.control = {}
+        self.parameter_widgets = {}
 
     def initialize_widgets(self):
         # Initialize QListWidget for target media
@@ -40,7 +43,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.scene = QtWidgets.QGraphicsScene()
         self.graphicsViewFrame.setScene(self.scene)
         # Event filter to start playing when clicking on frame
-        graphics_event_filter = GraphicsViewEventFilter(self.graphicsViewFrame)
+        graphics_event_filter = GraphicsViewEventFilter(self, self.graphicsViewFrame,)
         self.graphicsViewFrame.installEventFilter(graphics_event_filter)
 
         self.buttonSelectTargetVideos.clicked.connect(partial(widget_actions.onClickSelectTargetVideos, self, 'folder'))
@@ -59,6 +62,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.update_frame_signal.connect(widget_actions.update_graphics_view)
 
         widget_actions.initializeModelLoadDialog(self)
+        widget_actions.add_parameter_widgets(self)
+
+        # widget_actions.add_groupbox_and_widgets_from_layout_map(self)
     def __init__(self):
         super(MainWindow, self).__init__()
         self.setupUi(self)

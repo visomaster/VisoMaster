@@ -1,4 +1,5 @@
 import os
+from PySide6 import QtWidgets
 image_extensions = ('.png', '.jpg', '.jpeg', '.bmp', '.gif')
 video_extensions = ('.mp4', '.avi', '.mov', '.mkv')
 

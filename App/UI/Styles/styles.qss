@@ -102,3 +102,25 @@ QSlider::groove:horizontal:disabled {
 QSlider::sub-page:horizontal:disabled {
     background-color: #bdc3c7;        /* Lighter gray completed part when disabled */
 }
+
+
+ToggleButton {
+    border: 0px;
+    border-radius: 6px;
+    background-color: #dc2626;
+    text-align: center;
+    padding: 2px;
+
+}
+ToggleButton:hover {
+    background-color: #232323;
+} 
+ToggleButton:pressed {
+    background-color: #38b845;
+}
+ToggleButton:checked {
+    background-color: #38b845;
+}
+ToggleButton:default {
+    border-color: none; /* make the default button prominent */
+} 
