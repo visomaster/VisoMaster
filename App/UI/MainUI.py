@@ -6,7 +6,7 @@ from functools import partial
 from App.Processors.VideoProcessor import VideoProcessor
 from App.Processors.ModelsProcessor import ModelsProcessor
 from App.UI.Widgets.WidgetComponents import GraphicsViewEventFilter
-
+from App.UI.Widgets.LayoutData import SWAPPER_LAYOUT_DATA
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     update_frame_signal = qtc.Signal(Ui_MainWindow, QtGui.QPixmap, int)
@@ -62,7 +62,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.update_frame_signal.connect(widget_actions.update_graphics_view)
 
         widget_actions.initializeModelLoadDialog(self)
-        widget_actions.add_parameter_widgets(self)
+        widget_actions.add_parameter_widgets(self, LAYOUT_DATA=SWAPPER_LAYOUT_DATA, layoutWidget=self.swapWidgetsLayout)
 
 
         # widget_actions.add_groupbox_and_widgets_from_layout_map(self)

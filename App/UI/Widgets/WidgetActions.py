@@ -341,7 +341,7 @@ def clear_input_faces(main_window: 'MainWindow'):
 #         main_window.formLayoutSwap.addWidget(group_box)
 
 
-def add_parameter_widgets(main_window: 'MainWindow'):
+def add_parameter_widgets(main_window: 'MainWindow', LAYOUT_DATA: dict, layoutWidget: QtWidgets.QVBoxLayout):
     layout = QtWidgets.QVBoxLayout()
     scroll_area = QtWidgets.QScrollArea()
     scroll_area.setWidgetResizable(True)
@@ -349,52 +349,79 @@ def add_parameter_widgets(main_window: 'MainWindow'):
     scroll_content.setLayout(layout)
     scroll_area.setWidget(scroll_content)
 
-    for category, widgets in SWAPPER_LAYOUT_DATA.items():
+    for category, widgets in LAYOUT_DATA.items():
         group_box = FormGroupBox(main_window, title=category)
         group_box.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         category_layout = QtWidgets.QFormLayout()
         group_box.setLayout(category_layout)
 
         for widget_name, widget_data in widgets.items():
-            label = QtWidgets.QLabel(widget_data['label'])
+            spacing_level = widget_data['level']
+            # Create a horizontal layout for the toggle button and its label
             if 'Toggle' in widget_name:
-                widget = ToggleButton(label=widget_data['label'], widget_name=widget_name, group_layout_data=widgets, label_widget=label, main_window=main_window)
+                widget = ToggleButton(label=widget_data['label'], widget_name=widget_name, group_layout_data=widgets, label_widget=None, main_window=main_window)
                 widget.setChecked(widget_data['default'])
+                
+                # Create a horizontal layout
+                horizontal_layout = QtWidgets.QHBoxLayout()
+                horizontal_layout.addWidget(widget)  # Add the toggle button
+                label = QtWidgets.QLabel(widget_data['label'])  # Create the label separately
+                horizontal_layout.addWidget(label)  # Add the label
+                
+                category_layout.addRow(horizontal_layout)  # Add the horizontal layout to the form layout
+
             elif 'Selection' in widget_name:
+                label = QtWidgets.QLabel(widget_data['label'])
                 widget = SelectionBox(label=widget_data['label'], widget_name=widget_name, group_layout_data=widgets, label_widget=label, main_window=main_window)
                 widget.addItems(widget_data['options'])
                 widget.setCurrentText(widget_data['default'])
 
-            category_layout.addRow(label, widget)
-            spacing_level = widget_data['level']
-            label.setContentsMargins(spacing_level * 10, 0, 0, 0)
+                horizontal_layout = QtWidgets.QHBoxLayout()
+                horizontal_layout.addWidget(label)
+                horizontal_layout.addWidget(widget)
+                category_layout.addRow(horizontal_layout)
+            horizontal_layout.setContentsMargins(spacing_level * 10, 0, 0, 0)
+
             main_window.parameter_widgets[widget_name] = widget
 
         layout.addWidget(group_box)
 
-    main_window.swapWidgetsLayout.addWidget(scroll_area)
+    layoutWidget.addWidget(scroll_area)
 
+    # Default show/hide widgets
+    for category, widgets in LAYOUT_DATA.items():
+        for widget_name, widget_data in widgets.items():
+            widget = main_window.parameter_widgets[widget_name]
+            show_hide_related_widgets(main_window, widget, widget_name)
 
-def hide_child_elements(main_window: 'MainWindow', parent_widget, parent_widget_name, value1=False, value2=False):
+# Function to Hide Elements conditionally from values in LayoutData
+def show_hide_related_widgets(main_window: 'MainWindow', parent_widget: ToggleButton | QComboBox, parent_widget_name, value1=False, value2=False):
     if main_window.parameter_widgets:
-        group_layout_data = parent_widget.group_layout_data
-        if 'Selection' in  parent_widget_name:
+        group_layout_data = parent_widget.group_layout_data #Dictionary contaning layout data of all elements in the group of the parent_widget
+        if 'Selection' in parent_widget_name:
+            # Loop through all widgets data in the parent widget's group layout data
             for widget_name in group_layout_data.keys():
+                # Store the widget object (instance) from the parameters_widgets Dictionary
                 current_widget = main_window.parameter_widgets.get(widget_name, False)
+                # Check if the current_widget depends on the Parent Widget's (selection) value 
                 if group_layout_data[widget_name].get('parentSelection', '') == parent_widget_name and current_widget:
+                    # Check if the current_widget has the required value of Parent Widget's (selection) current value to hide/show the current_widget
                     if group_layout_data[widget_name].get('requiredSelectionValue') != parent_widget.currentText():
                         current_widget.hide()
                         current_widget.label_widget.hide()
-
                     else:
                         current_widget.show()
                         current_widget.label_widget.show()
 
         elif 'Toggle' in parent_widget_name:
+            # Loop through all widgets data in the parent widget's group layout data
             for widget_name in group_layout_data.keys():
+                # Store the widget object (instance) from the parameters_widgets Dictionary
                 current_widget = main_window.parameter_widgets[widget_name]
+                # Check if the current_widget depends on the Parent Widget's (toggle) value 
                 if group_layout_data[widget_name].get('parentToggle', '') == parent_widget_name:
-                    if group_layout_data[widget_name].get('requiredToggleValue') == parent_widget.isChecked():
+                    # Check if the current_widget has the required toggle value of Parent Widget's (toggle) checked state to hide/show the current_widget
+                    if group_layout_data[widget_name].get('requiredToggleValue') != parent_widget.isChecked():
                         current_widget.hide()
                         current_widget.label_widget.hide()
                     else:

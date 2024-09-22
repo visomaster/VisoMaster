@@ -159,16 +159,12 @@ class SelectionBox(QtWidgets.QComboBox, ParametersWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         ParametersWidget.__init__(self, *args, **kwargs)
-        self.currentTextChanged.connect(partial(widget_actions.hide_child_elements, self.main_window, self, self.widget_name, ))
+        self.currentTextChanged.connect(partial(widget_actions.show_hide_related_widgets, self.main_window, self, self.widget_name, ))
     
 class ToggleButton(QtWidgets.QCheckBox, ParametersWidget):
     _circle_position = None
 
-    def __init__(self, 
-                 bg_color="#000000", 
-                 circle_color="#ffffff", 
-                 active_color="#5af542",
-                 *args, **kwargs):
+    def __init__(self, bg_color="#000000", circle_color="#ffffff", active_color="#16a085", *args, **kwargs):
         
         super().__init__(*args, **kwargs)
         ParametersWidget.__init__(self, *args, **kwargs)
@@ -181,7 +177,7 @@ class ToggleButton(QtWidgets.QCheckBox, ParametersWidget):
         self._circle_color = circle_color
         self._active_color = active_color
         self._circle_position = 1 
-        self.stateChanged.connect(partial(widget_actions.hide_child_elements, self.main_window, self, self.widget_name, None))
+        self.stateChanged.connect(partial(widget_actions.show_hide_related_widgets, self.main_window, self, self.widget_name, None))
 
         
     def paintEvent(self, e):
