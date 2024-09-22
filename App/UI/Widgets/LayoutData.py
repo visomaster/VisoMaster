@@ -12,6 +12,6 @@ SWAPPER_LAYOUT_DATA = {
         'DetectorModelSelection': { 'level': 1, 'label': 'Face Detect Model', 'options': ['Retinaface', 'YoloV8', 'SCRFD'], 'default': 'Retinaface',},
         'LandmarkDetectToggle': {'level': 1, 'label': 'Enable Landmark Detection', 'default': False, },
             'LandmarkDetectModelSelection': {'level': 2, 'label': 'Landmark Detect Model', 'options': ['68', '3d68', '202'],  'default': '68', 'parentToggle': 'LandmarkDetectToggle', 'requiredToggleValue': True}
-    }
+    },
 
 }

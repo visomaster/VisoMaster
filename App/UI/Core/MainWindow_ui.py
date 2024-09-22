@@ -320,10 +320,10 @@ class Ui_MainWindow(object):
         self.face_swap_tab.setObjectName(u"face_swap_tab")
         self.verticalLayout_4 = QVBoxLayout(self.face_swap_tab)
         self.verticalLayout_4.setObjectName(u"verticalLayout_4")
-        self.swapWidgetsList = QListWidget(self.face_swap_tab)
-        self.swapWidgetsList.setObjectName(u"swapWidgetsList")
+        self.swapWidgetsLayout = QVBoxLayout()
+        self.swapWidgetsLayout.setObjectName(u"swapWidgetsLayout")
 
-        self.verticalLayout_4.addWidget(self.swapWidgetsList)
+        self.verticalLayout_4.addLayout(self.swapWidgetsLayout)
 
         self.tabWidget.addTab(self.face_swap_tab, "")
         self.face_editor_tab = QWidget()

@@ -64,6 +64,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         widget_actions.initializeModelLoadDialog(self)
         widget_actions.add_parameter_widgets(self)
 
+
         # widget_actions.add_groupbox_and_widgets_from_layout_map(self)
     def __init__(self):
         super(MainWindow, self).__init__()

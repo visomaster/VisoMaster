@@ -340,11 +340,18 @@ def clear_input_faces(main_window: 'MainWindow'):
 #             row+=1
 #         main_window.formLayoutSwap.addWidget(group_box)
 
+
 def add_parameter_widgets(main_window: 'MainWindow'):
+    layout = QtWidgets.QVBoxLayout()
+    scroll_area = QtWidgets.QScrollArea()
+    scroll_area.setWidgetResizable(True)
+    scroll_content = QtWidgets.QWidget()
+    scroll_content.setLayout(layout)
+    scroll_area.setWidget(scroll_content)
 
     for category, widgets in SWAPPER_LAYOUT_DATA.items():
         group_box = FormGroupBox(main_window, title=category)
-        group_box.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
+        group_box.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         category_layout = QtWidgets.QFormLayout()
         group_box.setLayout(category_layout)
 
@@ -360,15 +367,15 @@ def add_parameter_widgets(main_window: 'MainWindow'):
 
             category_layout.addRow(label, widget)
             spacing_level = widget_data['level']
-            label.setContentsMargins(spacing_level*10, 0, 0, 0)
+            label.setContentsMargins(spacing_level * 10, 0, 0, 0)
             main_window.parameter_widgets[widget_name] = widget
 
-        item = QtWidgets.QListWidgetItem(category)
-        item.setSizeHint(group_box.sizeHint())
-        main_window.swapWidgetsList.addItem(item)
-        main_window.swapWidgetsList.setItemWidget(item, group_box)
+        layout.addWidget(group_box)
 
-def hide_child_elements(main_window: 'MainWindow', parent_widget, parent_widget_name, selectionValue='', toggleValue=None):
+    main_window.swapWidgetsLayout.addWidget(scroll_area)
+
+
+def hide_child_elements(main_window: 'MainWindow', parent_widget, parent_widget_name, value1=False, value2=False):
     if main_window.parameter_widgets:
         group_layout_data = parent_widget.group_layout_data
         if 'Selection' in  parent_widget_name:

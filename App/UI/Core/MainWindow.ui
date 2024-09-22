@@ -491,7 +491,7 @@
         </attribute>
         <layout class="QVBoxLayout" name="verticalLayout_4">
          <item>
-          <widget class="QListWidget" name="swapWidgetsList"/>
+          <layout class="QVBoxLayout" name="swapWidgetsLayout"/>
          </item>
         </layout>
        </widget>
