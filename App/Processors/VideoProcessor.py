@@ -74,7 +74,7 @@ class VideoProcessor(QObject):
         elif self.file_type == 'image':
             self.processing = True
             self.max_frame_number = 1
-            self.create_threads()  # Start worker threads for image processing
+            self.create_threads(threads_count=1)  # Start worker threads for image processing
             self.timer.start(10)
 
     def process_next_frame(self):
@@ -104,7 +104,7 @@ class VideoProcessor(QObject):
         elif self.file_type == 'image':
             frame = cv2.imread(self.media_path)
             self.frame_queue.put((self.current_frame_number, frame))
-
+            self.processing = False
         self.current_frame_number += 1
 
     def stop_processing(self):

@@ -11,9 +11,12 @@ from math import floor, ceil
 import numpy as np
 from App.Processors.Utils import FaceUtil as faceutil
 import threading
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from App.UI.MainUI import MainWindow
 lock = threading.Lock()
 class FrameWorker(threading.Thread):
-    def __init__(self, frame, main_window, current_frame_number):
+    def __init__(self, frame, main_window: 'MainWindow', current_frame_number):
         super().__init__()
         self.current_frame_number = current_frame_number
         self.frame = frame
@@ -22,12 +25,14 @@ class FrameWorker(threading.Thread):
         # self.graphicsViewFrame = graphicsViewFrame
 
     def run(self):
+        self.parameters = self.main_window.parameters.copy()
         self.frame = self.process_swap()
         # Convert the frame (which is a NumPy array) to QImage
         scaled_pixmap = widget_actions.get_pixmap_from_frame(self.main_window, self.frame)
         self.main_window.update_frame_signal.emit(self.main_window, scaled_pixmap, self.current_frame_number)
 
     def process_swap(self):
+        parameters = self.parameters
         # Load frame into VRAM
         img = torch.from_numpy(self.frame.astype('uint8')).to('cuda') #HxWxc
         img = img.permute(2,0,1)#cxHxW
@@ -64,7 +69,7 @@ class FrameWorker(threading.Thread):
 
             det_scale = torch.div(new_height, img_y)
 
-        bboxes, kpss_5, kpss = self.models_processor.run_detect(img,max_num=2)
+        bboxes, kpss_5, kpss = self.models_processor.run_detect(img,max_num=2, score=parameters['DetectorScoreSlider']/100)
         ret = []
         if len(kpss_5)>0:
             for i in range(kpss_5.shape[0]):

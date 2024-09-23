@@ -336,11 +336,11 @@ def add_parameter_widgets(main_window: 'MainWindow', LAYOUT_DATA: dict, layoutWi
                 category_layout.addRow(horizontal_layout)  # Add the horizontal layout to the form layout
 
                 # Initialize parameter value
-                create_update_parameter(main_window, widget_name, widget_data['default'])
+                create_parameter(main_window, widget_name, widget_data['default'])
                 # Set onclick function for toggle button
                 def onchange(toggle_widget: ToggleButton, toggle_widget_name):
                     toggle_state = toggle_widget.isChecked()
-                    create_update_parameter(main_window, toggle_widget_name, toggle_state)    
+                    update_parameter(main_window, toggle_widget_name, toggle_state)    
                 widget.clicked.connect(partial(onchange, widget, widget_name))
 
             elif 'Selection' in widget_name:
@@ -354,11 +354,11 @@ def add_parameter_widgets(main_window: 'MainWindow', LAYOUT_DATA: dict, layoutWi
                 category_layout.addRow(horizontal_layout)
 
                 # Initialize parameter value
-                create_update_parameter(main_window, widget_name, widget_data['default'])
+                create_parameter(main_window, widget_name, widget_data['default'])
                 # Set onchange function for select box (Selected value is passed by the signal)
                 def onchange(selection_widget: SelectionBox, selection_widget_name, selected_value=False):
                     # selected_value = selection_widget.currentText()
-                    create_update_parameter(main_window, selection_widget_name, selected_value)
+                    update_parameter(main_window, selection_widget_name, selected_value)
                     print(main_window.parameters)
                 widget.currentTextChanged.connect(partial(onchange, widget, widget_name))
 
@@ -379,11 +379,11 @@ def add_parameter_widgets(main_window: 'MainWindow', LAYOUT_DATA: dict, layoutWi
                 category_layout.addRow(horizontal_layout)
 
                 # Initialize parameter value
-                create_update_parameter(main_window, widget_name, widget_data['default'])
+                create_parameter(main_window, widget_name, int(widget_data['default']))
 
                 # When slider value is change
                 def onchange_slider(slider_widget: ParameterSlider, slider_widget_name, new_value=False):
-                    create_update_parameter(main_window, slider_widget_name, new_value)
+                    update_parameter(main_window, slider_widget_name, new_value)
                     # Update the slider text box value too
                     slider_widget.line_edit.setText(str(new_value))
                     print(main_window.parameters)
@@ -392,7 +392,7 @@ def add_parameter_widgets(main_window: 'MainWindow', LAYOUT_DATA: dict, layoutWi
                 # When slider textbox value is changed
                 def onchange_line_edit(slider_widget: ParameterSlider, slider_widget_name, new_value=False):
                     new_value = int(new_value) #Text box value is sent as str by default
-                    create_update_parameter(main_window, slider_widget_name, new_value)
+                    update_parameter(main_window, slider_widget_name, new_value)
                     # Prevent the text box value from going above the maximum value of the slider
                     if new_value>slider_widget.max_value and new_value>0:
                         new_value = new_value % (slider_widget.max_value+1)
@@ -452,5 +452,21 @@ def show_hide_related_widgets(main_window: 'MainWindow', parent_widget: ToggleBu
                         if current_widget.line_edit:
                             current_widget.line_edit.show()
 
-def create_update_parameter(main_window: 'MainWindow', parameter_name, parameter_value):
+def create_parameter(main_window: 'MainWindow', parameter_name, parameter_value):
     main_window.parameters[parameter_name] = parameter_value
+
+def update_parameter(main_window: 'MainWindow', parameter_name, parameter_value):
+    main_window.parameters[parameter_name] = parameter_value
+    refresh_frame(main_window)
+
+def refresh_frame(main_window: 'MainWindow'):
+    video_processor = main_window.video_processor
+    if not video_processor.processing:
+        if video_processor.current_frame_number>0:
+            video_processor.current_frame_number-=1
+        if video_processor.media_capture:
+            video_processor.media_capture.set(cv2.CAP_PROP_POS_FRAMES, video_processor.current_frame_number)
+        video_processor.processing=True
+        video_processor.create_threads(threads_count=1)
+        video_processor.process_next_frame()
+        video_processor.processing=False

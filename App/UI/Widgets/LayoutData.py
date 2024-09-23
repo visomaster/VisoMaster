@@ -31,7 +31,7 @@ SWAPPER_LAYOUT_DATA = {
         'DetectorScoreSlider': {
             'level': 1,
             'label': 'Detect Score',
-            'min_value': '0',
+            'min_value': '1',
             'max_value': '100',
             'default': '50',
         },
@@ -57,7 +57,7 @@ SWAPPER_LAYOUT_DATA = {
         'LandmarkDetectScoreSlider': {
             'level': 2,
             'label': 'Landmark Detect Score',
-            'min_value': '0',
+            'min_value': '1',
             'max_value': '100',
             'default': '50',
             'parentToggle': 'LandmarkDetectToggle',

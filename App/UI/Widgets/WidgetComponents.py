@@ -50,7 +50,7 @@ class TargetMediaCardButton(QPushButton):
 
         elif self.file_type=='image':
             frame = cv2.imread(self.media_path)
-            max_frames_number = 1
+            max_frames_number = 0
         if not isinstance(frame,bool):
             # Convert the frame to QPixmap
             height, width, channel = frame.shape
@@ -95,6 +95,7 @@ class TargetFaceCardButton(QPushButton):
             main_window.selected_target_face_buttons.pop(0)
         if self.isChecked():
             main_window.selected_target_face_buttons.append(self)
+        widget_actions.refresh_frame(main_window)
 
 
 class InputFaceCardButton(QPushButton):
@@ -121,6 +122,9 @@ class InputFaceCardButton(QPushButton):
                 main_window.selected_input_face_buttons.pop(i)
         if self.isChecked():
             main_window.selected_input_face_buttons.append(self)
+
+        widget_actions.refresh_frame(main_window)
+
 # Custom progress dialog
 class ProgressDialog(QtWidgets.QProgressDialog):
     pass

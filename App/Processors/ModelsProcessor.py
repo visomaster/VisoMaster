@@ -105,7 +105,6 @@ class ModelsProcessor(QObject):
         bboxes = []
         kpss_5 = []
         kpss = []
-
         if detect_mode=='Retinaface':
             if not self.models['Retinaface']:
                 self.models['Retinaface'] = self.load_model('Retinaface')
