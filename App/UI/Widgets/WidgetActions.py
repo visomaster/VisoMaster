@@ -327,13 +327,21 @@ def add_parameter_widgets(main_window: 'MainWindow', LAYOUT_DATA: dict, layoutWi
             if 'Toggle' in widget_name:
                 widget = ToggleButton(label=widget_data['label'], widget_name=widget_name, group_layout_data=widgets, label_widget=None, main_window=main_window)
                 widget.setChecked(widget_data['default'])
-                
                 # Create a horizontal layout
                 horizontal_layout = QtWidgets.QHBoxLayout()
+                # In case of toggle button, add show widget first, then its label
                 horizontal_layout.addWidget(widget)  # Add the toggle button
                 horizontal_layout.addWidget(label)  # Add the label
                 
                 category_layout.addRow(horizontal_layout)  # Add the horizontal layout to the form layout
+
+                # Initialize parameter value
+                create_update_parameter(main_window, widget_name, widget_data['default'])
+                # Set onclick function for toggle button
+                def onchange(toggle_widget: ToggleButton, toggle_widget_name):
+                    toggle_state = toggle_widget.isChecked()
+                    create_update_parameter(main_window, toggle_widget_name, toggle_state)    
+                widget.clicked.connect(partial(onchange, widget, widget_name))
 
             elif 'Selection' in widget_name:
                 widget = SelectionBox(label=widget_data['label'], widget_name=widget_name, group_layout_data=widgets, label_widget=label, main_window=main_window)
@@ -345,12 +353,22 @@ def add_parameter_widgets(main_window: 'MainWindow', LAYOUT_DATA: dict, layoutWi
                 horizontal_layout.addWidget(widget)
                 category_layout.addRow(horizontal_layout)
 
+                # Initialize parameter value
+                create_update_parameter(main_window, widget_name, widget_data['default'])
+                # Set onchange function for select box (Selected value is passed by the signal)
+                def onchange(selection_widget: SelectionBox, selection_widget_name, selected_value=False):
+                    # selected_value = selection_widget.currentText()
+                    create_update_parameter(main_window, selection_widget_name, selected_value)
+                    print(main_window.parameters)
+                widget.currentTextChanged.connect(partial(onchange, widget, widget_name))
+
+
             elif 'Slider' in widget_name:
                 widget = ParameterSlider(label=widget_data['label'], widget_name=widget_name, group_layout_data=widgets, label_widget=label, min_value=widget_data['min_value'], max_value=widget_data['max_value'], default_value=widget_data['default'], main_window=main_window)
                 line_edit = QtWidgets.QLineEdit()
                 line_edit.setFixedWidth(38)  # Make the line edit narrower
                 line_edit.setMaxLength(3)
-                line_edit.setValidator(QtGui.QIntValidator())  # Restrict input to numbers
+                line_edit.setValidator(QtGui.QIntValidator(int(widget_data['min_value']), int(widget_data['max_value'])))  # Restrict input to numbers
                 line_edit.setText(widget_data['default'])
                 widget.line_edit = line_edit
 
@@ -359,6 +377,28 @@ def add_parameter_widgets(main_window: 'MainWindow', LAYOUT_DATA: dict, layoutWi
                 horizontal_layout.addWidget(widget)
                 horizontal_layout.addWidget(line_edit)
                 category_layout.addRow(horizontal_layout)
+
+                # Initialize parameter value
+                create_update_parameter(main_window, widget_name, widget_data['default'])
+
+                # When slider value is change
+                def onchange_slider(slider_widget: ParameterSlider, slider_widget_name, new_value=False):
+                    create_update_parameter(main_window, slider_widget_name, new_value)
+                    # Update the slider text box value too
+                    slider_widget.line_edit.setText(str(new_value))
+                    print(main_window.parameters)
+                widget.valueChanged.connect(partial(onchange_slider, widget, widget_name))
+
+                # When slider textbox value is changed
+                def onchange_line_edit(slider_widget: ParameterSlider, slider_widget_name, new_value=False):
+                    new_value = int(new_value) #Text box value is sent as str by default
+                    create_update_parameter(main_window, slider_widget_name, new_value)
+                    # Prevent the text box value from going above the maximum value of the slider
+                    if new_value>slider_widget.max_value and new_value>0:
+                        new_value = new_value % (slider_widget.max_value+1)
+                        slider_widget.line_edit.setText(str(new_value))
+                    slider_widget.setValue(int(new_value)) #Update the value of slider too
+                widget.line_edit.textChanged.connect(partial(onchange_line_edit, widget, widget_name))
 
             horizontal_layout.setContentsMargins(spacing_level * 10, 0, 0, 0)
 
@@ -374,7 +414,7 @@ def add_parameter_widgets(main_window: 'MainWindow', LAYOUT_DATA: dict, layoutWi
             widget = main_window.parameter_widgets[widget_name]
             show_hide_related_widgets(main_window, widget, widget_name)
 
-# Function to Hide Elements conditionally from values in LayoutData (Currently support using Selection box and Toggle button to hide other widgets)
+# Function to Hide Elements conditionally from values in LayoutData (Currently supports using Selection box and Toggle button to hide other widgets)
 def show_hide_related_widgets(main_window: 'MainWindow', parent_widget: ToggleButton | QComboBox, parent_widget_name, value1=False, value2=False):
     if main_window.parameter_widgets:
         group_layout_data = parent_widget.group_layout_data #Dictionary contaning layout data of all elements in the group of the parent_widget
@@ -411,3 +451,6 @@ def show_hide_related_widgets(main_window: 'MainWindow', parent_widget: ToggleBu
                         current_widget.label_widget.show()
                         if current_widget.line_edit:
                             current_widget.line_edit.show()
+
+def create_update_parameter(main_window: 'MainWindow', parameter_name, parameter_value):
+    main_window.parameters[parameter_name] = parameter_value

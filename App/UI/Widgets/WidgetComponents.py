@@ -144,6 +144,8 @@ class GraphicsViewEventFilter(qtc.QObject):
 class ParametersWidget:
     def __init__(self, *args, **kwargs):
         self.default_value = kwargs.get('default_value', False)
+        self.min_value = kwargs.get('min_value',False)
+        self.max_value = kwargs.get('max_value',False)
         self.group_layout_data = kwargs.get('group_layout_data', {})
         self.widget_name = kwargs.get('widget_name', False)
         self.label_widget = kwargs.get('label_widget', False)
@@ -209,6 +211,8 @@ class ParameterSlider(QtWidgets.QSlider, ParametersWidget):
     def __init__(self, min_value=0, max_value=0, default_value=0, *args, **kwargs):
         super().__init__(*args, **kwargs)
         ParametersWidget.__init__(self, *args, **kwargs)
+        self.min_value = int(min_value)
+        self.max_value = int(max_value)
         self.setMinimum(int(min_value))
         self.setMaximum(int(max_value))
         self.setValue(int(default_value))
