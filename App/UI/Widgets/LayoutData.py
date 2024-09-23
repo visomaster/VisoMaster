@@ -49,8 +49,8 @@ SWAPPER_LAYOUT_DATA = {
         'LandmarkDetectModelSelection': {
             'level': 2,
             'label': 'Landmark Detect Model',
-            'options': ['68', '3d68', '202'],
-            'default': '68',
+            'options': ['5', '68', '3d68', '98', '106', '203', '478'],
+            'default': '203',
             'parentToggle': 'LandmarkDetectToggle',
             'requiredToggleValue': True,
         },

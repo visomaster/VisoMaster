@@ -22,8 +22,8 @@ models_dir = './App/ONNXModels'
 
 models_list = [
     {'Inswapper128': f'{models_dir}/inswapper_128.fp16.onnx', },
-    {'Retinaface': f'{models_dir}/det_10g.onnx', 'model_instance': None},
-    {'Webface600k': f'{models_dir}/w600k_r50.onnx', 'model_instance': None},
+    {'Retinaface': f'{models_dir}/det_10g.onnx',},
+    {'Webface600k': f'{models_dir}/w600k_r50.onnx',},
 ]
 
 class ModelsProcessor(QObject):
