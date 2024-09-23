@@ -385,7 +385,6 @@ def add_parameter_widgets(main_window: 'MainWindow', LAYOUT_DATA: dict, layoutWi
                     update_parameter(main_window, slider_widget_name, new_value)
                     # Update the slider text box value too
                     slider_widget.line_edit.setText(str(new_value))
-                    print(main_window.parameters)
                 widget.valueChanged.connect(partial(onchange_slider, widget, widget_name))
 
                 # When slider textbox value is changed
