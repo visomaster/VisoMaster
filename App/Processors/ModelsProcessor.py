@@ -26,23 +26,6 @@ models_list = [
     {'Webface600k': f'{models_dir}/w600k_r50.onnx', 'model_instance': None},
 ]
 
-class Worker(QObject):
-    finished = Signal()
-
-    def __init__(self, model_name, models, models_path, providers):
-        super().__init__()
-        self.model_name = model_name
-        self.models = models
-        self.models_path = models_path
-        self.providers = providers
-
-    def run(self):
-        time.sleep(0.5)
-        self.models[self.model_name] = onnxruntime.InferenceSession(
-            self.models_path[self.model_name]['model_path'], providers=self.providers,
-        )
-        self.finished.emit()  # Signal that loading is complete
-
 class ModelsProcessor(QObject):
     processing_complete = Signal()
     model_loaded = Signal()  # Signal emitted with Onnx InferenceSession
