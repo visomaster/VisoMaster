@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from App.UI.Widgets.WidgetComponents import ToggleButton
 
+# Widgets in Face Swap tab are created from this Layout
 SWAPPER_LAYOUT_DATA = {
     'Swapper': {
         'SwapModelSelection': {
@@ -27,6 +28,19 @@ SWAPPER_LAYOUT_DATA = {
             'options': ['Retinaface', 'YoloV8', 'SCRFD'],
             'default': 'Retinaface',
         },
+        'DetectorScoreSlider': {
+            'level': 1,
+            'label': 'Detect Score',
+            'min_value': '0',
+            'max_value': '100',
+            'default': '50',
+        },
+        'SimilariyTypeSelection': {
+            'level': 1,
+            'label': 'Similarity Type',
+            'options': ['Opal', 'Pearl', 'Optimal'],
+            'default': 'Opal',
+        },
         'LandmarkDetectToggle': {
             'level': 1,
             'label': 'Enable Landmark Detection',
@@ -37,6 +51,15 @@ SWAPPER_LAYOUT_DATA = {
             'label': 'Landmark Detect Model',
             'options': ['68', '3d68', '202'],
             'default': '68',
+            'parentToggle': 'LandmarkDetectToggle',
+            'requiredToggleValue': True,
+        },
+        'LandmarkDetectScoreSlider': {
+            'level': 2,
+            'label': 'Landmark Detect Score',
+            'min_value': '0',
+            'max_value': '100',
+            'default': '50',
             'parentToggle': 'LandmarkDetectToggle',
             'requiredToggleValue': True,
         },

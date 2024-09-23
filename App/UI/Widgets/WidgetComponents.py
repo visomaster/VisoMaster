@@ -149,6 +149,7 @@ class ParametersWidget:
         self.label_widget = kwargs.get('label_widget', False)
         self.group_widget = kwargs.get('group_widget', False)
         self.main_window = kwargs.get('main_window', False)
+        self.line_edit = False #Only sliders have textbox currently
 
 class ToggleSwitchButton(QtWidgets.QPushButton, ParametersWidget):
     def __init__(self, *args, **kwargs):
@@ -203,7 +204,19 @@ class ToggleButton(QtWidgets.QCheckBox, ParametersWidget):
             p.drawEllipse(self._circle_position, 1, 13, 13)
         
         p.end()
-        
+
+class ParameterSlider(QtWidgets.QSlider, ParametersWidget):
+    def __init__(self, min_value=0, max_value=0, default_value=0, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        ParametersWidget.__init__(self, *args, **kwargs)
+        self.setMinimum(int(min_value))
+        self.setMaximum(int(max_value))
+        self.setValue(int(default_value))
+        self.setOrientation(qtc.Qt.Orientation.Horizontal)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Minimum)
+        self.setMinimumWidth(130)
+        # Set a fixed width for the slider
+
 class FormGroupBox(QtWidgets.QGroupBox):
     def __init__(self, main_window:'MainWindow', title="Form Group", parent=None,):
         super().__init__(title, parent)

@@ -4,7 +4,7 @@ from PySide6 import QtWidgets, QtGui
 import time
 import App.Helpers.Misc_Helpers as misc_helpers 
 import App.UI.Widgets.UI_Workers as ui_workers
-from App.UI.Widgets.WidgetComponents import TargetMediaCardButton, ProgressDialog, TargetFaceCardButton, InputFaceCardButton, FormGroupBox, ToggleButton, SelectionBox
+from App.UI.Widgets.WidgetComponents import TargetMediaCardButton, ProgressDialog, TargetFaceCardButton, InputFaceCardButton, FormGroupBox, ToggleButton, SelectionBox, ParameterSlider
 from PySide6.QtWidgets import QComboBox
 
 import App.UI.Widgets.WidgetActions as widget_actions 
@@ -305,42 +305,6 @@ def clear_input_faces(main_window: 'MainWindow'):
     main_window.selected_input_face_buttons = []
 
 
-# def test_create_gbox(main_window: 'MainWindow'):
-#     group_box = FormGroupBox(main_window=main_window, title="User Details")
-#     main_window.formLayoutSwap.addWidget(group_box)
-
-# def create_and_get_widget(main_window: 'MainWindow', widget_name,  widget_data):
-#     WidgetClass = widget_data['widget_class']
-#     if WidgetClass==ToggleButton:
-#         toggle_button = ToggleButton(widget_name=widget_name)
-#         return toggle_button, WidgetClass
-#     elif WidgetClass==QComboBox:
-#         select_box = QComboBox()
-#         select_box.addItems(widget_data['options'])
-#         return select_box, WidgetClass
-
-# def add_groupbox_and_widgets_from_layout_map(main_window: 'MainWindow',):
-#     for group_name in SWAPPER_LAYOUT_MAP.keys():
-#         group_box = FormGroupBox(main_window=main_window, title=group_name)
-#         group_box.setFlat(True)
-#         row=0
-#         for widget_name in SWAPPER_LAYOUT_MAP[group_name].keys():
-#             label = SWAPPER_LAYOUT_MAP[group_name][widget_name]['label']
-#             widget, WidgetClass = create_and_get_widget(main_window, widget_name=widget_name, widget_data=SWAPPER_LAYOUT_MAP[group_name][widget_name])
-#             if WidgetClass==ToggleButton:
-#                 col1, col2 = 2, 1
-#                 colsp1, colsp2 = 1,2
-
-#             else:
-#                 col1, col2 = 1, 2
-#                 colsp1, colsp2 = 1,1
-#             group_box.grid_layout.addWidget(QtWidgets.QLabel(label), row, col1, 1, colsp1)
-#             group_box.grid_layout.addWidget(widget, row, col2, 1, colsp2)
-#             group_box.grid_layout.setColumnStretch(1, 1)
-#             row+=1
-#         main_window.formLayoutSwap.addWidget(group_box)
-
-
 def add_parameter_widgets(main_window: 'MainWindow', LAYOUT_DATA: dict, layoutWidget: QtWidgets.QVBoxLayout):
     layout = QtWidgets.QVBoxLayout()
     scroll_area = QtWidgets.QScrollArea()
@@ -357,6 +321,8 @@ def add_parameter_widgets(main_window: 'MainWindow', LAYOUT_DATA: dict, layoutWi
 
         for widget_name, widget_data in widgets.items():
             spacing_level = widget_data['level']
+            label = QtWidgets.QLabel(widget_data['label'])
+
             # Create a horizontal layout for the toggle button and its label
             if 'Toggle' in widget_name:
                 widget = ToggleButton(label=widget_data['label'], widget_name=widget_name, group_layout_data=widgets, label_widget=None, main_window=main_window)
@@ -365,13 +331,11 @@ def add_parameter_widgets(main_window: 'MainWindow', LAYOUT_DATA: dict, layoutWi
                 # Create a horizontal layout
                 horizontal_layout = QtWidgets.QHBoxLayout()
                 horizontal_layout.addWidget(widget)  # Add the toggle button
-                label = QtWidgets.QLabel(widget_data['label'])  # Create the label separately
                 horizontal_layout.addWidget(label)  # Add the label
                 
                 category_layout.addRow(horizontal_layout)  # Add the horizontal layout to the form layout
 
             elif 'Selection' in widget_name:
-                label = QtWidgets.QLabel(widget_data['label'])
                 widget = SelectionBox(label=widget_data['label'], widget_name=widget_name, group_layout_data=widgets, label_widget=label, main_window=main_window)
                 widget.addItems(widget_data['options'])
                 widget.setCurrentText(widget_data['default'])
@@ -380,6 +344,22 @@ def add_parameter_widgets(main_window: 'MainWindow', LAYOUT_DATA: dict, layoutWi
                 horizontal_layout.addWidget(label)
                 horizontal_layout.addWidget(widget)
                 category_layout.addRow(horizontal_layout)
+
+            elif 'Slider' in widget_name:
+                widget = ParameterSlider(label=widget_data['label'], widget_name=widget_name, group_layout_data=widgets, label_widget=label, min_value=widget_data['min_value'], max_value=widget_data['max_value'], default_value=widget_data['default'], main_window=main_window)
+                line_edit = QtWidgets.QLineEdit()
+                line_edit.setFixedWidth(38)  # Make the line edit narrower
+                line_edit.setMaxLength(3)
+                line_edit.setValidator(QtGui.QIntValidator())  # Restrict input to numbers
+                line_edit.setText(widget_data['default'])
+                widget.line_edit = line_edit
+
+                horizontal_layout = QtWidgets.QHBoxLayout()
+                horizontal_layout.addWidget(label)
+                horizontal_layout.addWidget(widget)
+                horizontal_layout.addWidget(line_edit)
+                category_layout.addRow(horizontal_layout)
+
             horizontal_layout.setContentsMargins(spacing_level * 10, 0, 0, 0)
 
             main_window.parameter_widgets[widget_name] = widget
@@ -394,7 +374,7 @@ def add_parameter_widgets(main_window: 'MainWindow', LAYOUT_DATA: dict, layoutWi
             widget = main_window.parameter_widgets[widget_name]
             show_hide_related_widgets(main_window, widget, widget_name)
 
-# Function to Hide Elements conditionally from values in LayoutData
+# Function to Hide Elements conditionally from values in LayoutData (Currently support using Selection box and Toggle button to hide other widgets)
 def show_hide_related_widgets(main_window: 'MainWindow', parent_widget: ToggleButton | QComboBox, parent_widget_name, value1=False, value2=False):
     if main_window.parameter_widgets:
         group_layout_data = parent_widget.group_layout_data #Dictionary contaning layout data of all elements in the group of the parent_widget
@@ -424,6 +404,10 @@ def show_hide_related_widgets(main_window: 'MainWindow', parent_widget: ToggleBu
                     if group_layout_data[widget_name].get('requiredToggleValue') != parent_widget.isChecked():
                         current_widget.hide()
                         current_widget.label_widget.hide()
+                        if current_widget.line_edit:
+                            current_widget.line_edit.hide()
                     else:
                         current_widget.show()
                         current_widget.label_widget.show()
+                        if current_widget.line_edit:
+                            current_widget.line_edit.show()

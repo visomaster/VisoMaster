@@ -45,61 +45,61 @@ TargetMediaCardButton:focus {
 
 
 /* QSlider --------------------------------------  */
-QSlider::groove:horizontal {
+#videoSeekSlider::groove:horizontal {
     border-radius: 10px;              /* Rounded corners to match the button */
     height: 8px;                      /* Increase groove thickness */
     margin: 0px;
     background-color: #34495e;        /* Background groove color (slightly lighter blue) */
 }
 
-QSlider::groove:horizontal:hover {
+#videoSeekSlider::groove:horizontal:hover {
     background-color: #1abc9c;        /* Turquoise color on hover */
 }
 
-QSlider::sub-page:horizontal {
+#videoSeekSlider::sub-page:horizontal {
     background-color: #1abc9c;        /* Turquoise for completed part */
     border-radius: 10px;              /* Rounded corners */
     height: 8px;
 }
 
-QSlider::sub-page:horizontal:hover {
+#videoSeekSlider::sub-page:horizontal:hover {
     background-color: #16a085;        /* Darker turquoise on hover */
 }
 
-QSlider::add-page:horizontal {
+#videoSeekSlider::add-page:horizontal {
     background-color: #2c3e50;        /* Dark blue for uncompleted part */
     border-radius: 10px;
     height: 8px;
 }
 
-QSlider::handle:horizontal {
+#videoSeekSlider::handle:horizontal {
     background-color: #bdc3c7;        /* Lighter gray handle color */
     border: 1px solid #7f8c8d;        /* Darker gray border */
     height: 20px;                     /* Handle height */
-    width: 20px;                      /* Handle width */
+    width: 8px;                      /* Handle width */
     margin: -6px 0;                   /* Adjust handle position */
-    border-radius: 10px;              /* Rounded handle */
+    border-radius: 2px;              /* Rounded handle */
 }
 
-QSlider::handle:horizontal:hover {
+#videoSeekSlider::handle:horizontal:hover {
     background-color: #1abc9c;        /* Turquoise handle on hover */
 }
 
-QSlider::handle:horizontal:pressed {
+#videoSeekSlider::handle:horizontal:pressed {
     background-color: #16a085;        /* Darker turquoise when pressed */
 }
 
-/* Disabled state */
-QSlider::handle:horizontal:disabled {
+/* #videoSeekSlider state */
+#videoSeekSlider::handle:horizontal:disabled {
     background-color: #95a5a6;        /* Gray background when disabled */
     border: 1px solid #7f8c8d;        /* Darker gray border */
 }
 
-QSlider::groove:horizontal:disabled {
+#videoSeekSlider::groove:horizontal:disabled {
     background-color: #7f8c8d;        /* Dark gray groove when disabled */
 }
 
-QSlider::sub-page:horizontal:disabled {
+#videoSeekSlider::sub-page:horizontal:disabled {
     background-color: #bdc3c7;        /* Lighter gray completed part when disabled */
 }
 
@@ -124,3 +124,48 @@ ToggleButton:checked {
 ToggleButton:default {
     border-color: none; /* make the default button prominent */
 } 
+
+
+
+/* ParameterSlider - Thin Groove and Handle */
+/* -------------------------------------- */
+
+ParameterSlider::groove:horizontal {
+    border-radius: 1px;              /* Rounded corners */
+    height: 6px;                     /* Thinner groove */
+    margin: 0px;
+    background-color: #34495e;       /* Background groove color */
+}
+
+/* Remove the completed part color by making it transparent */
+ParameterSlider::sub-page:horizontal {
+    background-color: transparent;   /* No color for completed part */
+}
+
+ParameterSlider::add-page:horizontal {
+    background-color: #2c3e50;       /* Dark blue for uncompleted part */
+    border-radius: 1px;              /* Thinner radius */
+    height: 4px;                     /* Thinner groove */
+}
+
+ParameterSlider::handle:horizontal {
+    background-color: #ffffff;       /* Lighter gray handle color */
+    border: 1px solid #7f8c8d;       /* Darker gray border */
+    height: 16px;                    /* Thinner handle */
+    width: 4px;                     /* Thinner handle */
+    margin: -4px 0;                  /* Adjust handle position for thinner groove */
+}
+
+/* Disabled state */
+ParameterSlider::handle:horizontal:disabled {
+    background-color: #95a5a6;       /* Gray background when disabled */
+    border: 1px solid #7f8c8d;       /* Darker gray border */
+}
+
+ParameterSlider::groove:horizontal:disabled {
+    background-color: #7f8c8d;       /* Dark gray groove when disabled */
+}
+
+ParameterSlider::sub-page:horizontal:disabled {
+    background-color: transparent;   /* No color for completed part when disabled */
+}
