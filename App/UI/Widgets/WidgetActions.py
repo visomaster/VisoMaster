@@ -359,7 +359,6 @@ def add_parameter_widgets(main_window: 'MainWindow', LAYOUT_DATA: dict, layoutWi
                 def onchange(selection_widget: SelectionBox, selection_widget_name, selected_value=False):
                     # selected_value = selection_widget.currentText()
                     update_parameter(main_window, selection_widget_name, selected_value)
-                    print(main_window.parameters)
                 widget.currentTextChanged.connect(partial(onchange, widget, widget_name))
 
 
