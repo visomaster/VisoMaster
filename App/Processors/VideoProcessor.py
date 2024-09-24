@@ -6,7 +6,9 @@ from App.Processors.Workers.Frame_Worker import FrameWorker
 from App.UI.Widgets import WidgetActions as widget_actions
 # Lock for synchronizing thread-safe operations
 lock = threading.Lock()
-
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from App.UI.MainUI import MainWindow
 class VideoProcessingWorker(threading.Thread):
     def __init__(self, frame_queue, main_window):
         super().__init__()
@@ -32,7 +34,7 @@ class VideoProcessingWorker(threading.Thread):
 class VideoProcessor(QObject):
     processing_complete = Signal()
 
-    def __init__(self, main_window, num_threads=5):
+    def __init__(self, main_window: 'MainWindow', num_threads=5):
         super().__init__()
         self.main_window = main_window
         self.frame_queue = queue.Queue()  # Queue for storing frames to be processed
@@ -43,9 +45,12 @@ class VideoProcessor(QObject):
         self.current_frame_number = 0
         self.max_frame_number = 0
         self.media_path = None
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.process_next_frame)
+        self.frame_read_timer = QTimer()
+        self.frame_read_timer.timeout.connect(self.process_next_frame)
+        self.current_frame_data = ()
         self.num_threads = num_threads  # Number of threads for processing
+
+    
 
     def create_threads(self, threads_count=False):
         """Create and start the worker threads."""
@@ -68,14 +73,14 @@ class VideoProcessor(QObject):
                 
                 self.processing = True
                 self.create_threads()  # Start the worker threads
-                # self.timer.start(5)
-                self.timer.start(1000/self.media_capture.get(cv2.CAP_PROP_FPS))  # Timer to control frame reading pace
+                # self.frame_read_timer.start(5)
+                self.frame_read_timer.start(1000/self.media_capture.get(cv2.CAP_PROP_FPS))  # frame_read_timer to control frame reading pace
                 
         elif self.file_type == 'image':
             self.processing = True
             self.max_frame_number = 1
             self.create_threads(threads_count=1)  # Start worker threads for image processing
-            self.timer.start(10)
+            self.frame_read_timer.start(10)
 
     def process_next_frame(self):
         """Read the next frame and add it to the queue for processing."""
@@ -110,7 +115,7 @@ class VideoProcessor(QObject):
     def stop_processing(self):
         """Stop video processing and signal completion."""
         self.processing = False
-        self.timer.stop()
+        self.frame_read_timer.stop()
 
         # Stop all worker threads
         for thread in self.threads:

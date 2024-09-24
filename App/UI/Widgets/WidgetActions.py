@@ -389,6 +389,8 @@ def add_parameter_widgets(main_window: 'MainWindow', LAYOUT_DATA: dict, layoutWi
 
                 # When slider textbox value is changed
                 def onchange_line_edit(slider_widget: ParameterSlider, slider_widget_name, new_value=False):
+                    if not new_value:
+                        new_value = 0
                     new_value = int(new_value) #Text box value is sent as str by default
                     update_parameter(main_window, slider_widget_name, new_value)
                     # Prevent the text box value from going above the maximum value of the slider
@@ -460,11 +462,11 @@ def update_parameter(main_window: 'MainWindow', parameter_name, parameter_value)
 def refresh_frame(main_window: 'MainWindow'):
     video_processor = main_window.video_processor
     if not video_processor.processing:
+        video_processor.processing=True
         if video_processor.current_frame_number>0:
             video_processor.current_frame_number-=1
         if video_processor.media_capture:
             video_processor.media_capture.set(cv2.CAP_PROP_POS_FRAMES, video_processor.current_frame_number)
-        video_processor.processing=True
         video_processor.create_threads(threads_count=1)
         video_processor.process_next_frame()
         video_processor.processing=False
