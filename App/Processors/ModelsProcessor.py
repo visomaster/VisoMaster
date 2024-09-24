@@ -14,6 +14,8 @@ from App.Processors.Utils import FaceUtil as faceutil
 from skimage import transform as trans
 import torchvision
 from torchvision.transforms import v2
+from torchvision import transforms
+
 import numpy as np
 from numpy.linalg import norm as l2norm
 from packaging import version
@@ -23,7 +25,9 @@ from itertools import product as product
 from App.Processors.Utils.EngineBuilder import onnx_to_trt as onnx2trt
 from App.Processors.Utils.TensorRTPredictor import TensorRTPredictor
 from App.Processors.external.clipseg import CLIPDensePredT
-
+import cv2
+import os
+import math
 try:
     from torch.cuda import nvtx
     import tensorrt as trt
@@ -119,7 +123,7 @@ class ModelsProcessor(QObject):
             'trt_builder_optimization_level': 5,
         }
         self.providers = [
-            ('TensorrtExecutionProvider', self.trt_ep_options),
+            # ('TensorrtExecutionProvider', self.trt_ep_options),
             ('CUDAExecutionProvider'),
             ('CPUExecutionProvider')
         ]       

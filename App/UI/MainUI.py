@@ -77,3 +77,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # Call the method to fit the image to the view whenever the window resizes
         if self.scene.items():
             widget_actions.fit_image_to_view(self, self.scene.items()[0])
+
+    def closeEvent(self, event):
+        # Ensure all threads are stopped before closing
+        self.video_processor.stop_processing()
+        # Optionally handle the event if needed
+        event.accept()  # Accept the close event to proceed with closing
