@@ -16,12 +16,13 @@ if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
 lock = threading.Lock()
 class FrameWorker(threading.Thread):
-    def __init__(self, frame, main_window: 'MainWindow', current_frame_number):
+    def __init__(self, frame, main_window: 'MainWindow', current_frame_number, single_frame=False):
         super().__init__()
         self.current_frame_number = current_frame_number
         self.frame = frame
         self.main_window = main_window
         self.models_processor = main_window.models_processor
+        self.single_frame = single_frame
         # self.graphicsViewFrame = graphicsViewFrame
 
     def run(self):
@@ -29,7 +30,11 @@ class FrameWorker(threading.Thread):
         self.frame = self.process_swap()
         # Convert the frame (which is a NumPy array) to QImage
         scaled_pixmap = widget_actions.get_pixmap_from_frame(self.main_window, self.frame)
-        self.main_window.update_frame_signal.emit(self.main_window, scaled_pixmap, self.current_frame_number)
+        # self.main_window.update_frame_signal.emit(self.main_window, scaled_pixmap, self.current_frame_number)
+        self.main_window.video_processor.processed_frames.append({'scaled_pixmap': scaled_pixmap, 'frame_number': self.current_frame_number})
+        # If only one frame and thread was used, emit and display the frame immediately as the video is most probably paused now
+        if self.single_frame:
+            self.main_window.video_processor.emit_lowest_frame()
 
     def process_swap(self):
         parameters = self.parameters

@@ -14,8 +14,9 @@ from App.UI.Core import media_rc
 import torch
 import numpy
 from App.UI.Widgets.LayoutData import SWAPPER_LAYOUT_DATA
+import threading
+lock = threading.Lock()
 from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
 def scale_pixmap_to_view(view: QtWidgets.QGraphicsView, pixmap: QtGui.QPixmap):
@@ -94,17 +95,19 @@ def onClickSelectInputImages(main_window: 'MainWindow', source_type='folder', fo
 
     
 @qtc.Slot()
-def OnChangeSlider(main_window: 'MainWindow', new_position=0):
+def OnChangeVideoSeekSlider(main_window: 'MainWindow', new_position=0):
     video_processor = main_window.video_processor
     video_processor.stop_processing()
     video_processor.current_frame_number = new_position
     if video_processor.media_capture:
         video_processor.media_capture.set(cv2.CAP_PROP_POS_FRAMES, new_position)
     video_processor.processing=True
-    video_processor.create_threads(threads_count=1)
-    video_processor.process_next_frame()
+    video_processor.create_and_run_frame_workers(threads_count=1, single_frame=True)
+    video_processor.read_next_frame()
     widget_actions.resetMediaButtons(main_window)
     video_processor.processing=False
+
+
 
 
 # Functions to add Buttons with thumbnail for selecting videos/images and faces
@@ -467,6 +470,6 @@ def refresh_frame(main_window: 'MainWindow'):
             video_processor.current_frame_number-=1
         if video_processor.media_capture:
             video_processor.media_capture.set(cv2.CAP_PROP_POS_FRAMES, video_processor.current_frame_number)
-        video_processor.create_threads(threads_count=1)
-        video_processor.process_next_frame()
+        video_processor.create_and_run_frame_workers(threads_count=1, single_frame=True)
+        video_processor.read_next_frame()
         video_processor.processing=False

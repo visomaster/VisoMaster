@@ -51,7 +51,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.buttonSelectInputFaces.clicked.connect(partial(widget_actions.onClickSelectInputImages, self, 'folder'))
         self.buttonSelectInputFacesFiles.clicked.connect(partial(widget_actions.onClickSelectInputImages, self, 'files'))
 
-        self.videoSeekSlider.valueChanged.connect(partial(widget_actions.OnChangeSlider, self))
+        self.videoSeekSlider.valueChanged.connect(partial(widget_actions.OnChangeVideoSeekSlider, self))
         self.buttonMediaPlay.clicked.connect(partial(widget_actions.OnClickPlayButton, self))
         # self.buttonMediaStop.clicked.connect(partial(self.video_processor.stop_processing))
         self.findTargetFacesButton.clicked.connect(partial(widget_actions.find_target_faces, self))
@@ -81,5 +81,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def closeEvent(self, event):
         # Ensure all threads are stopped before closing
         self.video_processor.stop_processing()
+        widget_actions.clear_stop_loading_input_media()
+        widget_actions.clear_stop_loading_target_media()
         # Optionally handle the event if needed
         event.accept()  # Accept the close event to proceed with closing
