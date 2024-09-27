@@ -81,7 +81,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def closeEvent(self, event):
         # Ensure all threads are stopped before closing
         self.video_processor.stop_processing()
-        widget_actions.clear_stop_loading_input_media()
-        widget_actions.clear_stop_loading_target_media()
+        widget_actions.clear_stop_loading_input_media(self)
+        widget_actions.clear_stop_loading_target_media(self)
         # Optionally handle the event if needed
         event.accept()  # Accept the close event to proceed with closing
