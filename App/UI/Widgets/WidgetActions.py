@@ -43,10 +43,12 @@ def onClickSelectTargetVideos(main_window: 'MainWindow', source_type='folder', f
             return
 
     # Stop the current video if it's playing
+    '''
     video_processor = main_window.video_processor
     if video_processor.processing:
         print("Stopping the current video before loading a new video or image.")
         video_processor.stop_processing()
+    '''
 
     clear_stop_loading_target_media(main_window)
     clear_target_faces(main_window)
@@ -83,10 +85,12 @@ def onClickSelectInputImages(main_window: 'MainWindow', source_type='folder', fo
             return
 
     # Stop the current video if it's playing
+    '''
     video_processor = main_window.video_processor
     if video_processor.processing:
         print("Stopping the current video before loading a new video or image.")
         video_processor.stop_processing()
+    '''
 
     clear_stop_loading_input_media(main_window)
     clear_input_faces(main_window)
