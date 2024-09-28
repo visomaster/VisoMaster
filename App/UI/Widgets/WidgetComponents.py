@@ -192,25 +192,50 @@ class SelectionBox(QtWidgets.QComboBox, ParametersWidget):
         ParametersWidget.__init__(self, *args, **kwargs)
         self.currentTextChanged.connect(partial(widget_actions.show_hide_related_widgets, self.main_window, self, self.widget_name, ))
     
-class ToggleButton(QtWidgets.QCheckBox, ParametersWidget):
+class ToggleButton(QtWidgets.QPushButton, ParametersWidget):
     _circle_position = None
 
     def __init__(self, bg_color="#000000", circle_color="#ffffff", active_color="#16a085", *args, **kwargs):
-        
         super().__init__(*args, **kwargs)
         ParametersWidget.__init__(self, *args, **kwargs)
-        width = 30
-        height = 15
-        self.animation_curve = QtCore.QEasingCurve.Linear
-        self.setFixedSize(width, height)
+
+        self.setFixedSize(30, 15)
         self.setCursor(QtCore.Qt.PointingHandCursor)
+        self.setCheckable(True)
+        
         self._bg_color = bg_color
         self._circle_color = circle_color
         self._active_color = active_color
-        self._circle_position = 1 
-        self.stateChanged.connect(partial(widget_actions.show_hide_related_widgets, self.main_window, self, self.widget_name, None))
-
+        self._circle_position = 1  # Start position of the circle
+        self.animation_curve = QtCore.QEasingCurve.OutCubic
         
+        # Animation
+        self.animation = QtCore.QPropertyAnimation(self, b"circle_position", self)
+        self.animation.setDuration(300)  # Animation duration in milliseconds
+        self.animation.setEasingCurve(self.animation_curve)
+        
+        self.clicked.connect(partial(widget_actions.show_hide_related_widgets, self.main_window, self, self.widget_name, None))
+        self.toggled.connect(self.start_animation)
+        
+    # Property for animation
+    @QtCore.Property(int)
+    def circle_position(self):
+        return self._circle_position
+
+    @circle_position.setter
+    def circle_position(self, pos):
+        self._circle_position = pos
+        self.update()  # Update the widget to trigger paintEvent
+
+    def start_animation(self):
+        # Animate circle position when toggled
+        start_pos = 1 if self.isChecked() else 15
+        end_pos = 15 if self.isChecked() else 1
+        
+        self.animation.setStartValue(start_pos)
+        self.animation.setEndValue(end_pos)
+        self.animation.start()
+
     def paintEvent(self, e):
         p = QtGui.QPainter(self)
         p.setRenderHint(QtGui.QPainter.Antialiasing)
@@ -221,17 +246,13 @@ class ToggleButton(QtWidgets.QCheckBox, ParametersWidget):
         if self.isChecked():
             p.setBrush(QtGui.QColor(self._active_color))
             p.drawRoundedRect(0, 0, rect.width(), self.height(), self.height() / 2, self.height() / 2)
-            
-            p.setBrush(QtGui.QColor(self._circle_color))
-            # p.drawEllipse(self._circle_position, 1, 10, 10)
-            p.drawEllipse(15, 1, 13, 13)
-
         else:
             p.setBrush(QtGui.QColor(self._bg_color))
             p.drawRoundedRect(0, 0, rect.width(), self.height(), self.height() / 2, self.height() / 2)
-            
-            p.setBrush(QtGui.QColor(self._circle_color))
-            p.drawEllipse(self._circle_position, 1, 13, 13)
+        
+        # Draw the circle at the animated position
+        p.setBrush(QtGui.QColor(self._circle_color))
+        p.drawEllipse(self._circle_position, 1, 13, 13)
         
         p.end()
 
