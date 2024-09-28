@@ -6,20 +6,23 @@ from PySide6.QtCore import QObject, QTimer, Signal, QThread
 from App.Processors.Workers.Frame_Worker import FrameWorker
 from App.UI.Widgets import WidgetActions as widget_actions
 # Lock for synchronizing thread-safe operations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from App.UI.MainUI import MainWindow
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
 
 class VideoProcessingWorker(threading.Thread):
-    def __init__(self, frame_queue, main_window):
+    def __init__(self, frame_queue, main_window: 'MainWindow'):
         super().__init__()
         self.frame_queue = frame_queue
         self.main_window = main_window
-        self._running = True
+        self._stop_event = threading.Event()
 
     def run(self):
-        while self._running:
+        while not self._stop_event.is_set():
             try:
                 current_frame_number, frame = self.frame_queue.get(timeout=1)
                 print(f"VideoProcessingWorker: Worker has obtained frame {current_frame_number}")
@@ -30,21 +33,20 @@ class VideoProcessingWorker(threading.Thread):
 
                 self.frame_queue.task_done()
             except queue.Empty:
-                if not self._running:
+                if not self._stop_event.is_set():
                     break
                 continue
             except Exception as e:
                 print(f"Error in worker: {e}")
-                self._running = False
+                self._stop_event.set()
 
     def stop(self):
-        self._running = False
-        self.join()
+        self._stop_event.set()
 
 class VideoProcessor(QObject):
     processing_complete = Signal()
 
-    def __init__(self, main_window, num_threads=5):
+    def __init__(self, main_window: 'MainWindow', num_threads=5):
         super().__init__()
         self.main_window = main_window
         self.frame_queue = queue.Queue()
