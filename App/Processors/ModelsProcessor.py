@@ -111,6 +111,7 @@ class ModelsProcessor(QObject):
         self.main_window = main_window
         self.provider_name = 'TensorRT'
         self.device = device
+        self.model_lock = threading.RLock()  # Reentrant lock for model access
         self.trt_ep_options = {
             'trt_max_workspace_size': 3 << 30,  # Dimensione massima dello spazio di lavoro in bytes
             'trt_engine_cache_enable': True,

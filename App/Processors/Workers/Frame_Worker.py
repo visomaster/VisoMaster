@@ -11,6 +11,7 @@ from math import floor, ceil
 import numpy as np
 from App.Processors.Utils import FaceUtil as faceutil
 import threading
+
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
@@ -27,10 +28,14 @@ class FrameWorker(threading.Thread):
     def run(self):
         try:
             self.parameters = self.main_window.parameters.copy()
-            self.frame = self.process_swap()
+            # Process the frame with model inference
+            with self.models_processor.model_lock:  # Lock only here
+                print(f"Processing frame {self.frame_number} with lock")
+                self.frame = self.process_swap()
 
             # Check if processing is still allowed before displaying the frame
             if self.main_window.video_processor.allow_frame_display:
+                print(f"Displaying frame {self.frame_number}")
                 # Convert the frame (which is a NumPy array) to QImage
                 pixmap = widget_actions.get_pixmap_from_frame(self.main_window, self.frame)
                 self.main_window.update_frame_signal.emit(self.frame_number, pixmap)

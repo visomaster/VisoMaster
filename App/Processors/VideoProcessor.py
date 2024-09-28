@@ -6,9 +6,6 @@ from PySide6.QtCore import QObject, QTimer, Signal, QThread
 from App.Processors.Workers.Frame_Worker import FrameWorker
 from App.UI.Widgets import WidgetActions as widget_actions
 # Lock for synchronizing thread-safe operations
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from App.UI.MainUI import MainWindow
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -19,13 +16,17 @@ class VideoProcessingWorker(threading.Thread):
         super().__init__()
         self.frame_queue = frame_queue
         self.main_window = main_window
-        self._stop_event = threading.Event()
+        self._stop_event = threading.Event() # Use Event to manage stopping
 
     def run(self):
-        while not self._stop_event.is_set():
+        while not self._stop_event.is_set(): # Check the status of the event
             try:
-                current_frame_number, frame = self.frame_queue.get(timeout=1)
+                current_frame_number, frame = self.frame_queue.get()
                 print(f"VideoProcessingWorker: Worker has obtained frame {current_frame_number}")
+
+                if current_frame_number is None:
+                    print("VideoProcessingWorker: Received stop signal.")
+                    break  # Esci dal loop
 
                 # Process the frame with FrameWorker
                 worker = FrameWorker(frame, self.main_window, current_frame_number)
@@ -34,14 +35,15 @@ class VideoProcessingWorker(threading.Thread):
                 self.frame_queue.task_done()
             except queue.Empty:
                 if not self._stop_event.is_set():
-                    break
+                    break # Exit the loop when the event is set
                 continue
             except Exception as e:
                 print(f"Error in worker: {e}")
-                self._stop_event.set()
+                self._stop_event.set() # Set the event in case of an error
 
     def stop(self):
-        self._stop_event.set()
+        self._stop_event.set() # Set the event to stop the thread
+        self.join()
 
 class VideoProcessor(QObject):
     processing_complete = Signal()
@@ -49,7 +51,8 @@ class VideoProcessor(QObject):
     def __init__(self, main_window: 'MainWindow', num_threads=5):
         super().__init__()
         self.main_window = main_window
-        self.frame_queue = queue.Queue()
+        #self.frame_queue = queue.Queue()
+        self.frame_queue = queue.Queue(maxsize=num_threads)
         self.threads = []
         self.media_capture = None
         self.file_type = None
@@ -193,6 +196,10 @@ class VideoProcessor(QObject):
 
         # Stop the QTimer only from the main thread
         self.frame_read_timer.stop()
+
+        # Inserisci None nella coda per sbloccare eventuali thread in attesa
+        for _ in range(len(self.threads)):  # Inserisci un "None" per ogni thread
+            self.frame_queue.put((None,None))
 
         # Stop all worker threads
         for thread in self.threads:
