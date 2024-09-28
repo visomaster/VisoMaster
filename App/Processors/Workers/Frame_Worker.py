@@ -1,4 +1,4 @@
-from PySide6.QtCore import QRunnable,QTimer, QThread
+from PySide6.QtCore import QRunnable,QTimer, QThread, Signal
 from PySide6.QtGui import QImage, QPixmap, QPainter, QColor
 from PySide6.QtWidgets import QGraphicsPixmapItem
 import cv2
@@ -14,27 +14,31 @@ import threading
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
-lock = threading.Lock()
+
 class FrameWorker(threading.Thread):
-    def __init__(self, frame, main_window: 'MainWindow', current_frame_number, single_frame=False):
+    def __init__(self, frame, main_window: 'MainWindow', frame_number):
         super().__init__()
-        self.current_frame_number = current_frame_number
         self.frame = frame
         self.main_window = main_window
+        self.frame_number = frame_number
         self.models_processor = main_window.models_processor
-        self.single_frame = single_frame
         # self.graphicsViewFrame = graphicsViewFrame
 
     def run(self):
-        self.parameters = self.main_window.parameters.copy()
-        self.frame = self.process_swap()
-        # Convert the frame (which is a NumPy array) to QImage
-        scaled_pixmap = widget_actions.get_pixmap_from_frame(self.main_window, self.frame)
-        # self.main_window.update_frame_signal.emit(self.main_window, scaled_pixmap, self.current_frame_number)
-        self.main_window.video_processor.processed_frames.append({'scaled_pixmap': scaled_pixmap, 'frame_number': self.current_frame_number})
-        # If only one frame and thread was used, emit and display the frame immediately as the video is most probably paused now
-        if self.single_frame:
-            self.main_window.video_processor.emit_lowest_frame()
+        try:
+            self.parameters = self.main_window.parameters.copy()
+            self.frame = self.process_swap()
+
+            # Check if processing is still allowed before displaying the frame
+            if self.main_window.video_processor.allow_frame_display:
+                # Convert the frame (which is a NumPy array) to QImage
+                pixmap = widget_actions.get_pixmap_from_frame(self.main_window, self.frame)
+                self.main_window.update_frame_signal.emit(self.frame_number, pixmap)
+            else:
+                print(f"Frame {self.frame_number} was not displayed because processing was stopped.")
+
+        except Exception as e:
+            print(f"Error in FrameWorker: {e}")
 
     def process_swap(self):
         parameters = self.parameters
@@ -93,7 +97,6 @@ class FrameWorker(threading.Thread):
         img = img.permute(1,2,0)
         img = img.cpu().numpy()
         return np.ascontiguousarray(img)
-    
 
     def swap_core(self, img, kps_5, kps=False, s_e=[], t_e=[], dfl_model=False): # img = RGB
         swapper_model = 'Inswapper128'
@@ -147,7 +150,7 @@ class FrameWorker(threading.Thread):
         output = output.permute(2, 0, 1)
         swap = t512(output)
 
-        # Cslculate the area to be mergerd back to the original frame
+        # Calculate the area to be mergerd back to the original frame
         IM512 = tform.inverse.params[0:2, :]
         corners = np.array([[0,0], [0,511], [511, 0], [511, 511]])
 

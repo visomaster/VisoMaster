@@ -17,6 +17,7 @@ class TargetMediaLoaderWorker(qtc.QThread):
         super().__init__(parent)
         self.folder_name = folder_name
         self.files_list = files_list
+        self._running = True  # Flag to control the running state
 
     def run(self):
         if self.folder_name:
@@ -31,6 +32,8 @@ class TargetMediaLoaderWorker(qtc.QThread):
 
         media_files = video_files + image_files
         for media_file in media_files:
+            if not self._running:  # Check if the thread is still running
+                break
             media_file_path = os.path.join(folder_name, media_file)
             file_type = misc_helpers.get_file_type(media_file_path)
             pixmap = widget_actions.extract_frame_as_pixmap(media_file_path, file_type)
@@ -41,12 +44,18 @@ class TargetMediaLoaderWorker(qtc.QThread):
     def load_videos_and_images_from_files_list(self, files_list):
         media_files = files_list
         for media_file_path in media_files:
+            if not self._running:  # Check if the thread is still running
+                break
             file_type = misc_helpers.get_file_type(media_file_path)
             pixmap = widget_actions.extract_frame_as_pixmap(media_file_path, file_type)
             if pixmap:
                 # Emit the signal to update GUI
                 self.thumbnail_ready.emit(media_file_path, pixmap, file_type)
 
+    def stop(self):
+        """Stop the thread by setting the running flag to False."""
+        self._running = False
+        self.wait()
 
 class InputFacesLoaderWorker(qtc.QThread):
     # Define signals to emit when loading is done or if there are updates
@@ -57,6 +66,7 @@ class InputFacesLoaderWorker(qtc.QThread):
         self.main_window = main_window
         self.folder_name = folder_name
         self.files_list = files_list
+        self._running = True  # Flag to control the running state
 
     def run(self):
         if self.folder_name or self.files_list:
@@ -69,6 +79,8 @@ class InputFacesLoaderWorker(qtc.QThread):
             image_files = files_list
 
         for image_file_path in image_files:
+            if not self._running:  # Check if the thread is still running
+                break
             if folder_name:
                 image_file_path = os.path.join(folder_name, image_file_path)
             frame = cv2.imread(image_file_path)
@@ -89,3 +101,8 @@ class InputFacesLoaderWorker(qtc.QThread):
                 # crop = cv2.resize(face[2].cpu().numpy(), (82, 82))
                 pixmap = widget_actions.get_pixmap_from_frame(self.main_window, face_img)
                 self.thumbnail_ready.emit(image_file_path, face_img, face_emb, pixmap)
+
+    def stop(self):
+        """Stop the thread by setting the running flag to False."""
+        self._running = False
+        self.wait()

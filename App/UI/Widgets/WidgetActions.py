@@ -14,37 +14,13 @@ from App.UI.Core import media_rc
 import torch
 import numpy
 from App.UI.Widgets.LayoutData import SWAPPER_LAYOUT_DATA
-import threading
-lock = threading.Lock()
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
-def scale_pixmap_to_view(view: QtWidgets.QGraphicsView, pixmap: QtGui.QPixmap):
-    # Get the size of the view
-    view_size = view.viewport().size()
-    pixmap_size = pixmap.size()
-    # Calculate the scale factor
-    scale_factor = min(view_size.width() / pixmap_size.width(), view_size.height() / pixmap_size.height())
-    # Scale the pixmap
-    scaled_pixmap = pixmap.scaled(
-        pixmap_size.width() * scale_factor,
-        pixmap_size.height() * scale_factor,
-        qtc.Qt.AspectRatioMode.KeepAspectRatio
-    )
-    return scaled_pixmap
-
-def fit_image_to_view(main_window: 'MainWindow', pixmap_item: QtWidgets.QGraphicsPixmapItem):
-    graphicsViewFrame = main_window.graphicsViewFrame
-    # Reset the transform to ensure no previous transformations affect the new fit
-    graphicsViewFrame.resetTransform()
-    # Set the scene rectangle to the bounding rectangle of the pixmap item
-    graphicsViewFrame.setSceneRect(pixmap_item.boundingRect())
-    # Fit the image to the view, keeping the aspect ratio
-    graphicsViewFrame.fitInView(pixmap_item, qtc.Qt.AspectRatioMode.KeepAspectRatio)
-    graphicsViewFrame.update()
-
 def clear_stop_loading_target_media(main_window: 'MainWindow'):
     if main_window.video_loader_worker:
+        main_window.video_loader_worker.stop()
         main_window.video_loader_worker.terminate()
         main_window.video_loader_worker = False
         time.sleep(0.5)
@@ -56,20 +32,35 @@ def onClickSelectTargetVideos(main_window: 'MainWindow', source_type='folder', f
         folder_name = QtWidgets.QFileDialog.getExistingDirectory()
         main_window.labelTargetVideosPath.setText(misc_helpers.truncate_text(folder_name))
         main_window.labelTargetVideosPath.setToolTip(folder_name)
+
+        if not folder_name:
+            return
     elif source_type=='files':
         files_list = QtWidgets.QFileDialog.getOpenFileNames()[0]
         main_window.labelTargetVideosPath.setText('Selected Files') #Just a temp text until i think of something better
         main_window.labelTargetVideosPath.setToolTip('Selected Files')
-    main_window.selected_video_buttons = []
-    main_window.target_videos = []
+        if not files_list:
+            return
+
+    # Stop the current video if it's playing
+    video_processor = main_window.video_processor
+    if video_processor.processing:
+        print("Stopping the current video before loading a new video or image.")
+        video_processor.stop_processing()
+
     clear_stop_loading_target_media(main_window)
     clear_target_faces(main_window)
+    
+    main_window.selected_video_buttons = []
+    main_window.target_videos = []
+
     main_window.video_loader_worker = ui_workers.TargetMediaLoaderWorker(folder_name=folder_name, files_list=files_list)
     main_window.video_loader_worker.thumbnail_ready.connect(partial(add_media_thumbnail_to_target_videos_list, main_window))
     main_window.video_loader_worker.start()
 
 def clear_stop_loading_input_media(main_window: 'MainWindow'):
     if main_window.input_faces_loader_worker:
+        main_window.input_faces_loader_worker.stop()
         main_window.input_faces_loader_worker.terminate()
         main_window.input_faces_loader_worker = False
         time.sleep(0.5)
@@ -81,34 +72,49 @@ def onClickSelectInputImages(main_window: 'MainWindow', source_type='folder', fo
         folder_name = QtWidgets.QFileDialog.getExistingDirectory()
         main_window.labelInputFacesPath.setText(misc_helpers.truncate_text(folder_name))
         main_window.labelInputFacesPath.setToolTip(folder_name)
+        if not folder_name:
+            return
 
     elif source_type=='files':
         files_list = QtWidgets.QFileDialog.getOpenFileNames()[0]
         main_window.labelInputFacesPath.setText('Selected Files') #Just a temp text until i think of something better
         main_window.labelInputFacesPath.setToolTip('Selected Files')
-    main_window.selected_input_face_buttons = []
+        if not files_list:
+            return
+
+    # Stop the current video if it's playing
+    video_processor = main_window.video_processor
+    if video_processor.processing:
+        print("Stopping the current video before loading a new video or image.")
+        video_processor.stop_processing()
+
     clear_stop_loading_input_media(main_window)
     clear_input_faces(main_window)
+    main_window.selected_input_face_buttons = []
     main_window.input_faces_loader_worker = ui_workers.InputFacesLoaderWorker(main_window=main_window, folder_name=folder_name, files_list=files_list)
     main_window.input_faces_loader_worker.thumbnail_ready.connect(partial(add_media_thumbnail_to_source_faces_list, main_window))
     main_window.input_faces_loader_worker.start()
 
     
-@qtc.Slot()
-def OnChangeVideoSeekSlider(main_window: 'MainWindow', new_position=0):
+@qtc.Slot(int)
+def OnChangeSlider(main_window: 'MainWindow', new_position=0):
     video_processor = main_window.video_processor
-    video_processor.stop_processing()
+    was_processing = video_processor.processing
+
+    if was_processing:
+        print("OnChangeSlider: Processing in progress. Stopping current processing.")
+        video_processor.stop_processing()
+
     video_processor.current_frame_number = new_position
     if video_processor.media_capture:
         video_processor.media_capture.set(cv2.CAP_PROP_POS_FRAMES, new_position)
-    video_processor.processing=True
-    video_processor.create_and_run_frame_workers(threads_count=1, single_frame=True)
-    video_processor.read_next_frame()
-    widget_actions.resetMediaButtons(main_window)
-    video_processor.processing=False
+        ret, frame = video_processor.media_capture.read()
+        if ret:
+            pixmap = widget_actions.get_pixmap_from_frame(main_window, frame)
+            widget_actions.update_graphics_view(main_window, pixmap, new_position)
 
-
-
+    # Do not automatically restart the video, let the user press Play to resume
+    print("OnChangeSlider: Video stopped after slider movement.")
 
 # Functions to add Buttons with thumbnail for selecting videos/images and faces
 @qtc.Slot(str, QtGui.QPixmap)
@@ -180,18 +186,69 @@ def update_graphics_view(main_window: 'MainWindow' , pixmap, current_frame_numbe
     pixmap_item = QtWidgets.QGraphicsPixmapItem(pixmap)
     main_window.graphicsViewFrame.scene().addItem(pixmap_item)
     # Optionally fit the image to the view
-    widget_actions.fit_image_to_view(main_window, pixmap_item)
+    fit_image_to_view(main_window, pixmap_item)
 
+def fit_image_to_view(main_window: 'MainWindow', pixmap_item: QtWidgets.QGraphicsPixmapItem):
+    graphicsViewFrame = main_window.graphicsViewFrame
+    # Reset the transform to ensure no previous transformations affect the new fit
+    graphicsViewFrame.resetTransform()
+    # Set the scene rectangle to the bounding rectangle of the pixmap item
+    graphicsViewFrame.setSceneRect(pixmap_item.boundingRect())
+    # Fit the image to the view, keeping the aspect ratio
+    graphicsViewFrame.fitInView(pixmap_item, qtc.Qt.AspectRatioMode.KeepAspectRatio)
+    graphicsViewFrame.update()
 
 def get_pixmap_from_frame(main_window: 'MainWindow', frame, scale=True):
-    height, width, channel = frame.shape
-    bytes_per_line = 3 * width
-    q_img = QtGui.QImage(frame.data, width, height, bytes_per_line, QtGui.QImage.Format.Format_RGB888).rgbSwapped()
+    height, width = frame.shape[:2]
+    if len(frame.shape) == 2:
+        # Frame in grayscale
+        bytes_per_line = width
+        q_img = QtGui.QImage(frame.data, width, height, bytes_per_line, QtGui.QImage.Format.Format_Grayscale8)
+    else:
+        # Frame in color
+        bytes_per_line = 3 * width
+        q_img = QtGui.QImage(frame.data, width, height, bytes_per_line, QtGui.QImage.Format.Format_RGB888).rgbSwapped()
     pixmap = QtGui.QPixmap.fromImage(q_img)
 
     if scale:
-        pixmap = widget_actions.scale_pixmap_to_view(main_window.graphicsViewFrame, pixmap)
+        pixmap = scale_pixmap_to_view(main_window.graphicsViewFrame, pixmap)
     return pixmap
+
+def scale_pixmap_to_view(view: QtWidgets.QGraphicsView, pixmap: QtGui.QPixmap):
+    # Get the size of the view
+    view_size = view.viewport().size()
+    pixmap_size = pixmap.size()
+    # Calculate the scale factor
+    scale_factor = min(view_size.width() / pixmap_size.width(), view_size.height() / pixmap_size.height())
+    # Scale the pixmap
+    scaled_pixmap = pixmap.scaled(
+        pixmap_size.width() * scale_factor,
+        pixmap_size.height() * scale_factor,
+        qtc.Qt.AspectRatioMode.KeepAspectRatio
+    )
+    return scaled_pixmap
+
+def OnClickPlayButton(main_window: 'MainWindow', checked):
+    video_processor = main_window.video_processor
+    if checked:
+        if video_processor.processing:
+            print("OnClickPlayButton: Video already playing. Stopping the current video before starting a new one.")
+            video_processor.stop_processing()
+        print("OnClickPlayButton: Starting video processing.")
+        setPlayButtonIconToStop(main_window)
+        video_processor.process_video()
+    else:
+        print("OnClickPlayButton: Stopping video processing.")
+        setPlayButtonIconToPlay(main_window)
+        video_processor.stop_processing()
+
+def setPlayButtonIconToPlay(main_window: 'MainWindow'):
+    main_window.buttonMediaPlay.setIcon(QtGui.QIcon(":/media/Media/play_off.png"))
+    main_window.buttonMediaPlay.setToolTip("Play")
+
+def setPlayButtonIconToStop(main_window: 'MainWindow'):
+    main_window.buttonMediaPlay.setIcon(QtGui.QIcon(":/media/Media/play_on.png"))
+    main_window.buttonMediaPlay.setToolTip("Stop")
 
 def resetMediaButtons(main_window: 'MainWindow'):
     main_window.buttonMediaPlay.setChecked(False)
@@ -200,12 +257,10 @@ def resetMediaButtons(main_window: 'MainWindow'):
 def setPlayButtonIcon(main_window: 'MainWindow'):
     if main_window.buttonMediaPlay.isChecked(): 
         main_window.buttonMediaPlay.setIcon(QtGui.QIcon(":/media/Media/play_on.png"))
+        main_window.buttonMediaPlay.setToolTip("Stop")
     else:
         main_window.buttonMediaPlay.setIcon(QtGui.QIcon(":/media/Media/play_off.png"))
-
-def OnClickPlayButton(main_window: 'MainWindow'):
-    setPlayButtonIcon(main_window)
-    main_window.video_processor.process_video()
+        main_window.buttonMediaPlay.setToolTip("Play")
 
 def filterTargetVideos(main_window: 'MainWindow', search_text: str):
     search_text = search_text.lower()
@@ -464,12 +519,4 @@ def update_parameter(main_window: 'MainWindow', parameter_name, parameter_value)
 
 def refresh_frame(main_window: 'MainWindow'):
     video_processor = main_window.video_processor
-    if not video_processor.processing:
-        video_processor.processing=True
-        if video_processor.current_frame_number>0:
-            video_processor.current_frame_number-=1
-        if video_processor.media_capture:
-            video_processor.media_capture.set(cv2.CAP_PROP_POS_FRAMES, video_processor.current_frame_number)
-        video_processor.create_and_run_frame_workers(threads_count=1, single_frame=True)
-        video_processor.read_next_frame()
-        video_processor.processing=False
+    video_processor.process_current_frame()

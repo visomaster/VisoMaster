@@ -173,7 +173,7 @@ class ModelsProcessor(QObject):
 
     def load_model(self, model_name, session_options=None):
         # self.showModelLoadingProgressBar()
-        time.sleep(0.5)
+        #time.sleep(0.5)
         if session_options is None:
             model_instance = onnxruntime.InferenceSession(self.models_path[model_name], providers=self.providers)
         else:
@@ -184,7 +184,7 @@ class ModelsProcessor(QObject):
 
     def load_model_trt(self, model_name, custom_plugin_path=None, precision='fp16'):
         # self.showModelLoadingProgressBar()
-        time.sleep(0.5)
+        #time.sleep(0.5)
         if not os.path.exists(self.models_trt_path[model_name]):
             onnx2trt(onnx_model_path=self.models_path[model_name],
                      trt_model_path=self.models_trt_path[model_name],

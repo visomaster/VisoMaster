@@ -24,34 +24,46 @@ class TargetMediaCardButton(QPushButton):
 
     def loadMediaOnClick(self):
         main_window = self.window()
-        # Check if it is docked or not 
+        # Check if it is docked or not
         if main_window.parent():
             main_window = main_window.parent()
+
+        # Deselect the currently selected video
         if main_window.selected_video_buttons:
-            main_window.selected_video_buttons[0].toggle()
+            main_window.selected_video_buttons[0].toggle()  # Deselect the previous video
             main_window.selected_video_buttons.pop(0)
 
+        # Stop the current video processing
         main_window.video_processor.stop_processing()
+
+        # Reset the frame counter
         main_window.video_processor.current_frame_number = 0
         main_window.video_processor.media_path = self.media_path
 
+        # Release the previous media_capture if it exists
         if main_window.video_processor.media_capture:
-            main_window.video_processor.media_capture.release()  # Release the video capture object
+            main_window.video_processor.media_capture.release()
 
         frame = False
-        if self.file_type=='video':
+        max_frames_number = 0  # Initialize max_frames_number for either video or image
+        
+        if self.file_type == 'video':
             media_capture = cv2.VideoCapture(self.media_path)
+            if not media_capture.isOpened():
+                print(f"Error opening video {self.media_path}")
+                return  # If the video cannot be opened, exit the function
+
             media_capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
             max_frames_number = int(media_capture.get(cv2.CAP_PROP_FRAME_COUNT))
             ret, frame = media_capture.read()
             main_window.video_processor.media_capture = media_capture
             main_window.video_processor.max_frame_number = max_frames_number
 
-
-        elif self.file_type=='image':
+        elif self.file_type == 'image':
             frame = cv2.imread(self.media_path)
-            max_frames_number = 0
-        if not isinstance(frame,bool):
+            max_frames_number = 0  # For an image, there is only one "frame"
+
+        if frame is not None:
             # Convert the frame to QPixmap
             height, width, channel = frame.shape
             bytes_per_line = 3 * width
@@ -62,17 +74,29 @@ class TargetMediaCardButton(QPushButton):
             scaled_pixmap = widget_actions.scale_pixmap_to_view(main_window.graphicsViewFrame, pixmap)
             pixmap_item = QtWidgets.QGraphicsPixmapItem(scaled_pixmap)
 
+            # Clear the scene and add the new frame
             main_window.scene.clear()
             main_window.scene.addItem(pixmap_item)
-            
+
             # Fit the image to the view
             widget_actions.fit_image_to_view(main_window, pixmap_item)
+
+            # Immediately update the graphics view
+            main_window.graphicsViewFrame.update()
+
+        # Reset buttons and slider
         widget_actions.resetMediaButtons(main_window)
         main_window.video_processor.file_type = self.file_type
-        main_window.videoSeekSlider.setMaximum(max_frames_number)
-        main_window.videoSeekSlider.setValue(0)
-        # Append video button to main_window selected videos list
+        main_window.videoSeekSlider.blockSignals(True)  # Block signals to prevent unnecessary updates
+        main_window.videoSeekSlider.setMaximum(max_frames_number - 1 if max_frames_number > 0 else 0)
+        main_window.videoSeekSlider.setValue(0)  # Set the slider to 0 for the new video
+        main_window.videoSeekSlider.blockSignals(False)  # Unblock signals
+
+        # Append the selected video button to the list
         main_window.selected_video_buttons.append(self)
+
+        # Update the graphics frame after the reset
+        main_window.graphicsViewFrame.update()
 
 class TargetFaceCardButton(QPushButton):
     def __init__(self, media_path, cropped_face, embedding, *args, **kwargs):
