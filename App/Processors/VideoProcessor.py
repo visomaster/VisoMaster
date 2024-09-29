@@ -61,7 +61,6 @@ class VideoProcessor(QObject):
         self.max_frame_number = 0
         self.media_path = None
         self.num_threads = num_threads
-        self.allow_frame_display = True  # Flag to track if frame display is allowed
 
         # QTimer managed by the main thread
         self.frame_read_timer = QTimer()  # This timer must only be started from the UI thread
@@ -85,7 +84,6 @@ class VideoProcessor(QObject):
         self.processing = True
 
         if self.file_type == 'video':
-            self.allow_frame_display = True  # Allow frame display for new processing
             self.reset_frame_counter()
 
             if self.media_capture and self.media_capture.isOpened():
@@ -141,7 +139,6 @@ class VideoProcessor(QObject):
             return
 
         self.processing = True
-        self.allow_frame_display = True  # Allow frame display for new processing
         self.reset_frame_counter()
 
         if self.file_type == 'video' and self.media_capture:
@@ -192,7 +189,6 @@ class VideoProcessor(QObject):
 
         print("Stopping video processing.")
         self.processing = False
-        self.allow_frame_display = False  # Prevent further frame display
 
         # Stop the QTimer only from the main thread
         self.frame_read_timer.stop()
