@@ -116,14 +116,6 @@ class VideoProcessor(QObject):
 
             ret, frame = self.media_capture.read()
 
-            if not ret:
-                print("End of video. Attempting to read from the beginning.")
-                self.media_capture.release()
-                self.media_capture = cv2.VideoCapture(self.media_path)
-                self.media_capture.set(cv2.CAP_PROP_POS_FRAMES, 0)  # Restart from the first frame position
-                self.current_frame_number = 0
-                ret, frame = self.media_capture.read()
-
             if ret:
                 print(f"Enqueuing frame {self.current_frame_number}")
                 self.frame_queue.put((self.current_frame_number, frame))
@@ -143,22 +135,14 @@ class VideoProcessor(QObject):
 
         if self.file_type == 'video' and self.media_capture:
             # restore the last frame position if necessary
-            max_frame_number = int(self.media_capture.get(cv2.CAP_PROP_FRAME_COUNT))
-            if self.current_frame_number > max_frame_number - 1:
-                self.current_frame_number = max_frame_number - 1
+            # max_frame_number = int(self.media_capture.get(cv2.CAP_PROP_FRAME_COUNT))
+            if self.current_frame_number > self.max_frame_number:
+                self.current_frame_number = self.max_frame_number
 
             self.media_capture.set(cv2.CAP_PROP_POS_FRAMES, self.current_frame_number)
 
             # Read the current frame
             ret, frame = self.media_capture.read()
-
-            if not ret:
-                print("End of video. Attempting to read from the beginning.")
-                self.media_capture.release()
-                self.media_capture = cv2.VideoCapture(self.media_path)
-                self.media_capture.set(cv2.CAP_PROP_POS_FRAMES, 0)  # Restart from the first frame position
-                self.current_frame_number = 0
-                ret, frame = self.media_capture.read()
 
             if ret:
                 print(f"Enqueuing frame {self.current_frame_number}")

@@ -57,7 +57,7 @@ class TargetMediaCardButton(QPushButton):
             max_frames_number = int(media_capture.get(cv2.CAP_PROP_FRAME_COUNT))
             ret, frame = media_capture.read()
             main_window.video_processor.media_capture = media_capture
-            main_window.video_processor.max_frame_number = max_frames_number
+            main_window.video_processor.max_frame_number = max_frames_number - 1
 
         elif self.file_type == 'image':
             frame = cv2.imread(self.media_path)
