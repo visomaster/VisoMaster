@@ -94,13 +94,15 @@ class InputFacesLoaderWorker(qtc.QThread):
             try:
                 face_kps = kpss_5[0]
             except:
-                return
+                continue
             if face_kps.any():
                 face_emb, cropped_img = self.main_window.models_processor.run_recognize(img, face_kps)
                 face_img = numpy.ascontiguousarray(cropped_img.cpu().numpy())
                 # crop = cv2.resize(face[2].cpu().numpy(), (82, 82))
                 pixmap = widget_actions.get_pixmap_from_frame(self.main_window, face_img)
                 self.thumbnail_ready.emit(image_file_path, face_img, face_emb, pixmap)
+
+        torch.cuda.empty_cache()
 
     def stop(self):
         """Stop the thread by setting the running flag to False."""

@@ -34,7 +34,8 @@ class FrameWorker(threading.Thread):
             self.parameters = self.main_window.parameters.copy()
             # Process the frame with model inference
             print(f"Processing frame {self.frame_number}")
-            self.frame = self.process_swap()
+            with self.models_processor.model_lock:
+                self.frame = self.process_swap()
 
             # Check if processing is still allowed before displaying the frame
             if not self.main_window.video_processor._stop_frame_display.is_set():

@@ -1,4 +1,5 @@
 import threading
+import torch
 import cv2
 import queue
 from functools import partial
@@ -203,6 +204,8 @@ class VideoProcessor(QObject):
 
         # Reset the media control buttons
         widget_actions.resetMediaButtons(self.main_window)
+
+        torch.cuda.empty_cache()
 
         return True
 
