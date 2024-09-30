@@ -8,6 +8,10 @@ from torchvision.transforms import v2
 from skimage import transform as trans
 from math import floor, ceil
 
+import torchvision
+from torchvision import transforms
+torchvision.disable_beta_transforms_warning()
+
 import numpy as np
 from App.Processors.Utils import FaceUtil as faceutil
 import threading
@@ -103,7 +107,8 @@ class FrameWorker(threading.Thread):
         return np.ascontiguousarray(img)
 
     def swap_core(self, img, kps_5, kps=False, s_e=[], t_e=[], dfl_model=False): # img = RGB
-        swapper_model = 'Inswapper128'
+        parameters = self.parameters
+        swapper_model = parameters['SwapModelSelection']
         dst = faceutil.get_arcface_template(image_size=512, mode='arcfacemap')
         M, _ = faceutil.estimate_norm_arcface_template(kps_5, src=dst)
         tform = trans.SimilarityTransform()
@@ -122,7 +127,15 @@ class FrameWorker(threading.Thread):
         if swapper_model == 'Inswapper128':
             latent = torch.from_numpy(self.models_processor.calc_swapper_latent(s_e)).float().to('cuda')
             dim = 1
-            input_face_affined = original_face_128
+            if parameters['SwapperResSelection'] == '128':
+                dim = 1
+                input_face_affined = original_face_128
+            elif parameters['SwapperResSelection'] == '256':
+                dim = 2
+                input_face_affined = original_face_256
+            elif parameters['SwapperResSelection'] == '512':
+                dim = 4
+                input_face_affined = original_face_512
 
         itex = 1
         output_size = int(128 * dim)
@@ -154,6 +167,40 @@ class FrameWorker(threading.Thread):
         output = output.permute(2, 0, 1)
         swap = t512(output)
 
+        # Create border mask
+        border_mask = torch.ones((128, 128), dtype=torch.float32, device=self.models_processor.device)
+        border_mask = torch.unsqueeze(border_mask,0)
+
+        # if parameters['BorderState']:
+        top = 10 #parameters['BorderTopSlider']
+        left = 10 #parameters['BorderLeftSlider']
+        right = 128-10 #parameters['BorderRightSlider']
+        bottom = 128-10 # parameters['BorderBottomSlider']
+
+        border_mask[:, :top, :] = 0
+        border_mask[:, bottom:, :] = 0
+        border_mask[:, :, :left] = 0
+        border_mask[:, :, right:] = 0
+
+        #gauss = transforms.GaussianBlur(parameters['BorderBlurSlider']*2+1, (parameters['BorderBlurSlider']+1)*0.2)
+        gauss = transforms.GaussianBlur(5*2+1, (5+1)*0.2)
+        border_mask = gauss(border_mask)
+
+        # Create image mask
+        swap_mask = torch.ones((128, 128), dtype=torch.float32, device=self.models_processor.device)
+        swap_mask = torch.unsqueeze(swap_mask,0)
+
+        # Add blur to swap_mask results
+        #gauss = transforms.GaussianBlur(parameters['BlendSlider']*2+1, (parameters['BlendSlider']+1)*0.2)
+        gauss = transforms.GaussianBlur(5*2+1, (5+1)*0.2)
+        swap_mask = gauss(swap_mask)
+
+        # Combine border and swap mask, scale, and apply to swap
+        swap_mask = torch.mul(swap_mask, border_mask)
+        swap_mask = t512(swap_mask)
+
+        swap = torch.mul(swap, swap_mask)
+
         # Calculate the area to be mergerd back to the original frame
         IM512 = tform.inverse.params[0:2, :]
         corners = np.array([[0,0], [0,511], [511, 0], [511, 511]])
@@ -180,7 +227,20 @@ class FrameWorker(threading.Thread):
         swap = swap[0:3, top:bottom, left:right]
         swap = swap.permute(1, 2, 0)
 
+        # Untransform the swap mask
+        swap_mask = v2.functional.pad(swap_mask, (0,0,img.shape[2]-512, img.shape[1]-512))
+        swap_mask = v2.functional.affine(swap_mask, tform.inverse.rotation*57.2958, (tform.inverse.translation[0], tform.inverse.translation[1]), tform.inverse.scale, 0, interpolation=v2.InterpolationMode.BILINEAR, center = (0,0) )
+        swap_mask = swap_mask[0:1, top:bottom, left:right]
+        swap_mask = swap_mask.permute(1, 2, 0)
+        swap_mask = torch.sub(1, swap_mask)
+
+        # Apply the mask to the original image areas
+        img_crop = img[0:3, top:bottom, left:right]
+        img_crop = img_crop.permute(1,2,0)
+        img_crop = torch.mul(swap_mask,img_crop)
+            
         #Add the cropped areas and place them back into the original image
+        swap = torch.add(swap, img_crop)
         swap = swap.type(torch.uint8)
         swap = swap.permute(2,0,1)
         img[0:3, top:bottom, left:right] = swap
