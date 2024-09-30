@@ -29,14 +29,17 @@ class FrameWorker(threading.Thread):
         try:
             self.parameters = self.main_window.parameters.copy()
             # Process the frame with model inference
-            with self.models_processor.model_lock:  # Lock only here
-                print(f"Processing frame {self.frame_number} with lock")
-                self.frame = self.process_swap()
+            print(f"Processing frame {self.frame_number}")
+            self.frame = self.process_swap()
 
-            print(f"Displaying frame {self.frame_number}")
-            # Convert the frame (which is a NumPy array) to QImage
-            pixmap = widget_actions.get_pixmap_from_frame(self.main_window, self.frame)
-            self.main_window.update_frame_signal.emit(self.frame_number, pixmap)
+            # Check if processing is still allowed before displaying the frame
+            if not self.main_window.video_processor._stop_frame_display.is_set():
+                print(f"Displaying frame {self.frame_number}")
+                # Convert the frame (which is a NumPy array) to QImage
+                pixmap = widget_actions.get_pixmap_from_frame(self.main_window, self.frame)
+                self.main_window.update_frame_signal.emit(self.frame_number, pixmap)
+            else:
+                print(f"Frame {self.frame_number} was not displayed because processing was stopped.")
 
         except Exception as e:
             print(f"Error in FrameWorker: {e}")

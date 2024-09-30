@@ -34,7 +34,10 @@ class TargetMediaCardButton(QPushButton):
             main_window.selected_video_buttons.pop(0)
 
         # Stop the current video processing
-        main_window.video_processor.stop_processing()
+        processing = main_window.video_processor.stop_processing()
+        if processing:
+            main_window.video_processor._stop_frame_display.set()
+            qtc.QThread.msleep(200)  # Sleep per 200 ms
 
         # Reset the frame counter
         main_window.video_processor.current_frame_number = 0
@@ -54,16 +57,20 @@ class TargetMediaCardButton(QPushButton):
                 return  # If the video cannot be opened, exit the function
 
             media_capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
-            max_frames_number = int(media_capture.get(cv2.CAP_PROP_FRAME_COUNT))
+            max_frames_number = int(media_capture.get(cv2.CAP_PROP_FRAME_COUNT)) - 1
             ret, frame = media_capture.read()
             main_window.video_processor.media_capture = media_capture
-            main_window.video_processor.max_frame_number = max_frames_number - 1
+            main_window.video_processor.max_frame_number = max_frames_number
 
         elif self.file_type == 'image':
             frame = cv2.imread(self.media_path)
             max_frames_number = 0  # For an image, there is only one "frame"
+            main_window.video_processor.max_frame_number = max_frames_number
 
         if frame is not None:
+            # restore initial video position after reading. == 0
+            media_capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
+
             # Convert the frame to QPixmap
             height, width, channel = frame.shape
             bytes_per_line = 3 * width
@@ -88,7 +95,7 @@ class TargetMediaCardButton(QPushButton):
         widget_actions.resetMediaButtons(main_window)
         main_window.video_processor.file_type = self.file_type
         main_window.videoSeekSlider.blockSignals(True)  # Block signals to prevent unnecessary updates
-        main_window.videoSeekSlider.setMaximum(max_frames_number - 1 if max_frames_number > 0 else 0)
+        main_window.videoSeekSlider.setMaximum(max_frames_number)
         main_window.videoSeekSlider.setValue(0)  # Set the slider to 0 for the new video
         main_window.videoSeekSlider.blockSignals(False)  # Unblock signals
 
