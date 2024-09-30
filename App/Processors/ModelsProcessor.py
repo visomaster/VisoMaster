@@ -283,7 +283,7 @@ class ModelsProcessor(QObject):
 
             bboxes, kpss_5, kpss = self.detect_retinaface(img, max_num=max_num, score=score, use_landmark_detection=use_landmark_detection, landmark_detect_mode=landmark_detect_mode, landmark_score=landmark_score, from_points=from_points, rotation_angles=rotation_angles)
 
-        elif detect_mode=='SCRDF':
+        elif detect_mode=='SCRFD':
             if not self.models['SCRFD2.5g']:
                 self.models['SCRFD2.5g'] = self.load_model('SCRFD2.5g')
 
