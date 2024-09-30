@@ -7,7 +7,7 @@ import cv2
 from PySide6.QtWidgets import QPushButton
 from App.UI.Widgets.LayoutData import SWAPPER_LAYOUT_DATA
 from functools import partial
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict
 if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
 
@@ -174,12 +174,13 @@ class ParametersWidget:
         self.default_value = kwargs.get('default_value', False)
         self.min_value = kwargs.get('min_value',False)
         self.max_value = kwargs.get('max_value',False)
-        self.group_layout_data = kwargs.get('group_layout_data', {})
+        self.group_layout_data: Dict[str, dict]  = kwargs.get('group_layout_data', {})
         self.widget_name = kwargs.get('widget_name', False)
-        self.label_widget = kwargs.get('label_widget', False)
-        self.group_widget = kwargs.get('group_widget', False)
-        self.main_window = kwargs.get('main_window', False)
-        self.line_edit = False #Only sliders have textbox currently
+        self.label_widget: QtWidgets.QLabel = kwargs.get('label_widget', False)
+        self.group_widget: QtWidgets.QGroupBox = kwargs.get('group_widget', False)
+        self.main_window: 'MainWindow' = kwargs.get('main_window', False)
+        self.line_edit: QtWidgets.QLineEdit = False #Only sliders have textbox currently
+        self.reset_default_button = False
 
 class ToggleSwitchButton(QtWidgets.QPushButton, ParametersWidget):
     def __init__(self, *args, **kwargs):
@@ -191,6 +192,9 @@ class SelectionBox(QtWidgets.QComboBox, ParametersWidget):
         super().__init__(*args, **kwargs)
         ParametersWidget.__init__(self, *args, **kwargs)
         self.currentTextChanged.connect(partial(widget_actions.show_hide_related_widgets, self.main_window, self, self.widget_name, ))
+
+    def reset_to_default_value(self):
+        self.setCurrentText(self.default_value)
     
 class ToggleButton(QtWidgets.QPushButton, ParametersWidget):
     _circle_position = None
@@ -262,13 +266,39 @@ class ParameterSlider(QtWidgets.QSlider, ParametersWidget):
         ParametersWidget.__init__(self, *args, **kwargs)
         self.min_value = int(min_value)
         self.max_value = int(max_value)
+        self.default_value = int(default_value)
         self.setMinimum(int(min_value))
         self.setMaximum(int(max_value))
-        self.setValue(int(default_value))
+        self.setValue(self.default_value)
         self.setOrientation(qtc.Qt.Orientation.Horizontal)
         self.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Minimum)
         self.setMinimumWidth(130)
         # Set a fixed width for the slider
+
+    def reset_to_default_value(self):
+        self.setValue(int(self.default_value))
+
+
+class ParameterLineEdit(QtWidgets.QLineEdit):
+    def __init__(self, min_value: int, max_value: int, default_value: str, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setFixedWidth(38)  # Make the line edit narrower
+        self.setMaxLength(3)
+        self.setValidator(QtGui.QIntValidator(min_value, max_value))  # Restrict input to numbers
+        self.setText(default_value)
+        
+
+class ParameterResetDefaultButton(QtWidgets.QPushButton):
+    def __init__(self, related_widget: ParameterSlider | SelectionBox, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.related_widget = related_widget
+        button_icon = QtGui.QIcon(QtGui.QPixmap(':/media/Media/reset_default.png'))
+        self.setIcon(button_icon)
+        self.setFixedWidth(30)  # Make the line edit narrower
+        self.setCursor(QtCore.Qt.PointingHandCursor)
+
+        self.clicked.connect(related_widget.reset_to_default_value)
+
 
 class FormGroupBox(QtWidgets.QGroupBox):
     def __init__(self, main_window:'MainWindow', title="Form Group", parent=None,):

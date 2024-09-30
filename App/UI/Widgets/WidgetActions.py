@@ -4,7 +4,7 @@ from PySide6 import QtWidgets, QtGui
 import time
 import App.Helpers.Misc_Helpers as misc_helpers 
 import App.UI.Widgets.UI_Workers as ui_workers
-from App.UI.Widgets.WidgetComponents import TargetMediaCardButton, ProgressDialog, TargetFaceCardButton, InputFaceCardButton, FormGroupBox, ToggleButton, SelectionBox, ParameterSlider
+from App.UI.Widgets.WidgetComponents import TargetMediaCardButton, ProgressDialog, TargetFaceCardButton, InputFaceCardButton, FormGroupBox, ToggleButton, SelectionBox, ParameterSlider, ParameterLineEdit, ParameterResetDefaultButton
 from PySide6.QtWidgets import QComboBox
 
 import App.UI.Widgets.WidgetActions as widget_actions 
@@ -406,13 +406,17 @@ def add_parameter_widgets(main_window: 'MainWindow', LAYOUT_DATA: dict, layoutWi
                 widget.clicked.connect(partial(onchange, widget, widget_name))
 
             elif 'Selection' in widget_name:
-                widget = SelectionBox(label=widget_data['label'], widget_name=widget_name, group_layout_data=widgets, label_widget=label, main_window=main_window)
+                widget = SelectionBox(label=widget_data['label'], widget_name=widget_name, group_layout_data=widgets, label_widget=label, main_window=main_window, default_value=widget_data['default'])
                 widget.addItems(widget_data['options'])
                 widget.setCurrentText(widget_data['default'])
+
+                widget.reset_default_button = ParameterResetDefaultButton(related_widget=widget)
 
                 horizontal_layout = QtWidgets.QHBoxLayout()
                 horizontal_layout.addWidget(label)
                 horizontal_layout.addWidget(widget)
+                horizontal_layout.addWidget(widget.reset_default_button)
+
                 category_layout.addRow(horizontal_layout)
 
                 # Initialize parameter value
@@ -423,20 +427,16 @@ def add_parameter_widgets(main_window: 'MainWindow', LAYOUT_DATA: dict, layoutWi
                     update_parameter(main_window, selection_widget_name, selected_value)
                 widget.currentTextChanged.connect(partial(onchange, widget, widget_name))
 
-
             elif 'Slider' in widget_name:
                 widget = ParameterSlider(label=widget_data['label'], widget_name=widget_name, group_layout_data=widgets, label_widget=label, min_value=widget_data['min_value'], max_value=widget_data['max_value'], default_value=widget_data['default'], main_window=main_window)
-                line_edit = QtWidgets.QLineEdit()
-                line_edit.setFixedWidth(38)  # Make the line edit narrower
-                line_edit.setMaxLength(3)
-                line_edit.setValidator(QtGui.QIntValidator(int(widget_data['min_value']), int(widget_data['max_value'])))  # Restrict input to numbers
-                line_edit.setText(widget_data['default'])
-                widget.line_edit = line_edit
-
+                widget.line_edit = ParameterLineEdit(min_value=int(widget_data['min_value']), max_value=int(widget_data['max_value']), default_value=widget_data['default'])
+                widget.reset_default_button = ParameterResetDefaultButton(related_widget=widget)
                 horizontal_layout = QtWidgets.QHBoxLayout()
                 horizontal_layout.addWidget(label)
                 horizontal_layout.addWidget(widget)
-                horizontal_layout.addWidget(line_edit)
+                horizontal_layout.addWidget(widget.line_edit)
+                horizontal_layout.addWidget(widget.reset_default_button)
+
                 category_layout.addRow(horizontal_layout)
 
                 # Initialize parameter value
@@ -477,7 +477,7 @@ def add_parameter_widgets(main_window: 'MainWindow', LAYOUT_DATA: dict, layoutWi
             show_hide_related_widgets(main_window, widget, widget_name)
 
 # Function to Hide Elements conditionally from values in LayoutData (Currently supports using Selection box and Toggle button to hide other widgets)
-def show_hide_related_widgets(main_window: 'MainWindow', parent_widget: ToggleButton | QComboBox, parent_widget_name, value1=False, value2=False):
+def show_hide_related_widgets(main_window: 'MainWindow', parent_widget: ToggleButton | QComboBox, parent_widget_name: str, value1=False, value2=False):
     if main_window.parameter_widgets:
         group_layout_data = parent_widget.group_layout_data #Dictionary contaning layout data of all elements in the group of the parent_widget
         if 'Selection' in parent_widget_name:
@@ -491,9 +491,11 @@ def show_hide_related_widgets(main_window: 'MainWindow', parent_widget: ToggleBu
                     if group_layout_data[widget_name].get('requiredSelectionValue') != parent_widget.currentText():
                         current_widget.hide()
                         current_widget.label_widget.hide()
+                        current_widget.reset_default_button.hide()
                     else:
                         current_widget.show()
                         current_widget.label_widget.show()
+                        current_widget.reset_default_button.show()
 
         elif 'Toggle' in parent_widget_name:
             # Loop through all widgets data in the parent widget's group layout data
@@ -506,11 +508,13 @@ def show_hide_related_widgets(main_window: 'MainWindow', parent_widget: ToggleBu
                     if group_layout_data[widget_name].get('requiredToggleValue') != parent_widget.isChecked():
                         current_widget.hide()
                         current_widget.label_widget.hide()
+                        current_widget.reset_default_button.hide()
                         if current_widget.line_edit:
                             current_widget.line_edit.hide()
                     else:
                         current_widget.show()
                         current_widget.label_widget.show()
+                        current_widget.reset_default_button.show()
                         if current_widget.line_edit:
                             current_widget.line_edit.show()
 

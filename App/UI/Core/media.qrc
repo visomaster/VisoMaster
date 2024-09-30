@@ -39,5 +39,6 @@
     <file>Media/tl_right_off.png</file>
     <file>Media/tl_right_on.png</file>
     <file>Media/webcam.png</file>
+    <file>Media/reset_default.png</file>
   </qresource>
 </RCC>

@@ -6,8 +6,9 @@ import App.UI.Widgets.WidgetActions as widget_actions
 from functools import partial
 from App.Processors.VideoProcessor import VideoProcessor
 from App.Processors.ModelsProcessor import ModelsProcessor
-from App.UI.Widgets.WidgetComponents import GraphicsViewEventFilter
+from App.UI.Widgets.WidgetComponents import GraphicsViewEventFilter, ParametersWidget
 from App.UI.Widgets.LayoutData import SWAPPER_LAYOUT_DATA
+from typing import Dict
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     update_frame_signal = QtCore.Signal(int, QtGui.QPixmap)
@@ -27,7 +28,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.parameters = {}
         self.parameters_list = {}
         self.control = {}
-        self.parameter_widgets = {}
+        self.parameter_widgets: Dict[str, ParametersWidget | QtWidgets.QWidget] = {}
         self.processed_frames = {}
         self.next_frame_to_display = None  # Index of the next frame to display
 

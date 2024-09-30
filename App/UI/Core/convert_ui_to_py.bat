@@ -1,4 +1,4 @@
-call conda activate pyside_test
+call conda activate rope_pyside
 pyside6-uic C:\Users\argen\Documents\Rope-PySide\App\UI\Core\MainWindow.ui -o C:\Users\argen\Documents\Rope-PySide\App\UI\Core\MainWindow.py
 pyside6-rcc C:\Users\argen\Documents\Rope-PySide\App\UI\Core\media.qrc -o C:\Users\argen\Documents\Rope-PySide\App\UI\Core\media_rc.py
 
