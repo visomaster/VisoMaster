@@ -1,4 +1,5 @@
 import cv2
+import threading
 from App.UI.Core.MainWindow import Ui_MainWindow
 from PySide6 import QtWidgets, QtGui
 from PySide6 import QtCore
@@ -31,6 +32,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.parameter_widgets: Dict[str, ParametersWidget | QtWidgets.QWidget] = {}
         self.processed_frames = {}
         self.next_frame_to_display = None  # Index of the next frame to display
+        self._is_slider_pressed = threading.Event()
 
     def initialize_widgets(self):
         # Initialize QListWidget for target media
@@ -56,6 +58,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.buttonSelectInputFacesFiles.clicked.connect(partial(widget_actions.onClickSelectInputImages, self, 'files'))
 
         self.videoSeekSlider.valueChanged.connect(partial(widget_actions.OnChangeSlider, self))
+        self.videoSeekSlider.sliderPressed.connect(self.on_slider_pressed)
         self.videoSeekSlider.sliderReleased.connect(self.on_slider_released)
 
         # Connect the Play/Stop button to the OnClickPlayButton method
@@ -74,8 +77,14 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # Initialize the button states
         widget_actions.resetMediaButtons(self)
 
+    def on_slider_pressed(self):
+        self._is_slider_pressed.set()
+        position = self.videoSeekSlider.value()
+        print(f"Slider pressed. position: {position}")
+
     def on_slider_released(self):
         new_position = self.videoSeekSlider.value()
+        self._is_slider_pressed.clear()
         print(f"Slider released. New position: {new_position}")
     
         # Perform the update to the new frame

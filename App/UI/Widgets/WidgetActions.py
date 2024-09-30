@@ -102,6 +102,8 @@ def OnChangeSlider(main_window: 'MainWindow', new_position=0):
             widget_actions.update_graphics_view(main_window, pixmap, new_position)
             # restore slider position 
             video_processor.media_capture.set(cv2.CAP_PROP_POS_FRAMES, new_position)
+            if not main_window._is_slider_pressed.is_set():
+                video_processor.process_current_frame()  # Process the current frame
 
     # Do not automatically restart the video, let the user press Play to resume
     print("OnChangeSlider: Video stopped after slider movement.")
