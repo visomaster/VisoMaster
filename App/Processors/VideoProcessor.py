@@ -52,7 +52,7 @@ class VideoProcessor(QObject):
         super().__init__()
         self.main_window = main_window
         #self.frame_queue = queue.Queue()
-        self.frame_queue = queue.Queue(maxsize=num_threads)
+        self.frame_queue = queue.Queue()
         self.threads = []
         self.media_capture = None
         self.file_type = None
@@ -61,6 +61,7 @@ class VideoProcessor(QObject):
         self.max_frame_number = 0
         self.media_path = None
         self.num_threads = num_threads
+        self._stop_frame_display = threading.Event()  # Use Event to manage to stop displaying frame
 
         # QTimer managed by the main thread
         self.frame_read_timer = QTimer()  # This timer must only be started from the UI thread
@@ -84,6 +85,7 @@ class VideoProcessor(QObject):
         self.processing = True
 
         if self.file_type == 'video':
+            self._stop_frame_display.clear()  # Allow frame display for new processing
             self.reset_frame_counter()
 
             if self.media_capture and self.media_capture.isOpened():
@@ -100,7 +102,6 @@ class VideoProcessor(QObject):
                 widget_actions.setPlayButtonIconToPlay(self.main_window)
 
         elif self.file_type == 'image':
-            self.max_frame_number = 0
             self.process_current_frame(ignore_processing=True)
 
     def process_next_frame(self):
@@ -108,10 +109,15 @@ class VideoProcessor(QObject):
         if not self.processing:
             return
 
+        if self.frame_queue.qsize() >= self.num_threads:
+            print(f"Queue is full ({self.frame_queue.qsize()} frames). Throttling frame reading.")
+            return  # Skip reading a new frame
+
         if self.file_type == 'video' and self.media_capture:
-            if self.current_frame_number >= self.max_frame_number:
+            if self.current_frame_number > self.max_frame_number:
                 self.stop_processing()
                 self.current_frame_number = self.max_frame_number
+                self.media_capture.set(cv2.CAP_PROP_POS_FRAMES, self.current_frame_number)
                 return
 
             ret, frame = self.media_capture.read()
@@ -122,7 +128,7 @@ class VideoProcessor(QObject):
             else:
                 print(f"Error reading frame at position {self.current_frame_number}")
 
-        self.current_frame_number += 1
+        self.current_frame_number = int(self.media_capture.get(cv2.CAP_PROP_POS_FRAMES))
 
     def process_current_frame(self, ignore_processing=False):
         """Read the current frame and process it immediately."""
@@ -131,15 +137,14 @@ class VideoProcessor(QObject):
             return
 
         self.processing = True
+        self._stop_frame_display.clear()  # Allow frame display for new processing
         self.reset_frame_counter()
 
         if self.file_type == 'video' and self.media_capture:
             # restore the last frame position if necessary
-            # max_frame_number = int(self.media_capture.get(cv2.CAP_PROP_FRAME_COUNT))
             if self.current_frame_number > self.max_frame_number:
                 self.current_frame_number = self.max_frame_number
-
-            self.media_capture.set(cv2.CAP_PROP_POS_FRAMES, self.current_frame_number)
+                self.media_capture.set(cv2.CAP_PROP_POS_FRAMES, self.current_frame_number)
 
             # Read the current frame
             ret, frame = self.media_capture.read()
@@ -169,7 +174,7 @@ class VideoProcessor(QObject):
         """Stop video processing and signal completion."""
         if not self.processing:
             print("Processing not active. No action to perform.")
-            return
+            return False
 
         print("Stopping video processing.")
         self.processing = False
@@ -198,6 +203,8 @@ class VideoProcessor(QObject):
 
         # Reset the media control buttons
         widget_actions.resetMediaButtons(self.main_window)
+
+        return True
 
     def reset_frame_counter(self):
         self.main_window.reset_frame_counter()

@@ -42,14 +42,6 @@ def onClickSelectTargetVideos(main_window: 'MainWindow', source_type='folder', f
         if not files_list:
             return
 
-    # Stop the current video if it's playing
-    '''
-    video_processor = main_window.video_processor
-    if video_processor.processing:
-        print("Stopping the current video before loading a new video or image.")
-        video_processor.stop_processing()
-    '''
-
     clear_stop_loading_target_media(main_window)
     clear_target_faces(main_window)
     
@@ -84,14 +76,6 @@ def onClickSelectInputImages(main_window: 'MainWindow', source_type='folder', fo
         if not files_list:
             return
 
-    # Stop the current video if it's playing
-    '''
-    video_processor = main_window.video_processor
-    if video_processor.processing:
-        print("Stopping the current video before loading a new video or image.")
-        video_processor.stop_processing()
-    '''
-
     clear_stop_loading_input_media(main_window)
     clear_input_faces(main_window)
     main_window.selected_input_face_buttons = []
@@ -103,11 +87,11 @@ def onClickSelectInputImages(main_window: 'MainWindow', source_type='folder', fo
 @qtc.Slot(int)
 def OnChangeSlider(main_window: 'MainWindow', new_position=0):
     video_processor = main_window.video_processor
-    was_processing = video_processor.processing
 
+    was_processing = video_processor.stop_processing()
     if was_processing:
+        video_processor._stop_frame_display.set()
         print("OnChangeSlider: Processing in progress. Stopping current processing.")
-        video_processor.stop_processing()
 
     video_processor.current_frame_number = new_position
     if video_processor.media_capture:
@@ -116,6 +100,8 @@ def OnChangeSlider(main_window: 'MainWindow', new_position=0):
         if ret:
             pixmap = widget_actions.get_pixmap_from_frame(main_window, frame)
             widget_actions.update_graphics_view(main_window, pixmap, new_position)
+            # restore slider position 
+            video_processor.media_capture.set(cv2.CAP_PROP_POS_FRAMES, new_position)
 
     # Do not automatically restart the video, let the user press Play to resume
     print("OnChangeSlider: Video stopped after slider movement.")
