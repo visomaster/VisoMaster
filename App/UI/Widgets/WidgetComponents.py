@@ -11,23 +11,25 @@ from typing import TYPE_CHECKING, Dict
 if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
 
-class TargetMediaCardButton(QPushButton):
+class CardButton(QPushButton):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args)
+        self.main_window: 'MainWindow' = kwargs.get('main_window', False)
+        self.list_item  = None
+        print(self.main_window)
+
+class TargetMediaCardButton(CardButton):
     def __init__(self, media_path, file_type, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.file_type = file_type
         self.media_path = media_path
-        self.list_item = None
         self.setCheckable(True)
         self.setToolTip(media_path)
         self.clicked.connect(self.loadMediaOnClick)
 
-
     def loadMediaOnClick(self):
-        main_window = self.window()
-        # Check if it is docked or not
-        if main_window.parent():
-            main_window = main_window.parent()
 
+        main_window = self.main_window
         # Deselect the currently selected video
         if main_window.selected_video_buttons:
             main_window.selected_video_buttons[0].toggle()  # Deselect the previous video
@@ -105,7 +107,7 @@ class TargetMediaCardButton(QPushButton):
         # Update the graphics frame after the reset
         main_window.graphicsViewFrame.update()
 
-class TargetFaceCardButton(QPushButton):
+class TargetFaceCardButton(CardButton):
     def __init__(self, media_path, cropped_face, embedding, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.media_path = media_path
@@ -115,10 +117,7 @@ class TargetFaceCardButton(QPushButton):
         self.clicked.connect(self.loadTargetFace)
 
     def loadTargetFace(self):
-        main_window = self.window()
-        # Check if it is docked or not 
-        if main_window.parent():
-            main_window = main_window.parent()
+        main_window = self.main_window
 
         if main_window.selected_target_face_buttons:
             if main_window.selected_target_face_buttons[0]!=self:
@@ -129,7 +128,7 @@ class TargetFaceCardButton(QPushButton):
         widget_actions.refresh_frame(main_window)
 
 
-class InputFaceCardButton(QPushButton):
+class InputFaceCardButton(CardButton):
     def __init__(self, media_path, cropped_face, embedding, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.cropped_face = cropped_face
@@ -141,10 +140,7 @@ class InputFaceCardButton(QPushButton):
         self.clicked.connect(self.loadInputFace)
 
     def loadInputFace(self):
-        main_window = self.window()
-        # Check if it is docked or not 
-        if main_window.parent():
-            main_window = main_window.parent()
+        main_window = self.main_window
         # When not holding ctrl key
         if not QtWidgets.QApplication.keyboardModifiers() == qtc.Qt.ControlModifier:
             for i in range(len(main_window.selected_input_face_buttons)-1, -1, -1):

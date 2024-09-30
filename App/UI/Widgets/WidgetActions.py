@@ -4,7 +4,7 @@ from PySide6 import QtWidgets, QtGui
 import time
 import App.Helpers.Misc_Helpers as misc_helpers 
 import App.UI.Widgets.UI_Workers as ui_workers
-from App.UI.Widgets.WidgetComponents import TargetMediaCardButton, ProgressDialog, TargetFaceCardButton, InputFaceCardButton, FormGroupBox, ToggleButton, SelectionBox, ParameterSlider, ParameterLineEdit, ParameterResetDefaultButton
+from App.UI.Widgets.WidgetComponents import TargetMediaCardButton, ProgressDialog, TargetFaceCardButton, InputFaceCardButton, FormGroupBox, ToggleButton, SelectionBox, ParameterSlider, ParameterLineEdit, ParameterResetDefaultButton, CardButton
 from PySide6.QtWidgets import QComboBox
 
 import App.UI.Widgets.WidgetActions as widget_actions 
@@ -126,24 +126,24 @@ def on_slider_released(main_window: 'MainWindow'):
 # Functions to add Buttons with thumbnail for selecting videos/images and faces
 @qtc.Slot(str, QtGui.QPixmap)
 def add_media_thumbnail_to_target_videos_list(main_window: 'MainWindow', media_path, pixmap, file_type):
-    add_media_thumbnail_button(TargetMediaCardButton, main_window.targetVideosList, main_window.target_videos, pixmap, media_path=media_path, file_type=file_type)
+    add_media_thumbnail_button(main_window, TargetMediaCardButton, main_window.targetVideosList, main_window.target_videos, pixmap, media_path=media_path, file_type=file_type)
 
 @qtc.Slot()
 def add_media_thumbnail_to_target_faces_list(main_window: 'MainWindow', cropped_face, embedding, pixmap):
-    add_media_thumbnail_button(TargetFaceCardButton, main_window.targetFacesList, main_window.target_faces, pixmap, cropped_face=cropped_face, embedding=embedding )
+    add_media_thumbnail_button(main_window, TargetFaceCardButton, main_window.targetFacesList, main_window.target_faces, pixmap, cropped_face=cropped_face, embedding=embedding )
 
 @qtc.Slot()
 def add_media_thumbnail_to_source_faces_list(main_window: 'MainWindow', media_path, cropped_face, embedding, pixmap):
-    add_media_thumbnail_button(InputFaceCardButton, main_window.inputFacesList, main_window.input_faces, pixmap, media_path=media_path, cropped_face=cropped_face, embedding=embedding )
+    add_media_thumbnail_button(main_window, InputFaceCardButton, main_window.inputFacesList, main_window.input_faces, pixmap, media_path=media_path, cropped_face=cropped_face, embedding=embedding )
 
 
-def add_media_thumbnail_button(buttonClass:QtWidgets.QPushButton, listWidget:QtWidgets.QListWidget, buttons_list:list, pixmap, **kwargs):
+def add_media_thumbnail_button(main_window: 'MainWindow', buttonClass: CardButton, listWidget:QtWidgets.QListWidget, buttons_list:list, pixmap, **kwargs):
     if buttonClass==TargetMediaCardButton:
         constructor_args = (kwargs.get('media_path'), kwargs.get('file_type'))
     elif buttonClass in (TargetFaceCardButton, InputFaceCardButton):
         constructor_args = (kwargs.get('media_path',''), kwargs.get('cropped_face'), kwargs.get('embedding'))
     button_size = qtc.QSize(70, 70)  # Set a fixed size for the buttons
-    button = buttonClass(*constructor_args)
+    button: CardButton = buttonClass(*constructor_args, main_window=main_window)
     button.setIcon(QtGui.QIcon(pixmap))
     button.setIconSize(button_size - qtc.QSize(3, 3))  # Slightly smaller than the button size to add some margin
     button.setFixedSize(button_size)
