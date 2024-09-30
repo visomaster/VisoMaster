@@ -58,8 +58,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.buttonSelectInputFacesFiles.clicked.connect(partial(widget_actions.onClickSelectInputImages, self, 'files'))
 
         self.videoSeekSlider.valueChanged.connect(partial(widget_actions.OnChangeSlider, self))
-        self.videoSeekSlider.sliderPressed.connect(self.on_slider_pressed)
-        self.videoSeekSlider.sliderReleased.connect(self.on_slider_released)
+        self.videoSeekSlider.sliderPressed.connect(partial(widget_actions.on_slider_pressed, self))
+        self.videoSeekSlider.sliderReleased.connect(partial(widget_actions.on_slider_released, self))
 
         # Connect the Play/Stop button to the OnClickPlayButton method
         self.buttonMediaPlay.toggled.connect(partial(widget_actions.OnClickPlayButton, self))
@@ -76,21 +76,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         # Initialize the button states
         widget_actions.resetMediaButtons(self)
-
-    def on_slider_pressed(self):
-        self._is_slider_pressed.set()
-        position = self.videoSeekSlider.value()
-        print(f"Slider pressed. position: {position}")
-
-    def on_slider_released(self):
-        new_position = self.videoSeekSlider.value()
-        self._is_slider_pressed.clear()
-        print(f"Slider released. New position: {new_position}")
-    
-        # Perform the update to the new frame
-        video_processor = self.video_processor
-        if video_processor.media_capture:
-            video_processor.process_current_frame()  # Process the current frame
 
         # widget_actions.add_groupbox_and_widgets_from_layout_map(self)
     def __init__(self):

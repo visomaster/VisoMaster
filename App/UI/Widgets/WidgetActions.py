@@ -108,6 +108,21 @@ def OnChangeSlider(main_window: 'MainWindow', new_position=0):
     # Do not automatically restart the video, let the user press Play to resume
     print("OnChangeSlider: Video stopped after slider movement.")
 
+def on_slider_pressed(main_window: 'MainWindow'):
+    main_window._is_slider_pressed.set()
+    position = main_window.videoSeekSlider.value()
+    print(f"Slider pressed. position: {position}")
+
+def on_slider_released(main_window: 'MainWindow'):
+    new_position = main_window.videoSeekSlider.value()
+    main_window._is_slider_pressed.clear()
+    print(f"Slider released. New position: {new_position}")
+
+    # Perform the update to the new frame
+    video_processor = main_window.video_processor
+    if video_processor.media_capture:
+        video_processor.process_current_frame()  # Process the current frame
+
 # Functions to add Buttons with thumbnail for selecting videos/images and faces
 @qtc.Slot(str, QtGui.QPixmap)
 def add_media_thumbnail_to_target_videos_list(main_window: 'MainWindow', media_path, pixmap, file_type):
