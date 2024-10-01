@@ -124,6 +124,12 @@ class TargetFaceCardButton(CardButton):
         self.setCheckable(True)
         self.clicked.connect(self.loadTargetFace)
 
+        # Set the context menu policy to trigger the custom context menu on right-click
+        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        # Connect the custom context menu request signal to the custom slot
+        self.customContextMenuRequested.connect(self.on_context_menu)
+        self.create_context_menu()
+
     def loadTargetFace(self):
         main_window = self.main_window
         main_window.cur_selected_target_face_button = self
@@ -150,6 +156,28 @@ class TargetFaceCardButton(CardButton):
                 self.assigned_input_embedding = np.median(all_input_embeddings, 0)
         else:
             self.assigned_input_embedding = np.array([])
+
+    def create_context_menu(self):
+        # create context menu
+        self.popMenu = QtWidgets.QMenu(self)
+        remove_action = QtGui.QAction('Remove from List', self)
+        remove_action.triggered.connect(self.remove_target_face_from_list)
+        self.popMenu.addAction(remove_action)
+
+    def on_context_menu(self, point):
+        # show context menu
+        self.popMenu.exec_(self.mapToGlobal(point))
+
+    def remove_target_face_from_list(self):
+        main_window = self.main_window
+        for i in range(main_window.targetFacesList.count()):
+            list_item = main_window.targetFacesList.item(i)
+            if list_item.listWidget().itemWidget(list_item) == self:
+                main_window.targetFacesList.takeItem(i)   
+                main_window.target_faces.pop(i)
+        widget_actions.refresh_frame(self.main_window)
+        del self
+
 
 class InputFaceCardButton(CardButton):
     def __init__(self, media_path, cropped_face, embedding, *args, **kwargs):
