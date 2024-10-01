@@ -27,7 +27,6 @@ class VideoProcessor(QObject):
         self.max_frame_number = 0
         self.media_path = None
         self.num_threads = num_threads
-        self._stop_frame_display = threading.Event()  # Event to manage frame display stopping
 
         # QTimer managed by the main thread
         self.frame_read_timer = QTimer()
@@ -43,7 +42,6 @@ class VideoProcessor(QObject):
         self.processing = True
 
         if self.file_type == 'video':
-            self._stop_frame_display.clear()  # Allow frame display for new processing
             self.reset_frame_counter()
 
             if self.media_capture and self.media_capture.isOpened():
@@ -82,7 +80,7 @@ class VideoProcessor(QObject):
             ret, frame = self.media_capture.read()
 
             if ret:
-                print(f"Enqueuing frame {self.current_frame_number}")
+                print(f"Enqueueing frame {self.current_frame_number}")
                 try:
                     # Put the frame in the queue and submit the task for processing
                     self.frame_queue.put_nowait((self.current_frame_number, frame))
@@ -119,7 +117,6 @@ class VideoProcessor(QObject):
             return
 
         self.processing = True
-        self._stop_frame_display.clear()  # Allow frame display for new processing
         self.reset_frame_counter()
 
         if self.file_type == 'video' and self.media_capture:
@@ -132,7 +129,7 @@ class VideoProcessor(QObject):
             ret, frame = self.media_capture.read()
 
             if ret:
-                print(f"Enqueuing frame {self.current_frame_number}")
+                print(f"Enqueueing frame {self.current_frame_number}")
                 worker = FrameWorker(frame, self.main_window, self.current_frame_number)
                 worker.start()
 
@@ -147,7 +144,7 @@ class VideoProcessor(QObject):
         elif self.file_type == 'image':
             frame = cv2.imread(self.media_path)
             if frame is not None:
-                print(f"Enqueuing frame {self.current_frame_number}")
+                print(f"Enqueueing frame {self.current_frame_number}")
                 worker = FrameWorker(frame, self.main_window, self.current_frame_number)
                 worker.start()
 
@@ -184,10 +181,10 @@ class VideoProcessor(QObject):
         # Reset multimedia control buttons
         widget_actions.resetMediaButtons(self.main_window)
 
-        torch.cuda.empty_cache()
-
         self.processing_complete.emit()
         print("Signal processing_complete emitted.")
+
+        torch.cuda.empty_cache()
 
         return True
 
