@@ -357,15 +357,17 @@ def clear_target_faces(main_window: 'MainWindow'):
     for target_face in main_window.target_faces:
         del target_face
     main_window.target_faces = []
-    main_window.selected_target_face_buttons = []
 
 def clear_input_faces(main_window: 'MainWindow'):
     main_window.inputFacesList.clear()
     for target_face in main_window.input_faces:
         del target_face
     main_window.input_faces = []
-    main_window.selected_input_face_buttons = []
 
+def uncheck_all_input_faces(main_window: 'MainWindow'):
+    # Uncheck All other input faces 
+    for input_face_button in main_window.input_faces:
+        input_face_button.setChecked(False)
 
 def add_parameter_widgets(main_window: 'MainWindow', LAYOUT_DATA: dict, layoutWidget: QtWidgets.QVBoxLayout):
     layout = QtWidgets.QVBoxLayout()

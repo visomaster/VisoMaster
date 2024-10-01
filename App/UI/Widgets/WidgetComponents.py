@@ -19,7 +19,7 @@ class CardButton(QPushButton):
         self.list_item  = None
 
 class TargetMediaCardButton(CardButton):
-    def __init__(self, media_path, file_type, *args, **kwargs):
+    def __init__(self, media_path: str, file_type: str, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.file_type = file_type
         self.media_path = media_path
@@ -34,7 +34,7 @@ class TargetMediaCardButton(CardButton):
         if main_window.selected_video_buttons:
             main_window.selected_video_buttons[0].toggle()  # Deselect the previous video
             main_window.selected_video_buttons.pop(0)
-
+        
         # Stop the current video processing
         processing = main_window.video_processor.stop_processing()
         if processing:
@@ -93,6 +93,11 @@ class TargetMediaCardButton(CardButton):
             # Immediately update the graphics view
             main_window.graphicsViewFrame.update()
 
+        # Clear current target faces
+        widget_actions.clear_target_faces(main_window)
+        # Uncheck input faces
+        widget_actions.uncheck_all_input_faces(main_window)
+
         # Reset buttons and slider
         widget_actions.resetMediaButtons(main_window)
         main_window.video_processor.file_type = self.file_type
@@ -127,9 +132,7 @@ class TargetFaceCardButton(CardButton):
             if target_face_button!=self:
                 target_face_button.setChecked(False)
 
-        # Uncheck All other input faces 
-        for input_face_button in main_window.input_faces:
-            input_face_button.setChecked(False)
+        widget_actions.uncheck_all_input_faces(main_window)
 
         for input_face_button in self.assigned_input_face_buttons.keys():
             input_face_button.setChecked(True)
@@ -160,7 +163,7 @@ class InputFaceCardButton(CardButton):
 
     def loadInputFace(self):
         main_window = self.main_window
-        
+
         if main_window.cur_selected_target_face_button:
             cur_selected_target_face_button = main_window.cur_selected_target_face_button
             if not QtWidgets.QApplication.keyboardModifiers() == qtc.Qt.ControlModifier:

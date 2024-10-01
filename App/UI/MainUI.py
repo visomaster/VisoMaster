@@ -8,7 +8,7 @@ import App.UI.Widgets.WidgetActions as widget_actions
 from functools import partial
 from App.Processors.VideoProcessor import VideoProcessor
 from App.Processors.ModelsProcessor import ModelsProcessor
-from App.UI.Widgets.WidgetComponents import GraphicsViewEventFilter, ParametersWidget, TargetFaceCardButton, InputFaceCardButton
+from App.UI.Widgets.WidgetComponents import GraphicsViewEventFilter, ParametersWidget, TargetFaceCardButton, InputFaceCardButton, TargetMediaCardButton
 from App.UI.Widgets.LayoutData import SWAPPER_LAYOUT_DATA
 from typing import Dict, List
 
@@ -61,14 +61,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.input_faces_loader_worker = False
         self.video_processor = VideoProcessor(self)
         self.models_processor = ModelsProcessor(self)
-        self.target_videos = [] #Contains button objects of target videos (Set as list instead of single video to support batch processing in future)
+        self.target_videos: List[TargetMediaCardButton] = [] #Contains button objects of target videos (Set as list instead of single video to support batch processing in future)
         self.target_faces: List[TargetFaceCardButton] = [] #Contains button objects of target faces
         self.input_faces: List[InputFaceCardButton] = [] #Contains button objects of source faces (images)
         self.cur_selected_target_face_button: TargetFaceCardButton = False
-        self.selected_target_face_buttons = [] 
-        self.selected_input_face_buttons = []
-        self.selected_input_emb_buttons = []
-        self.selected_video_buttons = [] #Contains list of buttons linked to videos/images
+        self.selected_video_buttons: List[TargetMediaCardButton] = [] #Contains list of buttons linked to videos/images
         self.parameters = {}
         self.parameters_list = {}
         self.control = {}
