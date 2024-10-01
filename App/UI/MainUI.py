@@ -160,6 +160,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def enqueue_frame(self, frame_number, pixmap):
         """Enqueue frame to be processed by the worker."""
         print(f"Enqueueing frame {frame_number} in worker thread.")
+        # Clear the event every time new frames are enqueued
+        self.processing_finished_event.clear()
         self.frame_queue.put((frame_number, pixmap))
 
         # Start frame processing in the worker
@@ -167,16 +169,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     @QtCore.Slot(int, QtGui.QPixmap)
     def handle_processed_frame(self, frame_number, pixmap):
-        # Clear the event every time new frames are enqueued
-        self.processing_finished_event.clear()
-
         self.processed_frames[frame_number] = pixmap
         self.display_frames_in_order()
 
     @QtCore.Slot()
     def on_processing_complete(self):
         """Handle completion of frame processing from the worker."""
-
         self.processing_finished_event.set()  # Now the entire process is complete
         print("Worker finished processing all frames.")
 
