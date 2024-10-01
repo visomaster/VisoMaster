@@ -47,7 +47,7 @@ class FrameWorker(threading.Thread):
     def process_swap(self):
         parameters = self.parameters
         # Load frame into VRAM
-        img = torch.from_numpy(self.frame.astype('uint8')).to('cuda') #HxWxc
+        img = torch.from_numpy(self.frame.astype('uint8')).to(self.models_processor.device) #HxWxc
         img = img.permute(2,0,1)#cxHxW
 
         #Scale up frame if it is smaller than 512
@@ -122,7 +122,7 @@ class FrameWorker(threading.Thread):
         original_face_256 = t256(original_face_512)
         original_face_128 = t128(original_face_256)
         if swapper_model == 'Inswapper128':
-            latent = torch.from_numpy(self.models_processor.calc_swapper_latent(s_e)).float().to('cuda')
+            latent = torch.from_numpy(self.models_processor.calc_swapper_latent(s_e)).float().to(self.models_processor.device)
             dim = 1
             if parameters['SwapperResSelection'] == '128':
                 dim = 1
@@ -136,7 +136,7 @@ class FrameWorker(threading.Thread):
 
         itex = 1
         output_size = int(128 * dim)
-        output = torch.zeros((output_size, output_size, 3), dtype=torch.float32, device='cuda')
+        output = torch.zeros((output_size, output_size, 3), dtype=torch.float32, device=self.models_processor.device)
         input_face_affined = input_face_affined.permute(1, 2, 0)
         input_face_affined = torch.div(input_face_affined, 255.0)
 
@@ -149,7 +149,7 @@ class FrameWorker(threading.Thread):
                             input_face_disc = input_face_disc.permute(2, 0, 1)
                             input_face_disc = torch.unsqueeze(input_face_disc, 0).contiguous()
 
-                            swapper_output = torch.empty((1,3,128,128), dtype=torch.float32, device='cuda').contiguous()
+                            swapper_output = torch.empty((1,3,128,128), dtype=torch.float32, device=self.models_processor.device).contiguous()
                             self.models_processor.run_swapper(input_face_disc, latent, swapper_output)
 
                             swapper_output = torch.squeeze(swapper_output)

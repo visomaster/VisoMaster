@@ -85,7 +85,7 @@ class InputFacesLoaderWorker(qtc.QThread):
             if folder_name:
                 image_file_path = os.path.join(folder_name, image_file_path)
             frame = cv2.imread(image_file_path)
-            img = torch.from_numpy(frame.astype('uint8')).to('cuda')
+            img = torch.from_numpy(frame.astype('uint8')).to(self.main_window.models_processor.device)
             img = img.permute(2,0,1)
             bboxes, kpss_5, _ = self.main_window.models_processor.run_detect(img, parameters['DetectorModelSelection'], max_num=1, score=parameters['DetectorScoreSlider']/100.0, use_landmark_detection=parameters['LandmarkDetectToggle'], landmark_detect_mode=parameters['LandmarkDetectModelSelection'], landmark_score=parameters["LandmarkDetectScoreSlider"]/100.0, from_points=parameters["DetectFromPointsToggle"], rotation_angles=[0] if not parameters["AutoRotationToggle"] else [0, 90, 180, 270])
 

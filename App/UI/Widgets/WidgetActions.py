@@ -325,7 +325,7 @@ def find_target_faces(main_window: 'MainWindow'):
             media_capture.release()
         
         # print(frame)
-        img = torch.from_numpy(frame.astype('uint8')).to('cuda')
+        img = torch.from_numpy(frame.astype('uint8')).to(main_window.models_processor.device)
         img = img.permute(2,0,1)
         bboxes, kpss_5, _ = main_window.models_processor.run_detect(img, parameters['DetectorModelSelection'], max_num=50, score=parameters['DetectorScoreSlider']/100.0, use_landmark_detection=parameters['LandmarkDetectToggle'], landmark_detect_mode=parameters['LandmarkDetectModelSelection'], landmark_score=parameters["LandmarkDetectScoreSlider"]/100.0, from_points=parameters["DetectFromPointsToggle"], rotation_angles=[0] if not parameters["AutoRotationToggle"] else [0, 90, 180, 270])
 
