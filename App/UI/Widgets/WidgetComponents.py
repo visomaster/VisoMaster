@@ -16,7 +16,6 @@ class CardButton(QPushButton):
         super().__init__(*args)
         self.main_window: 'MainWindow' = kwargs.get('main_window', False)
         self.list_item  = None
-        print(self.main_window)
 
 class TargetMediaCardButton(CardButton):
     def __init__(self, media_path, file_type, *args, **kwargs):

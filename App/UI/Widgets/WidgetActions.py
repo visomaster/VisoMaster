@@ -226,7 +226,7 @@ def scale_pixmap_to_view(view: QtWidgets.QGraphicsView, pixmap: QtGui.QPixmap):
     view_size = view.viewport().size()
     pixmap_size = pixmap.size()
     # Calculate the scale factor
-    scale_factor = min(view_size.width() / pixmap_size.width(), view_size.height() / pixmap_size.height())
+    scale_factor = max(view_size.width() / pixmap_size.width(), view_size.height() / pixmap_size.height())
     # Scale the pixmap
     scaled_pixmap = pixmap.scaled(
         pixmap_size.width() * scale_factor,
