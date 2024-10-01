@@ -156,9 +156,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def enqueue_frame(self, frame_number, pixmap):
         """Enqueue frame to be processed by the worker."""
-        print(f"Enqueueing frame {frame_number} in worker thread.")
         # Clear the event every time new frames are enqueued
         self.processing_finished_event.clear()
+
+        print(f"Enqueueing frame {frame_number} in worker thread.")
         self.frame_queue.put((frame_number, pixmap))
 
         # Start frame processing in the worker
