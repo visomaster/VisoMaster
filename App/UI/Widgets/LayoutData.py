@@ -35,6 +35,13 @@ SWAPPER_LAYOUT_DATA = {
             'max_value': '100',
             'default': '50',
         },
+        'SimilarityThresholdSlider': {
+            'level': 1,
+            'label': 'Similarity Threshold',
+            'min_value': '1',
+            'max_value': '100',
+            'default': '60',
+        },
         'SimilariyTypeSelection': {
             'level': 1,
             'label': 'Similarity Type',

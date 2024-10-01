@@ -313,6 +313,7 @@ def initializeModelLoadDialog(main_window: 'MainWindow'):
     main_window.model_load_dialog.close()
 
 def find_target_faces(main_window: 'MainWindow'):
+    parameters = main_window.parameters.copy()
     video_processor = main_window.video_processor
     if video_processor.media_path:
         print(video_processor.media_capture)
@@ -336,10 +337,7 @@ def find_target_faces(main_window: 'MainWindow'):
 
         if ret:
             # Apply threshold tolerence
-            threshhold = 50
-            # if self.parameters["ThresholdState"]:
-            if 1:
-                threshhold = 60
+            threshhold = parameters['SimilarityThresholdSlider']
 
             # Loop through all faces in video frame
             for face in ret:

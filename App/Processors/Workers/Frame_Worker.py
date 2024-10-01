@@ -99,7 +99,7 @@ class FrameWorker(threading.Thread):
             for i, fface in enumerate(ret):
                     for target_face in self.main_window.target_faces:
                         sim = self.models_processor.findCosineDistance(fface[2], target_face.embedding)
-                        if sim>=60:
+                        if sim>=parameters['SimilarityThresholdSlider']:
                             s_e = target_face.assigned_input_embedding
                             if len(s_e)>0:
                                 img = self.swap_core(img, fface[0],  s_e=s_e)
