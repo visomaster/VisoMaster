@@ -48,7 +48,6 @@ class FrameWorker(threading.Thread):
 
         except Exception as e:
             print(f"Error in FrameWorker: {e}")
-
     def process_swap(self):
         parameters = self.parameters
         # Load frame into VRAM
@@ -95,14 +94,15 @@ class FrameWorker(threading.Thread):
                 face_kps = kpss[i]
                 face_emb, _ = self.models_processor.run_recognize(img, face_kps_5)
                 ret.append([face_kps_5, face_kps, face_emb])
-        if ret and self.main_window.selected_target_face_buttons and self.main_window.selected_input_face_buttons:
+        if ret:
             # Loop through target faces to see if they match our found face embeddings
             for i, fface in enumerate(ret):
-                    for target_face in self.main_window.selected_target_face_buttons:
+                    for target_face in self.main_window.target_faces:
                         sim = self.models_processor.findCosineDistance(fface[2], target_face.embedding)
                         if sim>=60:
-                            s_e = self.main_window.selected_input_face_buttons[0].embedding
-                            img = self.swap_core(img, fface[0],  s_e=s_e)
+                            s_e = target_face.assigned_input_embedding
+                            if len(s_e)>0:
+                                img = self.swap_core(img, fface[0],  s_e=s_e)
         img = img.permute(1,2,0)
         img = img.cpu().numpy()
         return np.ascontiguousarray(img)

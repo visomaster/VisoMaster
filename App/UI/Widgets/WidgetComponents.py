@@ -3,11 +3,12 @@ from PySide6.QtGui import QImage, QPixmap
 import App.UI.Widgets.WidgetActions as widget_actions
 import PySide6.QtCore as qtc
 import cv2
+import numpy as np
 
 from PySide6.QtWidgets import QPushButton
 from App.UI.Widgets.LayoutData import SWAPPER_LAYOUT_DATA
 from functools import partial
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Dict, List
 if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
 
@@ -107,25 +108,44 @@ class TargetMediaCardButton(CardButton):
         main_window.graphicsViewFrame.update()
 
 class TargetFaceCardButton(CardButton):
-    def __init__(self, media_path, cropped_face, embedding, *args, **kwargs):
+    def __init__(self, media_path, cropped_face, embedding: np.ndarray, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.media_path = media_path
         self.cropped_face = cropped_face
         self.embedding = embedding
+        self.assigned_input_face_buttons: Dict[InputFaceCardButton, np.ndarray] = {} # Key: InputFaceCardButton, Value: Face Embedding
+        self.assigned_input_embedding = np.array([])
         self.setCheckable(True)
         self.clicked.connect(self.loadTargetFace)
 
     def loadTargetFace(self):
         main_window = self.main_window
+        main_window.cur_selected_target_face_button = self
+        self.setChecked(True)
+        for target_face_button in main_window.target_faces:
+            # Uncheck all other target faces
+            if target_face_button!=self:
+                target_face_button.setChecked(False)
 
-        if main_window.selected_target_face_buttons:
-            if main_window.selected_target_face_buttons[0]!=self:
-                main_window.selected_target_face_buttons[0].toggle()
-            main_window.selected_target_face_buttons.pop(0)
-        if self.isChecked():
-            main_window.selected_target_face_buttons.append(self)
+        # Uncheck All other input faces 
+        for input_face_button in main_window.input_faces:
+            input_face_button.setChecked(False)
+
+        for input_face_button in self.assigned_input_face_buttons.keys():
+            input_face_button.setChecked(True)
+
         widget_actions.refresh_frame(main_window)
 
+    def calculateAssignedInputEmbedding(self,):
+        parameters = self.main_window.parameters.copy()
+        all_input_embeddings = [embedding for embedding in self.assigned_input_face_buttons.values()]
+        if len(all_input_embeddings)>0:
+            if parameters['EmbMergeMethodSelection'] == 'Mean':
+                self.assigned_input_embedding = np.mean(all_input_embeddings, 0)
+            elif parameters['EmbMergeMethodSelection'] == 'Median':
+                self.assigned_input_embedding = np.median(all_input_embeddings, 0)
+        else:
+            self.assigned_input_embedding = np.array([])
 
 class InputFaceCardButton(CardButton):
     def __init__(self, media_path, cropped_face, embedding, *args, **kwargs):
@@ -140,14 +160,20 @@ class InputFaceCardButton(CardButton):
 
     def loadInputFace(self):
         main_window = self.main_window
-        # When not holding ctrl key
-        if not QtWidgets.QApplication.keyboardModifiers() == qtc.Qt.ControlModifier:
-            for i in range(len(main_window.selected_input_face_buttons)-1, -1, -1):
-                if main_window.selected_input_face_buttons[i]!=self:
-                    main_window.selected_input_face_buttons[i].toggle()
-                main_window.selected_input_face_buttons.pop(i)
-        if self.isChecked():
-            main_window.selected_input_face_buttons.append(self)
+        
+        if main_window.cur_selected_target_face_button:
+            cur_selected_target_face_button = main_window.cur_selected_target_face_button
+            if not QtWidgets.QApplication.keyboardModifiers() == qtc.Qt.ControlModifier:
+                for input_face_button in cur_selected_target_face_button.assigned_input_face_buttons.keys():
+                    if input_face_button!=self:
+                        input_face_button.setChecked(False)
+                cur_selected_target_face_button.assigned_input_face_buttons = {}
+
+            cur_selected_target_face_button.assigned_input_face_buttons[self] = self.embedding
+
+            if not self.isChecked():
+                cur_selected_target_face_button.assigned_input_face_buttons.pop(self)
+            cur_selected_target_face_button.calculateAssignedInputEmbedding()
 
         widget_actions.refresh_frame(main_window)
 

@@ -7,9 +7,9 @@ import App.UI.Widgets.WidgetActions as widget_actions
 from functools import partial
 from App.Processors.VideoProcessor import VideoProcessor
 from App.Processors.ModelsProcessor import ModelsProcessor
-from App.UI.Widgets.WidgetComponents import GraphicsViewEventFilter, ParametersWidget
+from App.UI.Widgets.WidgetComponents import GraphicsViewEventFilter, ParametersWidget, TargetFaceCardButton, InputFaceCardButton
 from App.UI.Widgets.LayoutData import SWAPPER_LAYOUT_DATA
-from typing import Dict
+from typing import Dict, List
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     update_frame_signal = QtCore.Signal(int, QtGui.QPixmap)
@@ -20,8 +20,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.video_processor = VideoProcessor(self)
         self.models_processor = ModelsProcessor(self)
         self.target_videos = [] #Contains button objects of target videos (Set as list instead of single video to support batch processing in future)
-        self.target_faces = [] #Contains button objects of target faces
-        self.input_faces = [] #Contains button objects of source faces (images)
+        self.target_faces: List[TargetFaceCardButton] = [] #Contains button objects of target faces
+        self.input_faces: List[InputFaceCardButton] = [] #Contains button objects of source faces (images)
+        self.cur_selected_target_face_button: TargetFaceCardButton = False
         self.selected_target_face_buttons = [] 
         self.selected_input_face_buttons = []
         self.selected_input_emb_buttons = []

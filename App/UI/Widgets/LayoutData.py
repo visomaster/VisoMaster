@@ -140,5 +140,13 @@ SWAPPER_LAYOUT_DATA = {
             'parentToggle': 'FrameEnhancerEnableToggle',
             'requiredToggleValue': True,
         }
+    },
+    'Embedding Merge Method':{
+        'EmbMergeMethodSelection':{
+            'level': 1,
+            'label': 'Embedding Merge Method',
+            'options': ['Mean','Median'],
+            'default': 'Mean',
+        }
     }
 }
