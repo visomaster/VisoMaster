@@ -113,12 +113,14 @@ class FrameWorker(threading.Thread):
 
         # Scaling Transforms
         t512 = v2.Resize((512, 512), interpolation=v2.InterpolationMode.BILINEAR, antialias=False)
+        t384 = v2.Resize((384, 384), interpolation=v2.InterpolationMode.BILINEAR, antialias=False)
         t256 = v2.Resize((256, 256), interpolation=v2.InterpolationMode.BILINEAR, antialias=False)
         t128 = v2.Resize((128, 128), interpolation=v2.InterpolationMode.BILINEAR, antialias=False)
 
         # Grab 512 face from image and create 256 and 128 copys
         original_face_512 = v2.functional.affine(img, tform.rotation*57.2958, (tform.translation[0], tform.translation[1]) , tform.scale, 0, center = (0,0), interpolation=v2.InterpolationMode.BILINEAR )
         original_face_512 = v2.functional.crop(original_face_512, 0,0, 512, 512)# 3, 512, 512
+        original_face_384 = t384(original_face_512)
         original_face_256 = t256(original_face_512)
         original_face_128 = t128(original_face_256)
         if swapper_model == 'Inswapper128':
@@ -130,6 +132,9 @@ class FrameWorker(threading.Thread):
             elif parameters['SwapperResSelection'] == '256':
                 dim = 2
                 input_face_affined = original_face_256
+            elif parameters['SwapperResSelection'] == '384':
+                dim = 3
+                input_face_affined = original_face_384
             elif parameters['SwapperResSelection'] == '512':
                 dim = 4
                 input_face_affined = original_face_512

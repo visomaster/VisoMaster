@@ -15,7 +15,7 @@ SWAPPER_LAYOUT_DATA = {
         'SwapperResSelection': {
             'level': 2,
             'label': 'Swapper Resolution',
-            'options': ['128', '256', '512'],
+            'options': ['128', '256', '384', '512'],
             'default': '128',
             'parentSelection': 'SwapModelSelection',
             'requiredSelectionValue': 'Inswapper128',
