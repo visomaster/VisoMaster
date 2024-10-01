@@ -342,6 +342,44 @@ class ParameterSlider(QtWidgets.QSlider, ParametersWidget):
     def reset_to_default_value(self):
         self.setValue(int(self.default_value))
 
+class ParameterDecimalSlider(QtWidgets.QSlider, ParametersWidget):
+    def __init__(self, min_value=0.0, max_value=1.0, default_value=0.0, decimals=2, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        ParametersWidget.__init__(self, *args, **kwargs)
+
+        # Ensure min, max, and default are floats
+        min_value = float(min_value)
+        max_value = float(max_value)
+        default_value = float(default_value)
+
+        # Store the number of decimals and calculate the scale factor
+        self.decimals = decimals
+        self.scale_factor = 10 ** self.decimals
+
+        # Convert min, max, and default to scaled integers for QSlider
+        self.min_value = int(min_value * self.scale_factor)
+        self.max_value = int(max_value * self.scale_factor)
+        self.default_value = int(default_value * self.scale_factor)
+
+        # Set the slider's integer range and default value
+        self.setMinimum(self.min_value)
+        self.setMaximum(self.max_value)
+        self.setValue(self.default_value)
+        print(self.default_value)
+        self.setOrientation(qtc.Qt.Orientation.Horizontal)
+
+    def reset_to_default_value(self):
+        """Reset the slider to its default value."""
+        self.setValue(self.default_value / self.scale_factor)
+
+    def value(self):
+        """Return the slider value as a float, scaled by the decimals."""
+        return super().value() / self.scale_factor
+
+    def setValue(self, value):
+        """Set the slider value, scaling it from a float to the internal integer."""
+        scaled_value = int(float(value) * self.scale_factor)
+        super().setValue(scaled_value)
 
 class ParameterLineEdit(QtWidgets.QLineEdit):
     def __init__(self, min_value: int, max_value: int, default_value: str, *args, **kwargs):
@@ -350,7 +388,29 @@ class ParameterLineEdit(QtWidgets.QLineEdit):
         self.setMaxLength(3)
         self.setValidator(QtGui.QIntValidator(min_value, max_value))  # Restrict input to numbers
         self.setText(default_value)
-        
+
+class ParameterLineDecimalEdit(QtWidgets.QLineEdit):
+    def __init__(self, min_value: float, max_value: float, default_value: str, decimals: int = 2, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setFixedWidth(60)  # Adjust the width for decimal numbers
+        self.decimals = decimals
+
+        # Use QDoubleValidator for decimal values
+        self.setValidator(QtGui.QDoubleValidator(min_value, max_value, decimals))
+
+        # Set the text to the default value
+        self.setText(default_value)
+
+        # Optional: Align text to the right for better readability
+        self.setAlignment(QtGui.Qt.AlignRight)
+
+    def set_value(self, value: float):
+        """Set the line edit's value."""
+        self.setText(f"{value:.{self.decimals}f}")
+
+    def get_value(self) -> float:
+        """Get the current value from the line edit."""
+        return float(self.text())
 
 class ParameterResetDefaultButton(QtWidgets.QPushButton):
     def __init__(self, related_widget: ParameterSlider | SelectionBox, *args, **kwargs):

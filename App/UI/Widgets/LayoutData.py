@@ -144,6 +144,15 @@ SWAPPER_LAYOUT_DATA = {
             'parentToggle': 'FaceRestorerEnableToggle',
             'requiredToggleValue': True,
         },
+        'FidelityWeightDecimalSlider': {
+            'level': 2,
+            'label': 'Fidelity Weight',
+            'min_value': '0.0',
+            'max_value': '1.0',
+            'default': '0.9',
+            'parentToggle': 'FaceRestorerEnableToggle',
+            'requiredToggleValue': True,
+        },
     },
     'Frame Enhancer':{
         'FrameEnhancerEnableToggle':{

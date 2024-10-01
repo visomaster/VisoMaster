@@ -4,7 +4,7 @@ from PySide6 import QtWidgets, QtGui
 import time
 import App.Helpers.Misc_Helpers as misc_helpers 
 import App.UI.Widgets.UI_Workers as ui_workers
-from App.UI.Widgets.WidgetComponents import TargetMediaCardButton, ProgressDialog, TargetFaceCardButton, InputFaceCardButton, FormGroupBox, ToggleButton, SelectionBox, ParameterSlider, ParameterLineEdit, ParameterResetDefaultButton, CardButton
+from App.UI.Widgets.WidgetComponents import TargetMediaCardButton, ProgressDialog, TargetFaceCardButton, InputFaceCardButton, FormGroupBox, ToggleButton, SelectionBox, ParameterSlider, ParameterDecimalSlider, ParameterLineEdit, ParameterLineDecimalEdit, ParameterResetDefaultButton, CardButton
 from PySide6.QtWidgets import QComboBox
 
 import App.UI.Widgets.WidgetActions as widget_actions 
@@ -432,6 +432,80 @@ def add_parameter_widgets(main_window: 'MainWindow', LAYOUT_DATA: dict, layoutWi
                     update_parameter(main_window, selection_widget_name, selected_value)
                 widget.currentTextChanged.connect(partial(onchange, widget, widget_name))
 
+            elif 'DecimalSlider' in widget_name:
+                widget = ParameterDecimalSlider(
+                    label=widget_data['label'], 
+                    widget_name=widget_name, 
+                    group_layout_data=widgets, 
+                    label_widget=label, 
+                    min_value=float(widget_data['min_value']),  # Ensure min_value is float
+                    max_value=float(widget_data['max_value']),  # Ensure max_value is float
+                    default_value=float(widget_data['default']),  # Ensure default_value is float
+                    decimals=1, 
+                    main_window=main_window
+                )
+
+                # Use the new ParameterLineDecimalEdit class
+                widget.line_edit = ParameterLineDecimalEdit(
+                    min_value=float(widget_data['min_value']), 
+                    max_value=float(widget_data['max_value']), 
+                    default_value=str(widget_data['default']),
+                    decimals=1  # Ensure it uses 1 decimal place for consistency
+                )
+
+                widget.reset_default_button = ParameterResetDefaultButton(related_widget=widget)
+
+                # Layout for widgets
+                horizontal_layout = QtWidgets.QHBoxLayout()
+                horizontal_layout.addWidget(label)
+                horizontal_layout.addWidget(widget)
+                horizontal_layout.addWidget(widget.line_edit)
+                horizontal_layout.addWidget(widget.reset_default_button)
+
+                category_layout.addRow(horizontal_layout)
+
+                # Initialize parameter value
+                create_parameter(main_window, widget_name, float(widget_data['default']))
+
+                # When slider value changes
+                def onchange_slider(slider_widget: ParameterDecimalSlider, slider_widget_name, new_value=False):
+                    # Update the slider text box value too
+                    actual_value = slider_widget.value()  # Get float value from the slider
+                    update_parameter(main_window, slider_widget_name, actual_value)
+                    slider_widget.line_edit.set_value(actual_value)  # Update the line edit with the actual value
+
+                widget.valueChanged.connect(partial(onchange_slider, widget, widget_name))
+
+                # When line edit value changes
+                def onchange_line_edit(slider_widget: ParameterDecimalSlider, slider_widget_name, new_value=False):
+                    """Handle changes in the line edit and update the slider accordingly."""
+                    if not new_value:
+                        new_value = 0.0
+
+                    try:
+                        # Convert the text box input to float
+                        new_value = float(new_value)
+                    except ValueError:
+                        # If the conversion fails, reset the line edit to the current slider value
+                        new_value = slider_widget.value()
+
+                    # Update the parameter
+                    update_parameter(main_window, slider_widget_name, new_value)
+
+                    # Prevent text box value from exceeding the slider range or going below minimum
+                    if new_value > (slider_widget.max_value / slider_widget.scale_factor):
+                        new_value = slider_widget.max_value / slider_widget.scale_factor
+                    elif new_value < (slider_widget.min_value / slider_widget.scale_factor):
+                        new_value = slider_widget.min_value / slider_widget.scale_factor
+
+                    # Update the slider's internal value
+                    slider_widget.setValue(new_value)
+
+                    # Update the line_edit text to reflect the current value
+                    slider_widget.line_edit.set_value(new_value)
+
+                widget.line_edit.textChanged.connect(partial(onchange_line_edit, widget, widget_name))
+ 
             elif 'Slider' in widget_name:
                 widget = ParameterSlider(label=widget_data['label'], widget_name=widget_name, group_layout_data=widgets, label_widget=label, min_value=widget_data['min_value'], max_value=widget_data['max_value'], default_value=widget_data['default'], main_window=main_window)
                 widget.line_edit = ParameterLineEdit(min_value=int(widget_data['min_value']), max_value=int(widget_data['max_value']), default_value=widget_data['default'])
