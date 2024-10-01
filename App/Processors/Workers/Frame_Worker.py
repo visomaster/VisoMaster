@@ -82,7 +82,7 @@ class FrameWorker(threading.Thread):
 
             det_scale = torch.div(new_height, img_y)
 
-        bboxes, kpss_5, kpss = self.models_processor.run_detect(img, parameters['DetectorModelSelection'], max_num=20, score=parameters['DetectorScoreSlider']/100.0, use_landmark_detection=parameters['LandmarkDetectToggle'], landmark_detect_mode=parameters['LandmarkDetectModelSelection'], landmark_score=parameters["LandmarkDetectScoreSlider"]/100.0, from_points=True, rotation_angles=[0])
+        bboxes, kpss_5, kpss = self.models_processor.run_detect(img, parameters['DetectorModelSelection'], max_num=20, score=parameters['DetectorScoreSlider']/100.0, use_landmark_detection=parameters['LandmarkDetectToggle'], landmark_detect_mode=parameters['LandmarkDetectModelSelection'], landmark_score=parameters["LandmarkDetectScoreSlider"]/100.0, from_points=parameters["DetectFromPointsToggle"], rotation_angles=[0] if not parameters["AutoRotationToggle"] else [0, 90, 180, 270])
         ret = []
         if len(kpss_5)>0:
             for i in range(kpss_5.shape[0]):

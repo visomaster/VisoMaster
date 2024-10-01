@@ -35,6 +35,11 @@ SWAPPER_LAYOUT_DATA = {
             'max_value': '100',
             'default': '50',
         },
+        'AutoRotationToggle': {
+            'level': 1,
+            'label': 'Auto Rotation',
+            'default': False,
+        },
         'SimilarityThresholdSlider': {
             'level': 1,
             'label': 'Similarity Threshold',
@@ -67,6 +72,13 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '1',
             'max_value': '100',
             'default': '50',
+            'parentToggle': 'LandmarkDetectToggle',
+            'requiredToggleValue': True,
+        },
+        'DetectFromPointsToggle': {
+            'level': 2,
+            'label': 'Detect From Points',
+            'default': False,
             'parentToggle': 'LandmarkDetectToggle',
             'requiredToggleValue': True,
         },

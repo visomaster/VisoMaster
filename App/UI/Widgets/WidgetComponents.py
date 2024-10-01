@@ -70,8 +70,9 @@ class TargetMediaCardButton(CardButton):
             main_window.video_processor.max_frame_number = max_frames_number
 
         if frame is not None:
-            # restore initial video position after reading. == 0
-            media_capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            if self.file_type == 'video':
+                # restore initial video position after reading. == 0
+                media_capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
 
             # Convert the frame to QPixmap
             height, width, channel = frame.shape
@@ -230,7 +231,7 @@ class SelectionBox(QtWidgets.QComboBox, ParametersWidget):
 class ToggleButton(QtWidgets.QPushButton, ParametersWidget):
     _circle_position = None
 
-    def __init__(self, bg_color="#000000", circle_color="#ffffff", active_color="#16a085", *args, **kwargs):
+    def __init__(self, bg_color="#000000", circle_color="#ffffff", active_color="#16a085", default_value=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
         ParametersWidget.__init__(self, *args, **kwargs)
 
@@ -241,6 +242,7 @@ class ToggleButton(QtWidgets.QPushButton, ParametersWidget):
         self._bg_color = bg_color
         self._circle_color = circle_color
         self._active_color = active_color
+        self.default_value = bool(default_value)
         self._circle_position = 1  # Start position of the circle
         self.animation_curve = QtCore.QEasingCurve.OutCubic
         
@@ -290,6 +292,9 @@ class ToggleButton(QtWidgets.QPushButton, ParametersWidget):
         p.drawEllipse(self._circle_position, 1, 13, 13)
         
         p.end()
+
+    def reset_to_default_value(self):
+        self.setChecked(bool(self.default_value))
 
 class ParameterSlider(QtWidgets.QSlider, ParametersWidget):
     def __init__(self, min_value=0, max_value=0, default_value=0, *args, **kwargs):

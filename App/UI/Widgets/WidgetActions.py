@@ -327,7 +327,7 @@ def find_target_faces(main_window: 'MainWindow'):
         # print(frame)
         img = torch.from_numpy(frame.astype('uint8')).to('cuda')
         img = img.permute(2,0,1)
-        bboxes, kpss_5, _ = main_window.models_processor.run_detect(img,max_num=50)
+        bboxes, kpss_5, _ = main_window.models_processor.run_detect(img, parameters['DetectorModelSelection'], max_num=50, score=parameters['DetectorScoreSlider']/100.0, use_landmark_detection=parameters['LandmarkDetectToggle'], landmark_detect_mode=parameters['LandmarkDetectModelSelection'], landmark_score=parameters["LandmarkDetectScoreSlider"]/100.0, from_points=parameters["DetectFromPointsToggle"], rotation_angles=[0] if not parameters["AutoRotationToggle"] else [0, 90, 180, 270])
 
         ret = []
         for face_kps in kpss_5:
@@ -389,13 +389,16 @@ def add_parameter_widgets(main_window: 'MainWindow', LAYOUT_DATA: dict, layoutWi
 
             # Create a horizontal layout for the toggle button and its label
             if 'Toggle' in widget_name:
-                widget = ToggleButton(label=widget_data['label'], widget_name=widget_name, group_layout_data=widgets, label_widget=None, main_window=main_window)
+                widget = ToggleButton(label=widget_data['label'], widget_name=widget_name, group_layout_data=widgets, label_widget=label, main_window=main_window)
                 widget.setChecked(widget_data['default'])
+                widget.reset_default_button = ParameterResetDefaultButton(related_widget=widget)
+
                 # Create a horizontal layout
                 horizontal_layout = QtWidgets.QHBoxLayout()
                 # In case of toggle button, add show widget first, then its label
                 horizontal_layout.addWidget(widget)  # Add the toggle button
                 horizontal_layout.addWidget(label)  # Add the label
+                horizontal_layout.addWidget(widget.reset_default_button)
                 
                 category_layout.addRow(horizontal_layout)  # Add the horizontal layout to the form layout
 
