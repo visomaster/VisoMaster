@@ -9,7 +9,7 @@ from functools import partial
 from App.Processors.VideoProcessor import VideoProcessor
 from App.Processors.ModelsProcessor import ModelsProcessor
 from App.UI.Widgets.WidgetComponents import GraphicsViewEventFilter, ParametersWidget, TargetFaceCardButton, InputFaceCardButton, TargetMediaCardButton, EmbeddingCardButton
-from App.UI.Widgets.LayoutData import SWAPPER_LAYOUT_DATA
+from App.UI.Widgets.LayoutData import SWAPPER_LAYOUT_DATA, SETTINGS_LAYOUT_DATA
 from typing import Dict, List
 
 class FrameProcessorWorker(QtCore.QObject):
@@ -112,6 +112,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         widget_actions.initializeModelLoadDialog(self)
         widget_actions.add_parameter_widgets(self, LAYOUT_DATA=SWAPPER_LAYOUT_DATA, layoutWidget=self.swapWidgetsLayout)
+        widget_actions.add_parameter_widgets(self, LAYOUT_DATA=SETTINGS_LAYOUT_DATA, layoutWidget=self.settingsWidgetsLayout)
 
         # Initialize the button states
         widget_actions.resetMediaButtons(self)

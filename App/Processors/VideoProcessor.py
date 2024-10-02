@@ -162,6 +162,12 @@ class VideoProcessor(QObject):
 
         self.processing = False
 
+    def set_number_of_threads(self, value):
+        self.stop_processing()
+        self.main_window.models_processor.set_number_of_threads(value)
+        self.num_threads = value
+        self.frame_queue = queue.Queue(maxsize=self.num_threads)
+
     def stop_processing(self):
         """Stop video processing and signal completion."""
         if not self.processing:

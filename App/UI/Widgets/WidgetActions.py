@@ -606,6 +606,16 @@ def create_parameter(main_window: 'MainWindow', parameter_name, parameter_value)
     main_window.parameters[parameter_name] = parameter_value
 
 def update_parameter(main_window: 'MainWindow', parameter_name, parameter_value):
+    if parameter_name == 'ProvidersPrioritySelection':
+        main_window.video_processor.stop_processing()
+        parameter_value = main_window.models_processor.switch_providers_priority(parameter_value)
+        if parameter_value != main_window.parameters[parameter_name]:
+            main_window.models_processor.delete_models()
+            torch.cuda.empty_cache()
+    elif parameter_name == 'nThreadsSlider':
+        main_window.video_processor.set_number_of_threads(parameter_value)
+        torch.cuda.empty_cache()
+
     main_window.parameters[parameter_name] = parameter_value
     refresh_frame(main_window)
 
