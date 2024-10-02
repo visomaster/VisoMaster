@@ -336,7 +336,7 @@ class ParameterSlider(QtWidgets.QSlider, ParametersWidget):
         self.setValue(self.default_value)
         self.setOrientation(qtc.Qt.Orientation.Horizontal)
         self.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Minimum)
-        self.setMaximumWidth(130)
+        self.setFixedWidth(130)
         # Set a fixed width for the slider
 
     def reset_to_default_value(self):
@@ -369,7 +369,7 @@ class ParameterDecimalSlider(QtWidgets.QSlider, ParametersWidget):
 
         self.setOrientation(qtc.Qt.Orientation.Horizontal)
         self.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Minimum)
-        self.setMaximumWidth(130)
+        self.setFixedWidth(130)
     def reset_to_default_value(self):
         """Reset the slider to its default value."""
         self.setValue(self.default_value / self.scale_factor)
@@ -389,6 +389,7 @@ class ParameterLineEdit(QtWidgets.QLineEdit):
         self.setFixedWidth(38)  # Make the line edit narrower
         self.setMaxLength(3)
         self.setValidator(QtGui.QIntValidator(min_value, max_value))  # Restrict input to numbers
+        self.setAlignment(QtCore.Qt.AlignCenter)
         self.setText(default_value)
 
 class ParameterLineDecimalEdit(QtWidgets.QLineEdit):
@@ -396,15 +397,10 @@ class ParameterLineDecimalEdit(QtWidgets.QLineEdit):
         super().__init__(*args, **kwargs)
         self.setFixedWidth(50)  # Adjust the width for decimal numbers
         self.decimals = decimals
-
         self.setMaxLength(5)
-        # Use QDoubleValidator for decimal values
         self.setValidator(QtGui.QDoubleValidator(min_value, max_value, decimals))
-
-        # Set the text to the default value
+        self.setAlignment(QtCore.Qt.AlignCenter)
         self.setText(default_value)
-
-        # Optional: Align text to the right for better readability
         self.setAlignment(QtGui.Qt.AlignRight)
 
     def set_value(self, value: float):
