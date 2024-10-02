@@ -151,7 +151,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.frame_processor_worker.frame_processed.connect(self.handle_processed_frame, QtCore.Qt.QueuedConnection)
 
         # Connect the processing complete signal
-        self.frame_processor_worker.processing_complete.connect(self.on_processing_complete)
+        self.frame_processor_worker.processing_complete.connect(self.on_processingcomplete)
 
         # Start the thread
         self.frame_processor_thread.start()
@@ -179,7 +179,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.display_frames_in_order()
 
     @QtCore.Slot()
-    def on_processing_complete(self):
+    def on_processingcomplete(self):
         """Handle completion of frame processing from the worker."""
         self.processing_finished_event.set()  # Now the entire process is complete
         print("Worker finished processing all frames.")

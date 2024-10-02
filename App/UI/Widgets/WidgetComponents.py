@@ -101,6 +101,8 @@ class TargetMediaCardButton(CardButton):
         # Uncheck merged embeddings
         widget_actions.uncheck_all_merged_embeddings(main_window)
 
+        main_window.cur_selected_target_face_button = False
+
         # Reset buttons and slider
         widget_actions.resetMediaButtons(main_window)
         main_window.video_processor.file_type = self.file_type

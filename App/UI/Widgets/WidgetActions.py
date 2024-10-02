@@ -674,7 +674,7 @@ def create_and_add_embed_button_to_list(main_window: 'MainWindow', embedding_nam
     main_window.merged_embeddings.append(embed_button)
 
 def open_embeddings_from_file(main_window: 'MainWindow'):
-    embedding_filename, _ = QtWidgets.QFileDialog.getOpenFileName(main_window)
+    embedding_filename, _ = QtWidgets.QFileDialog.getOpenFileName(main_window, filter='JSON (*.json)')
     if embedding_filename:
         with open(embedding_filename, 'r') as embed_file:
             embeddings_list = json.load(embed_file)
@@ -689,15 +689,19 @@ def open_embeddings_from_file(main_window: 'MainWindow'):
                 widget_actions.create_and_add_embed_button_to_list(main_window, embed_data['name'], embed_data['embedding'])
 
     main_window.loaded_embedding_filename = embedding_filename or main_window.loaded_embedding_filename
+
 def save_embeddings_to_file(main_window: 'MainWindow', save_as=False):
+    if not main_window.merged_embeddings:
+        create_and_show_messagebox(main_window, 'Embeddings List Empty!',  'No Embeddings available to save', parent_widget=main_window)
+        return
     embedding_filename = main_window.loaded_embedding_filename
     if not embedding_filename or save_as==True:
-        embedding_filename, _ = QtWidgets.QFileDialog.getSaveFileName(main_window)
+        embedding_filename, _ = QtWidgets.QFileDialog.getSaveFileName(main_window,filter='JSON (*.json)')
 
     embeddings_list = [{'name': embed_button.embedding_name, 'embedding': embed_button.embedding.tolist()} for embed_button in main_window.merged_embeddings]
+    if embedding_filename:
+        with open(embedding_filename, 'w') as embed_file:
+            embeddings_as_json = json.dumps(embeddings_list)
+            embed_file.write(embeddings_as_json)
 
-    with open(embedding_filename, 'w') as embed_file:
-        embeddings_as_json = json.dumps(embeddings_list)
-        embed_file.write(embeddings_as_json)
-
-    main_window.loaded_embedding_filename = embedding_filename
+        main_window.loaded_embedding_filename = embedding_filename
