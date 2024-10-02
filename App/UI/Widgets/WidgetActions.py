@@ -390,6 +390,7 @@ def add_parameter_widgets(main_window: 'MainWindow', LAYOUT_DATA: dict, layoutWi
         for widget_name, widget_data in widgets.items():
             spacing_level = widget_data['level']
             label = QtWidgets.QLabel(widget_data['label'])
+            label.setToolTip(widget_data['help'])
 
             # Create a horizontal layout for the toggle button and its label
             if 'Toggle' in widget_name:

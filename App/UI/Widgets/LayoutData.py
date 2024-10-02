@@ -11,6 +11,7 @@ SWAPPER_LAYOUT_DATA = {
             'label': 'Swapper Model',
             'options': ['Inswapper128', 'SimSwap256', 'SimSwap512'],
             'default': 'Inswapper128',
+            'help': 'Choose which swapper model to use for face swapping.'
         },
         'SwapperResSelection': {
             'level': 2,
@@ -19,6 +20,7 @@ SWAPPER_LAYOUT_DATA = {
             'default': '128',
             'parentSelection': 'SwapModelSelection',
             'requiredSelectionValue': 'Inswapper128',
+            'help': 'Select the resolution for the swapped face in pixels. Higher values offer better quality but are slower to process.'
         },
     },
     'Detectors': {
@@ -27,6 +29,7 @@ SWAPPER_LAYOUT_DATA = {
             'label': 'Face Detect Model',
             'options': ['Retinaface', 'Yolov8', 'SCRFD', 'Yunet'],
             'default': 'Retinaface',
+            'help': 'Select the face detection model to use for detecting faces in the input image or video.'
         },
         'DetectorScoreSlider': {
             'level': 1,
@@ -34,11 +37,13 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '1',
             'max_value': '100',
             'default': '50',
+            'help': 'Set the confidence score threshold for face detection. Higher values ensure more confident detections but may miss some faces.'
         },
         'AutoRotationToggle': {
             'level': 1,
             'label': 'Auto Rotation',
             'default': False,
+            'help': 'Automatically rotate the input to detect faces in various orientations.'
         },
         'SimilarityThresholdSlider': {
             'level': 1,
@@ -46,17 +51,20 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '1',
             'max_value': '100',
             'default': '60',
+            'help': 'Set the similarity threshold to control how similar the detected face should be to the reference face.'
         },
-        'SimilariyTypeSelection': {
+        'SimilarityTypeSelection': {
             'level': 1,
             'label': 'Similarity Type',
             'options': ['Opal', 'Pearl', 'Optimal'],
             'default': 'Opal',
+            'help': 'Choose the type of similarity calculation for face detection and matching.'
         },
         'LandmarkDetectToggle': {
             'level': 1,
             'label': 'Enable Landmark Detection',
             'default': False,
+            'help': 'Enable or disable facial landmark detection, which is used to refine face alignment.'
         },
         'LandmarkDetectModelSelection': {
             'level': 2,
@@ -65,6 +73,7 @@ SWAPPER_LAYOUT_DATA = {
             'default': '203',
             'parentToggle': 'LandmarkDetectToggle',
             'requiredToggleValue': True,
+            'help': 'Select the landmark detection model, where different models detect varying numbers of facial landmarks.'
         },
         'LandmarkDetectScoreSlider': {
             'level': 2,
@@ -74,6 +83,7 @@ SWAPPER_LAYOUT_DATA = {
             'default': '50',
             'parentToggle': 'LandmarkDetectToggle',
             'requiredToggleValue': True,
+            'help': 'Set the confidence score threshold for facial landmark detection.'
         },
         'DetectFromPointsToggle': {
             'level': 2,
@@ -81,6 +91,7 @@ SWAPPER_LAYOUT_DATA = {
             'default': False,
             'parentToggle': 'LandmarkDetectToggle',
             'requiredToggleValue': True,
+            'help': 'Enable detection of faces from specified landmark points.'
         },
     },
     'Webcam': {
@@ -88,6 +99,7 @@ SWAPPER_LAYOUT_DATA = {
             'level': 1,
             'label': 'Enable Webcam',
             'default': False,
+            'help': 'Enable the use of the webcam as the input source for face swapping.'
         },
         'WebcamMaxNoSelection': {
             'level': 2,
@@ -96,6 +108,7 @@ SWAPPER_LAYOUT_DATA = {
             'default': '1',
             'parentToggle': 'WebcamEnableToggle',
             'requiredToggleValue': True,
+            'help': 'Select the maximum number of webcam streams to allow for face swapping.'
         },
         'WebcamBackendSelection': {
             'level': 2,
@@ -104,6 +117,7 @@ SWAPPER_LAYOUT_DATA = {
             'default': 'Default',
             'parentToggle': 'WebcamEnableToggle',
             'requiredToggleValue': True,
+            'help': 'Choose the backend for accessing webcam input.'
         },
         'WebcamMaxResSelection': {
             'level': 2,
@@ -112,6 +126,7 @@ SWAPPER_LAYOUT_DATA = {
             'default': '1280x720',
             'parentToggle': 'WebcamEnableToggle',
             'requiredToggleValue': True,
+            'help': 'Select the maximum resolution for webcam input.'
         },
         'WebCamMaxFPSSelection': {
             'level': 2,
@@ -120,6 +135,7 @@ SWAPPER_LAYOUT_DATA = {
             'default': '30',
             'parentToggle': 'WebcamEnableToggle',
             'requiredToggleValue': True,
+            'help': 'Set the maximum frames per second (FPS) for webcam input.'
         },
     },
     'Face Restorer': {
@@ -127,6 +143,7 @@ SWAPPER_LAYOUT_DATA = {
             'level': 1,
             'label': 'Enable Face Restorer',
             'default': False,
+            'help': 'Enable the use of a face restoration model to improve the quality of the face after swapping.'
         },
         'FaceRestorerTypeSelection': {
             'level': 2,
@@ -135,6 +152,7 @@ SWAPPER_LAYOUT_DATA = {
             'default': 'GFPGAN-v1.4',
             'parentToggle': 'FaceRestorerEnableToggle',
             'requiredToggleValue': True,
+            'help': 'Select the model type for face restoration.'
         },
         'FaceRestorerDetTypeSelection': {
             'level': 2,
@@ -143,6 +161,7 @@ SWAPPER_LAYOUT_DATA = {
             'default': 'Blend',
             'parentToggle': 'FaceRestorerEnableToggle',
             'requiredToggleValue': True,
+            'help': 'Select the alignment method for restoring the face to its original or blended position.'
         },
         'FaceFidelityWeightDecimalSlider': {
             'level': 2,
@@ -152,6 +171,7 @@ SWAPPER_LAYOUT_DATA = {
             'default': '0.9',
             'parentToggle': 'FaceRestorerEnableToggle',
             'requiredToggleValue': True,
+            'help': 'Adjust the fidelity weight to control how closely the restoration preserves the original face details.'
         },
         'FaceRestorerBlendSlider': {
             'level': 2,
@@ -161,6 +181,7 @@ SWAPPER_LAYOUT_DATA = {
             'default': '100',
             'parentToggle': 'FaceRestorerEnableToggle',
             'requiredToggleValue': True,
+            'help': 'Control the blend ratio between the restored face and the swapped face.'
         },
     },
     'Frame Enhancer':{
@@ -168,6 +189,7 @@ SWAPPER_LAYOUT_DATA = {
             'level': 1,
             'label': 'Enable Frame Enhancer',
             'default': False,
+            'help': 'Enable frame enhancement for video inputs to improve visual quality.'
         },
         'FrameEnhancerTypeSelection':{
             'level': 2,
@@ -176,6 +198,7 @@ SWAPPER_LAYOUT_DATA = {
             'default': 'RealEsrgan-x2-Plus',
             'parentToggle': 'FrameEnhancerEnableToggle',
             'requiredToggleValue': True,
+            'help': 'Select the type of frame enhancement to apply, based on the content and resolution requirements.'
         }
     },
     'Embedding Merge Method':{
@@ -184,6 +207,7 @@ SWAPPER_LAYOUT_DATA = {
             'label': 'Embedding Merge Method',
             'options': ['Mean','Median'],
             'default': 'Mean',
+            'help': 'Select the method to merge facial embeddings. "Mean" averages the embeddings, while "Median" selects the middle value, providing more robustness to outliers.'
         }
     }
 }
