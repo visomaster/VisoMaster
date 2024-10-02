@@ -153,6 +153,15 @@ SWAPPER_LAYOUT_DATA = {
             'parentToggle': 'FaceRestorerEnableToggle',
             'requiredToggleValue': True,
         },
+        'RestorerBlendSlider': {
+            'level': 2,
+            'label': 'Blend',
+            'min_value': '0',
+            'max_value': '100',
+            'default': '100',
+            'parentToggle': 'FaceRestorerEnableToggle',
+            'requiredToggleValue': True,
+        },
     },
     'Frame Enhancer':{
         'FrameEnhancerEnableToggle':{

@@ -325,7 +325,7 @@ class ToggleButton(QtWidgets.QPushButton, ParametersWidget):
         self.setChecked(bool(self.default_value))
 
 class ParameterSlider(QtWidgets.QSlider, ParametersWidget):
-    def __init__(self, min_value=0, max_value=0, default_value=0, *args, **kwargs):
+    def __init__(self, min_value=0, max_value=0, default_value=0, fixed_width = 130, *args, **kwargs):
         super().__init__(*args, **kwargs)
         ParametersWidget.__init__(self, *args, **kwargs)
         self.min_value = int(min_value)
@@ -336,14 +336,14 @@ class ParameterSlider(QtWidgets.QSlider, ParametersWidget):
         self.setValue(self.default_value)
         self.setOrientation(qtc.Qt.Orientation.Horizontal)
         self.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Minimum)
-        self.setFixedWidth(130)
+        self.setFixedWidth(fixed_width)
         # Set a fixed width for the slider
 
     def reset_to_default_value(self):
         self.setValue(int(self.default_value))
 
 class ParameterDecimalSlider(QtWidgets.QSlider, ParametersWidget):
-    def __init__(self, min_value=0.0, max_value=1.0, default_value=0.0, decimals=2, *args, **kwargs):
+    def __init__(self, min_value=0.0, max_value=1.0, default_value=0.0, decimals=2, fixed_width = 130, *args, **kwargs):
         super().__init__(*args, **kwargs)
         ParametersWidget.__init__(self, *args, **kwargs)
 
@@ -364,12 +364,10 @@ class ParameterDecimalSlider(QtWidgets.QSlider, ParametersWidget):
         # Set the slider's integer range and default value
         self.setMinimum(self.min_value)
         self.setMaximum(self.max_value)
-        self.setValue(self.default_value)
-        print(self.default_value)
-
+        self.setValue(self.default_value / self.scale_factor)
         self.setOrientation(qtc.Qt.Orientation.Horizontal)
         self.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Minimum)
-        self.setFixedWidth(130)
+        self.setFixedWidth(fixed_width)
     def reset_to_default_value(self):
         """Reset the slider to its default value."""
         self.setValue(self.default_value / self.scale_factor)
@@ -384,24 +382,37 @@ class ParameterDecimalSlider(QtWidgets.QSlider, ParametersWidget):
         super().setValue(scaled_value)
 
 class ParameterLineEdit(QtWidgets.QLineEdit):
-    def __init__(self, min_value: int, max_value: int, default_value: str, *args, **kwargs):
+    def __init__(self, min_value: int, max_value: int, default_value: str, fixed_width: int = 38, max_length: int = 3, alignment: int = 1, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.setFixedWidth(38)  # Make the line edit narrower
-        self.setMaxLength(3)
+        self.setFixedWidth(fixed_width)  # Make the line edit narrower
+        self.setMaxLength(max_length)
         self.setValidator(QtGui.QIntValidator(min_value, max_value))  # Restrict input to numbers
-        self.setAlignment(QtCore.Qt.AlignCenter)
+
+        # Optional: Align text to the right for better readability
+        if alignment == 0:
+            self.setAlignment(QtGui.Qt.AlignLeft)
+        elif alignment == 1:
+            self.setAlignment(QtGui.Qt.AlignCenter)
+        else:
+            self.setAlignment(QtGui.Qt.AlignRight)
+
         self.setText(default_value)
 
 class ParameterLineDecimalEdit(QtWidgets.QLineEdit):
-    def __init__(self, min_value: float, max_value: float, default_value: str, decimals: int = 2, *args, **kwargs):
+    def __init__(self, min_value: float, max_value: float, default_value: str, decimals: int = 2, fixed_width: int = 38, max_length: int = 5, alignment: int = 1, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.setFixedWidth(50)  # Adjust the width for decimal numbers
+        self.setFixedWidth(fixed_width)  # Adjust the width for decimal numbers
         self.decimals = decimals
-        self.setMaxLength(5)
+        self.setMaxLength(max_length)
         self.setValidator(QtGui.QDoubleValidator(min_value, max_value, decimals))
-        self.setAlignment(QtCore.Qt.AlignCenter)
+        # Optional: Align text to the right for better readability
+        if alignment == 0:
+            self.setAlignment(QtGui.Qt.AlignLeft)
+        elif alignment == 1:
+            self.setAlignment(QtGui.Qt.AlignCenter)
+        else:
+            self.setAlignment(QtGui.Qt.AlignRight)
         self.setText(default_value)
-        self.setAlignment(QtGui.Qt.AlignRight)
 
     def set_value(self, value: float):
         """Set the line edit's value."""
@@ -412,7 +423,7 @@ class ParameterLineDecimalEdit(QtWidgets.QLineEdit):
         return float(self.text())
 
 class ParameterResetDefaultButton(QtWidgets.QPushButton):
-    def __init__(self, related_widget: ParameterSlider | SelectionBox, *args, **kwargs):
+    def __init__(self, related_widget: ParameterSlider | ParameterDecimalSlider | SelectionBox, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.related_widget = related_widget
         button_icon = QtGui.QIcon(QtGui.QPixmap(':/media/Media/reset_default.png'))
