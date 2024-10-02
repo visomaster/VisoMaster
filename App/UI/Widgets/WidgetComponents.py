@@ -240,7 +240,7 @@ class ParametersWidget:
         self.group_widget: QtWidgets.QGroupBox = kwargs.get('group_widget', False)
         self.main_window: 'MainWindow' = kwargs.get('main_window', False)
         self.line_edit: QtWidgets.QLineEdit = False #Only sliders have textbox currently
-        self.reset_default_button = False
+        self.reset_default_button: QPushButton = False
 
 class ToggleSwitchButton(QtWidgets.QPushButton, ParametersWidget):
     def __init__(self, *args, **kwargs):
@@ -336,7 +336,7 @@ class ParameterSlider(QtWidgets.QSlider, ParametersWidget):
         self.setValue(self.default_value)
         self.setOrientation(qtc.Qt.Orientation.Horizontal)
         self.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Minimum)
-        self.setMinimumWidth(130)
+        self.setMaximumWidth(130)
         # Set a fixed width for the slider
 
     def reset_to_default_value(self):
@@ -366,8 +366,10 @@ class ParameterDecimalSlider(QtWidgets.QSlider, ParametersWidget):
         self.setMaximum(self.max_value)
         self.setValue(self.default_value)
         print(self.default_value)
-        self.setOrientation(qtc.Qt.Orientation.Horizontal)
 
+        self.setOrientation(qtc.Qt.Orientation.Horizontal)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Minimum)
+        self.setMaximumWidth(130)
     def reset_to_default_value(self):
         """Reset the slider to its default value."""
         self.setValue(self.default_value / self.scale_factor)
@@ -392,9 +394,10 @@ class ParameterLineEdit(QtWidgets.QLineEdit):
 class ParameterLineDecimalEdit(QtWidgets.QLineEdit):
     def __init__(self, min_value: float, max_value: float, default_value: str, decimals: int = 2, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.setFixedWidth(60)  # Adjust the width for decimal numbers
+        self.setFixedWidth(50)  # Adjust the width for decimal numbers
         self.decimals = decimals
 
+        self.setMaxLength(5)
         # Use QDoubleValidator for decimal values
         self.setValidator(QtGui.QDoubleValidator(min_value, max_value, decimals))
 
@@ -420,6 +423,7 @@ class ParameterResetDefaultButton(QtWidgets.QPushButton):
         self.setIcon(button_icon)
         self.setFixedWidth(30)  # Make the line edit narrower
         self.setCursor(QtCore.Qt.PointingHandCursor)
+        self.setToolTip('Reset to default value')
 
         self.clicked.connect(related_widget.reset_to_default_value)
 

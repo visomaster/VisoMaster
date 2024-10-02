@@ -130,7 +130,7 @@ ToggleButton:default {
 /* ParameterSlider - Thin Groove and Handle */
 /* -------------------------------------- */
 
-ParameterSlider::groove:horizontal {
+ParameterSlider::groove:horizontal,ParameterDecimalSlider::groove:horizontal {
     border-radius: 1px;              /* Rounded corners */
     height: 6px;                     /* Thinner groove */
     margin: 0px;
@@ -138,17 +138,17 @@ ParameterSlider::groove:horizontal {
 }
 
 /* Remove the completed part color by making it transparent */
-ParameterSlider::sub-page:horizontal {
+ParameterSlider::sub-page:horizontal,ParameterDecimalSlider::sub-page:horizontal {
     background-color: transparent;   /* No color for completed part */
 }
 
-ParameterSlider::add-page:horizontal {
+ParameterSlider::add-page:horizontal,ParameterDecimalSlider::add-page:horizontal {
     background-color: #2c3e50;       /* Dark blue for uncompleted part */
     border-radius: 1px;              /* Thinner radius */
     height: 4px;                     /* Thinner groove */
 }
 
-ParameterSlider::handle:horizontal {
+ParameterSlider::handle:horizontal,ParameterDecimalSlider::handle:horizontal {
     background-color: #ffffff;       /* Lighter gray handle color */
     border: 1px solid #7f8c8d;       /* Darker gray border */
     height: 16px;                    /* Thinner handle */
@@ -157,15 +157,15 @@ ParameterSlider::handle:horizontal {
 }
 
 /* Disabled state */
-ParameterSlider::handle:horizontal:disabled {
+ParameterSlider::handle:horizontal:disabled,ParameterDecimalSlider::handle:horizontal:disabled {
     background-color: #95a5a6;       /* Gray background when disabled */
     border: 1px solid #7f8c8d;       /* Darker gray border */
 }
 
-ParameterSlider::groove:horizontal:disabled {
+ParameterSlider::groove:horizontal:disabled,ParameterDecimalSlider::groove:horizontal:disabled {
     background-color: #7f8c8d;       /* Dark gray groove when disabled */
 }
 
-ParameterSlider::sub-page:horizontal:disabled {
+ParameterSlider::sub-page:horizontal:disabled,ParameterDecimalSlider::sub-page:horizontal:disabled {
     background-color: transparent;   /* No color for completed part when disabled */
 }
