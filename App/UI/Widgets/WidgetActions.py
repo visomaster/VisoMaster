@@ -15,6 +15,7 @@ import torch
 import numpy
 from App.UI.Widgets.LayoutData import SWAPPER_LAYOUT_DATA
 from typing import TYPE_CHECKING
+import json
 
 if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
@@ -360,9 +361,15 @@ def clear_target_faces(main_window: 'MainWindow'):
 
 def clear_input_faces(main_window: 'MainWindow'):
     main_window.inputFacesList.clear()
-    for target_face in main_window.input_faces:
-        del target_face
+    for input_face in main_window.input_faces:
+        del input_face
     main_window.input_faces = []
+
+def clear_merged_embeddings(main_window: 'MainWindow'):
+    main_window.inputEmbeddingsList.clear()
+    for embed_button in main_window.merged_embeddings:
+        del embed_button
+    main_window.merged_embeddings = []
 
 def uncheck_all_input_faces(main_window: 'MainWindow'):
     # Uncheck All other input faces 
@@ -647,3 +654,32 @@ def create_and_add_embed_button_to_list(main_window: 'MainWindow', embedding_nam
     inputEmbeddingsList.setResizeMode(QtWidgets.QListView.Adjust)  # Adjust layout automatically
 
     main_window.merged_embeddings.append(embed_button)
+
+def open_embeddings_from_file(main_window: 'MainWindow'):
+    embedding_filename, _ = QtWidgets.QFileDialog.getOpenFileName(main_window)
+    if embedding_filename:
+        with open(embedding_filename, 'r') as embed_file:
+            embeddings_list = json.load(embed_file)
+            clear_merged_embeddings(main_window)
+
+            for target_face in main_window.target_faces:
+                target_face.assigned_embed_buttons = {}
+                target_face.assigned_input_embedding = numpy.array([])
+
+            for embed_data in  embeddings_list:
+                embed_data['embedding'] = numpy.array(embed_data['embedding'])
+                widget_actions.create_and_add_embed_button_to_list(main_window, embed_data['name'], embed_data['embedding'])
+
+    main_window.loaded_embedding_filename = embedding_filename or main_window.loaded_embedding_filename
+def save_embeddings_to_file(main_window: 'MainWindow', save_as=False):
+    embedding_filename = main_window.loaded_embedding_filename
+    if not embedding_filename or save_as==True:
+        embedding_filename, _ = QtWidgets.QFileDialog.getSaveFileName(main_window)
+
+    embeddings_list = [{'name': embed_button.embedding_name, 'embedding': embed_button.embedding.tolist()} for embed_button in main_window.merged_embeddings]
+
+    with open(embedding_filename, 'w') as embed_file:
+        embeddings_as_json = json.dumps(embeddings_list)
+        embed_file.write(embeddings_as_json)
+
+    main_window.loaded_embedding_filename = embedding_filename

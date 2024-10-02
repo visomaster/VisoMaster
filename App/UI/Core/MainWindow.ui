@@ -236,6 +236,88 @@
           <bool>false</bool>
          </property>
          <layout class="QGridLayout" name="gridLayout_2">
+          <item row="0" column="2">
+           <layout class="QHBoxLayout" name="horizontalLayout_3">
+            <item>
+             <widget class="QLineEdit" name="inputEmbeddingsSearchBox">
+              <property name="placeholderText">
+               <string>Search Embeddings</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="openEmbeddingButton">
+              <property name="toolTip">
+               <string>Open Embedding File</string>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="icon">
+               <iconset resource="media.qrc">
+                <normaloff>:/media/Media/open_file.png</normaloff>:/media/Media/open_file.png</iconset>
+              </property>
+              <property name="flat">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="saveEmbeddingButton">
+              <property name="toolTip">
+               <string>Save Embedding</string>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="icon">
+               <iconset resource="media.qrc">
+                <normaloff>:/media/Media/save_file.png</normaloff>:/media/Media/save_file.png</iconset>
+              </property>
+              <property name="flat">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="saveEmbeddingAsButton">
+              <property name="toolTip">
+               <string>Save Embedding As</string>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="icon">
+               <iconset resource="media.qrc">
+                <normaloff>:/media/Media/save_file_as.png</normaloff>:/media/Media/save_file_as.png</iconset>
+              </property>
+              <property name="flat">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item row="1" column="2">
+           <widget class="QListWidget" name="inputEmbeddingsList">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="toolTip">
+             <string>Save Embedding</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QListWidget" name="targetFacesList">
+            <property name="autoFillBackground">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
           <item row="1" column="0">
            <widget class="QWidget" name="widget_2" native="true">
             <property name="sizePolicy">
@@ -307,30 +389,6 @@
               </widget>
              </item>
             </layout>
-           </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="QListWidget" name="targetFacesList">
-            <property name="autoFillBackground">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="2">
-           <widget class="QListWidget" name="inputEmbeddingsList">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="2">
-           <widget class="QLineEdit" name="inputEmbeddingsSearchBox">
-            <property name="placeholderText">
-             <string>Search Embeddings</string>
-            </property>
            </widget>
           </item>
          </layout>

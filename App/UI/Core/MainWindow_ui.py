@@ -146,13 +146,66 @@ class Ui_MainWindow(object):
         self.gridGroupBox.setCheckable(False)
         self.gridLayout_2 = QGridLayout(self.gridGroupBox)
         self.gridLayout_2.setObjectName(u"gridLayout_2")
-        self.widget_2 = QWidget(self.gridGroupBox)
-        self.widget_2.setObjectName(u"widget_2")
-        sizePolicy4 = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Preferred)
+        self.horizontalLayout_3 = QHBoxLayout()
+        self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
+        self.inputEmbeddingsSearchBox = QLineEdit(self.gridGroupBox)
+        self.inputEmbeddingsSearchBox.setObjectName(u"inputEmbeddingsSearchBox")
+
+        self.horizontalLayout_3.addWidget(self.inputEmbeddingsSearchBox)
+
+        self.openEmbeddingButton = QPushButton(self.gridGroupBox)
+        self.openEmbeddingButton.setObjectName(u"openEmbeddingButton")
+        icon4 = QIcon()
+        icon4.addFile(u":/media/Media/open_file.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.openEmbeddingButton.setIcon(icon4)
+        self.openEmbeddingButton.setFlat(True)
+
+        self.horizontalLayout_3.addWidget(self.openEmbeddingButton)
+
+        self.saveEmbeddingButton = QPushButton(self.gridGroupBox)
+        self.saveEmbeddingButton.setObjectName(u"saveEmbeddingButton")
+        icon5 = QIcon()
+        icon5.addFile(u":/media/Media/save_file.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.saveEmbeddingButton.setIcon(icon5)
+        self.saveEmbeddingButton.setFlat(True)
+
+        self.horizontalLayout_3.addWidget(self.saveEmbeddingButton)
+
+        self.saveEmbeddingAsButton = QPushButton(self.gridGroupBox)
+        self.saveEmbeddingAsButton.setObjectName(u"saveEmbeddingAsButton")
+        icon6 = QIcon()
+        icon6.addFile(u":/media/Media/save_file_as.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.saveEmbeddingAsButton.setIcon(icon6)
+        self.saveEmbeddingAsButton.setFlat(True)
+
+        self.horizontalLayout_3.addWidget(self.saveEmbeddingAsButton)
+
+
+        self.gridLayout_2.addLayout(self.horizontalLayout_3, 0, 2, 1, 1)
+
+        self.inputEmbeddingsList = QListWidget(self.gridGroupBox)
+        self.inputEmbeddingsList.setObjectName(u"inputEmbeddingsList")
+        sizePolicy4 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         sizePolicy4.setHorizontalStretch(0)
         sizePolicy4.setVerticalStretch(0)
-        sizePolicy4.setHeightForWidth(self.widget_2.sizePolicy().hasHeightForWidth())
-        self.widget_2.setSizePolicy(sizePolicy4)
+        sizePolicy4.setHeightForWidth(self.inputEmbeddingsList.sizePolicy().hasHeightForWidth())
+        self.inputEmbeddingsList.setSizePolicy(sizePolicy4)
+
+        self.gridLayout_2.addWidget(self.inputEmbeddingsList, 1, 2, 1, 1)
+
+        self.targetFacesList = QListWidget(self.gridGroupBox)
+        self.targetFacesList.setObjectName(u"targetFacesList")
+        self.targetFacesList.setAutoFillBackground(True)
+
+        self.gridLayout_2.addWidget(self.targetFacesList, 1, 1, 1, 1)
+
+        self.widget_2 = QWidget(self.gridGroupBox)
+        self.widget_2.setObjectName(u"widget_2")
+        sizePolicy5 = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Preferred)
+        sizePolicy5.setHorizontalStretch(0)
+        sizePolicy5.setVerticalStretch(0)
+        sizePolicy5.setHeightForWidth(self.widget_2.sizePolicy().hasHeightForWidth())
+        self.widget_2.setSizePolicy(sizePolicy5)
         self.verticalLayout_8 = QVBoxLayout(self.widget_2)
         self.verticalLayout_8.setObjectName(u"verticalLayout_8")
         self.findTargetFacesButton = QPushButton(self.widget_2)
@@ -186,27 +239,6 @@ class Ui_MainWindow(object):
 
 
         self.gridLayout_2.addWidget(self.widget_2, 1, 0, 1, 1)
-
-        self.targetFacesList = QListWidget(self.gridGroupBox)
-        self.targetFacesList.setObjectName(u"targetFacesList")
-        self.targetFacesList.setAutoFillBackground(True)
-
-        self.gridLayout_2.addWidget(self.targetFacesList, 1, 1, 1, 1)
-
-        self.inputEmbeddingsList = QListWidget(self.gridGroupBox)
-        self.inputEmbeddingsList.setObjectName(u"inputEmbeddingsList")
-        sizePolicy5 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
-        sizePolicy5.setHorizontalStretch(0)
-        sizePolicy5.setVerticalStretch(0)
-        sizePolicy5.setHeightForWidth(self.inputEmbeddingsList.sizePolicy().hasHeightForWidth())
-        self.inputEmbeddingsList.setSizePolicy(sizePolicy5)
-
-        self.gridLayout_2.addWidget(self.inputEmbeddingsList, 1, 2, 1, 1)
-
-        self.inputEmbeddingsSearchBox = QLineEdit(self.gridGroupBox)
-        self.inputEmbeddingsSearchBox.setObjectName(u"inputEmbeddingsSearchBox")
-
-        self.gridLayout_2.addWidget(self.inputEmbeddingsSearchBox, 0, 2, 1, 1)
 
 
         self.verticalLayout.addWidget(self.gridGroupBox)
@@ -367,11 +399,26 @@ class Ui_MainWindow(object):
         self.pushButton.setText("")
         self.buttonMediaPlay.setText("")
         self.pushButton_2.setText("")
+        self.inputEmbeddingsSearchBox.setPlaceholderText(QCoreApplication.translate("MainWindow", u"Search Embeddings", None))
+#if QT_CONFIG(tooltip)
+        self.openEmbeddingButton.setToolTip(QCoreApplication.translate("MainWindow", u"Open Embedding File", None))
+#endif // QT_CONFIG(tooltip)
+        self.openEmbeddingButton.setText("")
+#if QT_CONFIG(tooltip)
+        self.saveEmbeddingButton.setToolTip(QCoreApplication.translate("MainWindow", u"Save Embedding", None))
+#endif // QT_CONFIG(tooltip)
+        self.saveEmbeddingButton.setText("")
+#if QT_CONFIG(tooltip)
+        self.saveEmbeddingAsButton.setToolTip(QCoreApplication.translate("MainWindow", u"Save Embedding As", None))
+#endif // QT_CONFIG(tooltip)
+        self.saveEmbeddingAsButton.setText("")
+#if QT_CONFIG(tooltip)
+        self.inputEmbeddingsList.setToolTip(QCoreApplication.translate("MainWindow", u"Save Embedding", None))
+#endif // QT_CONFIG(tooltip)
         self.findTargetFacesButton.setText(QCoreApplication.translate("MainWindow", u"Find Faces", None))
         self.clearTargetFacesButton.setText(QCoreApplication.translate("MainWindow", u"Clear Faces", None))
         self.swapfacesButton.setText(QCoreApplication.translate("MainWindow", u"Swap Faces", None))
         self.editFacesButton.setText(QCoreApplication.translate("MainWindow", u"Edit Faces", None))
-        self.inputEmbeddingsSearchBox.setPlaceholderText(QCoreApplication.translate("MainWindow", u"Search Embeddings", None))
         self.input_Target_DockWidget.setWindowTitle(QCoreApplication.translate("MainWindow", u"Target Videos and Input Faces", None))
         self.groupBox_TargetVideos_Select.setTitle(QCoreApplication.translate("MainWindow", u"Target Videos/Images", None))
         self.labelTargetVideosPath.setText(QCoreApplication.translate("MainWindow", u"Select Videos/Images Path", None))

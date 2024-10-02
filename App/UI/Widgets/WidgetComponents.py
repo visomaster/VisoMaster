@@ -244,7 +244,7 @@ class InputFaceCardButton(CardButton):
             embed_create_dialog.exec_()
 
 class EmbeddingCardButton(CardButton):
-    def __init__(self, embedding_name, embedding, *args, **kwargs):
+    def __init__(self, embedding_name: str, embedding: np.ndarray, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.embedding = embedding
         self.embedding_name = embedding_name

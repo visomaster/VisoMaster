@@ -71,6 +71,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.parameters_list = {}
         self.control = {}
         self.parameter_widgets: Dict[str, ParametersWidget | QtWidgets.QWidget] = {}
+        self.loaded_embedding_filename: str = ''
         self.processed_frames = {}
         self.next_frame_to_display = None  # Index of the next frame to display
         self._is_slider_pressed = threading.Event()
@@ -109,6 +110,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.clearTargetFacesButton.clicked.connect(partial(widget_actions.clear_target_faces, self))
         self.targetVideosSearchBox.textChanged.connect(partial(widget_actions.filterTargetVideos, self))
         self.inputFacesSearchBox.textChanged.connect(partial(widget_actions.filterInputFaces, self))
+
+        self.openEmbeddingButton.clicked.connect(partial(widget_actions.open_embeddings_from_file, self))
+        self.saveEmbeddingButton.clicked.connect(partial(widget_actions.save_embeddings_to_file, self))
+        self.saveEmbeddingAsButton.clicked.connect(partial(widget_actions.save_embeddings_to_file, self, True))
+
 
         widget_actions.initializeModelLoadDialog(self)
         widget_actions.add_parameter_widgets(self, LAYOUT_DATA=SWAPPER_LAYOUT_DATA, layoutWidget=self.swapWidgetsLayout)

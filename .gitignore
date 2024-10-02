@@ -19,6 +19,7 @@ merged_embeddings*.txt
 .vs
 *.sln
 *.pyproj
+*.json
 .vscode/
 tensorrt-engines/
 source_videos/
