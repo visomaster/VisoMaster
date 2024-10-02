@@ -98,6 +98,8 @@ class TargetMediaCardButton(CardButton):
         widget_actions.clear_target_faces(main_window)
         # Uncheck input faces
         widget_actions.uncheck_all_input_faces(main_window)
+        # Uncheck merged embeddings
+        widget_actions.uncheck_all_merged_embeddings(main_window)
 
         # Reset buttons and slider
         widget_actions.resetMediaButtons(main_window)
