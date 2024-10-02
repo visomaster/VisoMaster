@@ -4,7 +4,7 @@ from PySide6 import QtWidgets, QtGui
 import time
 import App.Helpers.Misc_Helpers as misc_helpers 
 import App.UI.Widgets.UI_Workers as ui_workers
-from App.UI.Widgets.WidgetComponents import TargetMediaCardButton, ProgressDialog, TargetFaceCardButton, InputFaceCardButton, FormGroupBox, ToggleButton, SelectionBox, ParameterSlider, ParameterDecimalSlider, ParameterLineEdit, ParameterLineDecimalEdit, ParameterResetDefaultButton, CardButton
+from App.UI.Widgets.WidgetComponents import TargetMediaCardButton, ProgressDialog, TargetFaceCardButton, InputFaceCardButton, FormGroupBox, ToggleButton, SelectionBox, ParameterSlider, ParameterDecimalSlider, ParameterLineEdit, ParameterLineDecimalEdit, ParameterResetDefaultButton, CardButton, EmbeddingCardButton
 from PySide6.QtWidgets import QComboBox
 
 import App.UI.Widgets.WidgetActions as widget_actions 
@@ -369,6 +369,10 @@ def uncheck_all_input_faces(main_window: 'MainWindow'):
     for input_face_button in main_window.input_faces:
         input_face_button.setChecked(False)
 
+def uncheck_all_merged_embeddings(main_window: 'MainWindow'):
+    for embed_button in  main_window.merged_embeddings:
+        embed_button.setChecked(False)
+
 def add_parameter_widgets(main_window: 'MainWindow', LAYOUT_DATA: dict, layoutWidget: QtWidgets.QVBoxLayout):
     layout = QtWidgets.QVBoxLayout()
     scroll_area = QtWidgets.QScrollArea()
@@ -607,3 +611,28 @@ def update_parameter(main_window: 'MainWindow', parameter_name, parameter_value)
 def refresh_frame(main_window: 'MainWindow'):
     video_processor = main_window.video_processor
     video_processor.process_current_frame()
+
+def create_and_show_messagebox(main_window: 'MainWindow', window_title: str, message: str, parent_widget: QtWidgets.QWidget):
+    messagebox = QtWidgets.QMessageBox(parent_widget)
+    messagebox.setWindowTitle(window_title)
+    messagebox.setText(message)
+    messagebox.exec_()
+
+
+def create_and_add_embed_button_to_list(main_window: 'MainWindow', embedding_name, merged_embedding):
+    inputEmbeddingsList = main_window.inputEmbeddingsList
+    embed_button = EmbeddingCardButton(main_window=main_window, embedding_name=embedding_name, embedding=merged_embedding)
+    button_size = qtc.QSize(120, 30)  # Set a fixed size for the buttons
+    embed_button.setFixedSize(button_size)
+    list_item = QtWidgets.QListWidgetItem(inputEmbeddingsList)
+    list_item.setSizeHint(button_size)
+    embed_button.list_item = list_item
+    list_item.setTextAlignment(qtc.Qt.AlignmentFlag.AlignCenter)
+    inputEmbeddingsList.setItemWidget(list_item, embed_button)
+    grid_size_with_padding = button_size + qtc.QSize(4, 4)  # Add padding around the buttons
+    inputEmbeddingsList.setGridSize(grid_size_with_padding)  # Set grid size with padding
+    inputEmbeddingsList.setWrapping(True)  # Enable wrapping to have items in rows
+    inputEmbeddingsList.setFlow(QtWidgets.QListView.LeftToRight)  # Set flow direction
+    inputEmbeddingsList.setResizeMode(QtWidgets.QListView.Adjust)  # Adjust layout automatically
+
+    main_window.merged_embeddings.append(embed_button)

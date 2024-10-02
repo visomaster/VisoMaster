@@ -120,6 +120,7 @@ class TargetFaceCardButton(CardButton):
         self.cropped_face = cropped_face
         self.embedding = embedding
         self.assigned_input_face_buttons: Dict[InputFaceCardButton, np.ndarray] = {} # Key: InputFaceCardButton, Value: Face Embedding
+        self.assigned_embed_buttons: Dict[EmbeddingCardButton, np.ndarray] = {} # Key: EmbeddingCardButton, Value: Face Embedding
         self.assigned_input_embedding = np.array([])
         self.setCheckable(True)
         self.clicked.connect(self.loadTargetFace)
@@ -148,7 +149,9 @@ class TargetFaceCardButton(CardButton):
 
     def calculateAssignedInputEmbedding(self,):
         parameters = self.main_window.parameters.copy()
-        all_input_embeddings = [embedding for embedding in self.assigned_input_face_buttons.values()]
+        input_face_embeddings = [embedding for embedding in self.assigned_input_face_buttons.values()]
+        merged_embeddings = [embedding for embedding in self.assigned_embed_buttons.values()]
+        all_input_embeddings = input_face_embeddings + merged_embeddings
         if len(all_input_embeddings)>0:
             if parameters['EmbMergeMethodSelection'] == 'Mean':
                 self.assigned_input_embedding = np.mean(all_input_embeddings, 0)
@@ -190,6 +193,12 @@ class InputFaceCardButton(CardButton):
         self.setToolTip(media_path)
         self.clicked.connect(self.loadInputFace)
 
+        # Set the context menu policy to trigger the custom context menu on right-click
+        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        # Connect the custom context menu request signal to the custom slot
+        self.customContextMenuRequested.connect(self.on_context_menu)
+        self.create_context_menu()
+
     def loadInputFace(self):
         main_window = self.main_window
 
@@ -206,8 +215,117 @@ class InputFaceCardButton(CardButton):
             if not self.isChecked():
                 cur_selected_target_face_button.assigned_input_face_buttons.pop(self)
             cur_selected_target_face_button.calculateAssignedInputEmbedding()
+        else:
+            if not QtWidgets.QApplication.keyboardModifiers() == qtc.Qt.ControlModifier:
+                # If there is no target face selected, uncheck all other input faces
+                for input_face_button in main_window.input_faces:
+                    if input_face_button!=self:
+                        input_face_button.setChecked(False)
 
         widget_actions.refresh_frame(main_window)
+
+    def create_context_menu(self):
+        # create context menu
+        self.popMenu = QtWidgets.QMenu(self)
+        remove_action = QtGui.QAction('Create embedding from selected faces', self)
+        remove_action.triggered.connect(self.create_embedding_from_selected_faces)
+        self.popMenu.addAction(remove_action)
+
+    def on_context_menu(self, point):
+        # show context menu
+        self.popMenu.exec_(self.mapToGlobal(point))
+
+    def create_embedding_from_selected_faces(self):
+        selected_faces_embeddings = [input_face.embedding for input_face in self.main_window.input_faces if input_face.isChecked()]
+        if len(selected_faces_embeddings)==0:
+            widget_actions.create_and_show_messagebox(self.main_window, "No Faces Selected!", "You need to select atleast one face to create a merged embedding!", self)
+        else:
+            embed_create_dialog = CreateEmbeddingDialog(self.main_window, selected_faces_embeddings)
+            embed_create_dialog.exec_()
+
+class EmbeddingCardButton(CardButton):
+    def __init__(self, embedding_name, embedding, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.embedding = embedding
+        self.embedding_name = embedding_name
+        self.setCheckable(True)
+        self.setText(embedding_name)
+        self.setToolTip(embedding_name)
+        self.clicked.connect(self.loadEmbedding)
+
+    def loadEmbedding(self):
+        main_window = self.main_window
+        if main_window.cur_selected_target_face_button:
+            
+            cur_selected_target_face_button = main_window.cur_selected_target_face_button
+            if not QtWidgets.QApplication.keyboardModifiers() == qtc.Qt.ControlModifier:
+                for embed_button in cur_selected_target_face_button.assigned_embed_buttons.keys():
+                    if embed_button!=self:
+                        embed_button.setChecked(False)
+                cur_selected_target_face_button.assigned_embed_buttons = {}
+
+            cur_selected_target_face_button.assigned_embed_buttons[self] = self.embedding
+
+            if not self.isChecked():
+                cur_selected_target_face_button.assigned_embed_buttons.pop(self)
+            cur_selected_target_face_button.calculateAssignedInputEmbedding()
+        else:
+            if not QtWidgets.QApplication.keyboardModifiers() == qtc.Qt.ControlModifier:
+                # If there is no target face selected, uncheck all other input faces
+                for embed_button in main_window.merged_embeddings:
+                    if embed_button!=self:
+                        embed_button.setChecked(False)
+
+        widget_actions.refresh_frame(main_window)
+
+
+class CreateEmbeddingDialog(QtWidgets.QDialog):
+    def __init__(self, main_window: 'MainWindow', embeddings: list = []):
+        super().__init__()
+        self.main_window = main_window
+        self.embeddings = embeddings
+        self.embedding_name = ''
+        self.merge_type = ''
+        self.setWindowTitle("Create Embedding")
+
+        # Create widgets
+        self.embed_name_edit = QtWidgets.QLineEdit(self)
+        self.embed_name_edit.setPlaceholderText("Enter embedding name")
+
+        self.merge_type_selection = QtWidgets.QComboBox(self)
+        self.merge_type_selection.addItems(['Mean', 'Median'])
+        self.merge_type_selection.setCurrentText(main_window.parameters['EmbMergeMethodSelection'])
+
+        # Create button box
+        QBtn = QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
+        self.buttonBox = QtWidgets.QDialogButtonBox(QBtn)
+        self.buttonBox.accepted.connect(self.create_embedding)
+        self.buttonBox.rejected.connect(self.reject)
+
+        # Create layout and add widgets
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(QtWidgets.QLabel("Embedding Name:"))
+        layout.addWidget(self.embed_name_edit)
+        layout.addWidget(QtWidgets.QLabel("Merge Type:"))
+        layout.addWidget(self.merge_type_selection)
+        layout.addWidget(self.buttonBox)
+
+        # Set dialog layout
+        self.setLayout(layout)
+
+    def create_embedding(self):
+        if self.embeddings:
+            self.embedding_name = self.embed_name_edit.text().strip()
+            self.merge_type = self.merge_type_selection.currentText()
+            if self.embedding_name == '':
+                widget_actions.create_and_show_messagebox(self.main_window, 'Empty Embedding Name!', 'Embedding Name cannot be empty!', self)
+            else:
+                if self.merge_type == 'Mean':
+                    merged_embedding = np.mean(self.embeddings, 0)
+                elif self.merge_type == 'Median':
+                    merged_embedding = np.median(self.embeddings, 0)
+                widget_actions.create_and_add_embed_button_to_list(main_window=self.main_window, embedding_name=self.embedding_name, merged_embedding = merged_embedding)
+                self.accept()
 
 # Custom progress dialog
 class ProgressDialog(QtWidgets.QProgressDialog):
@@ -401,7 +519,6 @@ class ParameterLineDecimalEdit(QtWidgets.QLineEdit):
         self.setValidator(QtGui.QDoubleValidator(min_value, max_value, decimals))
         self.setAlignment(QtCore.Qt.AlignCenter)
         self.setText(default_value)
-        self.setAlignment(QtGui.Qt.AlignRight)
 
     def set_value(self, value: float):
         """Set the line edit's value."""
