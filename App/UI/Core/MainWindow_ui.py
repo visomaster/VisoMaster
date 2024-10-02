@@ -330,11 +330,21 @@ class Ui_MainWindow(object):
         self.face_editor_tab.setObjectName(u"face_editor_tab")
         self.verticalLayout_3 = QVBoxLayout(self.face_editor_tab)
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
+        self.faceEditorWidgetsLayout = QVBoxLayout()
+        self.faceEditorWidgetsLayout.setObjectName(u"faceEditorWidgetsLayout")
+
+        self.verticalLayout_3.addLayout(self.faceEditorWidgetsLayout)
+
         self.tabWidget.addTab(self.face_editor_tab, "")
         self.settings_tab = QWidget()
         self.settings_tab.setObjectName(u"settings_tab")
         self.verticalLayout_2 = QVBoxLayout(self.settings_tab)
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
+        self.settingsWidgetsLayout = QVBoxLayout()
+        self.settingsWidgetsLayout.setObjectName(u"settingsWidgetsLayout")
+
+        self.verticalLayout_2.addLayout(self.settingsWidgetsLayout)
+
         self.tabWidget.addTab(self.settings_tab, "")
 
         self.gridLayout_5.addWidget(self.tabWidget, 0, 0, 1, 1)

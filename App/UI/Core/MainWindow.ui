@@ -499,13 +499,21 @@
         <attribute name="title">
          <string>Face Editor</string>
         </attribute>
-        <layout class="QVBoxLayout" name="verticalLayout_3"/>
+        <layout class="QVBoxLayout" name="verticalLayout_3">
+         <item>
+          <layout class="QVBoxLayout" name="faceEditorWidgetsLayout"/>
+         </item>
+        </layout>
        </widget>
        <widget class="QWidget" name="settings_tab">
         <attribute name="title">
          <string>Settings</string>
         </attribute>
-        <layout class="QVBoxLayout" name="verticalLayout_2"/>
+        <layout class="QVBoxLayout" name="verticalLayout_2">
+         <item>
+          <layout class="QVBoxLayout" name="settingsWidgetsLayout"/>
+         </item>
+        </layout>
        </widget>
       </widget>
      </item>
