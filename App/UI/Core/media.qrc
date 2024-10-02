@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="media">
+    <file>Media/save_file.png</file>
     <file>Media/add_marker_hover.png</file>
     <file>Media/add_marker_off.png</file>
     <file>Media/audio_off.png</file>
