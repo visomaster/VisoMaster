@@ -80,6 +80,9 @@ class VideoProcessor(QObject):
             ret, frame = self.media_capture.read()
 
             if ret:
+                # Frame must be in RGB format
+                frame = frame[..., ::-1]  # Swap the channels from BGR to RGB
+
                 print(f"Enqueueing frame {self.current_frame_number}")
                 try:
                     # Put the frame in the queue and submit the task for processing
@@ -129,6 +132,9 @@ class VideoProcessor(QObject):
             ret, frame = self.media_capture.read()
 
             if ret:
+                # Frame must be in RGB format
+                frame = frame[..., ::-1]  # Swap the channels from BGR to RGB
+
                 print(f"Enqueueing frame {self.current_frame_number}")
                 worker = FrameWorker(frame, self.main_window, self.current_frame_number)
                 worker.start()

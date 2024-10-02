@@ -101,6 +101,8 @@ class FrameWorker(threading.Thread):
                                 img = self.swap_core(img, fface[0],  s_e=s_e)
         img = img.permute(1,2,0)
         img = img.cpu().numpy()
+        # Img must be in BGR format
+        img = img[..., ::-1]  # Swap the channels from RGB to BGR
         return np.ascontiguousarray(img)
 
     def swap_core(self, img, kps_5, kps=False, s_e=[], t_e=[], dfl_model=False): # img = RGB
@@ -191,6 +193,10 @@ class FrameWorker(threading.Thread):
         # Create image mask
         swap_mask = torch.ones((128, 128), dtype=torch.float32, device=self.models_processor.device)
         swap_mask = torch.unsqueeze(swap_mask,0)
+
+        # Restorer
+        if parameters["FaceRestorerEnableToggle"]:
+            swap = self.models_processor.apply_facerestorer(swap, parameters['FaceRestorerDetTypeSelection'], parameters['FaceRestorerTypeSelection'], parameters["FaceRestorerBlendSlider"], parameters['FaceFidelityWeightDecimalSlider'], parameters['DetectorScoreSlider'])
 
         # Add blur to swap_mask results
         #gauss = transforms.GaussianBlur(parameters['BlendSlider']*2+1, (parameters['BlendSlider']+1)*0.2)

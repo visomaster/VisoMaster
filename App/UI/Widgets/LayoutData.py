@@ -144,7 +144,7 @@ SWAPPER_LAYOUT_DATA = {
             'parentToggle': 'FaceRestorerEnableToggle',
             'requiredToggleValue': True,
         },
-        'FidelityWeightDecimalSlider': {
+        'FaceFidelityWeightDecimalSlider': {
             'level': 2,
             'label': 'Fidelity Weight',
             'min_value': '0.0',
@@ -153,7 +153,7 @@ SWAPPER_LAYOUT_DATA = {
             'parentToggle': 'FaceRestorerEnableToggle',
             'requiredToggleValue': True,
         },
-        'RestorerBlendSlider': {
+        'FaceRestorerBlendSlider': {
             'level': 2,
             'label': 'Blend',
             'min_value': '0',
