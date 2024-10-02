@@ -282,7 +282,7 @@ SWAPPER_LAYOUT_DATA = {
             'default': '0',
             'parentToggle': 'DFLXSegEnableToggle',
             'requiredToggleValue': True,
-            'help': 'Grows or shrinks the occluded region'
+            'help': 'Grows or shrinks the occluded region.'
         },
         'OccluderXSegBlurSlider': {
             'level': 1,
@@ -294,7 +294,152 @@ SWAPPER_LAYOUT_DATA = {
             'requiredToggleValue': True,
             'help': 'Blend value for Occluder and XSeg.'
         },
-        
+        'FaceParserEnableToggle': {
+            'level': 1,
+            'label': 'Face Parser Mask',
+            'default': False,
+            'help': 'Allow the unprocessed background from the orginal image to show in the final swap.'
+        },
+        'BackgroundParserSlider': {
+            'level': 2,
+            'label': 'Background',
+            'min_value': '-50',
+            'max_value': '50',
+            'default': '0',
+            'parentToggle': 'FaceParserEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Negative/Positive values shrink and grow the mask.'
+        },
+        'LeftEyebrowParserSlider': {
+            'level': 2,
+            'label': 'Left Eyebrow',
+            'min_value': '0',
+            'max_value': '30',
+            'default': '0',
+            'parentToggle': 'FaceParserEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Adjust the size of the Mask. Mast the left eyebrow.'
+        },
+        'RightEyebrowParserSlider': {
+            'level': 2,
+            'label': 'Right Eyebrow',
+            'min_value': '0',
+            'max_value': '30',
+            'default': '0',
+            'parentToggle': 'FaceParserEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Adjust the size of the Mask. Mast the right eyebrow.'
+        },
+        'LeftEyeParserSlider': {
+            'level': 2,
+            'label': 'Left Eye',
+            'min_value': '0',
+            'max_value': '30',
+            'default': '0',
+            'parentToggle': 'FaceParserEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Adjust the size of the Mask. Mast the left eye.'
+        },
+        'RightEyeParserSlider': {
+            'level': 2,
+            'label': 'Right Eye',
+            'min_value': '0',
+            'max_value': '30',
+            'default': '0',
+            'parentToggle': 'FaceParserEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Adjust the size of the Mask. Mast the right eye.'
+        },
+        'EyeGlassesParserSlider': {
+            'level': 2,
+            'label': 'EyeGlasses',
+            'min_value': '0',
+            'max_value': '30',
+            'default': '0',
+            'parentToggle': 'FaceParserEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Adjust the size of the Mask. Mast the eyeglasses.'
+        },
+        'NoseParserSlider': {
+            'level': 2,
+            'label': 'Nose',
+            'min_value': '0',
+            'max_value': '30',
+            'default': '0',
+            'parentToggle': 'FaceParserEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Adjust the size of the Mask. Mast the nose.'
+        },
+        'MouthParserSlider': {
+            'level': 2,
+            'label': 'Mouth',
+            'min_value': '0',
+            'max_value': '30',
+            'default': '0',
+            'parentToggle': 'FaceParserEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Adjust the size of the Mask. Mast the inside of the mouth, including the tongue.'
+        },
+        'UpperLipParserSlider': {
+            'level': 2,
+            'label': 'Upper Lip',
+            'min_value': '0',
+            'max_value': '30',
+            'default': '0',
+            'parentToggle': 'FaceParserEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Adjust the size of the Mask. Mast the upper lip.'
+        },
+        'LowerLipParserSlider': {
+            'level': 2,
+            'label': 'Lower Lip',
+            'min_value': '0',
+            'max_value': '30',
+            'default': '0',
+            'parentToggle': 'FaceParserEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Adjust the size of the Mask. Mast the lower lip.'
+        },
+        'NeckParserSlider': {
+            'level': 2,
+            'label': 'Neck',
+            'min_value': '0',
+            'max_value': '30',
+            'default': '0',
+            'parentToggle': 'FaceParserEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Adjust the size of the Mask. Mast the neck.'
+        },
+        'HairParserSlider': {
+            'level': 2,
+            'label': 'Hair',
+            'min_value': '0',
+            'max_value': '30',
+            'default': '0',
+            'parentToggle': 'FaceParserEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Adjust the size of the Mask. Mast the hair.'
+        },
+        'BackgroundBlurParserSlider': {
+            'level': 2,
+            'label': 'Background',
+            'min_value': '0',
+            'max_value': '100',
+            'default': '5',
+            'parentToggle': 'FaceParserEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Blend the value for Background Parser'
+        },
+        'FaceBlurParserSlider': {
+            'level': 2,
+            'label': 'Face Blur',
+            'min_value': '0',
+            'max_value': '100',
+            'default': '5',
+            'parentToggle': 'FaceParserEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Blend the value for Face Parser'
+        },
     },
     'Embedding Merge Method':{
         'EmbMergeMethodSelection':{

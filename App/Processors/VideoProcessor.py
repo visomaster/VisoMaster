@@ -150,6 +150,9 @@ class VideoProcessor(QObject):
         elif self.file_type == 'image':
             frame = cv2.imread(self.media_path)
             if frame is not None:
+                # Frame must be in RGB format
+                frame = frame[..., ::-1]  # Swap the channels from BGR to RGB
+
                 print(f"Enqueueing frame {self.current_frame_number}")
                 worker = FrameWorker(frame, self.main_window, self.current_frame_number)
                 worker.start()
