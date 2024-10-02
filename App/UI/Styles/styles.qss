@@ -26,12 +26,12 @@ TargetMediaCardButton:pressed {
 }
 
 /* Pressed state */
-TargetMediaCardButton:checked, TargetFaceCardButton:checked, InputFaceCardButton:checked {
+TargetMediaCardButton:checked, TargetFaceCardButton:checked, InputFaceCardButton:checked, EmbeddingCardButton:checked {
     border: 1px solid #1abc9c;  /* Darker turquoise border */
 }
 
 /* Disabled state */
-TargetMediaCardButton:disabled, TargetFaceCardButton:disabled, InputFaceCardButton:disabled {
+TargetMediaCardButton:disabled, TargetFaceCardButton:disabled, InputFaceCardButton:disabled, EmbeddingCardButton:disabled {
     background-color: #95a5a6;  /* Gray background when disabled */
     border: 1px solid #7f8c8d;  /* Darker gray border */
     color: #bdc3c7;             /* Lighter gray text color */

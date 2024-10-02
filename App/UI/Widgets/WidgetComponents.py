@@ -141,9 +141,12 @@ class TargetFaceCardButton(CardButton):
                 target_face_button.setChecked(False)
 
         widget_actions.uncheck_all_input_faces(main_window)
+        widget_actions.uncheck_all_merged_embeddings(main_window)
 
         for input_face_button in self.assigned_input_face_buttons.keys():
             input_face_button.setChecked(True)
+        for embed_button in self.assigned_embed_buttons.keys():
+            embed_button.setChecked(True)
 
         widget_actions.refresh_frame(main_window)
 
