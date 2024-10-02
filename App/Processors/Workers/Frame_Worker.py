@@ -212,6 +212,11 @@ class FrameWorker(threading.Thread):
             gauss = transforms.GaussianBlur(parameters['OccluderXSegBlurSlider']*2+1, (parameters['OccluderXSegBlurSlider']+1)*0.2)
             swap_mask = gauss(swap_mask)
 
+        if parameters["FaceParserEnableToggle"]:
+            mask = self.models_processor.apply_face_parser(swap, parameters)
+            mask = t128(mask)
+            swap_mask = torch.mul(swap_mask, mask)
+
         # Add blur to swap_mask results
         #gauss = transforms.GaussianBlur(parameters['BlendSlider']*2+1, (parameters['BlendSlider']+1)*0.2)
         gauss = transforms.GaussianBlur(5*2+1, (5+1)*0.2)
