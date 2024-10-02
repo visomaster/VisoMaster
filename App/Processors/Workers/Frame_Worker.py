@@ -176,18 +176,17 @@ class FrameWorker(threading.Thread):
         border_mask = torch.unsqueeze(border_mask,0)
 
         # if parameters['BorderState']:
-        top = 10 #parameters['BorderTopSlider']
-        left = 10 #parameters['BorderLeftSlider']
-        right = 128-10 #parameters['BorderRightSlider']
-        bottom = 128-10 # parameters['BorderBottomSlider']
+        top = parameters['BorderTopSlider']
+        left = parameters['BorderLeftSlider']
+        right = 128 - parameters['BorderRightSlider']
+        bottom = 128 - parameters['BorderBottomSlider']
 
         border_mask[:, :top, :] = 0
         border_mask[:, bottom:, :] = 0
         border_mask[:, :, :left] = 0
         border_mask[:, :, right:] = 0
 
-        #gauss = transforms.GaussianBlur(parameters['BorderBlurSlider']*2+1, (parameters['BorderBlurSlider']+1)*0.2)
-        gauss = transforms.GaussianBlur(5*2+1, (5+1)*0.2)
+        gauss = transforms.GaussianBlur(parameters['BorderBlurSlider']*2+1, (parameters['BorderBlurSlider']+1)*0.2)
         border_mask = gauss(border_mask)
 
         # Create image mask
@@ -197,6 +196,21 @@ class FrameWorker(threading.Thread):
         # Restorer
         if parameters["FaceRestorerEnableToggle"]:
             swap = self.models_processor.apply_facerestorer(swap, parameters['FaceRestorerDetTypeSelection'], parameters['FaceRestorerTypeSelection'], parameters["FaceRestorerBlendSlider"], parameters['FaceFidelityWeightDecimalSlider'], parameters['DetectorScoreSlider'])
+
+        # Occluder
+        if parameters["OccluderEnableToggle"]:
+            mask = self.models_processor.apply_occlusion(original_face_256, parameters["OccluderSizeSlider"])
+            mask = t128(mask)
+            swap_mask = torch.mul(swap_mask, mask)
+            gauss = transforms.GaussianBlur(parameters['OccluderXSegBlurSlider']*2+1, (parameters['OccluderXSegBlurSlider']+1)*0.2)
+            swap_mask = gauss(swap_mask)
+
+        if parameters["DFLXSegEnableToggle"]:
+            img_mask = self.models_processor.apply_dfl_xseg(original_face_256, -parameters["DFLXSegSizeSlider"])
+            img_mask = t128(img_mask)
+            swap_mask = torch.mul(swap_mask, 1 - img_mask)
+            gauss = transforms.GaussianBlur(parameters['OccluderXSegBlurSlider']*2+1, (parameters['OccluderXSegBlurSlider']+1)*0.2)
+            swap_mask = gauss(swap_mask)
 
         # Add blur to swap_mask results
         #gauss = transforms.GaussianBlur(parameters['BlendSlider']*2+1, (parameters['BlendSlider']+1)*0.2)

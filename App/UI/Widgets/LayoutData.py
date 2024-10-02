@@ -201,6 +201,91 @@ SWAPPER_LAYOUT_DATA = {
             'help': 'Select the type of frame enhancement to apply, based on the content and resolution requirements.'
         }
     },
+    'Face Mask':{
+        'BorderBottomSlider':{
+            'level': 1,
+            'label': 'Bottom Border',
+            'min_value': '0',
+            'max_value': '100',
+            'default': '10',
+            'help': 'A rectangle with adjustable bottom, left, right, top, and sides that masks the swapped face result back into the original image.'
+        },
+        'BorderLeftSlider':{
+            'level': 1,
+            'label': 'Left Border',
+            'min_value': '0',
+            'max_value': '100',
+            'default': '10',
+            'help': 'A rectangle with adjustable bottom, left, right, top, and sides that masks the swapped face result back into the original image.'
+        },
+        'BorderRightSlider':{
+            'level': 1,
+            'label': 'Right Border',
+            'min_value': '0',
+            'max_value': '100',
+            'default': '10',
+            'help': 'A rectangle with adjustable bottom, left, right, top, and sides that masks the swapped face result back into the original image.'
+        },
+        'BorderTopSlider':{
+            'level': 1,
+            'label': 'Top Border',
+            'min_value': '0',
+            'max_value': '100',
+            'default': '10',
+            'help': 'A rectangle with adjustable bottom, left, right, top, and sides that masks the swapped face result back into the original image.'
+        },
+        'BorderBlurSlider':{
+            'level': 1,
+            'label': 'Border Blur',
+            'min_value': '0',
+            'max_value': '100',
+            'default': '10',
+            'help': 'Border mask blending distance.'
+        },
+        'OccluderEnableToggle': {
+            'level': 1,
+            'label': 'Occlusion Mask',
+            'default': False,
+            'help': 'Allow objects occluding the face to show up in the swapped image.'
+        },
+        'OccluderSizeSlider': {
+            'level': 2,
+            'label': 'Size',
+            'min_value': '-100',
+            'max_value': '100',
+            'default': '0',
+            'parentToggle': 'OccluderEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Grows or shrinks the occluded region'
+        },
+        'DFLXSegEnableToggle': {
+            'level': 1,
+            'label': 'DFL XSeg Mask',
+            'default': False,
+            'help': 'Allow objects occluding the face to show up in the swapped image.'
+        },
+        'DFLXSegSizeSlider': {
+            'level': 2,
+            'label': 'Size',
+            'min_value': '-100',
+            'max_value': '100',
+            'default': '0',
+            'parentToggle': 'DFLXSegEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Grows or shrinks the occluded region'
+        },
+        'OccluderXSegBlurSlider': {
+            'level': 1,
+            'label': 'Occluder/DFL XSeg Blur',
+            'min_value': '0',
+            'max_value': '100',
+            'default': '0',
+            'parentToggle': 'OccluderEnableToggle, DFLXSegEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Blend value for Occluder and XSeg.'
+        },
+        
+    },
     'Embedding Merge Method':{
         'EmbMergeMethodSelection':{
             'level': 1,
