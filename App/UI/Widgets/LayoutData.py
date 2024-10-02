@@ -199,7 +199,17 @@ SWAPPER_LAYOUT_DATA = {
             'parentToggle': 'FrameEnhancerEnableToggle',
             'requiredToggleValue': True,
             'help': 'Select the type of frame enhancement to apply, based on the content and resolution requirements.'
-        }
+        },
+        'FrameEnhancerBlendSlider': {
+            'level': 2,
+            'label': 'Blend',
+            'min_value': '0',
+            'max_value': '100',
+            'default': '100',
+            'parentToggle': 'FrameEnhancerEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Blends the enhanced results back into the original frame.'
+        },
     },
     'Face Mask':{
         'BorderBottomSlider':{
