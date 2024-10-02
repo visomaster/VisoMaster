@@ -295,11 +295,23 @@ def filterInputFaces(main_window: 'MainWindow', search_text: str):
 
             else:
                 list_item.setHidden(False)
-
-
     else:
         for i in range(main_window.inputFacesList.count()):
             main_window.inputFacesList.item(i).setHidden(False)
+
+def filterMergedEmbeddings(main_window: 'MainWindow', search_text: str):
+    search_text = search_text.lower()
+    if search_text:
+        for i in range(main_window.inputEmbeddingsList.count()):
+            list_item = main_window.inputEmbeddingsList.item(i)
+            if search_text not in main_window.merged_embeddings[i].embedding_name.lower():
+                list_item.setHidden(True)
+
+            else:
+                list_item.setHidden(False)
+    else:
+        for i in range(main_window.inputEmbeddingsList.count()):
+            main_window.inputEmbeddingsList.item(i).setHidden(False)
 
 def initializeModelLoadDialog(main_window: 'MainWindow'):
     main_window.model_load_dialog = ProgressDialog("Loading Models...This is gonna take a while.", "Cancel", 0, 100, main_window)
