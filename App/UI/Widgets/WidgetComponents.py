@@ -260,6 +260,12 @@ class EmbeddingCardButton(CardButton):
         self.setToolTip(embedding_name)
         self.clicked.connect(self.loadEmbedding)
 
+        # Set the context menu policy to trigger the custom context menu on right-click
+        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        # Connect the custom context menu request signal to the custom slot
+        self.customContextMenuRequested.connect(self.on_context_menu)
+        self.create_context_menu()
+
     def loadEmbedding(self):
         main_window = self.main_window
         if main_window.cur_selected_target_face_button:
@@ -284,6 +290,27 @@ class EmbeddingCardButton(CardButton):
                         embed_button.setChecked(False)
 
         widget_actions.refresh_frame(main_window)
+
+    def create_context_menu(self):
+        # create context menu
+        self.popMenu = QtWidgets.QMenu(self)
+        remove_action = QtGui.QAction('Remove Embedding', self)
+        remove_action.triggered.connect(self.remove_embedding_from_list)
+        self.popMenu.addAction(remove_action)
+
+    def on_context_menu(self, point):
+        # show context menu
+        self.popMenu.exec_(self.mapToGlobal(point))
+
+    def remove_embedding_from_list(self):
+        main_window = self.main_window
+        for i in range(main_window.inputEmbeddingsList.count()):
+            list_item = main_window.inputEmbeddingsList.item(i)
+            if list_item.listWidget().itemWidget(list_item) == self:
+                main_window.inputEmbeddingsList.takeItem(i)   
+                main_window.merged_embeddings.pop(i)
+        widget_actions.refresh_frame(self.main_window)
+        del self        
 
 
 class CreateEmbeddingDialog(QtWidgets.QDialog):
