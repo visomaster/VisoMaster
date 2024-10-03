@@ -22,3 +22,4 @@ tensorrt-cu11==10.4.0
 numexpr
 onnxsim
 requests
+pyqt-toast-notification==1.3.2
