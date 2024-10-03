@@ -431,8 +431,8 @@ class ToggleButton(QtWidgets.QPushButton, ParametersWidget):
         self.animation.setDuration(300)  # Animation duration in milliseconds
         self.animation.setEasingCurve(self.animation_curve)
         
-        self.clicked.connect(partial(widget_actions.show_hide_related_widgets, self.main_window, self, self.widget_name, None))
-        self.toggled.connect(self.start_animation)
+        self.toggled.connect(partial(widget_actions.show_hide_related_widgets, self.main_window, self, self.widget_name, None))
+        self.clicked.connect(self.start_animation)
         
     # Property for animation
     @QtCore.Property(int)
