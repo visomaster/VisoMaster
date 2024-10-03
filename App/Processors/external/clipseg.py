@@ -80,7 +80,7 @@ class CLIPDenseBase(nn.Module):
     def __init__(self, version, reduce_cond, reduce_dim, prompt, n_tokens):
         super().__init__()
 
-        from rope.external.cliplib import clip
+        from App.Processors.external.cliplib import clip
 
         # prec = torch.FloatTensor
         self.clip_model, _ = clip.load(version, device='cpu', jit=False)
@@ -223,7 +223,7 @@ class CLIPDenseBase(nn.Module):
         return cond   
 
     def compute_conditional(self, conditional):
-        from rope.external.cliplib import clip
+        from App.Processors.external.cliplib import clip
 
         dev = next(self.parameters()).device
 

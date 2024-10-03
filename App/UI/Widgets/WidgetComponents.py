@@ -625,6 +625,30 @@ class ParameterDecimalSlider(QtWidgets.QSlider, ParametersWidget):
         # Accept the event
         event.accept()
 
+class ParameterText(QtWidgets.QLineEdit, ParametersWidget):
+    def __init__(self, default_value: str, fixed_width: int = 130, max_length: int = 500, alignment: int = 0, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        ParametersWidget.__init__(self, *args, **kwargs)
+
+        self.setFixedWidth(fixed_width)  # Make the line edit narrower
+        self.setMaxLength(max_length)
+        self.default_value = default_value
+
+        # Optional: Align text to the right for better readability
+        if alignment == 0:
+            self.setAlignment(QtGui.Qt.AlignLeft)
+        elif alignment == 1:
+            self.setAlignment(QtGui.Qt.AlignCenter)
+        else:
+            self.setAlignment(QtGui.Qt.AlignRight)
+
+        # Set the initial text to the default value
+        self.setText(self.default_value)
+
+    def reset_to_default_value(self):
+        """Reset the line edit to its default value."""
+        self.setText(self.default_value)
+
 class ParameterLineEdit(QtWidgets.QLineEdit):
     def __init__(self, min_value: int, max_value: int, default_value: str, fixed_width: int = 38, max_length: int = 3, alignment: int = 1, *args, **kwargs):
         super().__init__(*args, **kwargs)

@@ -276,6 +276,34 @@ SWAPPER_LAYOUT_DATA = {
             'requiredToggleValue': True,
             'help': 'Blend value for Occluder and XSeg.'
         },
+        'ClipEnableToggle': {
+            'level': 1,
+            'label': 'Text Masking',
+            'default': False,
+            'help': 'Use descriptions to identify objects that will be present in the final swapped image.'
+        },
+        'ClipText': {
+            'level': 2,
+            'label': 'Text Masking Entry',
+            'min_value': '0',
+            'max_value': '1000',
+            'default': '',
+            'width': 130,
+            'parentToggle': 'ClipEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'To use, type a word(s) in the box separated by commas and press <enter>.'
+        },
+        'ClipAmountSlider': {
+            'level': 2,
+            'label': 'Amount',
+            'min_value': '0',
+            'max_value': '100',
+            'default': '50',
+            'step': 1,
+            'parentToggle': 'ClipEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Increase to strengthen the effect.'
+        },
         'FaceParserEnableToggle': {
             'level': 1,
             'label': 'Face Parser Mask',

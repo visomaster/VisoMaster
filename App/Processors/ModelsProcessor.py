@@ -2370,7 +2370,7 @@ class ModelsProcessor(QObject):
         if not self.clip_session:
             self.clip_session = CLIPDensePredT(version='ViT-B/16', reduce_dim=64, complex_trans_conv=True)
             self.clip_session.eval()
-            self.clip_session.load_state_dict(torch.load('./models/rd64-uni-refined.pth', weights_only=True), strict=False)
+            self.clip_session.load_state_dict(torch.load(f'{models_dir}/rd64-uni-refined.pth', weights_only=True), strict=False)
             self.clip_session.to(device)  # Sposta il modello sul dispositivo dell'immagine
 
         # Crea un mask tensor direttamente sul dispositivo dell'immagine

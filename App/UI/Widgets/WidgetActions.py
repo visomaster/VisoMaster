@@ -4,7 +4,7 @@ from PySide6 import QtWidgets, QtGui
 import time
 import App.Helpers.Misc_Helpers as misc_helpers 
 import App.UI.Widgets.UI_Workers as ui_workers
-from App.UI.Widgets.WidgetComponents import TargetMediaCardButton, ProgressDialog, TargetFaceCardButton, InputFaceCardButton, FormGroupBox, ToggleButton, SelectionBox, ParameterSlider, ParameterDecimalSlider, ParameterLineEdit, ParameterLineDecimalEdit, ParameterResetDefaultButton, CardButton, EmbeddingCardButton
+from App.UI.Widgets.WidgetComponents import TargetMediaCardButton, ProgressDialog, TargetFaceCardButton, InputFaceCardButton, FormGroupBox, ToggleButton, SelectionBox, ParameterSlider, ParameterDecimalSlider, ParameterLineEdit, ParameterText, ParameterLineDecimalEdit, ParameterResetDefaultButton, CardButton, EmbeddingCardButton
 from PySide6.QtWidgets import QComboBox
 from pyqttoast import Toast, ToastPreset, ToastPosition
 
@@ -585,6 +585,34 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
                         slider_widget.line_edit.setText(str(new_value))
                     slider_widget.setValue(int(new_value)) #Update the value of slider too
                 widget.line_edit.textChanged.connect(partial(onchange_line_edit, widget, widget_name))
+
+            elif 'Text' in widget_name:
+                widget = ParameterText(label=widget_data['label'], widget_name=widget_name, group_layout_data=widgets, label_widget=label, default_value=widget_data['default'], fixed_width=widget_data['width'], main_window=main_window)
+                widget.reset_default_button = ParameterResetDefaultButton(related_widget=widget)
+                horizontal_layout = QtWidgets.QHBoxLayout()
+                horizontal_layout.addWidget(label)
+                horizontal_layout.addWidget(widget)
+                horizontal_layout.addWidget(widget.reset_default_button)
+
+                category_layout.addRow(horizontal_layout)
+
+                if data_type=='parameter':
+                    # Initialize parameter value
+                    create_parameter(main_window, widget_name, widget_data['default'])
+                else:
+                    create_control(main_window, widget_name, widget_data['default'])
+
+                 # Handle 'Enter' key press to confirm input
+                def on_enter_pressed(text_widget: ParameterText, text_widget_name):
+                    # Logic to confirm input or trigger any action when Enter is pressed
+                    new_value = text_widget.text()  # Get the current text value
+                    if data_type == 'parameter':
+                        update_parameter(main_window, text_widget_name, new_value)
+                    else:
+                        update_control(main_window, text_widget_name, new_value)
+                
+                # Connect the 'returnPressed' signal to the on_enter_pressed function
+                widget.returnPressed.connect(partial(on_enter_pressed, widget, widget_name))
 
             horizontal_layout.setContentsMargins(spacing_level * 10, 0, 0, 0)
 
