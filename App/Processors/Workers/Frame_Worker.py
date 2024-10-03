@@ -142,6 +142,9 @@ class FrameWorker(threading.Thread):
                 input_face_affined = original_face_512
 
         itex = 1
+        if parameters['StrengthEnableToggle']:
+            itex = ceil(parameters['StrengthAmountSlider'] / 100.)
+
         output_size = int(128 * dim)
         output = torch.zeros((output_size, output_size, 3), dtype=torch.float32, device=self.models_processor.device)
         input_face_affined = input_face_affined.permute(1, 2, 0)
@@ -170,6 +173,23 @@ class FrameWorker(threading.Thread):
 
         output = output.permute(2, 0, 1)
         swap = t512(output)
+
+        if parameters['StrengthEnableToggle']:
+            if itex == 0:
+                swap = original_face_512.clone()
+            else:
+                alpha = np.mod(parameters['StrengthAmountSlider'], 100)*0.01
+                if alpha==0:
+                    alpha=1
+
+                # Blend the images
+                prev_face = torch.mul(prev_face, 255)
+                prev_face = torch.clamp(prev_face, 0, 255)
+                prev_face = prev_face.permute(2, 0, 1)
+                prev_face = t512(prev_face)
+                swap = torch.mul(swap, alpha)
+                prev_face = torch.mul(prev_face, 1-alpha)
+                swap = torch.add(swap, prev_face)
 
         # Create border mask
         border_mask = torch.ones((128, 128), dtype=torch.float32, device=self.models_processor.device)

@@ -134,6 +134,22 @@ SWAPPER_LAYOUT_DATA = {
             'requiredToggleValue': True,
             'help': 'Control the blend ratio between the restored face and the swapped face.'
         },
+        'StrengthEnableToggle': {
+            'level': 1,
+            'label': 'Strength',
+            'default': False,
+            'help': 'Apply additional swapping iterations to increase the strength of the result, which may increase likeness.'
+        },
+        'StrengthAmountSlider': {
+            'level': 2,
+            'label': 'Amount',
+            'min_value': '0',
+            'max_value': '500',
+            'default': '100',
+            'parentToggle': 'StrengthEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Increase up to 5x additional swaps (500%). 200% is generally a good result. Set to 0 to turn off swapping but allow the rest of the pipeline to apply to the original image.'
+        },
     },
     'Frame Enhancer':{
         'FrameEnhancerEnableToggle':{
