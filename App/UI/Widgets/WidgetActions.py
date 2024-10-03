@@ -482,7 +482,6 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
                     decimals=1, 
                     main_window=main_window
                 )
-
                 # Use the new ParameterLineDecimalEdit class
                 widget.line_edit = ParameterLineDecimalEdit(
                     min_value=float(widget_data['min_value']), 
@@ -490,7 +489,6 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
                     default_value=str(widget_data['default']),
                     decimals=1  # Ensure it uses 1 decimal place for consistency
                 )
-
                 widget.reset_default_button = ParameterResetDefaultButton(related_widget=widget)
 
                 # Layout for widgets
@@ -602,7 +600,7 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
             show_hide_related_widgets(main_window, widget, widget_name)
 
 # Function to Hide Elements conditionally from values in LayoutData (Currently supports using Selection box and Toggle button to hide other widgets)
-def show_hide_related_widgets(main_window: 'MainWindow', parent_widget: ToggleButton | QComboBox, parent_widget_name: str, value1=False, value2=False):
+def show_hide_related_widgets(main_window: 'MainWindow', parent_widget: ToggleButton | SelectionBox, parent_widget_name: str, value1=False, value2=False):
     if main_window.parameter_widgets:
         group_layout_data = parent_widget.group_layout_data #Dictionary contaning layout data of all elements in the group of the parent_widget
         if 'Selection' in parent_widget_name:
@@ -648,6 +646,9 @@ def show_hide_related_widgets(main_window: 'MainWindow', parent_widget: ToggleBu
                         current_widget.reset_default_button.show()
                         if current_widget.line_edit:
                             current_widget.line_edit.show()
+                    
+            parent_widget.start_animation()
+                    
 
 def create_control(main_window: 'MainWindow', control_name, control_value):
     main_window.control[control_name] = control_value
@@ -665,10 +666,6 @@ def create_parameter(main_window: 'MainWindow', parameter_name, parameter_value)
     main_window.parameters[parameter_name] = parameter_value
 
 def update_parameter(main_window: 'MainWindow', parameter_name, parameter_value):
-    # elif parameter_name == 'nThreadsSlider':
-    #     main_window.video_processor.set_number_of_threads(parameter_value)
-    #     torch.cuda.empty_cache()
-    print(main_window.parameters['DetectorScoreSlider'])
     main_window.parameters[parameter_name] = parameter_value
     refresh_frame(main_window)
 

@@ -21,4 +21,48 @@ SETTINGS_LAYOUT_DATA = {
             'exec_function_args': [],
         },
     },
+    'Webcam Settings': {
+        'WebcamEnableToggle': {
+            'level': 1,
+            'label': 'Enable Webcam',
+            'default': False,
+            'help': 'Enable the use of the webcam as the input source for face swapping.'
+        },
+        'WebcamMaxNoSelection': {
+            'level': 2,
+            'label': 'Webcam Max No',
+            'options': ['1', '2', '3', '4', '5', '6'],
+            'default': '1',
+            'parentToggle': 'WebcamEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Select the maximum number of webcam streams to allow for face swapping.'
+        },
+        'WebcamBackendSelection': {
+            'level': 2,
+            'label': 'Webcam Backend',
+            'options': ['Default', 'Directshow', 'MSMF', 'V4L', 'V4L2', 'GSTREAMER'],
+            'default': 'Default',
+            'parentToggle': 'WebcamEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Choose the backend for accessing webcam input.'
+        },
+        'WebcamMaxResSelection': {
+            'level': 2,
+            'label': 'Webcam Resolution',
+            'options': ['480x360', '640x480', '1280x720', '1920x1080', '2560x1440', '3840x2160'],
+            'default': '1280x720',
+            'parentToggle': 'WebcamEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Select the maximum resolution for webcam input.'
+        },
+        'WebCamMaxFPSSelection': {
+            'level': 2,
+            'label': 'Webcam FPS',
+            'options': ['23', '30', '60'],
+            'default': '30',
+            'parentToggle': 'WebcamEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Set the maximum frames per second (FPS) for webcam input.'
+        },
+    },
 }
