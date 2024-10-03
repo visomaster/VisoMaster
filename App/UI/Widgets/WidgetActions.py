@@ -6,6 +6,7 @@ import App.Helpers.Misc_Helpers as misc_helpers
 import App.UI.Widgets.UI_Workers as ui_workers
 from App.UI.Widgets.WidgetComponents import TargetMediaCardButton, ProgressDialog, TargetFaceCardButton, InputFaceCardButton, FormGroupBox, ToggleButton, SelectionBox, ParameterSlider, ParameterDecimalSlider, ParameterLineEdit, ParameterLineDecimalEdit, ParameterResetDefaultButton, CardButton, EmbeddingCardButton
 from PySide6.QtWidgets import QComboBox
+from pyqttoast import Toast, ToastPreset, ToastPosition
 
 import App.UI.Widgets.WidgetActions as widget_actions 
 from functools import partial
@@ -704,4 +705,25 @@ def save_embeddings_to_file(main_window: 'MainWindow', save_as=False):
             embeddings_as_json = json.dumps(embeddings_list)
             embed_file.write(embeddings_as_json)
 
+            create_and_show_toast_message(main_window, 'Embeddings Saved', f'Saved Embeddings to file: {embedding_filename}')
+
         main_window.loaded_embedding_filename = embedding_filename
+
+def create_and_show_toast_message(main_window: 'MainWindow', title: str, message: str, style_type='information'):
+    style_preset_map = {
+        'success': ToastPreset.SUCCESS,
+        'warning': ToastPreset.WARNING,
+        'error': ToastPreset.ERROR,
+        'information': ToastPreset.INFORMATION,
+        'success_dark': ToastPreset.SUCCESS_DARK,
+        'warning_dark': ToastPreset.WARNING_DARK,
+        'error_dark': ToastPreset.ERROR_DARK,
+        'information_dark': ToastPreset.INFORMATION_DARK,
+    }
+    toast = Toast(main_window)
+    toast.setTitle(title)
+    toast.setText(message)
+    toast.setDuration(1400)
+    toast.setPosition(ToastPosition.TOP_RIGHT)  # Default: ToastPosition.BOTTOM_RIGHT
+    toast.applyPreset(style_preset_map[style_type])  # Apply style preset
+    toast.show()
