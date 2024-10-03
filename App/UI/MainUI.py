@@ -118,8 +118,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
         widget_actions.initializeModelLoadDialog(self)
-        widget_actions.add_parameter_widgets(self, LAYOUT_DATA=SWAPPER_LAYOUT_DATA, layoutWidget=self.swapWidgetsLayout)
-        widget_actions.add_parameter_widgets(self, LAYOUT_DATA=SETTINGS_LAYOUT_DATA, layoutWidget=self.settingsWidgetsLayout)
+        widget_actions.add_widgets_to_tab_layout(self, LAYOUT_DATA=SWAPPER_LAYOUT_DATA, layoutWidget=self.swapWidgetsLayout, data_type='parameter')
+        widget_actions.add_widgets_to_tab_layout(self, LAYOUT_DATA=SETTINGS_LAYOUT_DATA, layoutWidget=self.settingsWidgetsLayout, data_type='control')
 
         # Initialize the button states
         widget_actions.resetMediaButtons(self)

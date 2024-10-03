@@ -394,7 +394,7 @@ def uncheck_all_merged_embeddings(main_window: 'MainWindow'):
     for embed_button in  main_window.merged_embeddings:
         embed_button.setChecked(False)
 
-def add_parameter_widgets(main_window: 'MainWindow', LAYOUT_DATA: dict, layoutWidget: QtWidgets.QVBoxLayout):
+def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layoutWidget: QtWidgets.QVBoxLayout, data_type='parameter'):
     layout = QtWidgets.QVBoxLayout()
     scroll_area = QtWidgets.QScrollArea()
     scroll_area.setWidgetResizable(True)
@@ -428,13 +428,19 @@ def add_parameter_widgets(main_window: 'MainWindow', LAYOUT_DATA: dict, layoutWi
                 
                 category_layout.addRow(horizontal_layout)  # Add the horizontal layout to the form layout
 
-                # Initialize parameter value
-                create_parameter(main_window, widget_name, widget_data['default'])
+                if data_type=='parameter':
+                    # Initialize parameter value
+                    create_parameter(main_window, widget_name, widget_data['default'])
+                else:
+                    create_control(main_window, widget_name, widget_data['default'])
                 # Set onclick function for toggle button
-                def onchange(toggle_widget: ToggleButton, toggle_widget_name):
+                def onchange(toggle_widget: ToggleButton, toggle_widget_name, widget_data: dict):
                     toggle_state = toggle_widget.isChecked()
-                    update_parameter(main_window, toggle_widget_name, toggle_state)    
-                widget.clicked.connect(partial(onchange, widget, widget_name))
+                    if data_type=='parameter':
+                        update_parameter(main_window, toggle_widget_name, toggle_state)    
+                    elif data_type=='control':
+                        update_control(main_window, toggle_widget_name, toggle_state, exec_function=widget_data.get('exec_function'), exec_function_args = widget_data.get('exec_function_args',[]))
+                widget.clicked.connect(partial(onchange, widget, widget_name, widget_data))
 
             elif 'Selection' in widget_name:
                 widget = SelectionBox(label=widget_data['label'], widget_name=widget_name, group_layout_data=widgets, label_widget=label, main_window=main_window, default_value=widget_data['default'])
@@ -450,13 +456,19 @@ def add_parameter_widgets(main_window: 'MainWindow', LAYOUT_DATA: dict, layoutWi
 
                 category_layout.addRow(horizontal_layout)
 
-                # Initialize parameter value
-                create_parameter(main_window, widget_name, widget_data['default'])
+                if data_type=='parameter':
+                    # Initialize parameter value
+                    create_parameter(main_window, widget_name, widget_data['default'])
+                else:
+                    create_control(main_window, widget_name, widget_data['default'])
                 # Set onchange function for select box (Selected value is passed by the signal)
-                def onchange(selection_widget: SelectionBox, selection_widget_name, selected_value=False):
+                def onchange(selection_widget: SelectionBox, selection_widget_name, widget_data: dict = {}, selected_value=False):
                     # selected_value = selection_widget.currentText()
-                    update_parameter(main_window, selection_widget_name, selected_value)
-                widget.currentTextChanged.connect(partial(onchange, widget, widget_name))
+                    if data_type=='parameter':
+                        update_parameter(main_window, selection_widget_name, selected_value)
+                    elif data_type=='control':
+                        update_control(main_window, selection_widget_name, selected_value, exec_function=widget_data.get('exec_function'), exec_function_args=widget_data.get('exec_function_args', []))
+                widget.currentTextChanged.connect(partial(onchange, widget, widget_name, widget_data))
 
             elif 'DecimalSlider' in widget_name:
                 widget = ParameterDecimalSlider(
@@ -490,17 +502,23 @@ def add_parameter_widgets(main_window: 'MainWindow', LAYOUT_DATA: dict, layoutWi
 
                 category_layout.addRow(horizontal_layout)
 
-                # Initialize parameter value
-                create_parameter(main_window, widget_name, float(widget_data['default']))
+                if data_type=='parameter':
+                    # Initialize parameter value
+                    create_parameter(main_window, widget_name, float(widget_data['default']))
+                else:
+                    create_control(main_window, widget_name, float(widget_data['default']))
 
                 # When slider value changes
-                def onchange_slider(slider_widget: ParameterDecimalSlider, slider_widget_name, new_value=False):
+                def onchange_slider(slider_widget: ParameterDecimalSlider, slider_widget_name, widget_data: dict, new_value=False):
                     # Update the slider text box value too
                     actual_value = slider_widget.value()  # Get float value from the slider
-                    update_parameter(main_window, slider_widget_name, actual_value)
+                    if data_type=='paramter':
+                        update_parameter(main_window, slider_widget_name, actual_value, )
+                    elif data_type=='control':
+                        update_control(main_window, slider_widget_name, actual_value, exec_function=widget_data.get('exec_function'), exec_function_args=widget_data.get('exec_function_args', []))
                     slider_widget.line_edit.set_value(actual_value)  # Update the line edit with the actual value
 
-                widget.valueChanged.connect(partial(onchange_slider, widget, widget_name))
+                widget.valueChanged.connect(partial(onchange_slider, widget, widget_name, widget_data))
 
                 # When line edit value changes
                 def onchange_line_edit(slider_widget: ParameterDecimalSlider, slider_widget_name, new_value=False):
@@ -514,9 +532,6 @@ def add_parameter_widgets(main_window: 'MainWindow', LAYOUT_DATA: dict, layoutWi
                     except ValueError:
                         # If the conversion fails, reset the line edit to the current slider value
                         new_value = slider_widget.value()
-
-                    # Update the parameter
-                    update_parameter(main_window, slider_widget_name, new_value)
 
                     # Prevent text box value from exceeding the slider range or going below minimum
                     if new_value > (slider_widget.max_value / slider_widget.scale_factor):
@@ -544,22 +559,27 @@ def add_parameter_widgets(main_window: 'MainWindow', LAYOUT_DATA: dict, layoutWi
 
                 category_layout.addRow(horizontal_layout)
 
-                # Initialize parameter value
-                create_parameter(main_window, widget_name, int(widget_data['default']))
+                if data_type=='parameter':
+                    # Initialize parameter value
+                    create_parameter(main_window, widget_name, int(widget_data['default']))
+                else:
+                    create_control(main_window, widget_name, int(widget_data['default']))
 
                 # When slider value is change
-                def onchange_slider(slider_widget: ParameterSlider, slider_widget_name, new_value=False):
-                    update_parameter(main_window, slider_widget_name, new_value)
+                def onchange_slider(slider_widget: ParameterSlider, slider_widget_name, widget_data: dict, new_value=False):
+                    if data_type=='parameter':
+                        update_parameter(main_window, slider_widget_name, new_value)
+                    elif data_type=='control':
+                        update_control(main_window, slider_widget_name, new_value, exec_function=widget_data.get('exec_function'), exec_function_args=widget_data.get('exec_function_args', []))
                     # Update the slider text box value too
                     slider_widget.line_edit.setText(str(new_value))
-                widget.valueChanged.connect(partial(onchange_slider, widget, widget_name))
+                widget.valueChanged.connect(partial(onchange_slider, widget, widget_name, widget_data))
 
                 # When slider textbox value is changed
                 def onchange_line_edit(slider_widget: ParameterSlider, slider_widget_name, new_value=False):
                     if not new_value:
                         new_value = 0
                     new_value = int(new_value) #Text box value is sent as str by default
-                    update_parameter(main_window, slider_widget_name, new_value)
                     # Prevent the text box value from going above the maximum value of the slider
                     if new_value>slider_widget.max_value and new_value>0:
                         new_value = new_value % (slider_widget.max_value+1)
@@ -629,20 +649,26 @@ def show_hide_related_widgets(main_window: 'MainWindow', parent_widget: ToggleBu
                         if current_widget.line_edit:
                             current_widget.line_edit.show()
 
+def create_control(main_window: 'MainWindow', control_name, control_value):
+    main_window.control[control_name] = control_value
+
+def update_control(main_window: 'MainWindow', control_name, control_value, exec_function=None, exec_function_args=[]):
+    if exec_function:
+        # Only execute the function if the value is different from current
+        if main_window.control[control_name] != control_value:
+            # By default an exec function definition should have atleast one parameter : MainWindow
+            exec_function_args = [main_window, control_value] + exec_function_args
+            exec_function(*exec_function_args)
+    main_window.control[control_name] = control_value
+
 def create_parameter(main_window: 'MainWindow', parameter_name, parameter_value):
     main_window.parameters[parameter_name] = parameter_value
 
 def update_parameter(main_window: 'MainWindow', parameter_name, parameter_value):
-    if parameter_name == 'ProvidersPrioritySelection':
-        main_window.video_processor.stop_processing()
-        parameter_value = main_window.models_processor.switch_providers_priority(parameter_value)
-        if parameter_value != main_window.parameters[parameter_name]:
-            main_window.models_processor.delete_models()
-            torch.cuda.empty_cache()
-    elif parameter_name == 'nThreadsSlider':
-        main_window.video_processor.set_number_of_threads(parameter_value)
-        torch.cuda.empty_cache()
-
+    # elif parameter_name == 'nThreadsSlider':
+    #     main_window.video_processor.set_number_of_threads(parameter_value)
+    #     torch.cuda.empty_cache()
+    print(main_window.parameters['DetectorScoreSlider'])
     main_window.parameters[parameter_name] = parameter_value
     refresh_frame(main_window)
 
