@@ -14,7 +14,8 @@ import cv2
 from App.UI.Core import media_rc
 import torch
 import numpy
-from App.UI.Widgets.LayoutData import SWAPPER_LAYOUT_DATA
+from App.UI.Widgets.SwapperLayoutData import SWAPPER_LAYOUT_DATA
+from App.UI.Widgets.SettingsLayoutData import SETTINGS_LAYOUT_DATA
 from typing import TYPE_CHECKING
 import json
 

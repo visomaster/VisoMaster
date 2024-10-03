@@ -1,8 +1,3 @@
-from PySide6.QtWidgets import QComboBox
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from App.UI.Widgets.WidgetComponents import ToggleButton
-
 # Widgets in Face Swap tab are created from this Layout
 SWAPPER_LAYOUT_DATA = {
     'Swapper': {
@@ -450,24 +445,4 @@ SWAPPER_LAYOUT_DATA = {
             'help': 'Select the method to merge facial embeddings. "Mean" averages the embeddings, while "Median" selects the middle value, providing more robustness to outliers.'
         }
     }
-}
-
-SETTINGS_LAYOUT_DATA = {
-    'General': {
-        'ProvidersPrioritySelection': {
-            'level': 1,
-            'label': 'Providers Priority',
-            'options': ['CUDA', 'TensorRT', 'TensorRT-Engine', 'CPU'],
-            'default': 'CUDA',
-            'help': 'Select the providers priority to be used with the system.'
-        },
-        'nThreadsSlider': {
-            'level': 1,
-            'label': 'Number of Threads',
-            'min_value': '1',
-            'max_value': '30',
-            'default': '5',
-            'help': 'Set number of execution threads while playing and recording. Depends strongly on GPU VRAM. 5 threads for 12GB.'
-        },
-    },
 }

@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 
 from PySide6.QtWidgets import QPushButton
-from App.UI.Widgets.LayoutData import SWAPPER_LAYOUT_DATA
+
 from functools import partial
 from typing import TYPE_CHECKING, Dict, List
 if TYPE_CHECKING:

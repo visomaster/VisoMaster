@@ -1,3 +1,6 @@
+# Script Usage Example
+# 'python3 convert_old_rope_embeddings.py old_merged_embeddings.txt new_merged_embeddings.json'  
+
 import sys
 import json
 import numpy as np
