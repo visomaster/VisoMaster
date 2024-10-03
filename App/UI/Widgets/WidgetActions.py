@@ -479,7 +479,8 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
                     min_value=float(widget_data['min_value']),  # Ensure min_value is float
                     max_value=float(widget_data['max_value']),  # Ensure max_value is float
                     default_value=float(widget_data['default']),  # Ensure default_value is float
-                    decimals=1, 
+                    decimals=1,
+                    step_size=float(widget_data['step']),
                     main_window=main_window
                 )
                 # Use the new ParameterLineDecimalEdit class
@@ -546,7 +547,7 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
                 widget.line_edit.textChanged.connect(partial(onchange_line_edit, widget, widget_name))
  
             elif 'Slider' in widget_name:
-                widget = ParameterSlider(label=widget_data['label'], widget_name=widget_name, group_layout_data=widgets, label_widget=label, min_value=widget_data['min_value'], max_value=widget_data['max_value'], default_value=widget_data['default'], main_window=main_window)
+                widget = ParameterSlider(label=widget_data['label'], widget_name=widget_name, group_layout_data=widgets, label_widget=label, min_value=widget_data['min_value'], max_value=widget_data['max_value'], default_value=widget_data['default'], step_size=widget_data['step'], main_window=main_window)
                 widget.line_edit = ParameterLineEdit(min_value=int(widget_data['min_value']), max_value=int(widget_data['max_value']), default_value=widget_data['default'])
                 widget.reset_default_button = ParameterResetDefaultButton(related_widget=widget)
                 horizontal_layout = QtWidgets.QHBoxLayout()

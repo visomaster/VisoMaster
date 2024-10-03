@@ -32,6 +32,7 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '1',
             'max_value': '100',
             'default': '50',
+            'step': 1,
             'help': 'Set the confidence score threshold for face detection. Higher values ensure more confident detections but may miss some faces.'
         },
         'AutoRotationToggle': {
@@ -46,6 +47,7 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '1',
             'max_value': '100',
             'default': '60',
+            'step': 1,
             'help': 'Set the similarity threshold to control how similar the detected face should be to the reference face.'
         },
         'SimilarityTypeSelection': {
@@ -76,6 +78,7 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '1',
             'max_value': '100',
             'default': '50',
+            'step': 1,
             'parentToggle': 'LandmarkDetectToggle',
             'requiredToggleValue': True,
             'help': 'Set the confidence score threshold for facial landmark detection.'
@@ -120,6 +123,7 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '0.0',
             'max_value': '1.0',
             'default': '0.9',
+            'step': 0.1,
             'parentToggle': 'FaceRestorerEnableToggle',
             'requiredToggleValue': True,
             'help': 'Adjust the fidelity weight to control how closely the restoration preserves the original face details.'
@@ -130,6 +134,7 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '0',
             'max_value': '100',
             'default': '100',
+            'step': 1,
             'parentToggle': 'FaceRestorerEnableToggle',
             'requiredToggleValue': True,
             'help': 'Control the blend ratio between the restored face and the swapped face.'
@@ -146,6 +151,7 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '0',
             'max_value': '500',
             'default': '100',
+            'step': 25,
             'parentToggle': 'StrengthEnableToggle',
             'requiredToggleValue': True,
             'help': 'Increase up to 5x additional swaps (500%). 200% is generally a good result. Set to 0 to turn off swapping but allow the rest of the pipeline to apply to the original image.'
@@ -173,6 +179,7 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '0',
             'max_value': '100',
             'default': '100',
+            'step': 1,
             'parentToggle': 'FrameEnhancerEnableToggle',
             'requiredToggleValue': True,
             'help': 'Blends the enhanced results back into the original frame.'
@@ -185,6 +192,7 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '0',
             'max_value': '100',
             'default': '10',
+            'step': 1,
             'help': 'A rectangle with adjustable bottom, left, right, top, and sides that masks the swapped face result back into the original image.'
         },
         'BorderLeftSlider':{
@@ -193,6 +201,7 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '0',
             'max_value': '100',
             'default': '10',
+            'step': 1,
             'help': 'A rectangle with adjustable bottom, left, right, top, and sides that masks the swapped face result back into the original image.'
         },
         'BorderRightSlider':{
@@ -201,6 +210,7 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '0',
             'max_value': '100',
             'default': '10',
+            'step': 1,
             'help': 'A rectangle with adjustable bottom, left, right, top, and sides that masks the swapped face result back into the original image.'
         },
         'BorderTopSlider':{
@@ -209,6 +219,7 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '0',
             'max_value': '100',
             'default': '10',
+            'step': 1,
             'help': 'A rectangle with adjustable bottom, left, right, top, and sides that masks the swapped face result back into the original image.'
         },
         'BorderBlurSlider':{
@@ -217,6 +228,7 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '0',
             'max_value': '100',
             'default': '10',
+            'step': 1,
             'help': 'Border mask blending distance.'
         },
         'OccluderEnableToggle': {
@@ -231,6 +243,7 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '-100',
             'max_value': '100',
             'default': '0',
+            'step': 1,
             'parentToggle': 'OccluderEnableToggle',
             'requiredToggleValue': True,
             'help': 'Grows or shrinks the occluded region'
@@ -247,6 +260,7 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '-100',
             'max_value': '100',
             'default': '0',
+            'step': 1,
             'parentToggle': 'DFLXSegEnableToggle',
             'requiredToggleValue': True,
             'help': 'Grows or shrinks the occluded region.'
@@ -257,6 +271,7 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '0',
             'max_value': '100',
             'default': '0',
+            'step': 1,
             'parentToggle': 'OccluderEnableToggle, DFLXSegEnableToggle',
             'requiredToggleValue': True,
             'help': 'Blend value for Occluder and XSeg.'
@@ -273,6 +288,7 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '-50',
             'max_value': '50',
             'default': '0',
+            'step': 1,
             'parentToggle': 'FaceParserEnableToggle',
             'requiredToggleValue': True,
             'help': 'Negative/Positive values shrink and grow the mask.'
@@ -283,6 +299,7 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '0',
             'max_value': '30',
             'default': '0',
+            'step': 1,
             'parentToggle': 'FaceParserEnableToggle',
             'requiredToggleValue': True,
             'help': 'Adjust the size of the Mask. Mast the left eyebrow.'
@@ -293,6 +310,7 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '0',
             'max_value': '30',
             'default': '0',
+            'step': 1,
             'parentToggle': 'FaceParserEnableToggle',
             'requiredToggleValue': True,
             'help': 'Adjust the size of the Mask. Mast the right eyebrow.'
@@ -303,6 +321,7 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '0',
             'max_value': '30',
             'default': '0',
+            'step': 1,
             'parentToggle': 'FaceParserEnableToggle',
             'requiredToggleValue': True,
             'help': 'Adjust the size of the Mask. Mast the left eye.'
@@ -313,6 +332,7 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '0',
             'max_value': '30',
             'default': '0',
+            'step': 1,
             'parentToggle': 'FaceParserEnableToggle',
             'requiredToggleValue': True,
             'help': 'Adjust the size of the Mask. Mast the right eye.'
@@ -323,6 +343,7 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '0',
             'max_value': '30',
             'default': '0',
+            'step': 1,
             'parentToggle': 'FaceParserEnableToggle',
             'requiredToggleValue': True,
             'help': 'Adjust the size of the Mask. Mast the eyeglasses.'
@@ -333,6 +354,7 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '0',
             'max_value': '30',
             'default': '0',
+            'step': 1,
             'parentToggle': 'FaceParserEnableToggle',
             'requiredToggleValue': True,
             'help': 'Adjust the size of the Mask. Mast the nose.'
@@ -343,6 +365,7 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '0',
             'max_value': '30',
             'default': '0',
+            'step': 1,
             'parentToggle': 'FaceParserEnableToggle',
             'requiredToggleValue': True,
             'help': 'Adjust the size of the Mask. Mast the inside of the mouth, including the tongue.'
@@ -353,6 +376,7 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '0',
             'max_value': '30',
             'default': '0',
+            'step': 1,
             'parentToggle': 'FaceParserEnableToggle',
             'requiredToggleValue': True,
             'help': 'Adjust the size of the Mask. Mast the upper lip.'
@@ -363,6 +387,7 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '0',
             'max_value': '30',
             'default': '0',
+            'step': 1,
             'parentToggle': 'FaceParserEnableToggle',
             'requiredToggleValue': True,
             'help': 'Adjust the size of the Mask. Mast the lower lip.'
@@ -373,6 +398,7 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '0',
             'max_value': '30',
             'default': '0',
+            'step': 1,
             'parentToggle': 'FaceParserEnableToggle',
             'requiredToggleValue': True,
             'help': 'Adjust the size of the Mask. Mast the neck.'
@@ -383,6 +409,7 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '0',
             'max_value': '30',
             'default': '0',
+            'step': 1,
             'parentToggle': 'FaceParserEnableToggle',
             'requiredToggleValue': True,
             'help': 'Adjust the size of the Mask. Mast the hair.'
@@ -393,6 +420,7 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '0',
             'max_value': '100',
             'default': '5',
+            'step': 1,
             'parentToggle': 'FaceParserEnableToggle',
             'requiredToggleValue': True,
             'help': 'Blend the value for Background Parser'
@@ -403,6 +431,7 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '0',
             'max_value': '100',
             'default': '5',
+            'step': 1,
             'parentToggle': 'FaceParserEnableToggle',
             'requiredToggleValue': True,
             'help': 'Blend the value for Face Parser'

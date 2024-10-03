@@ -476,11 +476,12 @@ class ToggleButton(QtWidgets.QPushButton, ParametersWidget):
         self.setChecked(bool(self.default_value))
 
 class ParameterSlider(QtWidgets.QSlider, ParametersWidget):
-    def __init__(self, min_value=0, max_value=0, default_value=0, fixed_width = 130, *args, **kwargs):
+    def __init__(self, min_value=0, max_value=0, default_value=0, step_size=1, fixed_width = 130, *args, **kwargs):
         super().__init__(*args, **kwargs)
         ParametersWidget.__init__(self, *args, **kwargs)
         self.min_value = int(min_value)
         self.max_value = int(max_value)
+        self.step_size = int(step_size)
         self.default_value = int(default_value)
         self.setMinimum(int(min_value))
         self.setMaximum(int(max_value))
@@ -493,8 +494,53 @@ class ParameterSlider(QtWidgets.QSlider, ParametersWidget):
     def reset_to_default_value(self):
         self.setValue(int(self.default_value))
 
+    def wheelEvent(self, event):
+        """Override wheel event to define custom increments/decrements with the mouse wheel."""
+        num_steps = event.angleDelta().y() / 120  # 120 is one step of the wheel
+
+        # Adjust the current value based on the number of steps
+        current_value = self.value()
+
+        # Calculate the new value based on the step size and num_steps
+        new_value = current_value + (self.step_size * num_steps)
+
+        # Ensure the new value is within the valid range
+        new_value = min(max(new_value, self.min_value), self.max_value)
+
+        # Update the slider's internal value (ensuring precision)
+        self.setValue(new_value)
+
+        # Accept the event
+        event.accept()
+
+    def keyPressEvent(self, event):
+        """Override key press event to handle arrow key increments/decrements."""
+        # Get the current value of the slider
+        current_value = self.value()
+
+        # Check which key is pressed
+        if event.key() == QtCore.Qt.Key_Right:
+            # Increment value by step_size when right arrow is pressed
+            new_value = current_value + self.step_size
+        elif event.key() == QtCore.Qt.Key_Left:
+            # Decrement value by step_size when left arrow is pressed
+            new_value = current_value - self.step_size
+        else:
+            # Pass the event to the base class if it's not an arrow key
+            super().keyPressEvent(event)
+            return
+
+        # Ensure the new value is within the valid range
+        new_value = min(max(new_value, self.min_value), self.max_value)
+
+        # Set the new value to the slider
+        self.setValue(new_value)
+
+        # Accept the event
+        event.accept()
+    
 class ParameterDecimalSlider(QtWidgets.QSlider, ParametersWidget):
-    def __init__(self, min_value=0.0, max_value=1.0, default_value=0.0, decimals=2, fixed_width = 130, *args, **kwargs):
+    def __init__(self, min_value=0.0, max_value=1.0, default_value=0.00, decimals=2, step_size=0.01, fixed_width = 130, *args, **kwargs):
         super().__init__(*args, **kwargs)
         ParametersWidget.__init__(self, *args, **kwargs)
 
@@ -503,25 +549,27 @@ class ParameterDecimalSlider(QtWidgets.QSlider, ParametersWidget):
         max_value = float(max_value)
         default_value = float(default_value)
 
-        # Store the number of decimals and calculate the scale factor
+        # Store step size and decimal precision
+        self.step_size = step_size
         self.decimals = decimals
-        self.scale_factor = 10 ** self.decimals
 
-        # Convert min, max, and default to scaled integers for QSlider
+        # Scale values for internal handling (to manage decimals)
+        self.scale_factor = 10 ** self.decimals
         self.min_value = int(min_value * self.scale_factor)
         self.max_value = int(max_value * self.scale_factor)
         self.default_value = int(default_value * self.scale_factor)
 
-        # Set the slider's integer range and default value
+        # Set slider properties
         self.setMinimum(self.min_value)
         self.setMaximum(self.max_value)
-        self.setValue(self.default_value / self.scale_factor)
-        self.setOrientation(qtc.Qt.Orientation.Horizontal)
+        self.setValue(float(self.default_value) / self.scale_factor)
+        self.setOrientation(QtCore.Qt.Orientation.Horizontal)
         self.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Minimum)
         self.setFixedWidth(fixed_width)
+
     def reset_to_default_value(self):
         """Reset the slider to its default value."""
-        self.setValue(self.default_value / self.scale_factor)
+        self.setValue(float(self.default_value) / self.scale_factor)
 
     def value(self):
         """Return the slider value as a float, scaled by the decimals."""
@@ -531,6 +579,51 @@ class ParameterDecimalSlider(QtWidgets.QSlider, ParametersWidget):
         """Set the slider value, scaling it from a float to the internal integer."""
         scaled_value = int(float(value) * self.scale_factor)
         super().setValue(scaled_value)
+
+    def wheelEvent(self, event):
+        """Override wheel event to define custom increments/decrements with the mouse wheel."""
+        num_steps = event.angleDelta().y() / 120  # 120 is one step of the wheel
+
+        # Adjust the current value based on the number of steps
+        current_value = self.value()
+
+        # Calculate the new value based on the step size and num_steps
+        new_value = current_value + (self.step_size * num_steps)
+
+        # Ensure the new value is within the valid range
+        new_value = min(max(round(new_value, self.decimals), self.min_value), self.max_value)
+
+        # Update the slider's internal value (ensuring precision)
+        self.setValue(new_value)
+
+        # Accept the event
+        event.accept()
+
+    def keyPressEvent(self, event):
+        """Override key press event to handle arrow key increments/decrements."""
+        # Get the current value of the slider
+        current_value = self.value()
+
+        # Check which key is pressed
+        if event.key() == QtCore.Qt.Key_Right:
+            # Increment value by step_size when right arrow is pressed
+            new_value = current_value + self.step_size
+        elif event.key() == QtCore.Qt.Key_Left:
+            # Decrement value by step_size when left arrow is pressed
+            new_value = current_value - self.step_size
+        else:
+            # Pass the event to the base class if it's not an arrow key
+            super().keyPressEvent(event)
+            return
+
+        # Ensure the new value is within the valid range
+        new_value = min(max(round(new_value, self.decimals), self.min_value), self.max_value)
+
+        # Set the new value to the slider
+        self.setValue(new_value)
+
+        # Accept the event
+        event.accept()
 
 class ParameterLineEdit(QtWidgets.QLineEdit):
     def __init__(self, min_value: int, max_value: int, default_value: str, fixed_width: int = 38, max_length: int = 3, alignment: int = 1, *args, **kwargs):

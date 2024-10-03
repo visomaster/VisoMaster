@@ -16,6 +16,7 @@ SETTINGS_LAYOUT_DATA = {
             'min_value': '1',
             'max_value': '30',
             'default': '5',
+            'step': 1,
             'help': 'Set number of execution threads while playing and recording. Depends strongly on GPU VRAM.',
             'exec_function': control_actions.change_threads_number,
             'exec_function_args': [],
