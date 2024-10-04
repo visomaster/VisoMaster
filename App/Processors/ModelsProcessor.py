@@ -3046,3 +3046,154 @@ class ModelsProcessor(QObject):
         out_parse = torch.clamp(out_parse, 0, 1)
 
         return out_parse
+
+    def soft_oval_mask(self, height, width, center, radius_x, radius_y, feather_radius=None):
+        """
+        Create a soft oval mask with feathering effect using integer operations.
+
+        Args:
+            height (int): Height of the mask.
+            width (int): Width of the mask.
+            center (tuple): Center of the oval (x, y).
+            radius_x (int): Radius of the oval along the x-axis.
+            radius_y (int): Radius of the oval along the y-axis.
+            feather_radius (int): Radius for feathering effect.
+
+        Returns:
+            torch.Tensor: Soft oval mask tensor of shape (H, W).
+        """
+        if feather_radius is None:
+            feather_radius = max(radius_x, radius_y) // 2  # Integer division
+
+        # Calculating the normalized distance from the center
+        y, x = torch.meshgrid(torch.arange(height), torch.arange(width), indexing='ij')
+
+        # Calculating the normalized distance from the center
+        normalized_distance = torch.sqrt(((x - center[0]) / radius_x) ** 2 + ((y - center[1]) / radius_y) ** 2)
+
+        # Creating the oval mask with a feathering effect
+        mask = torch.clamp((1 - normalized_distance) * (radius_x / feather_radius), 0, 1)
+
+        return mask
+
+    def restore_mouth(self, img_orig, img_swap, kpss_orig, blend_alpha=0.5, feather_radius=10, size_factor=0.5, radius_factor_x=1.0, radius_factor_y=1.0, x_offset=0, y_offset=0):
+        """
+        Extract mouth from img_orig using the provided keypoints and place it in img_swap.
+
+        Args:
+            img_orig (torch.Tensor): The original image tensor of shape (C, H, W) from which mouth is extracted.
+            img_swap (torch.Tensor): The target image tensor of shape (C, H, W) where mouth is placed.
+            kpss_orig (list): List of keypoints arrays for detected faces. Each keypoints array contains coordinates for 5 keypoints.
+            radius_factor_x (float): Factor to scale the horizontal radius. 1.0 means circular, >1.0 means wider oval, <1.0 means narrower.
+            radius_factor_y (float): Factor to scale the vertical radius. 1.0 means circular, >1.0 means taller oval, <1.0 means shorter.
+            x_offset (int): Horizontal offset for shifting the mouth left (negative value) or right (positive value).
+            y_offset (int): Vertical offset for shifting the mouth up (negative value) or down (positive value).
+
+        Returns:
+            torch.Tensor: The resulting image tensor with mouth from img_orig placed on img_swap.
+        """
+        left_mouth = np.array([int(val) for val in kpss_orig[3]])
+        right_mouth = np.array([int(val) for val in kpss_orig[4]])
+
+        mouth_center = (left_mouth + right_mouth) // 2
+        mouth_base_radius = int(np.linalg.norm(left_mouth - right_mouth) * size_factor)
+
+        # Calculate the scaled radii
+        radius_x = int(mouth_base_radius * radius_factor_x)
+        radius_y = int(mouth_base_radius * radius_factor_y)
+
+        # Apply the x/y_offset to the mouth center
+        mouth_center[0] += x_offset
+        mouth_center[1] += y_offset
+
+        # Calculate bounding box for mouth region
+        ymin = max(0, mouth_center[1] - radius_y)
+        ymax = min(img_orig.size(1), mouth_center[1] + radius_y)
+        xmin = max(0, mouth_center[0] - radius_x)
+        xmax = min(img_orig.size(2), mouth_center[0] + radius_x)
+
+        mouth_region_orig = img_orig[:, ymin:ymax, xmin:xmax]
+        mouth_mask = self.soft_oval_mask(ymax - ymin, xmax - xmin,
+                                         (radius_x, radius_y),
+                                         radius_x, radius_y,
+                                         feather_radius).to(img_orig.device)
+
+        target_ymin = ymin
+        target_ymax = ymin + mouth_region_orig.size(1)
+        target_xmin = xmin
+        target_xmax = xmin + mouth_region_orig.size(2)
+
+        img_swap_mouth = img_swap[:, target_ymin:target_ymax, target_xmin:target_xmax]
+        blended_mouth = blend_alpha * img_swap_mouth + (1 - blend_alpha) * mouth_region_orig
+
+        img_swap[:, target_ymin:target_ymax, target_xmin:target_xmax] = mouth_mask * blended_mouth + (1 - mouth_mask) * img_swap_mouth
+        return img_swap
+
+    def restore_eyes(self, img_orig, img_swap, kpss_orig, blend_alpha=0.5, feather_radius=10, size_factor=3.5, radius_factor_x=1.0, radius_factor_y=1.0, x_offset=0, y_offset=0, eye_spacing_offset=0):
+        """
+        Extract eyes from img_orig using the provided keypoints and place them in img_swap.
+
+        Args:
+            img_orig (torch.Tensor): The original image tensor of shape (C, H, W) from which eyes are extracted.
+            img_swap (torch.Tensor): The target image tensor of shape (C, H, W) where eyes are placed.
+            kpss_orig (list): List of keypoints arrays for detected faces. Each keypoints array contains coordinates for 5 keypoints.
+            radius_factor_x (float): Factor to scale the horizontal radius. 1.0 means circular, >1.0 means wider oval, <1.0 means narrower.
+            radius_factor_y (float): Factor to scale the vertical radius. 1.0 means circular, >1.0 means taller oval, <1.0 means shorter.
+            x_offset (int): Horizontal offset for shifting the eyes left (negative value) or right (positive value).
+            y_offset (int): Vertical offset for shifting the eyes up (negative value) or down (positive value).
+            eye_spacing_offset (int): Horizontal offset to move eyes closer together (negative value) or farther apart (positive value).
+
+        Returns:
+            torch.Tensor: The resulting image tensor with eyes from img_orig placed on img_swap.
+        """
+        # Extract original keypoints for left and right eye
+        left_eye = np.array([int(val) for val in kpss_orig[0]])
+        right_eye = np.array([int(val) for val in kpss_orig[1]])
+
+        # Apply horizontal offset (x-axis)
+        left_eye[0] += x_offset
+        right_eye[0] += x_offset
+
+        # Apply vertical offset (y-axis)
+        left_eye[1] += y_offset
+        right_eye[1] += y_offset
+
+        # Calculate eye distance and radii
+        eye_distance = np.linalg.norm(left_eye - right_eye)
+        base_eye_radius = int(eye_distance / size_factor)
+
+        # Calculate the scaled radii
+        radius_x = int(base_eye_radius * radius_factor_x)
+        radius_y = int(base_eye_radius * radius_factor_y)
+
+        # Adjust for eye spacing (horizontal movement)
+        left_eye[0] += eye_spacing_offset
+        right_eye[0] -= eye_spacing_offset
+
+        def extract_and_blend_eye(eye_center, radius_x, radius_y, img_orig, img_swap, blend_alpha, feather_radius):
+            ymin = max(0, eye_center[1] - radius_y)
+            ymax = min(img_orig.size(1), eye_center[1] + radius_y)
+            xmin = max(0, eye_center[0] - radius_x)
+            xmax = min(img_orig.size(2), eye_center[0] + radius_x)
+
+            eye_region_orig = img_orig[:, ymin:ymax, xmin:xmax]
+            eye_mask = self.soft_oval_mask(ymax - ymin, xmax - xmin,
+                                           (radius_x, radius_y),
+                                           radius_x, radius_y,
+                                           feather_radius).to(img_orig.device)
+
+            target_ymin = ymin
+            target_ymax = ymin + eye_region_orig.size(1)
+            target_xmin = xmin
+            target_xmax = xmin + eye_region_orig.size(2)
+
+            img_swap_eye = img_swap[:, target_ymin:target_ymax, target_xmin:target_xmax]
+            blended_eye = blend_alpha * img_swap_eye + (1 - blend_alpha) * eye_region_orig
+
+            img_swap[:, target_ymin:target_ymax, target_xmin:target_xmax] = eye_mask * blended_eye + (1 - eye_mask) * img_swap_eye
+
+        # Process both eyes with updated positions
+        extract_and_blend_eye(left_eye, radius_x, radius_y, img_orig, img_swap, blend_alpha, feather_radius)
+        extract_and_blend_eye(right_eye, radius_x, radius_y, img_orig, img_swap, blend_alpha, feather_radius)
+
+        return img_swap

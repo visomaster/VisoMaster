@@ -243,6 +243,29 @@ class FrameWorker(threading.Thread):
             mask = t128(mask)
             swap_mask *= mask
 
+        if parameters['RestoreMouthEnableToggle'] or parameters['RestoreEyesEnableToggle']:
+            M = tform.params[0:2]
+            ones_column = np.ones((kps_5.shape[0], 1), dtype=np.float32)
+            homogeneous_kps = np.hstack([kps_5, ones_column])
+            dst_kps_5 = np.dot(homogeneous_kps, M.T)
+
+            img_swap_mask = torch.ones((1, 512, 512), dtype=torch.float32, device=self.models_processor.device).contiguous()
+            img_orig_mask = torch.zeros((1, 512, 512), dtype=torch.float32, device=self.models_processor.device).contiguous()
+
+            if parameters['RestoreMouthEnableToggle']:
+                img_swap_mask = self.models_processor.restore_mouth(img_orig_mask, img_swap_mask, dst_kps_5, parameters['RestoreMouthBlendAmountSlider']/100, parameters['RestoreMouthFeatherBlendSlider'], parameters['RestoreMouthSizeFactorSlider']/100, parameters['RestoreXMouthRadiusFactorDecimalSlider'], parameters['RestoreYMouthRadiusFactorDecimalSlider'], parameters['RestoreXMouthOffsetSlider'], parameters['RestoreYMouthOffsetSlider'])
+                img_swap_mask = torch.clamp(img_swap_mask, 0, 1)
+
+            if parameters['RestoreEyesEnableToggle']:
+                img_swap_mask = self.models_processor.restore_eyes(img_orig_mask, img_swap_mask, dst_kps_5, parameters['RestoreEyesBlendAmountSlider']/100, parameters['RestoreEyesFeatherBlendSlider'], parameters['RestoreEyesSizeFactorDecimalSlider'],  parameters['RestoreXEyesRadiusFactorDecimalSlider'], parameters['RestoreYEyesRadiusFactorDecimalSlider'], parameters['RestoreXEyesOffsetSlider'], parameters['RestoreYEyesOffsetSlider'], parameters['RestoreEyesSpacingOffsetSlider'])
+                img_swap_mask = torch.clamp(img_swap_mask, 0, 1)
+
+            gauss = transforms.GaussianBlur(parameters['RestoreEyesMouthBlurSlider']*2+1, (parameters['RestoreEyesMouthBlurSlider']+1)*0.2)
+            img_swap_mask = gauss(img_swap_mask)
+
+            img_swap_mask = t128(img_swap_mask)
+            swap_mask = torch.mul(swap_mask, img_swap_mask)
+
         # Add blur to swap_mask results
         #gauss = transforms.GaussianBlur(parameters['BlendSlider']*2+1, (parameters['BlendSlider']+1)*0.2)
         gauss = transforms.GaussianBlur(5*2+1, (5+1)*0.2)

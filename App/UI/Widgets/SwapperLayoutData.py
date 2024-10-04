@@ -464,6 +464,194 @@ SWAPPER_LAYOUT_DATA = {
             'requiredToggleValue': True,
             'help': 'Blend the value for Face Parser'
         },
+        'RestoreEyesEnableToggle': {
+            'level': 1,
+            'label': 'Restore Eyes',
+            'default': False,
+            'help': 'Restore eyes from the original face.'
+        },
+        'RestoreEyesBlendAmountSlider': {
+            'level': 2,
+            'label': 'Eyes Blend Amount',
+            'min_value': '1',
+            'max_value': '100',
+            'default': '50',
+            'step': 1,
+            'parentToggle': 'RestoreEyesEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Increase this to show more of the swapped eyes. Decrease it to show more of the original eyes.'
+        },
+        'RestoreEyesSizeFactorDecimalSlider': {
+            'level': 2,
+            'label': 'Eyes Size Factor',
+            'min_value': '2.0',
+            'max_value': '4.0',
+            'default': '3.0',
+            'step': 0.5,
+            'parentToggle': 'RestoreEyesEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Reduce this when swapping faces zoomed out of the frame.'
+        },
+        'RestoreEyesFeatherBlendSlider': {
+            'level': 2,
+            'label': 'Eyes Feather Blend',
+            'min_value': '1',
+            'max_value': '100',
+            'default': '10',
+            'step': 1,
+            'parentToggle': 'RestoreEyesEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Adjust the blending of eyes border. Increase this to show more of the original eyes. Decrease this to show more of the swapped eyes.'
+        },
+        'RestoreXEyesRadiusFactorDecimalSlider': {
+            'level': 2,
+            'label': 'X Eyes Radius Factor',
+            'min_value': '0.3',
+            'max_value': '3.0',
+            'default': '1.0',
+            'step': 0.1,
+            'parentToggle': 'RestoreEyesEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'These parameters determine the shape of the mask. If both are equal to 1.0, the mask will be circular. If either one is greater or less than 1.0, the mask will become oval, stretching or shrinking along the corresponding direction.'
+        },
+        'RestoreYEyesRadiusFactorDecimalSlider': {
+            'level': 2,
+            'label': 'Y Eyes Radius Factor',
+            'min_value': '0.3',
+            'max_value': '3.0',
+            'default': '1.0',
+            'step': 0.1,
+            'parentToggle': 'RestoreEyesEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'These parameters determine the shape of the mask. If both are equal to 1.0, the mask will be circular. If either one is greater or less than 1.0, the mask will become oval, stretching or shrinking along the corresponding direction.'
+        },
+        'RestoreXEyesOffsetSlider': {
+            'level': 2,
+            'label': 'X Eyes Offset',
+            'min_value': '-300',
+            'max_value': '300',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'RestoreEyesEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Moves the Eyes Mask on the X Axis.'
+        },
+        'RestoreYEyesOffsetSlider': {
+            'level': 2,
+            'label': 'Y Eyes Offset',
+            'min_value': '-300',
+            'max_value': '300',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'RestoreEyesEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Moves the Eyes Mask on the Y Axis.'
+        },
+        'RestoreEyesSpacingOffsetSlider': {
+            'level': 2,
+            'label': 'Eyes Spacing Offset',
+            'min_value': '-200',
+            'max_value': '200',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'RestoreEyesEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Change the Eyes Spacing distance.'
+        },
+        'RestoreMouthEnableToggle': {
+            'level': 1,
+            'label': 'Restore Mouth',
+            'default': False,
+            'help': 'Restore mouth from the original face.'
+        },
+        'RestoreMouthBlendAmountSlider': {
+            'level': 2,
+            'label': 'Mouth Blend Amount',
+            'min_value': '1',
+            'max_value': '100',
+            'default': '50',
+            'step': 1,
+            'parentToggle': 'RestoreMouthEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Increase this to show more of the swapped Mouth. Decrease it to show more of the original Mouth.'
+        },       
+        'RestoreMouthSizeFactorSlider': {
+            'level': 2,
+            'label': 'Mouth Size Factor',
+            'min_value': '5',
+            'max_value': '60',
+            'default': '25',
+            'step': 5,
+            'parentToggle': 'RestoreMouthEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Increase this when swapping faces zoomed out of the frame.'
+        },
+        'RestoreMouthFeatherBlendSlider': {
+            'level': 2,
+            'label': 'Mouth Feather Blend',
+            'min_value': '1',
+            'max_value': '100',
+            'default': '10',
+            'step': 1,
+            'parentToggle': 'RestoreMouthEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Adjust the border of Mouth blending. Increase this to show more of the original Mouth. Decrease this to show more of the swapped Mouth.'
+        },
+        'RestoreXMouthRadiusFactorDecimalSlider': {
+            'level': 2,
+            'label': 'X Mouth Radius Factor',
+            'min_value': '0.3',
+            'max_value': '3.0',
+            'default': '1.0',
+            'step': 0.1,
+            'parentToggle': 'RestoreMouthEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'These parameters determine the shape of the mask. If both are equal to 1.0, the mask will be circular. If either one is greater or less than 1.0, the mask will become oval, stretching or shrinking along the corresponding direction.'
+        },
+        'RestoreYMouthRadiusFactorDecimalSlider': {
+            'level': 2,
+            'label': 'Y Mouth Radius Factor',
+            'min_value': '0.3',
+            'max_value': '3.0',
+            'default': '1.0',
+            'step': 0.1,
+            'parentToggle': 'RestoreMouthEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'These parameters determine the shape of the mask. If both are equal to 1.0, the mask will be circular. If either one is greater or less than 1.0, the mask will become oval, stretching or shrinking along the corresponding direction.'
+        },
+        'RestoreXMouthOffsetSlider': {
+            'level': 2,
+            'label': 'X Mouth Offset',
+            'min_value': '-300',
+            'max_value': '300',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'RestoreMouthEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Moves the Mouth Mask on the X Axis.'
+        },
+        'RestoreYMouthOffsetSlider': {
+            'level': 2,
+            'label': 'Y Mouth Offset',
+            'min_value': '-300',
+            'max_value': '300',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'RestoreMouthEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Moves the Mouth Mask on the Y Axis.'
+        },
+        'RestoreEyesMouthBlurSlider': {
+            'level': 1,
+            'label': 'Eyes/Mouth Blur',
+            'min_value': '0',
+            'max_value': '50',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'RestoreEyesEnableToggle, RestoreMouthEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Adjust the blur of mask border.'
+        },
     },
     'Embedding Merge Method':{
         'EmbMergeMethodSelection':{
