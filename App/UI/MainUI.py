@@ -20,7 +20,7 @@ class FrameProcessorWorker(QtCore.QObject):
 
     def __init__(self, frame_queue):
         super().__init__()
-        self.queue = frame_queue  # Queue for storing frames to process
+        self.queue: queue.Queue = frame_queue  # Queue for storing frames to process
         self._is_processing = threading.Event()  # Event to signal when processing is active
         self.running = True
 

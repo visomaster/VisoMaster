@@ -494,7 +494,7 @@ class ParameterSlider(QtWidgets.QSlider, ParametersWidget):
     def reset_to_default_value(self):
         self.setValue(int(self.default_value))
 
-    def wheelEvent(self, event):
+    def wheelEvent(self, event: QtGui.QWheelEvent):
         """Override wheel event to define custom increments/decrements with the mouse wheel."""
         num_steps = event.angleDelta().y() / 120  # 120 is one step of the wheel
 
@@ -513,7 +513,7 @@ class ParameterSlider(QtWidgets.QSlider, ParametersWidget):
         # Accept the event
         event.accept()
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, event: QtGui.QKeyEvent):
         """Override key press event to handle arrow key increments/decrements."""
         # Get the current value of the slider
         current_value = self.value()
@@ -654,14 +654,14 @@ class ParameterText(QtWidgets.QLineEdit, ParametersWidget):
         if self.data_type == 'parameter':
             widget_actions.update_parameter(self.main_window, self.widget_name, self.text())
         else:
-             widget_actions.update_control(self.main_window, self.widget_name, new_value, exec_function=self.exec_function, exec_function_args=self.exec_function_args)
+            widget_actions.update_control(self.main_window, self.widget_name, self.text(), exec_function=self.exec_function, exec_function_args=self.exec_function_args)
 
     def focusOutEvent(self, event):
         """Handle the focus out event (when the QLineEdit loses focus)."""
         if self.data_type == 'parameter':
             widget_actions.update_parameter(self.main_window, self.widget_name, self.text())
         else:
-             widget_actions.update_control(self.main_window, self.widget_name, new_value, exec_function=self.exec_function, exec_function_args=self.exec_function_args)
+             widget_actions.update_control(self.main_window, self.widget_name, self.text(), exec_function=self.exec_function, exec_function_args=self.exec_function_args)
 
         # Call the base class method to ensure normal behavior
         super().focusOutEvent(event)
