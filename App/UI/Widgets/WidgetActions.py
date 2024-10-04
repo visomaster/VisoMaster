@@ -594,7 +594,7 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
                 widget.line_edit.textChanged.connect(partial(onchange_line_edit, widget, widget_name))
 
             elif 'Text' in widget_name:
-                widget = ParameterText(label=widget_data['label'], widget_name=widget_name, group_layout_data=widgets, label_widget=label, default_value=widget_data['default'], fixed_width=widget_data['width'], main_window=main_window)
+                widget = ParameterText(label=widget_data['label'], widget_name=widget_name, group_layout_data=widgets, label_widget=label, default_value=widget_data['default'], fixed_width=widget_data['width'], main_window=main_window, data_type=data_type, exec_function=widget_data.get('exec_function'), exec_function_args=widget_data.get('exec_function_args', []))
                 widget.reset_default_button = ParameterResetDefaultButton(related_widget=widget)
                 horizontal_layout = QtWidgets.QHBoxLayout()
                 horizontal_layout.addWidget(label)
@@ -616,7 +616,7 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
                     if data_type == 'parameter':
                         update_parameter(main_window, text_widget_name, new_value)
                     else:
-                        update_control(main_window, text_widget_name, new_value)
+                        update_control(main_window, text_widget_name, new_value, exec_function=widget_data.get('exec_function'), exec_function_args=widget_data.get('exec_function_args', []))
                 
                 # Connect the 'returnPressed' signal to the on_enter_pressed function
                 widget.returnPressed.connect(partial(on_enter_pressed, widget, widget_name))

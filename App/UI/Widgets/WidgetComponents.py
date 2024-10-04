@@ -629,6 +629,9 @@ class ParameterText(QtWidgets.QLineEdit, ParametersWidget):
     def __init__(self, default_value: str, fixed_width: int = 130, max_length: int = 500, alignment: int = 0, *args, **kwargs):
         super().__init__(*args, **kwargs)
         ParametersWidget.__init__(self, *args, **kwargs)
+        self.data_type = kwargs.get('data_type')
+        self.exec_function = kwargs.get('exec_function')
+        self.exec_function_args = kwargs.get('exec_function_args', [])
 
         self.setFixedWidth(fixed_width)  # Make the line edit narrower
         self.setMaxLength(max_length)
@@ -648,6 +651,20 @@ class ParameterText(QtWidgets.QLineEdit, ParametersWidget):
     def reset_to_default_value(self):
         """Reset the line edit to its default value."""
         self.setText(self.default_value)
+        if self.data_type == 'parameter':
+            widget_actions.update_parameter(self.main_window, self.widget_name, self.text())
+        else:
+             widget_actions.update_control(self.main_window, self.widget_name, new_value, exec_function=self.exec_function, exec_function_args=self.exec_function_args)
+
+    def focusOutEvent(self, event):
+        """Handle the focus out event (when the QLineEdit loses focus)."""
+        if self.data_type == 'parameter':
+            widget_actions.update_parameter(self.main_window, self.widget_name, self.text())
+        else:
+             widget_actions.update_control(self.main_window, self.widget_name, new_value, exec_function=self.exec_function, exec_function_args=self.exec_function_args)
+
+        # Call the base class method to ensure normal behavior
+        super().focusOutEvent(event)
 
 class ParameterLineEdit(QtWidgets.QLineEdit):
     def __init__(self, min_value: int, max_value: int, default_value: str, fixed_width: int = 38, max_length: int = 3, alignment: int = 1, *args, **kwargs):
