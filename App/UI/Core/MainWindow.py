@@ -14,11 +14,11 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
     QIcon, QImage, QKeySequence, QLinearGradient,
     QPainter, QPalette, QPixmap, QRadialGradient,
     QTransform)
-from PySide6.QtWidgets import (QApplication, QDockWidget, QGraphicsView, QGridLayout,
-    QGroupBox, QHBoxLayout, QLabel, QLineEdit,
-    QListWidget, QListWidgetItem, QMainWindow, QPushButton,
-    QSizePolicy, QSlider, QSpacerItem, QTabWidget,
-    QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QApplication, QCheckBox, QDockWidget, QGraphicsView,
+    QGridLayout, QGroupBox, QHBoxLayout, QLabel,
+    QLineEdit, QListWidget, QListWidgetItem, QMainWindow,
+    QPushButton, QSizePolicy, QSlider, QSpacerItem,
+    QTabWidget, QVBoxLayout, QWidget)
 from App.UI.Core import media_rc
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -215,9 +215,26 @@ class Ui_MainWindow(object):
         self.buttonSelectTargetVideoFiles.setObjectName(u"buttonSelectTargetVideoFiles")
         self.gridLayout_3.addWidget(self.buttonSelectTargetVideoFiles, 0, 1, 1, 1)
         self.vboxLayout.addWidget(self.groupBox_TargetVideos_Select)
+        self.horizontalLayout_9 = QHBoxLayout()
+        self.horizontalLayout_9.setObjectName(u"horizontalLayout_9")
         self.targetVideosSearchBox = QLineEdit(self.dockWidgetContents)
         self.targetVideosSearchBox.setObjectName(u"targetVideosSearchBox")
-        self.vboxLayout.addWidget(self.targetVideosSearchBox)
+        self.horizontalLayout_9.addWidget(self.targetVideosSearchBox)
+        self.filterImagesCheckBox = QCheckBox(self.dockWidgetContents)
+        self.filterImagesCheckBox.setObjectName(u"filterImagesCheckBox")
+        icon7 = QIcon()
+        icon7.addFile(u":/media/Media/image.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.filterImagesCheckBox.setIcon(icon7)
+        self.filterImagesCheckBox.setChecked(True)
+        self.horizontalLayout_9.addWidget(self.filterImagesCheckBox)
+        self.filterVideosCheckBox = QCheckBox(self.dockWidgetContents)
+        self.filterVideosCheckBox.setObjectName(u"filterVideosCheckBox")
+        icon8 = QIcon()
+        icon8.addFile(u":/media/Media/video.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.filterVideosCheckBox.setIcon(icon8)
+        self.filterVideosCheckBox.setChecked(True)
+        self.horizontalLayout_9.addWidget(self.filterVideosCheckBox)
+        self.vboxLayout.addLayout(self.horizontalLayout_9)
         self.targetVideosList = QListWidget(self.dockWidgetContents)
         self.targetVideosList.setObjectName(u"targetVideosList")
         self.vboxLayout.addWidget(self.targetVideosList)
@@ -332,6 +349,14 @@ class Ui_MainWindow(object):
         self.buttonSelectTargetVideoFiles.setText(QCoreApplication.translate("MainWindow", u"   Select Files     ", None))
         self.targetVideosSearchBox.setText("")
         self.targetVideosSearchBox.setPlaceholderText(QCoreApplication.translate("MainWindow", u"Search Videos/Images", None))
+#if QT_CONFIG(tooltip)
+        self.filterImagesCheckBox.setToolTip(QCoreApplication.translate("MainWindow", u"Include Images", None))
+#endif // QT_CONFIG(tooltip)
+        self.filterImagesCheckBox.setText("")
+#if QT_CONFIG(tooltip)
+        self.filterVideosCheckBox.setToolTip(QCoreApplication.translate("MainWindow", u"Include Videos", None))
+#endif // QT_CONFIG(tooltip)
+        self.filterVideosCheckBox.setText("")
         self.groupBox_InputFaces_Select.setTitle(QCoreApplication.translate("MainWindow", u"Input Faces", None))
         self.labelInputFacesPath.setText(QCoreApplication.translate("MainWindow", u"Select Face Images Path", None))
         self.buttonSelectInputFaces.setText(QCoreApplication.translate("MainWindow", u"         Select Folder       ", None))

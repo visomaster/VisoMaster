@@ -174,7 +174,7 @@ def extract_frame_as_pixmap(media_file_path, file_type):
         ret, frame = cap.read()
         cap.release()
 
-    if not isinstance(frame, bool):
+    if isinstance(frame, numpy.ndarray):
         # Convert the frame to QPixmap
         height, width, channel = frame.shape
         bytes_per_line = 3 * width
@@ -271,21 +271,28 @@ def setPlayButtonIcon(main_window: 'MainWindow'):
         main_window.buttonMediaPlay.setIcon(QtGui.QIcon(":/media/Media/play_off.png"))
         main_window.buttonMediaPlay.setToolTip("Play")
 
-def filterTargetVideos(main_window: 'MainWindow', search_text: str):
-    search_text = search_text.lower()
+def filterTargetVideos(main_window: 'MainWindow', search_text: str = ''):
+    search_text = main_window.targetVideosSearchBox.text()
+    include_file_types = []
+    if main_window.filterImagesCheckBox.isChecked():
+        include_file_types.append('image')
+    if main_window.filterVideosCheckBox.isChecked():
+        include_file_types.append('video')
     if search_text:
+        search_text = search_text.lower()
         for i in range(main_window.targetVideosList.count()):
             list_item = main_window.targetVideosList.item(i)
-            if search_text not in main_window.target_videos[i].media_path.lower():
+            if search_text not in main_window.target_videos[i].media_path.lower() or main_window.target_videos[i].file_type not in include_file_types:
                 list_item.setHidden(True)
 
             else:
                 list_item.setHidden(False)
-
-
     else:
         for i in range(main_window.targetVideosList.count()):
-            main_window.targetVideosList.item(i).setHidden(False)
+            if main_window.target_videos[i].file_type in include_file_types:
+                main_window.targetVideosList.item(i).setHidden(False)
+            else:
+                main_window.targetVideosList.item(i).setHidden(True)
 
 def filterInputFaces(main_window: 'MainWindow', search_text: str):
     search_text = search_text.lower()

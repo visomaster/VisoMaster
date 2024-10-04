@@ -110,6 +110,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.findTargetFacesButton.clicked.connect(partial(widget_actions.find_target_faces, self))
         self.clearTargetFacesButton.clicked.connect(partial(widget_actions.clear_target_faces, self))
         self.targetVideosSearchBox.textChanged.connect(partial(widget_actions.filterTargetVideos, self))
+        self.filterImagesCheckBox.clicked.connect(partial(widget_actions.filterTargetVideos, self))
+        self.filterVideosCheckBox.clicked.connect(partial(widget_actions.filterTargetVideos, self))
         self.inputFacesSearchBox.textChanged.connect(partial(widget_actions.filterInputFaces, self))
         self.inputEmbeddingsSearchBox.textChanged.connect(partial(widget_actions.filterMergedEmbeddings, self))
         self.openEmbeddingButton.clicked.connect(partial(widget_actions.open_embeddings_from_file, self))

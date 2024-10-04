@@ -444,14 +444,52 @@
         </widget>
        </item>
        <item>
-        <widget class="QLineEdit" name="targetVideosSearchBox">
-         <property name="text">
-          <string/>
-         </property>
-         <property name="placeholderText">
-          <string>Search Videos/Images</string>
-         </property>
-        </widget>
+        <layout class="QHBoxLayout" name="horizontalLayout_9">
+         <item>
+          <widget class="QLineEdit" name="targetVideosSearchBox">
+           <property name="text">
+            <string/>
+           </property>
+           <property name="placeholderText">
+            <string>Search Videos/Images</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="filterImagesCheckBox">
+           <property name="toolTip">
+            <string>Include Images</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset resource="media.qrc">
+             <normaloff>:/media/Media/image.png</normaloff>:/media/Media/image.png</iconset>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="filterVideosCheckBox">
+           <property name="toolTip">
+            <string>Include Videos</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset resource="media.qrc">
+             <normaloff>:/media/Media/video.png</normaloff>:/media/Media/video.png</iconset>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item>
         <widget class="QListWidget" name="targetVideosList"/>
