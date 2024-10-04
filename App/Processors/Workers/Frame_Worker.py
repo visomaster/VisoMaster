@@ -97,8 +97,7 @@ class FrameWorker(threading.Thread):
                         sim = self.models_processor.findCosineDistance(fface[2], target_face.embedding)
                         if sim>=parameters['SimilarityThresholdSlider']:
                             s_e = target_face.assigned_input_embedding
-                            if len(s_e)>0:
-                                img = self.swap_core(img, fface[0],  s_e=s_e)
+                            img = self.swap_core(img, fface[0],  s_e=s_e)
         img = img.permute(1,2,0)
         img = img.cpu().numpy()
         # Img must be in BGR format
@@ -125,54 +124,61 @@ class FrameWorker(threading.Thread):
         original_face_384 = t384(original_face_512)
         original_face_256 = t256(original_face_512)
         original_face_128 = t128(original_face_256)
-        if swapper_model == 'Inswapper128':
-            latent = torch.from_numpy(self.models_processor.calc_swapper_latent(s_e)).float().to(self.models_processor.device)
-            dim = 1
-            if parameters['SwapperResSelection'] == '128':
+        if s_e is not None and len(s_e) > 0:
+            if swapper_model == 'Inswapper128':
+                latent = torch.from_numpy(self.models_processor.calc_swapper_latent(s_e)).float().to(self.models_processor.device)
                 dim = 1
-                input_face_affined = original_face_128
-            elif parameters['SwapperResSelection'] == '256':
-                dim = 2
-                input_face_affined = original_face_256
-            elif parameters['SwapperResSelection'] == '384':
-                dim = 3
-                input_face_affined = original_face_384
-            elif parameters['SwapperResSelection'] == '512':
-                dim = 4
-                input_face_affined = original_face_512
+                if parameters['SwapperResSelection'] == '128':
+                    dim = 1
+                    input_face_affined = original_face_128
+                elif parameters['SwapperResSelection'] == '256':
+                    dim = 2
+                    input_face_affined = original_face_256
+                elif parameters['SwapperResSelection'] == '384':
+                    dim = 3
+                    input_face_affined = original_face_384
+                elif parameters['SwapperResSelection'] == '512':
+                    dim = 4
+                    input_face_affined = original_face_512
 
-        itex = 1
-        if parameters['StrengthEnableToggle']:
-            itex = ceil(parameters['StrengthAmountSlider'] / 100.)
+            itex = 1
+            if parameters['StrengthEnableToggle']:
+                itex = ceil(parameters['StrengthAmountSlider'] / 100.)
 
-        output_size = int(128 * dim)
-        output = torch.zeros((output_size, output_size, 3), dtype=torch.float32, device=self.models_processor.device)
-        input_face_affined = input_face_affined.permute(1, 2, 0)
-        input_face_affined = torch.div(input_face_affined, 255.0)
+            output_size = int(128 * dim)
+            output = torch.zeros((output_size, output_size, 3), dtype=torch.float32, device=self.models_processor.device)
+            input_face_affined = input_face_affined.permute(1, 2, 0)
+            input_face_affined = torch.div(input_face_affined, 255.0)
 
-        if swapper_model == 'Inswapper128':
-            with torch.no_grad():  # Disabilita il calcolo del gradiente se è solo per inferenza
-                for k in range(itex):
-                    for j in range(dim):
-                        for i in range(dim):
-                            input_face_disc = input_face_affined[j::dim,i::dim]
-                            input_face_disc = input_face_disc.permute(2, 0, 1)
-                            input_face_disc = torch.unsqueeze(input_face_disc, 0).contiguous()
+            if swapper_model == 'Inswapper128':
+                with torch.no_grad():  # Disabilita il calcolo del gradiente se è solo per inferenza
+                    for k in range(itex):
+                        for j in range(dim):
+                            for i in range(dim):
+                                input_face_disc = input_face_affined[j::dim,i::dim]
+                                input_face_disc = input_face_disc.permute(2, 0, 1)
+                                input_face_disc = torch.unsqueeze(input_face_disc, 0).contiguous()
 
-                            swapper_output = torch.empty((1,3,128,128), dtype=torch.float32, device=self.models_processor.device).contiguous()
-                            self.models_processor.run_swapper(input_face_disc, latent, swapper_output)
+                                swapper_output = torch.empty((1,3,128,128), dtype=torch.float32, device=self.models_processor.device).contiguous()
+                                self.models_processor.run_swapper(input_face_disc, latent, swapper_output)
 
-                            swapper_output = torch.squeeze(swapper_output)
-                            swapper_output = swapper_output.permute(1, 2, 0)
+                                swapper_output = torch.squeeze(swapper_output)
+                                swapper_output = swapper_output.permute(1, 2, 0)
 
-                            output[j::dim, i::dim] = swapper_output.clone()
-                    prev_face = input_face_affined.clone()
-                    input_face_affined = output.clone()
-                    output = torch.mul(output, 255)
-                    output = torch.clamp(output, 0, 255)
+                                output[j::dim, i::dim] = swapper_output.clone()
+                        prev_face = input_face_affined.clone()
+                        input_face_affined = output.clone()
+                        output = torch.mul(output, 255)
+                        output = torch.clamp(output, 0, 255)
 
-        output = output.permute(2, 0, 1)
-        swap = t512(output)
+            output = output.permute(2, 0, 1)
+            swap = t512(output)
+        else:
+            swap = original_face_512
+            if parameters['StrengthEnableToggle']:
+                itex = ceil(parameters['StrengthAmountSlider'] / 100.)
+                prev_face = torch.div(swap, 255.)
+                prev_face = prev_face.permute(1, 2, 0)
 
         if parameters['StrengthEnableToggle']:
             if itex == 0:
