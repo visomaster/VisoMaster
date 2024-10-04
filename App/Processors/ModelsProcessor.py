@@ -3197,3 +3197,26 @@ class ModelsProcessor(QObject):
         extract_and_blend_eye(right_eye, radius_x, radius_y, img_orig, img_swap, blend_alpha, feather_radius)
 
         return img_swap
+
+    def apply_fake_diff(self, swapped_face, original_face, DiffAmount):
+        swapped_face = swapped_face.permute(1,2,0)
+        original_face = original_face.permute(1,2,0)
+
+        diff = swapped_face-original_face
+        diff = torch.abs(diff)
+
+        # Find the diffrence between the swap and original, per channel
+        fthresh = DiffAmount*2.55
+
+        # Bimodal
+        diff[diff<fthresh] = 0
+        diff[diff>=fthresh] = 1
+
+        # If any of the channels exceeded the threshhold, them add them to the mask
+        diff = torch.sum(diff, dim=2)
+        diff = torch.unsqueeze(diff, 2)
+        diff[diff>0] = 1
+
+        diff = diff.permute(2,0,1)
+
+        return diff

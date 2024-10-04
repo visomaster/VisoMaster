@@ -97,7 +97,7 @@ class FrameWorker(threading.Thread):
                         sim = self.models_processor.findCosineDistance(fface[2], target_face.embedding)
                         if sim>=parameters['SimilarityThresholdSlider']:
                             s_e = target_face.assigned_input_embedding
-                            img = self.swap_core(img, fface[0],  s_e=s_e)
+                            img = self.swap_core(img, fface[0], s_e=s_e, t_e=fface[2])
         img = img.permute(1,2,0)
         img = img.cpu().numpy()
         # Img must be in BGR format
@@ -127,6 +127,11 @@ class FrameWorker(threading.Thread):
         if s_e is not None and len(s_e) > 0:
             if swapper_model == 'Inswapper128':
                 latent = torch.from_numpy(self.models_processor.calc_swapper_latent(s_e)).float().to(self.models_processor.device)
+                if parameters['FaceLikenessEnableToggle']:
+                    factor = parameters['FaceLikenessFactorDecimalSlider']
+                    dst_latent = torch.from_numpy(self.models_processor.calc_swapper_latent(t_e)).float().to(self.models_processor.device)
+                    latent = latent - (factor * dst_latent)
+
                 dim = 1
                 if parameters['SwapperResSelection'] == '128':
                     dim = 1
@@ -271,6 +276,13 @@ class FrameWorker(threading.Thread):
 
             img_swap_mask = t128(img_swap_mask)
             swap_mask = torch.mul(swap_mask, img_swap_mask)
+
+        # Face Diffing
+        if parameters["DifferencingEnableToggle"]:
+            mask = self.models_processor.apply_fake_diff(swap, original_face_512, parameters["DifferencingAmountSlider"])
+            gauss = transforms.GaussianBlur(parameters['DifferencingBlendAmountSlider']*2+1, (parameters['DifferencingBlendAmountSlider']+1)*0.2)
+            mask = gauss(mask.type(torch.float32))
+            swap = swap * mask + original_face_512*(1-mask)
 
         # Add blur to swap_mask results
         #gauss = transforms.GaussianBlur(parameters['BlendSlider']*2+1, (parameters['BlendSlider']+1)*0.2)

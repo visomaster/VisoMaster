@@ -486,7 +486,7 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
                     min_value=float(widget_data['min_value']),  # Ensure min_value is float
                     max_value=float(widget_data['max_value']),  # Ensure max_value is float
                     default_value=float(widget_data['default']),  # Ensure default_value is float
-                    decimals=1,
+                    decimals=int(widget_data['decimals']),
                     step_size=float(widget_data['step']),
                     main_window=main_window
                 )
@@ -495,7 +495,7 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
                     min_value=float(widget_data['min_value']), 
                     max_value=float(widget_data['max_value']), 
                     default_value=str(widget_data['default']),
-                    decimals=1  # Ensure it uses 1 decimal place for consistency
+                    decimals=int(widget_data['decimals'])  # Ensure it uses decimals place for consistency
                 )
                 widget.reset_default_button = ParameterResetDefaultButton(related_widget=widget)
 

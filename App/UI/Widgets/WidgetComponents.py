@@ -567,6 +567,19 @@ class ParameterDecimalSlider(QtWidgets.QSlider, ParametersWidget):
         self.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Minimum)
         self.setFixedWidth(fixed_width)
 
+        # Connect the sliderMoved signal to handle the dragging behavior
+        self.sliderMoved.connect(self.handle_slider_moved)
+
+    def handle_slider_moved(self, position):
+        """Handle the slider movement (dragging) and set the correct value."""
+        # Scale the integer position back to a float
+        new_value = position / self.scale_factor
+
+        new_value = round(new_value / self.step_size) * self.step_size
+
+        # Set the scaled value
+        self.setValue(new_value)
+
     def reset_to_default_value(self):
         """Reset the slider to its default value."""
         self.setValue(float(self.default_value) / self.scale_factor)
