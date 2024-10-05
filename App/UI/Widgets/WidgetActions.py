@@ -588,9 +588,12 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
                         new_value = 0
                     new_value = int(new_value) #Text box value is sent as str by default
                     # Prevent the text box value from going above the maximum value of the slider
-                    if new_value>slider_widget.max_value and new_value>0:
-                        new_value = new_value % (slider_widget.max_value+1)
-                        slider_widget.line_edit.setText(str(new_value))
+                    if new_value > slider_widget.max_value:
+                        new_value = slider_widget.max_value
+                    elif new_value < slider_widget.min_value:
+                        new_value = slider_widget.min_value
+
+                    slider_widget.line_edit.set_value(new_value)
                     slider_widget.setValue(int(new_value)) #Update the value of slider too
                 widget.line_edit.textChanged.connect(partial(onchange_line_edit, widget, widget_name))
 

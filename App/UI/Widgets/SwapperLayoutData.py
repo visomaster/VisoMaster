@@ -92,6 +92,58 @@ SWAPPER_LAYOUT_DATA = {
             'help': 'Enable detection of faces from specified landmark points.'
         },
     },
+    'Face Landmarks Correction': {
+        'FaceAdjEnableToggle': {
+            'level': 1,
+            'label': 'Face Adjustments',
+            'default': False,
+            'help': 'This is an experimental feature to perform direct adjustments to the face landmarks found by the detector. There is also an option to adjust the scale of the swapped face.'
+        },
+        'KpsXSlider': {
+            'level': 2,
+            'label': 'Keypoints X-Axis',
+            'min_value': '-100',
+            'max_value': '100',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'FaceAdjEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Shifts the detection points left and right.'
+        },
+        'KpsYSlider': {
+            'level': 2,
+            'label': 'Keypoints Y-Axis',
+            'min_value': '-100',
+            'max_value': '100',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'FaceAdjEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Shifts the detection points up and down.'
+        },
+        'KpsScaleSlider': {
+            'level': 2,
+            'label': 'Keypoints Scale',
+            'min_value': '-100',
+            'max_value': '100',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'FaceAdjEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Grows and shrinks the detection point distances.'
+        },
+        'FaceScaleAmountSlider': {
+            'level': 2,
+            'label': 'Face Scale Amount',
+            'min_value': '-20',
+            'max_value': '20',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'FaceAdjEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Grows and shrinks the entire face.'
+        },
+    },
     'Face Similarity': {
         'StrengthEnableToggle': {
             'level': 1,
@@ -177,7 +229,7 @@ SWAPPER_LAYOUT_DATA = {
             'level': 2,
             'label': 'Alignment',
             'options': ['Original', 'Blend', 'Reference'],
-            'default': 'Blend',
+            'default': 'Reference',
             'parentToggle': 'FaceRestorerEnableToggle',
             'requiredToggleValue': True,
             'help': 'Select the alignment method for restoring the face to its original or blended position.'
@@ -202,6 +254,53 @@ SWAPPER_LAYOUT_DATA = {
             'default': '100',
             'step': 1,
             'parentToggle': 'FaceRestorerEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Control the blend ratio between the restored face and the swapped face.'
+        },
+        'FaceRestorerEnable2Toggle': {
+            'level': 1,
+            'label': 'Enable Face Restorer 2',
+            'default': False,
+            'help': 'Enable the use of a face restoration model to improve the quality of the face after swapping.'
+        },
+        'FaceRestorerType2Selection': {
+            'level': 2,
+            'label': 'Restorer Type',
+            'options': ['GFPGAN-v1.4', 'CodeFormer', 'GPEN-256', 'GPEN-512', 'GPEN-1024', 'GPEN-2048', 'RestoreFormer++', 'VQFR-v2'],
+            'default': 'GFPGAN-v1.4',
+            'parentToggle': 'FaceRestorerEnable2Toggle',
+            'requiredToggleValue': True,
+            'help': 'Select the model type for face restoration.'
+        },
+        'FaceRestorerDetType2Selection': {
+            'level': 2,
+            'label': 'Alignment',
+            'options': ['Original', 'Blend', 'Reference'],
+            'default': 'Original',
+            'parentToggle': 'FaceRestorerEnable2Toggle',
+            'requiredToggleValue': True,
+            'help': 'Select the alignment method for restoring the face to its original or blended position.'
+        },
+        'FaceFidelityWeight2DecimalSlider': {
+            'level': 2,
+            'label': 'Fidelity Weight',
+            'min_value': '0.0',
+            'max_value': '1.0',
+            'default': '0.9',
+            'decimals': 1,
+            'step': 0.1,
+            'parentToggle': 'FaceRestorerEnable2Toggle',
+            'requiredToggleValue': True,
+            'help': 'Adjust the fidelity weight to control how closely the restoration preserves the original face details.'
+        },
+        'FaceRestorerBlend2Slider': {
+            'level': 2,
+            'label': 'Blend',
+            'min_value': '0',
+            'max_value': '100',
+            'default': '100',
+            'step': 1,
+            'parentToggle': 'FaceRestorerEnable2Toggle',
             'requiredToggleValue': True,
             'help': 'Control the blend ratio between the restored face and the swapped face.'
         },
@@ -370,6 +469,17 @@ SWAPPER_LAYOUT_DATA = {
             'requiredToggleValue': True,
             'help': 'Negative/Positive values shrink and grow the mask.'
         },
+        'FaceParserSlider': {
+            'level': 2,
+            'label': 'Face',
+            'min_value': '0',
+            'max_value': '30',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'FaceParserEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Adjust the size of the Mask. Mast the entire face.'
+        },
         'LeftEyebrowParserSlider': {
             'level': 2,
             'label': 'Left Eyebrow',
@@ -493,7 +603,7 @@ SWAPPER_LAYOUT_DATA = {
         },
         'BackgroundBlurParserSlider': {
             'level': 2,
-            'label': 'Background',
+            'label': 'Background Blur',
             'min_value': '0',
             'max_value': '100',
             'default': '5',
@@ -706,6 +816,187 @@ SWAPPER_LAYOUT_DATA = {
             'requiredToggleValue': True,
             'help': 'Adjust the blur of mask border.'
         },
+    },
+    'Face Color Correction':{
+        'AutoColorEnableToggle': {
+            'level': 1,
+            'label': 'AutoColor Transfer',
+            'default': False,
+            'help': 'Enable AutoColor Transfer: 1. Hans Test without mask, 2. Hans Test with mask, 3. DFL Method without mask, 4. DFL Original Method.'
+        },
+        'AutoColorTransferTypeSelection':{
+            'level': 2,
+            'label': 'Transfer Type',
+            'options': ['Test', 'Test_Mask', 'DFL_Test', 'DFL_Orig'],
+            'default': 'Test',
+            'parentToggle': 'AutoColorEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Select the AutoColor transfer method type. Hans Method could have some artefacts sometimes.'
+        },
+        'AutoColorBlendAmountSlider': {
+            'level': 1,
+            'label': 'Blend Amount',
+            'min_value': '0',
+            'max_value': '100',
+            'default': '80',
+            'step': 5,
+            'parentToggle': 'AutoColorEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Adjust the blend value.'
+        },
+        'ColorEnableToggle': {
+            'level': 1,
+            'label': 'Color Adjustments',
+            'default': False,
+            'help': 'Fine-tune the RGB color values of the swap.'
+        },
+        'ColorRedSlider': {
+            'level': 1,
+            'label': 'Red',
+            'min_value': '-100',
+            'max_value': '100',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'ColorEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Red color adjustments'
+        },
+        'ColorGreenSlider': {
+            'level': 1,
+            'label': 'Green',
+            'min_value': '-100',
+            'max_value': '100',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'ColorEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Green color adjustments'
+        },
+        'ColorBlueSlider': {
+            'level': 1,
+            'label': 'Blue',
+            'min_value': '-100',
+            'max_value': '100',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'ColorEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Blue color adjustments'
+        },
+        'ColorBrightnessDecimalSlider': {
+            'level': 1,
+            'label': 'Brightness',
+            'min_value': '0.00',
+            'max_value': '2.00',
+            'default': '1.00',
+            'step': 0.01,
+            'decimals': 2,
+            'parentToggle': 'ColorEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Changes the Brightness.'
+        },
+        'ColorContrastDecimalSlider': {
+            'level': 1,
+            'label': 'Contrast',
+            'min_value': '0.00',
+            'max_value': '2.00',
+            'default': '1.00',
+            'step': 0.01,
+            'decimals': 2,
+            'parentToggle': 'ColorEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Changes the Contrast.'
+        },
+        'ColorSaturationDecimalSlider': {
+            'level': 1,
+            'label': 'Saturation',
+            'min_value': '0.00',
+            'max_value': '2.00',
+            'default': '1.00',
+            'step': 0.01,
+            'decimals': 2,
+            'parentToggle': 'ColorEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Changes the Saturation.'
+        },
+        'ColorSharpnessDecimalSlider': {
+            'level': 1,
+            'label': 'Sharpness',
+            'min_value': '0.0',
+            'max_value': '2.0',
+            'default': '1.0',
+            'step': 0.1,
+            'decimals': 1,
+            'parentToggle': 'ColorEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Changes the Sharpness.'
+        },
+        'ColorHueDecimalSlider': {
+            'level': 1,
+            'label': 'Hue',
+            'min_value': '-0.50',
+            'max_value': '0.50',
+            'default': '0.00',
+            'step': 0.01,
+            'decimals': 2,
+            'parentToggle': 'ColorEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Changes the Hue.'
+        },
+        'ColorGammaDecimalSlider': {
+            'level': 1,
+            'label': 'Gamma',
+            'min_value': '0.00',
+            'max_value': '2.00',
+            'default': '1.00',
+            'step': 0.01,
+            'decimals': 2,
+            'parentToggle': 'ColorEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Changes the Gamma.'
+        },
+        'ColorNoiseDecimalSlider': {
+            'level': 1,
+            'label': 'Noise',
+            'min_value': '0.0',
+            'max_value': '20.0',
+            'default': '0.0',
+            'step': 0.5,
+            'decimals': 1,
+            'parentToggle': 'ColorEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Add noise to swapped face.'
+        },
+    },
+    'Final Blend Adjustments':{
+        'FinalBlendAdjEnableToggle': {
+            'level': 1,
+            'label': 'Final Blend',
+            'default': False,
+            'help': 'Blend at the end of pipeline.'
+        },
+        'FinalBlendAmountSlider': {
+            'level': 1,
+            'label': 'Final Blend Amount',
+            'min_value': '1',
+            'max_value': '50',
+            'default': '1',
+            'step': 1,
+            'parentToggle': 'FinalBlendAdjEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Adjust the final blend value.'
+        },
+        'OverallMaskBlendAmountSlider': {
+            'level': 1,
+            'label': 'Overall Mask Blend Amount',
+            'min_value': '0',
+            'max_value': '100',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'FinalBlendAdjEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Combined masks blending distance. It is not applied to the border masks.'
+        },        
     },
     'Embedding Merge Method':{
         'EmbMergeMethodSelection':{

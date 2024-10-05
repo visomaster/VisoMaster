@@ -488,13 +488,31 @@ class ParameterSlider(QtWidgets.QSlider, ParametersWidget):
         self.setValue(self.default_value)
         self.setOrientation(qtc.Qt.Orientation.Horizontal)
         self.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Minimum)
-        self.setFixedWidth(fixed_width)
         # Set a fixed width for the slider
+        self.setFixedWidth(fixed_width)
+
+        # Connect the sliderMoved signal to handle the dragging behavior
+        self.sliderMoved.connect(self.handle_slider_moved)
+
+    def handle_slider_moved(self, position):
+        """Handle the slider movement (dragging) and set the correct value."""
+        new_value = round(position / self.step_size) * self.step_size
+
+        # Set the scaled value
+        self.setValue(new_value)
 
     def reset_to_default_value(self):
         self.setValue(int(self.default_value))
 
-    def wheelEvent(self, event: QtGui.QWheelEvent):
+    def value(self):
+        """Return the slider value as a float, scaled by the decimals."""
+        return super().value()
+
+    def setValue(self, value):
+        """Set the slider value, scaling it from a float to the internal integer."""
+        super().setValue(int(value))
+
+    def wheelEvent(self, event):
         """Override wheel event to define custom increments/decrements with the mouse wheel."""
         num_steps = event.angleDelta().y() / 120  # 120 is one step of the wheel
 
@@ -638,6 +656,53 @@ class ParameterDecimalSlider(QtWidgets.QSlider, ParametersWidget):
         # Accept the event
         event.accept()
 
+class ParameterLineEdit(QtWidgets.QLineEdit):
+    def __init__(self, min_value: int, max_value: int, default_value: str, fixed_width: int = 38, max_length: int = 3, alignment: int = 1, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setFixedWidth(fixed_width)  # Make the line edit narrower
+        self.setMaxLength(max_length)
+        self.setValidator(QtGui.QIntValidator(min_value, max_value))  # Restrict input to numbers
+
+        # Optional: Align text to the right for better readability
+        if alignment == 0:
+            self.setAlignment(QtGui.Qt.AlignLeft)
+        elif alignment == 1:
+            self.setAlignment(QtGui.Qt.AlignCenter)
+        else:
+            self.setAlignment(QtGui.Qt.AlignRight)
+
+        self.setText(default_value)
+
+    def set_value(self, value: int):
+        """Set the line edit's value."""
+        self.setText(str(value))
+
+class ParameterLineDecimalEdit(QtWidgets.QLineEdit):
+    def __init__(self, min_value: float, max_value: float, default_value: str, decimals: int = 2, step_size=0.01, fixed_width: int = 38, max_length: int = 5, alignment: int = 1, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setFixedWidth(fixed_width)  # Adjust the width for decimal numbers
+        self.decimals = decimals
+        self.step_size = step_size
+        self.setMaxLength(max_length)
+        self.setValidator(QtGui.QDoubleValidator(min_value, max_value, decimals))
+        # Optional: Align text to the right for better readability
+        if alignment == 0:
+            self.setAlignment(QtGui.Qt.AlignLeft)
+        elif alignment == 1:
+            self.setAlignment(QtGui.Qt.AlignCenter)
+        else:
+            self.setAlignment(QtGui.Qt.AlignRight)
+        self.setText(default_value)
+
+    def set_value(self, value: float):
+        """Set the line edit's value."""
+        new_value = round(value / self.step_size) * self.step_size
+        self.setText(f"{new_value:.{self.decimals}f}")
+
+    def get_value(self) -> float:
+        """Get the current value from the line edit."""
+        return float(self.text())
+
 class ParameterText(QtWidgets.QLineEdit, ParametersWidget):
     def __init__(self, default_value: str, fixed_width: int = 130, max_length: int = 500, alignment: int = 0, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -674,53 +739,10 @@ class ParameterText(QtWidgets.QLineEdit, ParametersWidget):
         if self.data_type == 'parameter':
             widget_actions.update_parameter(self.main_window, self.widget_name, self.text())
         else:
-             widget_actions.update_control(self.main_window, self.widget_name, self.text(), exec_function=self.exec_function, exec_function_args=self.exec_function_args)
+            widget_actions.update_control(self.main_window, self.widget_name, self.text(), exec_function=self.exec_function, exec_function_args=self.exec_function_args)
 
         # Call the base class method to ensure normal behavior
         super().focusOutEvent(event)
-
-class ParameterLineEdit(QtWidgets.QLineEdit):
-    def __init__(self, min_value: int, max_value: int, default_value: str, fixed_width: int = 38, max_length: int = 3, alignment: int = 1, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.setFixedWidth(fixed_width)  # Make the line edit narrower
-        self.setMaxLength(max_length)
-        self.setValidator(QtGui.QIntValidator(min_value, max_value))  # Restrict input to numbers
-
-        # Optional: Align text to the right for better readability
-        if alignment == 0:
-            self.setAlignment(QtGui.Qt.AlignLeft)
-        elif alignment == 1:
-            self.setAlignment(QtGui.Qt.AlignCenter)
-        else:
-            self.setAlignment(QtGui.Qt.AlignRight)
-
-        self.setText(default_value)
-
-class ParameterLineDecimalEdit(QtWidgets.QLineEdit):
-    def __init__(self, min_value: float, max_value: float, default_value: str, decimals: int = 2, step_size=0.01, fixed_width: int = 38, max_length: int = 5, alignment: int = 1, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.setFixedWidth(fixed_width)  # Adjust the width for decimal numbers
-        self.decimals = decimals
-        self.step_size = step_size
-        self.setMaxLength(max_length)
-        self.setValidator(QtGui.QDoubleValidator(min_value, max_value, decimals))
-        # Optional: Align text to the right for better readability
-        if alignment == 0:
-            self.setAlignment(QtGui.Qt.AlignLeft)
-        elif alignment == 1:
-            self.setAlignment(QtGui.Qt.AlignCenter)
-        else:
-            self.setAlignment(QtGui.Qt.AlignRight)
-        self.setText(default_value)
-
-    def set_value(self, value: float):
-        """Set the line edit's value."""
-        new_value = round(value / self.step_size) * self.step_size
-        self.setText(f"{new_value:.{self.decimals}f}")
-
-    def get_value(self) -> float:
-        """Get the current value from the line edit."""
-        return float(self.text())
 
 class ParameterResetDefaultButton(QtWidgets.QPushButton):
     def __init__(self, related_widget: ParameterSlider | ParameterDecimalSlider | SelectionBox, *args, **kwargs):
