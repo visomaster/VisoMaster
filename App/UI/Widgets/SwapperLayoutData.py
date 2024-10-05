@@ -592,7 +592,7 @@ SWAPPER_LAYOUT_DATA = {
         },
         'BackgroundBlurParserSlider': {
             'level': 2,
-            'label': 'Background',
+            'label': 'Background Blur',
             'min_value': '0',
             'max_value': '100',
             'default': '5',
