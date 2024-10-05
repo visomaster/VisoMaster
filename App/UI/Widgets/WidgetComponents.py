@@ -118,6 +118,9 @@ class TargetMediaCardButton(CardButton):
         # Update the graphics frame after the reset
         main_window.graphicsViewFrame.update()
 
+        # Set Parameter widget values to default
+        widget_actions.set_widgets_values_using_face_id_parameters(main_window=main_window, face_id=False)
+
 class TargetFaceCardButton(CardButton):
     def __init__(self, media_path, cropped_face, embedding: np.ndarray, face_id: int|bool=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
