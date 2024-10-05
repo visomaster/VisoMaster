@@ -92,6 +92,71 @@ SWAPPER_LAYOUT_DATA = {
             'help': 'Enable detection of faces from specified landmark points.'
         },
     },
+    'Face Similarity': {
+        'StrengthEnableToggle': {
+            'level': 1,
+            'label': 'Strength',
+            'default': False,
+            'help': 'Apply additional swapping iterations to increase the strength of the result, which may increase likeness.'
+        },
+        'StrengthAmountSlider': {
+            'level': 2,
+            'label': 'Amount',
+            'min_value': '0',
+            'max_value': '500',
+            'default': '100',
+            'step': 25,
+            'parentToggle': 'StrengthEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Increase up to 5x additional swaps (500%). 200% is generally a good result. Set to 0 to turn off swapping but allow the rest of the pipeline to apply to the original image.'
+        },
+        'FaceLikenessEnableToggle': {
+            'level': 1,
+            'label': 'Face Likeness',
+            'default': False,
+            'help': 'This is a feature to perform direct adjustments to likeness of faces.'
+        },
+        'FaceLikenessFactorDecimalSlider': {
+            'level': 2,
+            'label': 'Amount',
+            'min_value': '-1.00',
+            'max_value': '1.00',
+            'default': '0.00',
+            'decimals': 2,
+            'step': 0.05,
+            'parentToggle': 'FaceLikenessEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Determines the factor of likeness between the source and assigned faces.'
+        },
+        'DifferencingEnableToggle': {
+            'level': 1,
+            'label': 'Differencing',
+            'default': False,
+            'help': 'Allow some of the original face to show in the swapped result when the difference between the two images is small. Can help bring back some texture to the swapped face.'
+        },
+        'DifferencingAmountSlider': {
+            'level': 2,
+            'label': 'Amount',
+            'min_value': '0',
+            'max_value': '100',
+            'default': '4',
+            'step': 1,
+            'parentToggle': 'DifferencingEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Higher values relaxes the similarity constraint.'
+        },
+        'DifferencingBlendAmountSlider': {
+            'level': 2,
+            'label': 'Blend Amount',
+            'min_value': '0',
+            'max_value': '100',
+            'default': '5',
+            'step': 1,
+            'parentToggle': 'DifferencingEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Blend differecing value.'
+        },
+    },
     'Face Restorer': {
         'FaceRestorerEnableToggle': {
             'level': 1,
@@ -123,6 +188,7 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '0.0',
             'max_value': '1.0',
             'default': '0.9',
+            'decimals': 1,
             'step': 0.1,
             'parentToggle': 'FaceRestorerEnableToggle',
             'requiredToggleValue': True,
@@ -138,23 +204,6 @@ SWAPPER_LAYOUT_DATA = {
             'parentToggle': 'FaceRestorerEnableToggle',
             'requiredToggleValue': True,
             'help': 'Control the blend ratio between the restored face and the swapped face.'
-        },
-        'StrengthEnableToggle': {
-            'level': 1,
-            'label': 'Strength',
-            'default': False,
-            'help': 'Apply additional swapping iterations to increase the strength of the result, which may increase likeness.'
-        },
-        'StrengthAmountSlider': {
-            'level': 2,
-            'label': 'Amount',
-            'min_value': '0',
-            'max_value': '500',
-            'default': '100',
-            'step': 25,
-            'parentToggle': 'StrengthEnableToggle',
-            'requiredToggleValue': True,
-            'help': 'Increase up to 5x additional swaps (500%). 200% is generally a good result. Set to 0 to turn off swapping but allow the rest of the pipeline to apply to the original image.'
         },
     },
     'Frame Enhancer':{
@@ -487,6 +536,7 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '2.0',
             'max_value': '4.0',
             'default': '3.0',
+            'decimals': 1,
             'step': 0.5,
             'parentToggle': 'RestoreEyesEnableToggle',
             'requiredToggleValue': True,
@@ -509,6 +559,7 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '0.3',
             'max_value': '3.0',
             'default': '1.0',
+            'decimals': 1,
             'step': 0.1,
             'parentToggle': 'RestoreEyesEnableToggle',
             'requiredToggleValue': True,
@@ -520,6 +571,7 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '0.3',
             'max_value': '3.0',
             'default': '1.0',
+            'decimals': 1,
             'step': 0.1,
             'parentToggle': 'RestoreEyesEnableToggle',
             'requiredToggleValue': True,
@@ -603,6 +655,7 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '0.3',
             'max_value': '3.0',
             'default': '1.0',
+            'decimals': 1,
             'step': 0.1,
             'parentToggle': 'RestoreMouthEnableToggle',
             'requiredToggleValue': True,
@@ -614,6 +667,7 @@ SWAPPER_LAYOUT_DATA = {
             'min_value': '0.3',
             'max_value': '3.0',
             'default': '1.0',
+            'decimals': 1,
             'step': 0.1,
             'parentToggle': 'RestoreMouthEnableToggle',
             'requiredToggleValue': True,

@@ -567,6 +567,19 @@ class ParameterDecimalSlider(QtWidgets.QSlider, ParametersWidget):
         self.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Minimum)
         self.setFixedWidth(fixed_width)
 
+        # Connect the sliderMoved signal to handle the dragging behavior
+        self.sliderMoved.connect(self.handle_slider_moved)
+
+    def handle_slider_moved(self, position):
+        """Handle the slider movement (dragging) and set the correct value."""
+        # Scale the integer position back to a float
+        new_value = position / self.scale_factor
+
+        new_value = round(new_value / self.step_size) * self.step_size
+
+        # Set the scaled value
+        self.setValue(new_value)
+
     def reset_to_default_value(self):
         """Reset the slider to its default value."""
         self.setValue(float(self.default_value) / self.scale_factor)
@@ -684,10 +697,11 @@ class ParameterLineEdit(QtWidgets.QLineEdit):
         self.setText(default_value)
 
 class ParameterLineDecimalEdit(QtWidgets.QLineEdit):
-    def __init__(self, min_value: float, max_value: float, default_value: str, decimals: int = 2, fixed_width: int = 38, max_length: int = 5, alignment: int = 1, *args, **kwargs):
+    def __init__(self, min_value: float, max_value: float, default_value: str, decimals: int = 2, step_size=0.01, fixed_width: int = 38, max_length: int = 5, alignment: int = 1, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setFixedWidth(fixed_width)  # Adjust the width for decimal numbers
         self.decimals = decimals
+        self.step_size = step_size
         self.setMaxLength(max_length)
         self.setValidator(QtGui.QDoubleValidator(min_value, max_value, decimals))
         # Optional: Align text to the right for better readability
@@ -701,7 +715,8 @@ class ParameterLineDecimalEdit(QtWidgets.QLineEdit):
 
     def set_value(self, value: float):
         """Set the line edit's value."""
-        self.setText(f"{value:.{self.decimals}f}")
+        new_value = round(value / self.step_size) * self.step_size
+        self.setText(f"{new_value:.{self.decimals}f}")
 
     def get_value(self) -> float:
         """Get the current value from the line edit."""
