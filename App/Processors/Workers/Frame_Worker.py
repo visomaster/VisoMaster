@@ -98,6 +98,10 @@ class FrameWorker(threading.Thread):
                         if sim>=parameters['SimilarityThresholdSlider']:
                             s_e = target_face.assigned_input_embedding
                             img = self.swap_core(img, fface[0], s_e=s_e, t_e=fface[2])
+
+        if parameters['FrameEnhancerEnableToggle']:
+            img = self.enhance_core(img, parameters)
+
         img = img.permute(1,2,0)
         img = img.cpu().numpy()
         # Img must be in BGR format
@@ -105,7 +109,7 @@ class FrameWorker(threading.Thread):
         return np.ascontiguousarray(img)
 
     def swap_core(self, img, kps_5, kps=False, s_e=[], t_e=[], dfl_model=False): # img = RGB
-        parameters = self.parameters
+        parameters = self.parameters.copy()
         swapper_model = parameters['SwapModelSelection']
 
         dst = faceutil.get_arcface_template(image_size=512, mode='arcfacemap')
@@ -405,4 +409,156 @@ class FrameWorker(threading.Thread):
         swap = swap.type(torch.uint8)
         swap = swap.permute(2,0,1)
         img[0:3, top:bottom, left:right] = swap
+        return img
+
+    def enhance_core(self, img, parameters):
+        enhancer_type = parameters['FrameEnhancerTypeSelection']
+
+        match enhancer_type:
+            case 'RealEsrgan-x2-Plus' | 'RealEsrgan-x4-Plus' | 'BSRGan-x2' | 'BSRGan-x4' | 'UltraSharp-x4' | 'UltraMix-x4' | 'RealEsr-General-x4v3':
+                tile_size = 512
+
+                if enhancer_type == 'RealEsrgan-x2-Plus' or enhancer_type == 'BSRGan-x2':
+                    scale = 2
+                else:
+                    scale = 4
+
+                image = img.type(torch.float32)
+                if torch.max(image) > 256:  # 16-bit image
+                    max_range = 65535
+                else:
+                    max_range = 255
+
+                image = torch.div(image, max_range)
+                image = torch.unsqueeze(image, 0).contiguous()
+
+                image = self.models_processor.run_enhance_frame_tile_process(image, enhancer_type, tile_size=tile_size, scale=scale)
+
+                image = torch.squeeze(image)
+                image = torch.clamp(image, 0, 1)
+                image = torch.mul(image, max_range)
+
+                # Blend
+                alpha = float(parameters["FrameEnhancerBlendSlider"])/100.0
+
+                t_scale = v2.Resize((img.shape[1] * scale, img.shape[2] * scale), interpolation=v2.InterpolationMode.BILINEAR, antialias=False)
+                img = t_scale(img)
+                img = torch.add(torch.mul(image, alpha), torch.mul(img, 1-alpha))
+                if max_range == 255:
+                    img = img.type(torch.uint8)
+                else:
+                    img = img.type(torch.uint16)
+
+            case 'DeOldify-Artistic' | 'DeOldify-Stable' | 'DeOldify-Video':
+                render_factor = 384 # 12 * 32 | highest quality = 20 * 32 == 640
+
+                channels, h, w = img.shape
+                t_resize_i = v2.Resize((render_factor, render_factor), interpolation=v2.InterpolationMode.BILINEAR, antialias=False)
+                image = t_resize_i(img)
+
+                image = image.type(torch.float32)
+                image = torch.unsqueeze(image, 0).contiguous()
+
+                output = torch.empty((image.shape), dtype=torch.float32, device=self.models_processor.device).contiguous()
+
+                match enhancer_type:
+                    case 'DeOldify-Artistic':
+                        self.models_processor.run_deoldify_artistic(image, output)
+                    case 'DeOldify-Stable':
+                        self.models_processor.run_deoldify_stable(image, output)
+                    case 'DeOldify-Video':
+                        self.models_processor.run_deoldify_video(image, output)
+
+                output = torch.squeeze(output)
+                t_resize_o = v2.Resize((h, w), interpolation=v2.InterpolationMode.BILINEAR, antialias=False)
+                output = t_resize_o(output)
+
+                output = faceutil.rgb_to_yuv(output, True)
+                # do a black and white transform first to get better luminance values
+                hires = faceutil.rgb_to_yuv(img, True)
+
+                hires[1:3, :, :] = output[1:3, :, :]
+                hires = faceutil.yuv_to_rgb(hires, True)
+
+                # Blend
+                alpha = float(parameters["FrameEnhancerBlendSlider"]) / 100.0
+                img = torch.add(torch.mul(hires, alpha), torch.mul(img, 1-alpha))
+
+                img = img.type(torch.uint8)
+
+            case 'DDColor-Artistic' | 'DDColor':
+                render_factor = 384 # 12 * 32 | highest quality = 20 * 32 == 640
+
+                # Converti RGB a LAB
+                '''
+                orig_l = img.permute(1, 2, 0).cpu().numpy()
+                orig_l = cv2.cvtColor(orig_l, cv2.COLOR_RGB2Lab)
+                orig_l = torch.from_numpy(orig_l).to(self.models_processor.device)
+                orig_l = orig_l.permute(2, 0, 1)
+                '''
+                orig_l = faceutil.rgb_to_lab(img, True)
+
+                orig_l = orig_l[0:1, :, :]  # (1, h, w)
+
+                # Resize per il modello
+                t_resize_i = v2.Resize((render_factor, render_factor), interpolation=v2.InterpolationMode.BILINEAR, antialias=False)
+                image = t_resize_i(img)
+
+                # Converti RGB in LAB
+                '''
+                img_l = image.permute(1, 2, 0).cpu().numpy()
+                img_l = cv2.cvtColor(img_l, cv2.COLOR_RGB2Lab)
+                img_l = torch.from_numpy(img_l).to(self.models_processor.device)
+                img_l = img_l.permute(2, 0, 1)
+                '''
+                img_l = faceutil.rgb_to_lab(image, True)
+
+                img_l = img_l[0:1, :, :]  # (1, render_factor, render_factor)
+                img_gray_lab = torch.cat((img_l, torch.zeros_like(img_l), torch.zeros_like(img_l)), dim=0)  # (3, render_factor, render_factor)
+
+                # Converti LAB in RGB
+                '''
+                img_gray_lab = img_gray_lab.permute(1, 2, 0).cpu().numpy()
+                img_gray_rgb = cv2.cvtColor(img_gray_lab, cv2.COLOR_LAB2RGB)
+                img_gray_rgb = torch.from_numpy(img_gray_rgb).to(self.models_processor.device)
+                img_gray_rgb = img_gray_rgb.permute(2, 0, 1)
+                '''
+                img_gray_rgb = faceutil.lab_to_rgb(img_gray_lab)
+
+                tensor_gray_rgb = torch.unsqueeze(img_gray_rgb.type(torch.float32), 0).contiguous()
+
+                # Prepara il tensore per il modello
+                output_ab = torch.empty((1, 2, render_factor, render_factor), dtype=torch.float32, device=self.models_processor.device)
+
+                # Esegui il modello
+                match enhancer_type:
+                    case 'DDColor-Artistic':
+                        self.models_processor.run_ddcolor_artistic(tensor_gray_rgb, output_ab)
+                    case 'DDColor':
+                        self.models_processor.run_ddcolor(tensor_gray_rgb, output_ab)
+
+                output_ab = output_ab.squeeze(0)  # (2, render_factor, render_factor)
+
+                t_resize_o = v2.Resize((img.size(1), img.size(2)), interpolation=v2.InterpolationMode.BILINEAR, antialias=False)
+                output_lab_resize = t_resize_o(output_ab)
+
+                # Combina il canale L originale con il risultato del modello
+                output_lab = torch.cat((orig_l, output_lab_resize), dim=0)  # (3, original_H, original_W)
+
+                # Convert LAB to RGB
+                '''
+                output_rgb = output_lab.permute(1, 2, 0).cpu().numpy()
+                output_rgb = cv2.cvtColor(output_rgb, cv2.COLOR_Lab2RGB)
+                output_rgb = torch.from_numpy(output_rgb).to(self.models_processor.device)
+                output_rgb = output_rgb.permute(2, 0, 1)
+                '''
+                output_rgb = faceutil.lab_to_rgb(output_lab, True)  # (3, original_H, original_W)
+
+                # Miscela le immagini
+                alpha = float(parameters["FrameEnhancerBlendSlider"]) / 100.0
+                blended_img = torch.add(torch.mul(output_rgb, alpha), torch.mul(img, 1 - alpha))
+
+                # Converti in uint8
+                img = blended_img.type(torch.uint8)
+
         return img
