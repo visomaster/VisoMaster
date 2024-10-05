@@ -44,6 +44,7 @@ class TargetMediaCardButton(CardButton):
         # Reset the frame counter
         main_window.video_processor.current_frame_number = 0
         main_window.video_processor.media_path = self.media_path
+        main_window.parameters = {}
 
         # Release the previous media_capture if it exists
         if main_window.video_processor.media_capture:
@@ -118,8 +119,9 @@ class TargetMediaCardButton(CardButton):
         main_window.graphicsViewFrame.update()
 
 class TargetFaceCardButton(CardButton):
-    def __init__(self, media_path, cropped_face, embedding: np.ndarray, *args, **kwargs):
+    def __init__(self, media_path, cropped_face, embedding: np.ndarray, face_id: int|bool=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.face_id = len(self.main_window.target_faces) #Assign face id
         self.media_path = media_path
         self.cropped_face = cropped_face
         self.embedding = embedding
@@ -134,6 +136,10 @@ class TargetFaceCardButton(CardButton):
         # Connect the custom context menu request signal to the custom slot
         self.customContextMenuRequested.connect(self.on_context_menu)
         self.create_context_menu()
+
+        # Create parameter dict for the target
+        if not self.main_window.parameters.get(self.face_id):
+            widget_actions.create_parameter_dict_for_face_id(self.main_window, self.face_id)
 
     def loadTargetFace(self):
         main_window = self.main_window
@@ -151,18 +157,21 @@ class TargetFaceCardButton(CardButton):
             input_face_button.setChecked(True)
         for embed_button in self.assigned_embed_buttons.keys():
             embed_button.setChecked(True)
+        
+        main_window.selected_target_face_id = self.face_id
+        print('main_window.selected_target_face_id', main_window.selected_target_face_id)
 
-        widget_actions.refresh_frame(main_window)
+        # widget_actions.refresh_frame(main_window)
 
     def calculateAssignedInputEmbedding(self,):
-        parameters = self.main_window.parameters.copy()
+        control = self.main_window.control.copy()
         input_face_embeddings = [embedding for embedding in self.assigned_input_face_buttons.values()]
         merged_embeddings = [embedding for embedding in self.assigned_embed_buttons.values()]
         all_input_embeddings = input_face_embeddings + merged_embeddings
         if len(all_input_embeddings)>0:
-            if parameters['EmbMergeMethodSelection'] == 'Mean':
+            if control['EmbMergeMethodSelection'] == 'Mean':
                 self.assigned_input_embedding = np.mean(all_input_embeddings, 0)
-            elif parameters['EmbMergeMethodSelection'] == 'Median':
+            elif control['EmbMergeMethodSelection'] == 'Median':
                 self.assigned_input_embedding = np.median(all_input_embeddings, 0)
         else:
             self.assigned_input_embedding = np.array([])
@@ -185,6 +194,14 @@ class TargetFaceCardButton(CardButton):
             if list_item.listWidget().itemWidget(list_item) == self:
                 main_window.targetFacesList.takeItem(i)   
                 main_window.target_faces.pop(i)
+                main_window.parameters.pop(i)
+
+        # Assign new Face Ids
+        i=0
+        for target_face in main_window.target_faces:
+            target_face.face_id = i
+            i+=1
+
         widget_actions.refresh_frame(self.main_window)
         del self
 
@@ -328,7 +345,7 @@ class CreateEmbeddingDialog(QtWidgets.QDialog):
 
         self.merge_type_selection = QtWidgets.QComboBox(self)
         self.merge_type_selection.addItems(['Mean', 'Median'])
-        self.merge_type_selection.setCurrentText(main_window.parameters['EmbMergeMethodSelection'])
+        self.merge_type_selection.setCurrentText(main_window.control['EmbMergeMethodSelection'])
 
         # Create button box
         QBtn = QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel

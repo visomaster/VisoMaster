@@ -45,7 +45,6 @@ class FrameWorker(threading.Thread):
             print(f"Error in FrameWorker: {e}")
 
     def process_swap(self):
-        parameters = self.parameters
         # Load frame into VRAM
         img = torch.from_numpy(self.frame.astype('uint8')).to(self.models_processor.device) #HxWxc
         img = img.permute(2,0,1)#cxHxW
@@ -82,7 +81,9 @@ class FrameWorker(threading.Thread):
 
             det_scale = torch.div(new_height, img_y)
 
+        parameters = self.main_window.default_parameters.copy() #Use the parameters of the first face for the detectors, since it is common for all faces
         bboxes, kpss_5, kpss = self.models_processor.run_detect(img, parameters['DetectorModelSelection'], max_num=20, score=parameters['DetectorScoreSlider']/100.0, use_landmark_detection=parameters['LandmarkDetectToggle'], landmark_detect_mode=parameters['LandmarkDetectModelSelection'], landmark_score=parameters["LandmarkDetectScoreSlider"]/100.0, from_points=parameters["DetectFromPointsToggle"], rotation_angles=[0] if not parameters["AutoRotationToggle"] else [0, 90, 180, 270])
+        
         ret = []
         if len(kpss_5)>0:
             for i in range(kpss_5.shape[0]):
@@ -95,9 +96,10 @@ class FrameWorker(threading.Thread):
             for i, fface in enumerate(ret):
                     for target_face in self.main_window.target_faces:
                         sim = self.models_processor.findCosineDistance(fface[2], target_face.embedding)
+                        parameters = self.parameters[target_face.face_id] #Use the parameters of the target face
                         if sim>=parameters['SimilarityThresholdSlider']:
                             s_e = target_face.assigned_input_embedding
-                            img = self.swap_core(img, fface[0], s_e=s_e, t_e=fface[2])
+                            img = self.swap_core(img, fface[0], s_e=s_e, t_e=fface[2], parameters=parameters)
 
         if parameters['FrameEnhancerEnableToggle']:
             img = self.enhance_core(img, parameters)

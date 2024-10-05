@@ -68,6 +68,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.merged_embeddings: List[EmbeddingCardButton] = []
         self.cur_selected_target_face_button: TargetFaceCardButton = False
         self.selected_video_buttons: List[TargetMediaCardButton] = [] #Contains list of buttons linked to videos/images
+        self.selected_target_face_id = 0
+        self.default_parameters = {}
         self.parameters = {}
         self.parameters_list = {}
         self.control = {}

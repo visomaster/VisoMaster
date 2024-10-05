@@ -334,7 +334,7 @@ def initializeModelLoadDialog(main_window: 'MainWindow'):
     main_window.model_load_dialog.close()
 
 def find_target_faces(main_window: 'MainWindow'):
-    parameters = main_window.parameters.copy()
+    parameters = main_window.default_parameters.copy()
     video_processor = main_window.video_processor
     if video_processor.media_path:
         print(video_processor.media_capture)
@@ -379,6 +379,7 @@ def clear_target_faces(main_window: 'MainWindow'):
     for target_face in main_window.target_faces:
         del target_face
     main_window.target_faces = []
+    main_window.parameters = {}
 
 def clear_input_faces(main_window: 'MainWindow'):
     main_window.inputFacesList.clear()
@@ -437,7 +438,7 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
 
                 if data_type=='parameter':
                     # Initialize parameter value
-                    create_parameter(main_window, widget_name, widget_data['default'])
+                    create_default_parameter(main_window, widget_name, widget_data['default'])
                 else:
                     create_control(main_window, widget_name, widget_data['default'])
                 # Set onclick function for toggle button
@@ -465,7 +466,7 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
 
                 if data_type=='parameter':
                     # Initialize parameter value
-                    create_parameter(main_window, widget_name, widget_data['default'])
+                    create_default_parameter(main_window, widget_name, widget_data['default'])
                 else:
                     create_control(main_window, widget_name, widget_data['default'])
                 # Set onchange function for select box (Selected value is passed by the signal)
@@ -511,7 +512,8 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
 
                 if data_type=='parameter':
                     # Initialize parameter value
-                    create_parameter(main_window, widget_name, float(widget_data['default']))
+                    create_default_parameter(main_window, widget_name, float(widget_data['default']))
+
                 else:
                     create_control(main_window, widget_name, float(widget_data['default']))
 
@@ -568,7 +570,7 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
 
                 if data_type=='parameter':
                     # Initialize parameter value
-                    create_parameter(main_window, widget_name, int(widget_data['default']))
+                    create_default_parameter(main_window, widget_name, int(widget_data['default']))
                 else:
                     create_control(main_window, widget_name, int(widget_data['default']))
 
@@ -609,7 +611,8 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
 
                 if data_type=='parameter':
                     # Initialize parameter value
-                    create_parameter(main_window, widget_name, widget_data['default'])
+                    create_default_parameter(main_window, widget_name, widget_data['default'])
+
                 else:
                     create_control(main_window, widget_name, widget_data['default'])
 
@@ -702,11 +705,34 @@ def update_control(main_window: 'MainWindow', control_name, control_value, exec_
             exec_function(*exec_function_args)
     main_window.control[control_name] = control_value
 
-def create_parameter(main_window: 'MainWindow', parameter_name, parameter_value):
-    main_window.parameters[parameter_name] = parameter_value
+def create_default_parameter(main_window: 'MainWindow', parameter_name, parameter_value):
+    main_window.default_parameters[parameter_name] = parameter_value
+
+def create_parameter_dict_for_face_id(main_window: 'MainWindow', face_id=0):
+    if not main_window.parameters.get(face_id):
+        parameters =  main_window.parameters.get(main_window.selected_target_face_id) or main_window.default_parameters
+        main_window.parameters[face_id] = parameters.copy()
+    print("Created parameter_dict_for_face_id", face_id)
+
+# def create_parameter(main_window: 'MainWindow', parameter_name, parameter_value, face_id=False):
+#     if not main_window.parameters.get(face_id):
+#         create_parameter_dict_using_face_id(main_window, face_id)
+#     main_window.parameters[parameter_name] = parameter_value
 
 def update_parameter(main_window: 'MainWindow', parameter_name, parameter_value):
-    main_window.parameters[parameter_name] = parameter_value
+    face_id = main_window.selected_target_face_id
+
+    # Display vals of all faces [Before update]
+    for key, val in main_window.parameters.items():
+        print('face_id', key, parameter_name, main_window.parameters[key][parameter_name])
+
+    print('update_parameter for',face_id, parameter_name, parameter_value )
+    main_window.parameters[face_id][parameter_name] = parameter_value
+
+    print('selected_face_id', face_id)
+    # Display vals of all faces [After update]
+    for key, val in main_window.parameters.items():
+        print('face_id', key, parameter_name, main_window.parameters[key][parameter_name])
     refresh_frame(main_window)
 
 def refresh_frame(main_window: 'MainWindow'):
