@@ -305,6 +305,20 @@ class FrameWorker(threading.Thread):
             mask = gauss(mask.type(torch.float32))
             swap = swap * mask + original_face_512*(1-mask)
 
+        if parameters["AutoColorEnableToggle"]:
+            # Histogram color matching original face on swapped face
+            if parameters['AutoColorTransferTypeSelection'] == 'Test':
+                swap = faceutil.histogram_matching(original_face_512, swap, parameters["AutoColorBlendAmountSlider"])
+
+            elif parameters['AutoColorTransferTypeSelection'] == 'Test_Mask':
+                swap = faceutil.histogram_matching_withmask(original_face_512, swap, t512(swap_mask), parameters["AutoColorBlendAmountSlider"])
+
+            elif parameters['AutoColorTransferTypeSelection'] == 'DFL_Test':
+                swap = faceutil.histogram_matching_DFL_test(original_face_512, swap, parameters["AutoColorBlendAmountSlider"])
+
+            elif parameters['AutoColorTransferTypeSelection'] == 'DFL_Orig':
+                swap = faceutil.histogram_matching_DFL_Orig(original_face_512, swap, t512(swap_mask), parameters["AutoColorBlendAmountSlider"])
+
         # Add blur to swap_mask results
         #gauss = transforms.GaussianBlur(parameters['BlendSlider']*2+1, (parameters['BlendSlider']+1)*0.2)
         gauss = transforms.GaussianBlur(5*2+1, (5+1)*0.2)

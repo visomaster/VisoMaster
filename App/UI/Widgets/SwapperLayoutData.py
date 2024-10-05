@@ -806,6 +806,34 @@ SWAPPER_LAYOUT_DATA = {
             'help': 'Adjust the blur of mask border.'
         },
     },
+    'Face Color Correction':{
+        'AutoColorEnableToggle': {
+            'level': 1,
+            'label': 'AutoColor Transfer',
+            'default': False,
+            'help': 'Enable AutoColor Transfer: 1. Hans Test without mask, 2. Hans Test with mask, 3. DFL Method without mask, 4. DFL Original Method.'
+        },
+        'AutoColorTransferTypeSelection':{
+            'level': 2,
+            'label': 'Transfer Type',
+            'options': ['Test', 'Test_Mask', 'DFL_Test', 'DFL_Orig'],
+            'default': 'Test',
+            'parentToggle': 'AutoColorEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Select the AutoColor transfer method type. Hans Method could have some artefacts sometimes.'
+        },
+        'AutoColorBlendAmountSlider': {
+            'level': 1,
+            'label': 'Blend Amount',
+            'min_value': '0',
+            'max_value': '100',
+            'default': '80',
+            'step': 5,
+            'parentToggle': 'AutoColorEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Adjust the blend value.'
+        },
+    },
     'Embedding Merge Method':{
         'EmbMergeMethodSelection':{
             'level': 1,
