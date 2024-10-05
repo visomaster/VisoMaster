@@ -495,7 +495,8 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
                     min_value=float(widget_data['min_value']), 
                     max_value=float(widget_data['max_value']), 
                     default_value=str(widget_data['default']),
-                    decimals=int(widget_data['decimals'])  # Ensure it uses decimals place for consistency
+                    decimals=int(widget_data['decimals']),  # Ensure it uses decimals place for consistency
+                    step_size=float(widget_data['step'])
                 )
                 widget.reset_default_button = ParameterResetDefaultButton(related_widget=widget)
 
@@ -518,7 +519,7 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
                 def onchange_slider(slider_widget: ParameterDecimalSlider, slider_widget_name, widget_data: dict, new_value=False):
                     # Update the slider text box value too
                     actual_value = slider_widget.value()  # Get float value from the slider
-                    if data_type=='paramter':
+                    if data_type=='parameter':
                         update_parameter(main_window, slider_widget_name, actual_value, )
                     elif data_type=='control':
                         update_control(main_window, slider_widget_name, actual_value, exec_function=widget_data.get('exec_function'), exec_function_args=widget_data.get('exec_function_args', []))
