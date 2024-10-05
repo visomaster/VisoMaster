@@ -844,6 +844,129 @@ SWAPPER_LAYOUT_DATA = {
             'requiredToggleValue': True,
             'help': 'Adjust the blend value.'
         },
+        'ColorEnableToggle': {
+            'level': 1,
+            'label': 'Color Adjustments',
+            'default': False,
+            'help': 'Fine-tune the RGB color values of the swap.'
+        },
+        'ColorRedSlider': {
+            'level': 1,
+            'label': 'Red',
+            'min_value': '-100',
+            'max_value': '100',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'ColorEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Red color adjustments'
+        },
+        'ColorGreenSlider': {
+            'level': 1,
+            'label': 'Green',
+            'min_value': '-100',
+            'max_value': '100',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'ColorEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Green color adjustments'
+        },
+        'ColorBlueSlider': {
+            'level': 1,
+            'label': 'Blue',
+            'min_value': '-100',
+            'max_value': '100',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'ColorEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Blue color adjustments'
+        },
+        'ColorBrightnessDecimalSlider': {
+            'level': 1,
+            'label': 'Brightness',
+            'min_value': '0.00',
+            'max_value': '2.00',
+            'default': '1.00',
+            'step': 0.01,
+            'decimals': 2,
+            'parentToggle': 'ColorEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Changes the Brightness.'
+        },
+        'ColorContrastDecimalSlider': {
+            'level': 1,
+            'label': 'Contrast',
+            'min_value': '0.00',
+            'max_value': '2.00',
+            'default': '1.00',
+            'step': 0.01,
+            'decimals': 2,
+            'parentToggle': 'ColorEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Changes the Contrast.'
+        },
+        'ColorSaturationDecimalSlider': {
+            'level': 1,
+            'label': 'Saturation',
+            'min_value': '0.00',
+            'max_value': '2.00',
+            'default': '1.00',
+            'step': 0.01,
+            'decimals': 2,
+            'parentToggle': 'ColorEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Changes the Saturation.'
+        },
+        'ColorSharpnessDecimalSlider': {
+            'level': 1,
+            'label': 'Sharpness',
+            'min_value': '0.0',
+            'max_value': '2.0',
+            'default': '1.0',
+            'step': 0.1,
+            'decimals': 1,
+            'parentToggle': 'ColorEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Changes the Sharpness.'
+        },
+        'ColorHueDecimalSlider': {
+            'level': 1,
+            'label': 'Hue',
+            'min_value': '-0.50',
+            'max_value': '0.50',
+            'default': '0.00',
+            'step': 0.01,
+            'decimals': 2,
+            'parentToggle': 'ColorEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Changes the Hue.'
+        },
+        'ColorGammaDecimalSlider': {
+            'level': 1,
+            'label': 'Gamma',
+            'min_value': '0.00',
+            'max_value': '2.00',
+            'default': '1.00',
+            'step': 0.01,
+            'decimals': 2,
+            'parentToggle': 'ColorEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Changes the Gamma.'
+        },
+        'ColorNoiseDecimalSlider': {
+            'level': 1,
+            'label': 'Noise',
+            'min_value': '0.0',
+            'max_value': '20.0',
+            'default': '0.0',
+            'step': 0.5,
+            'decimals': 1,
+            'parentToggle': 'ColorEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Add noise to swapped face.'
+        },
     },
     'Embedding Merge Method':{
         'EmbMergeMethodSelection':{

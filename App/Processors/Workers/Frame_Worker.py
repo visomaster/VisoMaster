@@ -319,6 +319,30 @@ class FrameWorker(threading.Thread):
             elif parameters['AutoColorTransferTypeSelection'] == 'DFL_Orig':
                 swap = faceutil.histogram_matching_DFL_Orig(original_face_512, swap, t512(swap_mask), parameters["AutoColorBlendAmountSlider"])
 
+        # Apply color corrections
+        if parameters['ColorEnableToggle']:
+            swap = torch.unsqueeze(swap,0).contiguous()
+            swap = v2.functional.adjust_gamma(swap, parameters['ColorGammaDecimalSlider'], 1.0)
+            swap = torch.squeeze(swap)
+            swap = swap.permute(1, 2, 0).type(torch.float32)
+
+            del_color = torch.tensor([parameters['ColorRedSlider'], parameters['ColorGreenSlider'], parameters['ColorBlueSlider']], device=self.models_processor.device)
+            swap += del_color
+            swap = torch.clamp(swap, min=0., max=255.)
+            swap = swap.permute(2, 0, 1).type(torch.uint8)
+
+            swap = v2.functional.adjust_brightness(swap, parameters['ColorBrightnessDecimalSlider'])
+            swap = v2.functional.adjust_contrast(swap, parameters['ColorContrastDecimalSlider'])
+            swap = v2.functional.adjust_saturation(swap, parameters['ColorSaturationDecimalSlider'])
+            swap = v2.functional.adjust_sharpness(swap, parameters['ColorSharpnessDecimalSlider'])
+            swap = v2.functional.adjust_hue(swap, parameters['ColorHueDecimalSlider'])
+
+            if parameters['ColorNoiseDecimalSlider'] > 0:
+                swap = swap.permute(1, 2, 0).type(torch.float32)
+                swap = swap + parameters['ColorNoiseDecimalSlider']*torch.randn(512, 512, 3, device=self.models_processor.device)
+                swap = torch.clamp(swap, 0, 255)
+                swap = swap.permute(2, 0, 1)
+
         # Add blur to swap_mask results
         #gauss = transforms.GaussianBlur(parameters['BlendSlider']*2+1, (parameters['BlendSlider']+1)*0.2)
         gauss = transforms.GaussianBlur(5*2+1, (5+1)*0.2)
