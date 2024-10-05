@@ -92,6 +92,58 @@ SWAPPER_LAYOUT_DATA = {
             'help': 'Enable detection of faces from specified landmark points.'
         },
     },
+    'Face Landmarks Correction': {
+        'FaceAdjEnableToggle': {
+            'level': 1,
+            'label': 'Face Adjustments',
+            'default': False,
+            'help': 'This is an experimental feature to perform direct adjustments to the face landmarks found by the detector. There is also an option to adjust the scale of the swapped face.'
+        },
+        'KpsXSlider': {
+            'level': 2,
+            'label': 'Keypoints X-Axis',
+            'min_value': '-100',
+            'max_value': '100',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'FaceAdjEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Shifts the detection points left and right.'
+        },
+        'KpsYSlider': {
+            'level': 2,
+            'label': 'Keypoints Y-Axis',
+            'min_value': '-100',
+            'max_value': '100',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'FaceAdjEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Shifts the detection points up and down.'
+        },
+        'KpsScaleSlider': {
+            'level': 2,
+            'label': 'Keypoints Scale',
+            'min_value': '-100',
+            'max_value': '100',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'FaceAdjEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Grows and shrinks the detection point distances.'
+        },
+        'FaceScaleAmountSlider': {
+            'level': 2,
+            'label': 'Face Scale Amount',
+            'min_value': '-20',
+            'max_value': '20',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'FaceAdjEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Grows and shrinks the entire face.'
+        },
+    },
     'Face Similarity': {
         'StrengthEnableToggle': {
             'level': 1,

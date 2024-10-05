@@ -107,7 +107,20 @@ class FrameWorker(threading.Thread):
     def swap_core(self, img, kps_5, kps=False, s_e=[], t_e=[], dfl_model=False): # img = RGB
         parameters = self.parameters
         swapper_model = parameters['SwapModelSelection']
+
         dst = faceutil.get_arcface_template(image_size=512, mode='arcfacemap')
+        # Change the ref points
+        if parameters['FaceAdjEnableToggle']:
+            for k in dst:
+                k[:,0] += parameters['KpsXSlider']
+                k[:,1] += parameters['KpsYSlider']
+                k[:,0] -= 255
+                k[:,0] *= (1+parameters['KpsScaleSlider']/100)
+                k[:,0] += 255
+                k[:,1] -= 255
+                k[:,1] *= (1+parameters['KpsScaleSlider']/100)
+                k[:,1] += 255
+                    
         M, _ = faceutil.estimate_norm_arcface_template(kps_5, src=dst)
         tform = trans.SimilarityTransform()
         tform.params[0:2] = M
@@ -145,6 +158,10 @@ class FrameWorker(threading.Thread):
                 elif parameters['SwapperResSelection'] == '512':
                     dim = 4
                     input_face_affined = original_face_512
+
+            # Optional Scaling # change the transform matrix scaling from center
+            if parameters['FaceAdjEnableToggle']:
+                input_face_affined = v2.functional.affine(input_face_affined, 0, (0, 0), 1 + parameters['FaceScaleAmountSlider'] / 100, 0, center=(dim*128/2, dim*128/2), interpolation=v2.InterpolationMode.BILINEAR)
 
             itex = 1
             if parameters['StrengthEnableToggle']:
