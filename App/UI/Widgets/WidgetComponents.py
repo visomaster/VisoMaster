@@ -121,7 +121,10 @@ class TargetMediaCardButton(CardButton):
 class TargetFaceCardButton(CardButton):
     def __init__(self, media_path, cropped_face, embedding: np.ndarray, face_id: int|bool=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.face_id = len(self.main_window.target_faces) #Assign face id
+        if self.main_window.target_faces:
+            self.face_id = max([target_face.face_id for target_face in self.main_window.target_faces]) + 1
+        else:
+            self.face_id = 0
         self.media_path = media_path
         self.cropped_face = cropped_face
         self.embedding = embedding
@@ -159,8 +162,7 @@ class TargetFaceCardButton(CardButton):
             embed_button.setChecked(True)
         
         main_window.selected_target_face_id = self.face_id
-        print('main_window.selected_target_face_id', main_window.selected_target_face_id)
-
+        print('main_window.selected_target_face_id', main_window.selected_target_face_id)     
         widget_actions.set_widgets_values_using_face_id_parameters(main_window=main_window, face_id=self.face_id)      
 
         # widget_actions.refresh_frame(main_window)
@@ -191,18 +193,13 @@ class TargetFaceCardButton(CardButton):
 
     def remove_target_face_from_list(self):
         main_window = self.main_window
-        for i in range(main_window.targetFacesList.count()):
+        for i in range(main_window.targetFacesList.count()-1, -1, -1):
             list_item = main_window.targetFacesList.item(i)
-            if list_item.listWidget().itemWidget(list_item) == self:
-                main_window.targetFacesList.takeItem(i)   
-                main_window.target_faces.pop(i)
-                main_window.parameters.pop(i)
-
-        # Assign new Face Ids
-        i=0
-        for target_face in main_window.target_faces:
-            target_face.face_id = i
-            i+=1
+            if list_item:
+                if list_item.listWidget().itemWidget(list_item) == self:
+                    main_window.targetFacesList.takeItem(i)   
+                    main_window.target_faces.pop(i)
+                    main_window.parameters.pop(i)
 
         widget_actions.refresh_frame(self.main_window)
         del self
@@ -412,6 +409,7 @@ class ParametersWidget:
         self.main_window: 'MainWindow' = kwargs.get('main_window', False)
         self.line_edit: QtWidgets.QLineEdit = False #Only sliders have textbox currently
         self.reset_default_button: QPushButton = False
+        self.enable_refresh_frame = True #This flag can be used to temporarily disable refreshing the frame when the widget value is changed
 
 class ToggleSwitchButton(QtWidgets.QPushButton, ParametersWidget):
     def __init__(self, *args, **kwargs):
@@ -426,6 +424,9 @@ class SelectionBox(QtWidgets.QComboBox, ParametersWidget):
 
     def reset_to_default_value(self):
         self.setCurrentText(self.default_value)
+
+    def set_value(self, value):
+        self.setCurrentText(value)
     
 class ToggleButton(QtWidgets.QPushButton, ParametersWidget):
     _circle_position = None
@@ -493,6 +494,10 @@ class ToggleButton(QtWidgets.QPushButton, ParametersWidget):
 
     def reset_to_default_value(self):
         self.setChecked(bool(self.default_value))
+
+    # Custom method in all parameter widgets to set value
+    def set_value(self, value):
+        self.setChecked(value)
 
 class ParameterSlider(QtWidgets.QSlider, ParametersWidget):
     def __init__(self, min_value=0, max_value=0, default_value=0, step_size=1, fixed_width = 130, *args, **kwargs):
@@ -575,6 +580,9 @@ class ParameterSlider(QtWidgets.QSlider, ParametersWidget):
 
         # Accept the event
         event.accept()
+
+    def set_value(self, value):
+        self.setValue(value)
     
 class ParameterDecimalSlider(QtWidgets.QSlider, ParametersWidget):
     def __init__(self, min_value=0.0, max_value=1.0, default_value=0.00, decimals=2, step_size=0.01, fixed_width = 130, *args, **kwargs):
@@ -675,6 +683,9 @@ class ParameterDecimalSlider(QtWidgets.QSlider, ParametersWidget):
         # Accept the event
         event.accept()
 
+    def set_value(self, value):
+        self.setValue(value)
+
 class ParameterLineEdit(QtWidgets.QLineEdit):
     def __init__(self, min_value: int, max_value: int, default_value: str, fixed_width: int = 38, max_length: int = 3, alignment: int = 1, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -763,6 +774,8 @@ class ParameterText(QtWidgets.QLineEdit, ParametersWidget):
         # Call the base class method to ensure normal behavior
         super().focusOutEvent(event)
 
+    def set_value(self, value):
+        self.setText(value)
 class ParameterResetDefaultButton(QtWidgets.QPushButton):
     def __init__(self, related_widget: ParameterSlider | ParameterDecimalSlider | SelectionBox, *args, **kwargs):
         super().__init__(*args, **kwargs)

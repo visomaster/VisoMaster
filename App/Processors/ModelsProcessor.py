@@ -125,7 +125,7 @@ class ModelsProcessor(QObject):
             'trt_builder_optimization_level': 5,
         }
         self.providers = [
-            # ('TensorrtExecutionProvider', self.trt_ep_options),
+            ('TensorrtExecutionProvider', self.trt_ep_options),
             ('CUDAExecutionProvider'),
             ('CPUExecutionProvider')
         ]       

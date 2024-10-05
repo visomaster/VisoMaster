@@ -334,7 +334,8 @@ def initializeModelLoadDialog(main_window: 'MainWindow'):
     main_window.model_load_dialog.close()
 
 def find_target_faces(main_window: 'MainWindow'):
-    parameters = main_window.default_parameters.copy()
+    parameters = main_window.parameters.get(main_window.selected_target_face_id) or main_window.default_parameters
+    parameters = parameters.copy()
     video_processor = main_window.video_processor
     if video_processor.media_path:
         print(video_processor.media_capture)
@@ -445,7 +446,7 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
                 def onchange(toggle_widget: ToggleButton, toggle_widget_name, widget_data: dict):
                     toggle_state = toggle_widget.isChecked()
                     if data_type=='parameter':
-                        update_parameter(main_window, toggle_widget_name, toggle_state)    
+                        update_parameter(main_window, toggle_widget_name, toggle_state, enable_refresh_frame=toggle_widget.enable_refresh_frame)    
                     elif data_type=='control':
                         update_control(main_window, toggle_widget_name, toggle_state, exec_function=widget_data.get('exec_function'), exec_function_args = widget_data.get('exec_function_args',[]))
                 widget.clicked.connect(partial(onchange, widget, widget_name, widget_data))
@@ -473,7 +474,7 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
                 def onchange(selection_widget: SelectionBox, selection_widget_name, widget_data: dict = {}, selected_value=False):
                     # selected_value = selection_widget.currentText()
                     if data_type=='parameter':
-                        update_parameter(main_window, selection_widget_name, selected_value)
+                        update_parameter(main_window, selection_widget_name, selected_value, enable_refresh_frame=selection_widget.enable_refresh_frame)
                     elif data_type=='control':
                         update_control(main_window, selection_widget_name, selected_value, exec_function=widget_data.get('exec_function'), exec_function_args=widget_data.get('exec_function_args', []))
                 widget.currentTextChanged.connect(partial(onchange, widget, widget_name, widget_data))
@@ -522,7 +523,7 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
                     # Update the slider text box value too
                     actual_value = slider_widget.value()  # Get float value from the slider
                     if data_type=='parameter':
-                        update_parameter(main_window, slider_widget_name, actual_value, )
+                        update_parameter(main_window, slider_widget_name, actual_value, enable_refresh_frame=slider_widget.enable_refresh_frame)
                     elif data_type=='control':
                         update_control(main_window, slider_widget_name, actual_value, exec_function=widget_data.get('exec_function'), exec_function_args=widget_data.get('exec_function_args', []))
                     slider_widget.line_edit.set_value(actual_value)  # Update the line edit with the actual value
@@ -577,7 +578,7 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
                 # When slider value is change
                 def onchange_slider(slider_widget: ParameterSlider, slider_widget_name, widget_data: dict, new_value=False):
                     if data_type=='parameter':
-                        update_parameter(main_window, slider_widget_name, new_value)
+                        update_parameter(main_window, slider_widget_name, new_value, enable_refresh_frame=slider_widget.enable_refresh_frame)
                     elif data_type=='control':
                         update_control(main_window, slider_widget_name, new_value, exec_function=widget_data.get('exec_function'), exec_function_args=widget_data.get('exec_function_args', []))
                     # Update the slider text box value too
@@ -621,7 +622,7 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
                     # Logic to confirm input or trigger any action when Enter is pressed
                     new_value = text_widget.text()  # Get the current text value
                     if data_type == 'parameter':
-                        update_parameter(main_window, text_widget_name, new_value)
+                        update_parameter(main_window, text_widget_name, new_value, enable_refresh_frame=text_widget.enable_refresh_frame)
                     else:
                         update_control(main_window, text_widget_name, new_value, exec_function=widget_data.get('exec_function'), exec_function_args=widget_data.get('exec_function_args', []))
                 
@@ -719,21 +720,12 @@ def create_parameter_dict_for_face_id(main_window: 'MainWindow', face_id=0):
 #         create_parameter_dict_using_face_id(main_window, face_id)
 #     main_window.parameters[parameter_name] = parameter_value
 
-def update_parameter(main_window: 'MainWindow', parameter_name, parameter_value):
+def update_parameter(main_window: 'MainWindow', parameter_name, parameter_value, enable_refresh_frame=True):
     face_id = main_window.selected_target_face_id
-
-    # Display vals of all faces [Before update]
-    for key, val in main_window.parameters.items():
-        print('face_id', key, parameter_name, main_window.parameters[key][parameter_name])
-
-    print('update_parameter for',face_id, parameter_name, parameter_value )
     main_window.parameters[face_id][parameter_name] = parameter_value
 
-    print('selected_face_id', face_id)
-    # Display vals of all faces [After update]
-    for key, val in main_window.parameters.items():
-        print('face_id', key, parameter_name, main_window.parameters[key][parameter_name])
-    refresh_frame(main_window)
+    if enable_refresh_frame:
+        refresh_frame(main_window)
 
 def refresh_frame(main_window: 'MainWindow'):
     video_processor = main_window.video_processor
@@ -828,13 +820,7 @@ def set_widgets_values_using_face_id_parameters(main_window: 'MainWindow', face_
         parameters = main_window.parameters[face_id].copy()
     parameter_widgets = main_window.parameter_widgets
     for parameter_name, parameter_value in parameters.items():
-        if 'DecimalSlider' in parameter_name:
-            parameter_widgets[parameter_name].setValue(parameter_value)
-        elif 'Slider' in parameter_name:
-            parameter_widgets[parameter_name].setValue(parameter_value)
-        elif  'Selection' in parameter_name:
-            parameter_widgets[parameter_name].setCurrentText(parameter_value)
-        elif 'Toggle' in parameter_name:
-            parameter_widgets[parameter_name].setChecked(parameter_value)
-        elif 'Text' in parameter_name:
-            parameter_widgets[parameter_name].setText(parameter_value)
+        # temporarily disable refreshing the frame to prevent slowing due to unecessary processing
+        parameter_widgets[parameter_name].enable_refresh_frame = False
+        parameter_widgets[parameter_name].set_value(parameter_value)
+        parameter_widgets[parameter_name].enable_refresh_frame = True
