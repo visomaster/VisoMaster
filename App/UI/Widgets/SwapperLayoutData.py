@@ -229,7 +229,7 @@ SWAPPER_LAYOUT_DATA = {
             'level': 2,
             'label': 'Alignment',
             'options': ['Original', 'Blend', 'Reference'],
-            'default': 'Blend',
+            'default': 'Reference',
             'parentToggle': 'FaceRestorerEnableToggle',
             'requiredToggleValue': True,
             'help': 'Select the alignment method for restoring the face to its original or blended position.'
@@ -254,6 +254,53 @@ SWAPPER_LAYOUT_DATA = {
             'default': '100',
             'step': 1,
             'parentToggle': 'FaceRestorerEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Control the blend ratio between the restored face and the swapped face.'
+        },
+        'FaceRestorerEnable2Toggle': {
+            'level': 1,
+            'label': 'Enable Face Restorer 2',
+            'default': False,
+            'help': 'Enable the use of a face restoration model to improve the quality of the face after swapping.'
+        },
+        'FaceRestorerType2Selection': {
+            'level': 2,
+            'label': 'Restorer Type',
+            'options': ['GFPGAN-v1.4', 'CodeFormer', 'GPEN-256', 'GPEN-512', 'GPEN-1024', 'GPEN-2048', 'RestoreFormer++', 'VQFR-v2'],
+            'default': 'GFPGAN-v1.4',
+            'parentToggle': 'FaceRestorerEnable2Toggle',
+            'requiredToggleValue': True,
+            'help': 'Select the model type for face restoration.'
+        },
+        'FaceRestorerDetType2Selection': {
+            'level': 2,
+            'label': 'Alignment',
+            'options': ['Original', 'Blend', 'Reference'],
+            'default': 'Original',
+            'parentToggle': 'FaceRestorerEnable2Toggle',
+            'requiredToggleValue': True,
+            'help': 'Select the alignment method for restoring the face to its original or blended position.'
+        },
+        'FaceFidelityWeight2DecimalSlider': {
+            'level': 2,
+            'label': 'Fidelity Weight',
+            'min_value': '0.0',
+            'max_value': '1.0',
+            'default': '0.9',
+            'decimals': 1,
+            'step': 0.1,
+            'parentToggle': 'FaceRestorerEnable2Toggle',
+            'requiredToggleValue': True,
+            'help': 'Adjust the fidelity weight to control how closely the restoration preserves the original face details.'
+        },
+        'FaceRestorerBlend2Slider': {
+            'level': 2,
+            'label': 'Blend',
+            'min_value': '0',
+            'max_value': '100',
+            'default': '100',
+            'step': 1,
+            'parentToggle': 'FaceRestorerEnable2Toggle',
             'requiredToggleValue': True,
             'help': 'Control the blend ratio between the restored face and the swapped face.'
         },

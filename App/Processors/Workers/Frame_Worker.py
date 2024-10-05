@@ -245,6 +245,10 @@ class FrameWorker(threading.Thread):
         if parameters["FaceRestorerEnableToggle"]:
             swap = self.models_processor.apply_facerestorer(swap, parameters['FaceRestorerDetTypeSelection'], parameters['FaceRestorerTypeSelection'], parameters["FaceRestorerBlendSlider"], parameters['FaceFidelityWeightDecimalSlider'], parameters['DetectorScoreSlider'])
 
+        # Restorer2
+        if parameters["FaceRestorerEnable2Toggle"]:
+            swap = self.models_processor.apply_facerestorer(swap, parameters['FaceRestorerDetType2Selection'], parameters['FaceRestorerType2Selection'], parameters["FaceRestorerBlend2Slider"], parameters['FaceFidelityWeight2DecimalSlider'], parameters['DetectorScoreSlider'])
+
         # Occluder
         if parameters["OccluderEnableToggle"]:
             mask = self.models_processor.apply_occlusion(original_face_256, parameters["OccluderSizeSlider"])
