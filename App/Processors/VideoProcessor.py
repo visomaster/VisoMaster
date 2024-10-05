@@ -20,7 +20,7 @@ class VideoProcessor(QObject):
         self.main_window = main_window
         self.frame_queue = queue.Queue(maxsize=num_threads)  # Queue to limit the number of pending frames
         self.executor = None
-        self.media_capture = None
+        self.media_capture: cv2.VideoCapture = None
         self.file_type = None
         self.processing = False
         self.current_frame_number = 0

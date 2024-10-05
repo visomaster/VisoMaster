@@ -20,7 +20,7 @@ class FrameProcessorWorker(QtCore.QObject):
 
     def __init__(self, frame_queue):
         super().__init__()
-        self.queue = frame_queue  # Queue for storing frames to process
+        self.queue: queue.Queue = frame_queue  # Queue for storing frames to process
         self._is_processing = threading.Event()  # Event to signal when processing is active
         self.running = True
 
@@ -68,6 +68,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.merged_embeddings: List[EmbeddingCardButton] = []
         self.cur_selected_target_face_button: TargetFaceCardButton = False
         self.selected_video_buttons: List[TargetMediaCardButton] = [] #Contains list of buttons linked to videos/images
+        self.selected_target_face_id = 0
+        self.default_parameters = {}
         self.parameters = {}
         self.parameters_list = {}
         self.control = {}

@@ -334,7 +334,8 @@ def initializeModelLoadDialog(main_window: 'MainWindow'):
     main_window.model_load_dialog.close()
 
 def find_target_faces(main_window: 'MainWindow'):
-    parameters = main_window.parameters.copy()
+    parameters = main_window.parameters.get(main_window.selected_target_face_id) or main_window.default_parameters
+    parameters = parameters.copy()
     video_processor = main_window.video_processor
     if video_processor.media_path:
         print(video_processor.media_capture)
@@ -379,6 +380,7 @@ def clear_target_faces(main_window: 'MainWindow'):
     for target_face in main_window.target_faces:
         del target_face
     main_window.target_faces = []
+    main_window.parameters = {}
 
 def clear_input_faces(main_window: 'MainWindow'):
     main_window.inputFacesList.clear()
@@ -437,14 +439,14 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
 
                 if data_type=='parameter':
                     # Initialize parameter value
-                    create_parameter(main_window, widget_name, widget_data['default'])
+                    create_default_parameter(main_window, widget_name, widget_data['default'])
                 else:
                     create_control(main_window, widget_name, widget_data['default'])
                 # Set onclick function for toggle button
                 def onchange(toggle_widget: ToggleButton, toggle_widget_name, widget_data: dict):
                     toggle_state = toggle_widget.isChecked()
                     if data_type=='parameter':
-                        update_parameter(main_window, toggle_widget_name, toggle_state)    
+                        update_parameter(main_window, toggle_widget_name, toggle_state, enable_refresh_frame=toggle_widget.enable_refresh_frame)    
                     elif data_type=='control':
                         update_control(main_window, toggle_widget_name, toggle_state, exec_function=widget_data.get('exec_function'), exec_function_args = widget_data.get('exec_function_args',[]))
                 widget.clicked.connect(partial(onchange, widget, widget_name, widget_data))
@@ -465,14 +467,14 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
 
                 if data_type=='parameter':
                     # Initialize parameter value
-                    create_parameter(main_window, widget_name, widget_data['default'])
+                    create_default_parameter(main_window, widget_name, widget_data['default'])
                 else:
                     create_control(main_window, widget_name, widget_data['default'])
                 # Set onchange function for select box (Selected value is passed by the signal)
                 def onchange(selection_widget: SelectionBox, selection_widget_name, widget_data: dict = {}, selected_value=False):
                     # selected_value = selection_widget.currentText()
                     if data_type=='parameter':
-                        update_parameter(main_window, selection_widget_name, selected_value)
+                        update_parameter(main_window, selection_widget_name, selected_value, enable_refresh_frame=selection_widget.enable_refresh_frame)
                     elif data_type=='control':
                         update_control(main_window, selection_widget_name, selected_value, exec_function=widget_data.get('exec_function'), exec_function_args=widget_data.get('exec_function_args', []))
                 widget.currentTextChanged.connect(partial(onchange, widget, widget_name, widget_data))
@@ -511,7 +513,8 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
 
                 if data_type=='parameter':
                     # Initialize parameter value
-                    create_parameter(main_window, widget_name, float(widget_data['default']))
+                    create_default_parameter(main_window, widget_name, float(widget_data['default']))
+
                 else:
                     create_control(main_window, widget_name, float(widget_data['default']))
 
@@ -520,7 +523,7 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
                     # Update the slider text box value too
                     actual_value = slider_widget.value()  # Get float value from the slider
                     if data_type=='parameter':
-                        update_parameter(main_window, slider_widget_name, actual_value, )
+                        update_parameter(main_window, slider_widget_name, actual_value, enable_refresh_frame=slider_widget.enable_refresh_frame)
                     elif data_type=='control':
                         update_control(main_window, slider_widget_name, actual_value, exec_function=widget_data.get('exec_function'), exec_function_args=widget_data.get('exec_function_args', []))
                     slider_widget.line_edit.set_value(actual_value)  # Update the line edit with the actual value
@@ -568,14 +571,14 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
 
                 if data_type=='parameter':
                     # Initialize parameter value
-                    create_parameter(main_window, widget_name, int(widget_data['default']))
+                    create_default_parameter(main_window, widget_name, int(widget_data['default']))
                 else:
                     create_control(main_window, widget_name, int(widget_data['default']))
 
                 # When slider value is change
                 def onchange_slider(slider_widget: ParameterSlider, slider_widget_name, widget_data: dict, new_value=False):
                     if data_type=='parameter':
-                        update_parameter(main_window, slider_widget_name, new_value)
+                        update_parameter(main_window, slider_widget_name, new_value, enable_refresh_frame=slider_widget.enable_refresh_frame)
                     elif data_type=='control':
                         update_control(main_window, slider_widget_name, new_value, exec_function=widget_data.get('exec_function'), exec_function_args=widget_data.get('exec_function_args', []))
                     # Update the slider text box value too
@@ -609,7 +612,8 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
 
                 if data_type=='parameter':
                     # Initialize parameter value
-                    create_parameter(main_window, widget_name, widget_data['default'])
+                    create_default_parameter(main_window, widget_name, widget_data['default'])
+
                 else:
                     create_control(main_window, widget_name, widget_data['default'])
 
@@ -618,7 +622,7 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
                     # Logic to confirm input or trigger any action when Enter is pressed
                     new_value = text_widget.text()  # Get the current text value
                     if data_type == 'parameter':
-                        update_parameter(main_window, text_widget_name, new_value)
+                        update_parameter(main_window, text_widget_name, new_value, enable_refresh_frame=text_widget.enable_refresh_frame)
                     else:
                         update_control(main_window, text_widget_name, new_value, exec_function=widget_data.get('exec_function'), exec_function_args=widget_data.get('exec_function_args', []))
                 
@@ -702,12 +706,26 @@ def update_control(main_window: 'MainWindow', control_name, control_value, exec_
             exec_function(*exec_function_args)
     main_window.control[control_name] = control_value
 
-def create_parameter(main_window: 'MainWindow', parameter_name, parameter_value):
-    main_window.parameters[parameter_name] = parameter_value
+def create_default_parameter(main_window: 'MainWindow', parameter_name, parameter_value):
+    main_window.default_parameters[parameter_name] = parameter_value
 
-def update_parameter(main_window: 'MainWindow', parameter_name, parameter_value):
-    main_window.parameters[parameter_name] = parameter_value
-    refresh_frame(main_window)
+def create_parameter_dict_for_face_id(main_window: 'MainWindow', face_id=0):
+    if not main_window.parameters.get(face_id):
+        parameters =  main_window.parameters.get(main_window.selected_target_face_id) or main_window.default_parameters
+        main_window.parameters[face_id] = parameters.copy()
+    print("Created parameter_dict_for_face_id", face_id)
+
+# def create_parameter(main_window: 'MainWindow', parameter_name, parameter_value, face_id=False):
+#     if not main_window.parameters.get(face_id):
+#         create_parameter_dict_using_face_id(main_window, face_id)
+#     main_window.parameters[parameter_name] = parameter_value
+
+def update_parameter(main_window: 'MainWindow', parameter_name, parameter_value, enable_refresh_frame=True):
+    face_id = main_window.selected_target_face_id
+    main_window.parameters[face_id][parameter_name] = parameter_value
+
+    if enable_refresh_frame:
+        refresh_frame(main_window)
 
 def refresh_frame(main_window: 'MainWindow'):
     video_processor = main_window.video_processor
@@ -791,3 +809,18 @@ def create_and_show_toast_message(main_window: 'MainWindow', title: str, message
     toast.setPosition(ToastPosition.TOP_RIGHT)  # Default: ToastPosition.BOTTOM_RIGHT
     toast.applyPreset(style_preset_map[style_type])  # Apply style preset
     toast.show()
+
+
+def set_widgets_values_using_face_id_parameters(main_window: 'MainWindow', face_id=False):
+    if face_id is False:
+        print("Set widgets values using default parameters")
+        parameters = main_window.default_parameters
+    else:
+        print(f"Set widgets values using face_id {face_id}")
+        parameters = main_window.parameters[face_id].copy()
+    parameter_widgets = main_window.parameter_widgets
+    for parameter_name, parameter_value in parameters.items():
+        # temporarily disable refreshing the frame to prevent slowing due to unecessary processing
+        parameter_widgets[parameter_name].enable_refresh_frame = False
+        parameter_widgets[parameter_name].set_value(parameter_value)
+        parameter_widgets[parameter_name].enable_refresh_frame = True

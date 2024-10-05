@@ -66,4 +66,13 @@ SETTINGS_LAYOUT_DATA = {
             'help': 'Set the maximum frames per second (FPS) for webcam input.'
         },
     },
+    'Embedding Merge Method':{
+        'EmbMergeMethodSelection':{
+            'level': 1,
+            'label': 'Embedding Merge Method',
+            'options': ['Mean','Median'],
+            'default': 'Mean',
+            'help': 'Select the method to merge facial embeddings. "Mean" averages the embeddings, while "Median" selects the middle value, providing more robustness to outliers.'
+        }
+    }
 }

@@ -28,6 +28,7 @@ from App.Processors.external.clipseg import CLIPDensePredT
 import cv2
 import os
 import math
+from typing import Dict
 try:
     from torch.cuda import nvtx
     import tensorrt as trt
@@ -132,7 +133,7 @@ class ModelsProcessor(QObject):
         self.syncvec = torch.empty((1, 1), dtype=torch.float32, device=self.device)
 
         # Initialize models and models_path
-        self.models = {}
+        self.models: Dict[str, onnxruntime.InferenceSession] = {}
         self.models_path = {}
         for model_data in models_list:
             model_name, model_path = list(model_data.items())[0]

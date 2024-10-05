@@ -44,6 +44,7 @@ class TargetMediaCardButton(CardButton):
         # Reset the frame counter
         main_window.video_processor.current_frame_number = 0
         main_window.video_processor.media_path = self.media_path
+        main_window.parameters = {}
 
         # Release the previous media_capture if it exists
         if main_window.video_processor.media_capture:
@@ -117,9 +118,16 @@ class TargetMediaCardButton(CardButton):
         # Update the graphics frame after the reset
         main_window.graphicsViewFrame.update()
 
+        # Set Parameter widget values to default
+        widget_actions.set_widgets_values_using_face_id_parameters(main_window=main_window, face_id=False)
+
 class TargetFaceCardButton(CardButton):
-    def __init__(self, media_path, cropped_face, embedding: np.ndarray, *args, **kwargs):
+    def __init__(self, media_path, cropped_face, embedding: np.ndarray, face_id: int|bool=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if self.main_window.target_faces:
+            self.face_id = max([target_face.face_id for target_face in self.main_window.target_faces]) + 1
+        else:
+            self.face_id = 0
         self.media_path = media_path
         self.cropped_face = cropped_face
         self.embedding = embedding
@@ -134,6 +142,10 @@ class TargetFaceCardButton(CardButton):
         # Connect the custom context menu request signal to the custom slot
         self.customContextMenuRequested.connect(self.on_context_menu)
         self.create_context_menu()
+
+        # Create parameter dict for the target
+        if not self.main_window.parameters.get(self.face_id):
+            widget_actions.create_parameter_dict_for_face_id(self.main_window, self.face_id)
 
     def loadTargetFace(self):
         main_window = self.main_window
@@ -151,18 +163,22 @@ class TargetFaceCardButton(CardButton):
             input_face_button.setChecked(True)
         for embed_button in self.assigned_embed_buttons.keys():
             embed_button.setChecked(True)
+        
+        main_window.selected_target_face_id = self.face_id
+        print('main_window.selected_target_face_id', main_window.selected_target_face_id)     
+        widget_actions.set_widgets_values_using_face_id_parameters(main_window=main_window, face_id=self.face_id)      
 
-        widget_actions.refresh_frame(main_window)
+        # widget_actions.refresh_frame(main_window)
 
     def calculateAssignedInputEmbedding(self,):
-        parameters = self.main_window.parameters.copy()
+        control = self.main_window.control.copy()
         input_face_embeddings = [embedding for embedding in self.assigned_input_face_buttons.values()]
         merged_embeddings = [embedding for embedding in self.assigned_embed_buttons.values()]
         all_input_embeddings = input_face_embeddings + merged_embeddings
         if len(all_input_embeddings)>0:
-            if parameters['EmbMergeMethodSelection'] == 'Mean':
+            if control['EmbMergeMethodSelection'] == 'Mean':
                 self.assigned_input_embedding = np.mean(all_input_embeddings, 0)
-            elif parameters['EmbMergeMethodSelection'] == 'Median':
+            elif control['EmbMergeMethodSelection'] == 'Median':
                 self.assigned_input_embedding = np.median(all_input_embeddings, 0)
         else:
             self.assigned_input_embedding = np.array([])
@@ -180,11 +196,14 @@ class TargetFaceCardButton(CardButton):
 
     def remove_target_face_from_list(self):
         main_window = self.main_window
-        for i in range(main_window.targetFacesList.count()):
+        for i in range(main_window.targetFacesList.count()-1, -1, -1):
             list_item = main_window.targetFacesList.item(i)
-            if list_item.listWidget().itemWidget(list_item) == self:
-                main_window.targetFacesList.takeItem(i)   
-                main_window.target_faces.pop(i)
+            if list_item:
+                if list_item.listWidget().itemWidget(list_item) == self:
+                    main_window.targetFacesList.takeItem(i)   
+                    main_window.target_faces.pop(i)
+                    main_window.parameters.pop(i)
+
         widget_actions.refresh_frame(self.main_window)
         del self
 
@@ -328,7 +347,7 @@ class CreateEmbeddingDialog(QtWidgets.QDialog):
 
         self.merge_type_selection = QtWidgets.QComboBox(self)
         self.merge_type_selection.addItems(['Mean', 'Median'])
-        self.merge_type_selection.setCurrentText(main_window.parameters['EmbMergeMethodSelection'])
+        self.merge_type_selection.setCurrentText(main_window.control['EmbMergeMethodSelection'])
 
         # Create button box
         QBtn = QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
@@ -393,6 +412,7 @@ class ParametersWidget:
         self.main_window: 'MainWindow' = kwargs.get('main_window', False)
         self.line_edit: QtWidgets.QLineEdit = False #Only sliders have textbox currently
         self.reset_default_button: QPushButton = False
+        self.enable_refresh_frame = True #This flag can be used to temporarily disable refreshing the frame when the widget value is changed
 
 class ToggleSwitchButton(QtWidgets.QPushButton, ParametersWidget):
     def __init__(self, *args, **kwargs):
@@ -407,6 +427,9 @@ class SelectionBox(QtWidgets.QComboBox, ParametersWidget):
 
     def reset_to_default_value(self):
         self.setCurrentText(self.default_value)
+
+    def set_value(self, value):
+        self.setCurrentText(value)
     
 class ToggleButton(QtWidgets.QPushButton, ParametersWidget):
     _circle_position = None
@@ -475,6 +498,10 @@ class ToggleButton(QtWidgets.QPushButton, ParametersWidget):
     def reset_to_default_value(self):
         self.setChecked(bool(self.default_value))
 
+    # Custom method in all parameter widgets to set value
+    def set_value(self, value):
+        self.setChecked(value)
+
 class ParameterSlider(QtWidgets.QSlider, ParametersWidget):
     def __init__(self, min_value=0, max_value=0, default_value=0, step_size=1, fixed_width = 130, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -531,7 +558,7 @@ class ParameterSlider(QtWidgets.QSlider, ParametersWidget):
         # Accept the event
         event.accept()
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, event: QtGui.QKeyEvent):
         """Override key press event to handle arrow key increments/decrements."""
         # Get the current value of the slider
         current_value = self.value()
@@ -556,6 +583,9 @@ class ParameterSlider(QtWidgets.QSlider, ParametersWidget):
 
         # Accept the event
         event.accept()
+
+    def set_value(self, value):
+        self.setValue(value)
     
 class ParameterDecimalSlider(QtWidgets.QSlider, ParametersWidget):
     def __init__(self, min_value=0.0, max_value=1.0, default_value=0.00, decimals=2, step_size=0.01, fixed_width = 130, *args, **kwargs):
@@ -656,6 +686,9 @@ class ParameterDecimalSlider(QtWidgets.QSlider, ParametersWidget):
         # Accept the event
         event.accept()
 
+    def set_value(self, value):
+        self.setValue(value)
+
 class ParameterLineEdit(QtWidgets.QLineEdit):
     def __init__(self, min_value: int, max_value: int, default_value: str, fixed_width: int = 38, max_length: int = 3, alignment: int = 1, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -744,6 +777,8 @@ class ParameterText(QtWidgets.QLineEdit, ParametersWidget):
         # Call the base class method to ensure normal behavior
         super().focusOutEvent(event)
 
+    def set_value(self, value):
+        self.setText(value)
 class ParameterResetDefaultButton(QtWidgets.QPushButton):
     def __init__(self, related_widget: ParameterSlider | ParameterDecimalSlider | SelectionBox, *args, **kwargs):
         super().__init__(*args, **kwargs)
