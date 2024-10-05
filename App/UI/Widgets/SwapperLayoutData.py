@@ -469,6 +469,17 @@ SWAPPER_LAYOUT_DATA = {
             'requiredToggleValue': True,
             'help': 'Negative/Positive values shrink and grow the mask.'
         },
+        'FaceParserSlider': {
+            'level': 2,
+            'label': 'Face',
+            'min_value': '0',
+            'max_value': '30',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'FaceParserEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Adjust the size of the Mask. Mast the entire face.'
+        },
         'LeftEyebrowParserSlider': {
             'level': 2,
             'label': 'Left Eyebrow',

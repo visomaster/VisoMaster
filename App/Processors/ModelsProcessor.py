@@ -2956,6 +2956,7 @@ class ModelsProcessor(QObject):
         outpred = torch.argmax(outpred, 0)
 
         face_attributes = {
+            1: parameters['FaceParserSlider'], #Face
             2: parameters['LeftEyebrowParserSlider'], #Left Eyebrow
             3: parameters['RightEyebrowParserSlider'], #Right Eyebrow
             4: parameters['LeftEyeParserSlider'], #Left Eye
