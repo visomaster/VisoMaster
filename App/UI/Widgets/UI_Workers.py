@@ -7,6 +7,9 @@ import os
 import cv2
 import torch
 import numpy
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from App.UI.MainUI import MainWindow
 
 class TargetMediaLoaderWorker(qtc.QThread):
     # Define signals to emit when loading is done or if there are updates
@@ -61,7 +64,7 @@ class InputFacesLoaderWorker(qtc.QThread):
     # Define signals to emit when loading is done or if there are updates
     thumbnail_ready = qtc.Signal(str, numpy.ndarray, numpy.ndarray, QPixmap)
     finished = qtc.Signal()  # Signal to indicate completion
-    def __init__(self, main_window, media_path=False, folder_name=False, files_list=[],  parent=None):
+    def __init__(self, main_window: 'MainWindow', media_path=False, folder_name=False, files_list=[],  parent=None):
         super().__init__(parent)
         self.main_window = main_window
         self.folder_name = folder_name
@@ -73,7 +76,8 @@ class InputFacesLoaderWorker(qtc.QThread):
             self.load_faces(self.folder_name, self.files_list)
 
     def load_faces(self, folder_name=False, files_list=[]):
-        parameters = self.main_window.parameters.copy()
+        parameters = self.main_window.parameters.get(self.main_window.selected_target_face_id) or self.main_window.default_parameters
+        parameters = parameters.copy()
         if folder_name:
             image_files = misc_helpers.get_image_files(self.folder_name)
         elif files_list:

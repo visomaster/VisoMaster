@@ -382,6 +382,10 @@ def clear_target_faces(main_window: 'MainWindow'):
     main_window.target_faces = []
     main_window.parameters = {}
 
+    # Set Parameter widget values to default
+    widget_actions.set_widgets_values_using_face_id_parameters(main_window=main_window, face_id=False)
+    widget_actions.refresh_frame(main_window=main_window)
+    
 def clear_input_faces(main_window: 'MainWindow'):
     main_window.inputFacesList.clear()
     for input_face in main_window.input_faces:
