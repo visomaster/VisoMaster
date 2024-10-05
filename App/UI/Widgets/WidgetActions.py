@@ -817,3 +817,24 @@ def create_and_show_toast_message(main_window: 'MainWindow', title: str, message
     toast.setPosition(ToastPosition.TOP_RIGHT)  # Default: ToastPosition.BOTTOM_RIGHT
     toast.applyPreset(style_preset_map[style_type])  # Apply style preset
     toast.show()
+
+
+def set_widgets_values_using_face_id_parameters(main_window: 'MainWindow', face_id=False):
+    if face_id is False:
+        print("Set widgets values using default parameters")
+        parameters = main_window.default_parameters
+    else:
+        print(f"Set widgets values using face_id {face_id}")
+        parameters = main_window.parameters[face_id].copy()
+    parameter_widgets = main_window.parameter_widgets
+    for parameter_name, parameter_value in parameters.items():
+        if 'DecimalSlider' in parameter_name:
+            parameter_widgets[parameter_name].setValue(parameter_value)
+        elif 'Slider' in parameter_name:
+            parameter_widgets[parameter_name].setValue(parameter_value)
+        elif  'Selection' in parameter_name:
+            parameter_widgets[parameter_name].setCurrentText(parameter_value)
+        elif 'Toggle' in parameter_name:
+            parameter_widgets[parameter_name].setChecked(parameter_value)
+        elif 'Text' in parameter_name:
+            parameter_widgets[parameter_name].setText(parameter_value)

@@ -161,6 +161,8 @@ class TargetFaceCardButton(CardButton):
         main_window.selected_target_face_id = self.face_id
         print('main_window.selected_target_face_id', main_window.selected_target_face_id)
 
+        widget_actions.set_widgets_values_using_face_id_parameters(main_window=main_window, face_id=self.face_id)      
+
         # widget_actions.refresh_frame(main_window)
 
     def calculateAssignedInputEmbedding(self,):

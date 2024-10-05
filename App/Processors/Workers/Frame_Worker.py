@@ -110,8 +110,8 @@ class FrameWorker(threading.Thread):
         img = img[..., ::-1]  # Swap the channels from RGB to BGR
         return np.ascontiguousarray(img)
 
-    def swap_core(self, img, kps_5, kps=False, s_e=[], t_e=[], dfl_model=False): # img = RGB
-        parameters = self.parameters.copy()
+    def swap_core(self, img, kps_5, kps=False, s_e=[], t_e=[], parameters={}, dfl_model=False): # img = RGB
+        # parameters = self.parameters.copy()
         swapper_model = parameters['SwapModelSelection']
 
         dst = faceutil.get_arcface_template(image_size=512, mode='arcfacemap')
