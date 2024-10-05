@@ -343,10 +343,18 @@ class FrameWorker(threading.Thread):
                 swap = torch.clamp(swap, 0, 255)
                 swap = swap.permute(2, 0, 1)
 
-        # Add blur to swap_mask results
-        #gauss = transforms.GaussianBlur(parameters['BlendSlider']*2+1, (parameters['BlendSlider']+1)*0.2)
-        gauss = transforms.GaussianBlur(5*2+1, (5+1)*0.2)
-        swap_mask = gauss(swap_mask)
+        if parameters['FinalBlendAdjEnableToggle'] and parameters['FinalBlendAdjEnableToggle'] > 0:
+            final_blur_strength = parameters['FinalBlendAmountSlider']  # Ein Parameter steuert beides
+            # Bestimme kernel_size und sigma basierend auf dem Parameter
+            kernel_size = 2 * final_blur_strength + 1  # Ungerade Zahl, z.B. 3, 5, 7, ...
+            sigma = final_blur_strength * 0.1  # Sigma proportional zur Stärke
+            # Gaussian Blur anwenden
+            gaussian_blur = transforms.GaussianBlur(kernel_size=kernel_size, sigma=sigma)
+            swap = gaussian_blur(swap)
+
+            # Add blur to swap_mask results
+            gauss = transforms.GaussianBlur(parameters['OverallMaskBlendAmountSlider'] * 2 + 1, (parameters['OverallMaskBlendAmountSlider'] + 1) * 0.2)
+            swap_mask = gauss(swap_mask)
 
         # Combine border and swap mask, scale, and apply to swap
         swap_mask = torch.mul(swap_mask, border_mask)

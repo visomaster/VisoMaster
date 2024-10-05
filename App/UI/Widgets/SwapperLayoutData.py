@@ -968,6 +968,36 @@ SWAPPER_LAYOUT_DATA = {
             'help': 'Add noise to swapped face.'
         },
     },
+    'Final Blend Adjustments':{
+        'FinalBlendAdjEnableToggle': {
+            'level': 1,
+            'label': 'Final Blend',
+            'default': False,
+            'help': 'Blend at the end of pipeline.'
+        },
+        'FinalBlendAmountSlider': {
+            'level': 1,
+            'label': 'Final Blend Amount',
+            'min_value': '1',
+            'max_value': '50',
+            'default': '1',
+            'step': 1,
+            'parentToggle': 'FinalBlendAdjEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Adjust the final blend value.'
+        },
+        'OverallMaskBlendAmountSlider': {
+            'level': 1,
+            'label': 'Overall Mask Blend Amount',
+            'min_value': '0',
+            'max_value': '100',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'FinalBlendAdjEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Combined masks blending distance. It is not applied to the border masks.'
+        },        
+    },
     'Embedding Merge Method':{
         'EmbMergeMethodSelection':{
             'level': 1,
