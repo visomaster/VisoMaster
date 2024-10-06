@@ -377,7 +377,7 @@ def find_target_faces(main_window: 'MainWindow'):
 def clear_target_faces(main_window: 'MainWindow'):
     main_window.targetFacesList.clear()
     for target_face in main_window.target_faces:
-        del target_face
+        target_face.deleteLater()
     main_window.target_faces = []
     main_window.parameters = {}
 
@@ -388,20 +388,23 @@ def clear_target_faces(main_window: 'MainWindow'):
 def clear_input_faces(main_window: 'MainWindow'):
     main_window.inputFacesList.clear()
     for input_face in main_window.input_faces:
-        del input_face
+        input_face.deleteLater()
     main_window.input_faces = []
 
     for target_face in main_window.target_faces:
         target_face.assigned_input_face_buttons = {}
+        target_face.calculateAssignedInputEmbedding()
     widget_actions.refresh_frame(main_window=main_window)
 
 def clear_merged_embeddings(main_window: 'MainWindow'):
     main_window.inputEmbeddingsList.clear()
     for embed_button in main_window.merged_embeddings:
-        del embed_button
+        embed_button.deleteLater()
+    main_window.merged_embeddings = []
+
     for target_face in main_window.target_faces:
         target_face.assigned_embed_buttons = {}
-    main_window.merged_embeddings = []
+        target_face.calculateAssignedInputEmbedding()
     widget_actions.refresh_frame(main_window=main_window)
 
 

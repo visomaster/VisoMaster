@@ -205,7 +205,7 @@ class TargetFaceCardButton(CardButton):
                     main_window.parameters.pop(i)
 
         widget_actions.refresh_frame(self.main_window)
-        del self
+        self.deleteLater()
 
 
 class InputFaceCardButton(CardButton):
@@ -329,7 +329,7 @@ class EmbeddingCardButton(CardButton):
                 main_window.inputEmbeddingsList.takeItem(i)   
                 main_window.merged_embeddings.pop(i)
         widget_actions.refresh_frame(self.main_window)
-        del self        
+        self.deleteLater()        
 
 
 class CreateEmbeddingDialog(QtWidgets.QDialog):
