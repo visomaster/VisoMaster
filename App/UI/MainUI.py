@@ -69,8 +69,22 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.cur_selected_target_face_button: TargetFaceCardButton = False
         self.selected_video_buttons: List[TargetMediaCardButton] = [] #Contains list of buttons linked to videos/images
         self.selected_target_face_id = 0
-        self.default_parameters = {}
-        self.parameters = {}
+        '''
+            self.parameters dict have the following structure:
+            {
+                face_id (int): 
+                {
+                    parameter_name: parameter_value,
+                    ------
+                }
+                -----
+            }
+        '''
+        self.parameters: Dict[int, Dict[str, bool|int|float|str]] = {} 
+
+        self.default_parameters: Dict[str, bool|int|float|str] = {}
+        self.copied_parameters: Dict[str, bool|int|float|str] = {}
+
         self.parameters_list = {}
         self.control = {}
         self.parameter_widgets: Dict[str, ParametersWidget | QtWidgets.QWidget] = {}

@@ -186,8 +186,14 @@ class TargetFaceCardButton(CardButton):
     def create_context_menu(self):
         # create context menu
         self.popMenu = QtWidgets.QMenu(self)
+        parameters_copy_action = QtGui.QAction('Copy Parameters', self)
+        parameters_copy_action.triggered.connect(self.copy_parameters)
+        parameters_paste_action = QtGui.QAction('Apply Copied Parameters', self)
+        parameters_paste_action.triggered.connect(self.paste_and_apply_parameters)
         remove_action = QtGui.QAction('Remove from List', self)
         remove_action.triggered.connect(self.remove_target_face_from_list)
+        self.popMenu.addAction(parameters_copy_action)
+        self.popMenu.addAction(parameters_paste_action)
         self.popMenu.addAction(remove_action)
 
     def on_context_menu(self, point):
@@ -207,6 +213,17 @@ class TargetFaceCardButton(CardButton):
         widget_actions.refresh_frame(self.main_window)
         self.deleteLater()
 
+    def copy_parameters(self):
+
+        self.main_window.copied_parameters = self.main_window.parameters[self.face_id].copy()
+
+    def paste_and_apply_parameters(self):
+        if not self.main_window.copied_parameters:
+            widget_actions.create_and_show_messagebox(self.main_window, 'No parameters found in Clipboard', 'You need to copy parameters from any of the target face before pasting it!', parent_widget=self)
+        else:
+            self.main_window.parameters[self.face_id] = self.main_window.copied_parameters.copy()
+            widget_actions.set_widgets_values_using_face_id_parameters(self.main_window, face_id=self.face_id)
+            widget_actions.refresh_frame(main_window=self.main_window)
 
 class InputFaceCardButton(CardButton):
     def __init__(self, media_path, cropped_face, embedding, *args, **kwargs):
