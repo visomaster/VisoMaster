@@ -22,6 +22,76 @@ SETTINGS_LAYOUT_DATA = {
             'exec_function_args': [],
         },
     },
+
+    'Detectors': {
+        'DetectorModelSelection': {
+            'level': 1,
+            'label': 'Face Detect Model',
+            'options': ['Retinaface', 'Yolov8', 'SCRFD', 'Yunet'],
+            'default': 'Retinaface',
+            'help': 'Select the face detection model to use for detecting faces in the input image or video.'
+        },
+        'DetectorScoreSlider': {
+            'level': 1,
+            'label': 'Detect Score',
+            'min_value': '1',
+            'max_value': '100',
+            'default': '50',
+            'step': 1,
+            'help': 'Set the confidence score threshold for face detection. Higher values ensure more confident detections but may miss some faces.'
+        },
+        'MaxFacesToDetectSlider': {
+            'level': 1,
+            'label': 'Max No of Faces to Detect',
+            'min_value': '1',
+            'max_value': '50',
+            'default': '20',
+            'step': 1,     
+            'help': 'Set the maximum number of faces to detect in a frame'
+   
+        },
+        'AutoRotationToggle': {
+            'level': 1,
+            'label': 'Auto Rotation',
+            'default': False,
+            'help': 'Automatically rotate the input to detect faces in various orientations.'
+        },
+        'LandmarkDetectToggle': {
+            'level': 1,
+            'label': 'Enable Landmark Detection',
+            'default': False,
+            'help': 'Enable or disable facial landmark detection, which is used to refine face alignment.'
+        },
+        'LandmarkDetectModelSelection': {
+            'level': 2,
+            'label': 'Landmark Detect Model',
+            'options': ['5', '68', '3d68', '98', '106', '203', '478'],
+            'default': '203',
+            'parentToggle': 'LandmarkDetectToggle',
+            'requiredToggleValue': True,
+            'help': 'Select the landmark detection model, where different models detect varying numbers of facial landmarks.'
+        },
+        'LandmarkDetectScoreSlider': {
+            'level': 2,
+            'label': 'Landmark Detect Score',
+            'min_value': '1',
+            'max_value': '100',
+            'default': '50',
+            'step': 1,
+            'parentToggle': 'LandmarkDetectToggle',
+            'requiredToggleValue': True,
+            'help': 'Set the confidence score threshold for facial landmark detection.'
+        },
+        'DetectFromPointsToggle': {
+            'level': 2,
+            'label': 'Detect From Points',
+            'default': False,
+            'parentToggle': 'LandmarkDetectToggle',
+            'requiredToggleValue': True,
+            'help': 'Enable detection of faces from specified landmark points.'
+        },
+    },
+
     'Webcam Settings': {
         'WebcamEnableToggle': {
             'level': 1,

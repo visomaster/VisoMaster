@@ -18,80 +18,6 @@ SWAPPER_LAYOUT_DATA = {
             'help': 'Select the resolution for the swapped face in pixels. Higher values offer better quality but are slower to process.'
         },
     },
-    'Detectors': {
-        'DetectorModelSelection': {
-            'level': 1,
-            'label': 'Face Detect Model',
-            'options': ['Retinaface', 'Yolov8', 'SCRFD', 'Yunet'],
-            'default': 'Retinaface',
-            'help': 'Select the face detection model to use for detecting faces in the input image or video.'
-        },
-        'DetectorScoreSlider': {
-            'level': 1,
-            'label': 'Detect Score',
-            'min_value': '1',
-            'max_value': '100',
-            'default': '50',
-            'step': 1,
-            'help': 'Set the confidence score threshold for face detection. Higher values ensure more confident detections but may miss some faces.'
-        },
-        'AutoRotationToggle': {
-            'level': 1,
-            'label': 'Auto Rotation',
-            'default': False,
-            'help': 'Automatically rotate the input to detect faces in various orientations.'
-        },
-        'SimilarityThresholdSlider': {
-            'level': 1,
-            'label': 'Similarity Threshold',
-            'min_value': '1',
-            'max_value': '100',
-            'default': '60',
-            'step': 1,
-            'help': 'Set the similarity threshold to control how similar the detected face should be to the reference face.'
-        },
-        'SimilarityTypeSelection': {
-            'level': 1,
-            'label': 'Similarity Type',
-            'options': ['Opal', 'Pearl', 'Optimal'],
-            'default': 'Opal',
-            'help': 'Choose the type of similarity calculation for face detection and matching.'
-        },
-        'LandmarkDetectToggle': {
-            'level': 1,
-            'label': 'Enable Landmark Detection',
-            'default': False,
-            'help': 'Enable or disable facial landmark detection, which is used to refine face alignment.'
-        },
-        'LandmarkDetectModelSelection': {
-            'level': 2,
-            'label': 'Landmark Detect Model',
-            'options': ['5', '68', '3d68', '98', '106', '203', '478'],
-            'default': '203',
-            'parentToggle': 'LandmarkDetectToggle',
-            'requiredToggleValue': True,
-            'help': 'Select the landmark detection model, where different models detect varying numbers of facial landmarks.'
-        },
-        'LandmarkDetectScoreSlider': {
-            'level': 2,
-            'label': 'Landmark Detect Score',
-            'min_value': '1',
-            'max_value': '100',
-            'default': '50',
-            'step': 1,
-            'parentToggle': 'LandmarkDetectToggle',
-            'requiredToggleValue': True,
-            'help': 'Set the confidence score threshold for facial landmark detection.'
-        },
-        'DetectFromPointsToggle': {
-            'level': 2,
-            'label': 'Detect From Points',
-            'default': False,
-            'parentToggle': 'LandmarkDetectToggle',
-            'requiredToggleValue': True,
-            'help': 'Enable detection of faces from specified landmark points.'
-        },
-    },
     'Face Landmarks Correction': {
         'FaceAdjEnableToggle': {
             'level': 1,
@@ -145,6 +71,22 @@ SWAPPER_LAYOUT_DATA = {
         },
     },
     'Face Similarity': {
+        'SimilarityThresholdSlider': {
+            'level': 1,
+            'label': 'Similarity Threshold',
+            'min_value': '1',
+            'max_value': '100',
+            'default': '60',
+            'step': 1,
+            'help': 'Set the similarity threshold to control how similar the detected face should be to the reference (target) face.'
+        },
+        'SimilarityTypeSelection': {
+            'level': 1,
+            'label': 'Similarity Type',
+            'options': ['Opal', 'Pearl', 'Optimal'],
+            'default': 'Opal',
+            'help': 'Choose the type of similarity calculation for face detection and matching.'
+        },
         'StrengthEnableToggle': {
             'level': 1,
             'label': 'Strength',
@@ -998,13 +940,4 @@ SWAPPER_LAYOUT_DATA = {
             'help': 'Combined masks blending distance. It is not applied to the border masks.'
         },        
     },
-    'Embedding Merge Method':{
-        'EmbMergeMethodSelection':{
-            'level': 1,
-            'label': 'Embedding Merge Method',
-            'options': ['Mean','Median'],
-            'default': 'Mean',
-            'help': 'Select the method to merge facial embeddings. "Mean" averages the embeddings, while "Median" selects the middle value, providing more robustness to outliers.'
-        }
-    }
 }

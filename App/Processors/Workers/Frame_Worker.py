@@ -81,8 +81,8 @@ class FrameWorker(threading.Thread):
 
             det_scale = torch.div(new_height, img_y)
 
-        parameters = self.main_window.default_parameters.copy() #Use the parameters of the first face for the detectors, since it is common for all faces
-        bboxes, kpss_5, kpss = self.models_processor.run_detect(img, parameters['DetectorModelSelection'], max_num=20, score=parameters['DetectorScoreSlider']/100.0, use_landmark_detection=parameters['LandmarkDetectToggle'], landmark_detect_mode=parameters['LandmarkDetectModelSelection'], landmark_score=parameters["LandmarkDetectScoreSlider"]/100.0, from_points=parameters["DetectFromPointsToggle"], rotation_angles=[0] if not parameters["AutoRotationToggle"] else [0, 90, 180, 270])
+        control = self.main_window.control.copy()
+        bboxes, kpss_5, kpss = self.models_processor.run_detect(img, control['DetectorModelSelection'], max_num=control['MaxFacesToDetectSlider'], score=control['DetectorScoreSlider']/100.0, use_landmark_detection=control['LandmarkDetectToggle'], landmark_detect_mode=control['LandmarkDetectModelSelection'], landmark_score=control["LandmarkDetectScoreSlider"]/100.0, from_points=control["DetectFromPointsToggle"], rotation_angles=[0] if not control["AutoRotationToggle"] else [0, 90, 180, 270])
         
         ret = []
         if len(kpss_5)>0:
@@ -99,7 +99,7 @@ class FrameWorker(threading.Thread):
                         parameters = self.parameters[target_face.face_id] #Use the parameters of the target face
                         if sim>=parameters['SimilarityThresholdSlider']:
                             s_e = target_face.assigned_input_embedding
-                            img = self.swap_core(img, fface[0], s_e=s_e, t_e=fface[2], parameters=parameters)
+                            img = self.swap_core(img, fface[0], s_e=s_e, t_e=fface[2], parameters=parameters, control=control)
 
         if parameters['FrameEnhancerEnableToggle']:
             img = self.enhance_core(img, parameters)
@@ -110,7 +110,7 @@ class FrameWorker(threading.Thread):
         img = img[..., ::-1]  # Swap the channels from RGB to BGR
         return np.ascontiguousarray(img)
 
-    def swap_core(self, img, kps_5, kps=False, s_e=[], t_e=[], parameters={}, dfl_model=False): # img = RGB
+    def swap_core(self, img, kps_5, kps=False, s_e=[], t_e=[], parameters={}, control={}, dfl_model=False): # img = RGB
         # parameters = self.parameters.copy()
         swapper_model = parameters['SwapModelSelection']
 
@@ -249,11 +249,11 @@ class FrameWorker(threading.Thread):
 
         # Restorer
         if parameters["FaceRestorerEnableToggle"]:
-            swap = self.models_processor.apply_facerestorer(swap, parameters['FaceRestorerDetTypeSelection'], parameters['FaceRestorerTypeSelection'], parameters["FaceRestorerBlendSlider"], parameters['FaceFidelityWeightDecimalSlider'], parameters['DetectorScoreSlider'])
+            swap = self.models_processor.apply_facerestorer(swap, parameters['FaceRestorerDetTypeSelection'], parameters['FaceRestorerTypeSelection'], parameters["FaceRestorerBlendSlider"], parameters['FaceFidelityWeightDecimalSlider'], control['DetectorScoreSlider'])
 
         # Restorer2
         if parameters["FaceRestorerEnable2Toggle"]:
-            swap = self.models_processor.apply_facerestorer(swap, parameters['FaceRestorerDetType2Selection'], parameters['FaceRestorerType2Selection'], parameters["FaceRestorerBlend2Slider"], parameters['FaceFidelityWeight2DecimalSlider'], parameters['DetectorScoreSlider'])
+            swap = self.models_processor.apply_facerestorer(swap, parameters['FaceRestorerDetType2Selection'], parameters['FaceRestorerType2Selection'], parameters["FaceRestorerBlend2Slider"], parameters['FaceFidelityWeight2DecimalSlider'], control['DetectorScoreSlider'])
 
         # Occluder
         if parameters["OccluderEnableToggle"]:

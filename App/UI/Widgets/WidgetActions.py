@@ -333,8 +333,7 @@ def initializeModelLoadDialog(main_window: 'MainWindow'):
     main_window.model_load_dialog.close()
 
 def find_target_faces(main_window: 'MainWindow'):
-    parameters = main_window.parameters.get(main_window.selected_target_face_id) or main_window.default_parameters
-    parameters = parameters.copy()
+    control = main_window.control.copy()
     video_processor = main_window.video_processor
     if video_processor.media_path:
         print(video_processor.media_capture)
@@ -349,7 +348,7 @@ def find_target_faces(main_window: 'MainWindow'):
         # print(frame)
         img = torch.from_numpy(frame.astype('uint8')).to(main_window.models_processor.device)
         img = img.permute(2,0,1)
-        bboxes, kpss_5, _ = main_window.models_processor.run_detect(img, parameters['DetectorModelSelection'], max_num=50, score=parameters['DetectorScoreSlider']/100.0, use_landmark_detection=parameters['LandmarkDetectToggle'], landmark_detect_mode=parameters['LandmarkDetectModelSelection'], landmark_score=parameters["LandmarkDetectScoreSlider"]/100.0, from_points=parameters["DetectFromPointsToggle"], rotation_angles=[0] if not parameters["AutoRotationToggle"] else [0, 90, 180, 270])
+        bboxes, kpss_5, _ = main_window.models_processor.run_detect(img, control['DetectorModelSelection'], max_num=control['MaxFacesToDetectSlider'], score=control['DetectorScoreSlider']/100.0, use_landmark_detection=control['LandmarkDetectToggle'], landmark_detect_mode=control['LandmarkDetectModelSelection'], landmark_score=control["LandmarkDetectScoreSlider"]/100.0, from_points=control["DetectFromPointsToggle"], rotation_angles=[0] if not control["AutoRotationToggle"] else [0, 90, 180, 270])
 
         ret = []
         for face_kps in kpss_5:
@@ -357,14 +356,13 @@ def find_target_faces(main_window: 'MainWindow'):
             ret.append([face_kps, face_emb, cropped_img])
 
         if ret:
-            # Apply threshold tolerence
-            threshhold = parameters['SimilarityThresholdSlider']
-
             # Loop through all faces in video frame
             for face in ret:
                 found = False
                 # Check if this face has already been found
                 for target_face in main_window.target_faces:
+                    parameters = main_window.parameters[target_face.face_id]
+                    threshhold = parameters['SimilarityThresholdSlider']
                     if main_window.models_processor.findCosineDistance(target_face.embedding, face[1]) >= threshhold:
                         found = True
                         break
