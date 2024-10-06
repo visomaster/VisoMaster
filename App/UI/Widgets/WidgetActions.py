@@ -81,7 +81,6 @@ def onClickSelectInputImages(main_window: 'MainWindow', source_type='folder', fo
 
     clear_stop_loading_input_media(main_window)
     clear_input_faces(main_window)
-    main_window.selected_input_face_buttons = []
     main_window.input_faces_loader_worker = ui_workers.InputFacesLoaderWorker(main_window=main_window, folder_name=folder_name, files_list=files_list)
     main_window.input_faces_loader_worker.thumbnail_ready.connect(partial(add_media_thumbnail_to_source_faces_list, main_window))
     main_window.input_faces_loader_worker.start()
@@ -392,11 +391,19 @@ def clear_input_faces(main_window: 'MainWindow'):
         del input_face
     main_window.input_faces = []
 
+    for target_face in main_window.target_faces:
+        target_face.assigned_input_face_buttons = {}
+    widget_actions.refresh_frame(main_window=main_window)
+
 def clear_merged_embeddings(main_window: 'MainWindow'):
     main_window.inputEmbeddingsList.clear()
     for embed_button in main_window.merged_embeddings:
         del embed_button
+    for target_face in main_window.target_faces:
+        target_face.assigned_embed_buttons = {}
     main_window.merged_embeddings = []
+    widget_actions.refresh_frame(main_window=main_window)
+
 
 def uncheck_all_input_faces(main_window: 'MainWindow'):
     # Uncheck All other input faces 
