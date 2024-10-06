@@ -101,8 +101,8 @@ class FrameWorker(threading.Thread):
                             s_e = target_face.assigned_input_embedding
                             img = self.swap_core(img, fface[0], s_e=s_e, t_e=fface[2], parameters=parameters, control=control)
 
-        if parameters['FrameEnhancerEnableToggle']:
-            img = self.enhance_core(img, parameters)
+        if control['FrameEnhancerEnableToggle']:
+            img = self.enhance_core(img, control=control)
 
         img = img.permute(1,2,0)
         img = img.cpu().numpy()
@@ -413,8 +413,8 @@ class FrameWorker(threading.Thread):
         img[0:3, top:bottom, left:right] = swap
         return img
 
-    def enhance_core(self, img, parameters):
-        enhancer_type = parameters['FrameEnhancerTypeSelection']
+    def enhance_core(self, img, control):
+        enhancer_type = control['FrameEnhancerTypeSelection']
 
         match enhancer_type:
             case 'RealEsrgan-x2-Plus' | 'RealEsrgan-x4-Plus' | 'BSRGan-x2' | 'BSRGan-x4' | 'UltraSharp-x4' | 'UltraMix-x4' | 'RealEsr-General-x4v3':
@@ -441,7 +441,7 @@ class FrameWorker(threading.Thread):
                 image = torch.mul(image, max_range)
 
                 # Blend
-                alpha = float(parameters["FrameEnhancerBlendSlider"])/100.0
+                alpha = float(control["FrameEnhancerBlendSlider"])/100.0
 
                 t_scale = v2.Resize((img.shape[1] * scale, img.shape[2] * scale), interpolation=v2.InterpolationMode.BILINEAR, antialias=False)
                 img = t_scale(img)
@@ -483,7 +483,7 @@ class FrameWorker(threading.Thread):
                 hires = faceutil.yuv_to_rgb(hires, True)
 
                 # Blend
-                alpha = float(parameters["FrameEnhancerBlendSlider"]) / 100.0
+                alpha = float(control["FrameEnhancerBlendSlider"]) / 100.0
                 img = torch.add(torch.mul(hires, alpha), torch.mul(img, 1-alpha))
 
                 img = img.type(torch.uint8)
@@ -557,7 +557,7 @@ class FrameWorker(threading.Thread):
                 output_rgb = faceutil.lab_to_rgb(output_lab, True)  # (3, original_H, original_W)
 
                 # Miscela le immagini
-                alpha = float(parameters["FrameEnhancerBlendSlider"]) / 100.0
+                alpha = float(control["FrameEnhancerBlendSlider"]) / 100.0
                 blended_img = torch.add(torch.mul(output_rgb, alpha), torch.mul(img, 1 - alpha))
 
                 # Converti in uint8

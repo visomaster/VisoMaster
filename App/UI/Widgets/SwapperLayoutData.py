@@ -247,34 +247,6 @@ SWAPPER_LAYOUT_DATA = {
             'help': 'Control the blend ratio between the restored face and the swapped face.'
         },
     },
-    'Frame Enhancer':{
-        'FrameEnhancerEnableToggle':{
-            'level': 1,
-            'label': 'Enable Frame Enhancer',
-            'default': False,
-            'help': 'Enable frame enhancement for video inputs to improve visual quality.'
-        },
-        'FrameEnhancerTypeSelection':{
-            'level': 2,
-            'label': 'Frame Enhancer Type',
-            'options': ['RealEsrgan-x2-Plus', 'RealEsrgan-x4-Plus', 'RealEsr-General-x4v3', 'BSRGan-x2', 'BSRGan-x4', 'UltraSharp-x4', 'UltraMix-x4', 'DDColor-Artistic', 'DDColor', 'DeOldify-Artistic', 'DeOldify-Stable', 'DeOldify-Video'],
-            'default': 'RealEsrgan-x2-Plus',
-            'parentToggle': 'FrameEnhancerEnableToggle',
-            'requiredToggleValue': True,
-            'help': 'Select the type of frame enhancement to apply, based on the content and resolution requirements.'
-        },
-        'FrameEnhancerBlendSlider': {
-            'level': 2,
-            'label': 'Blend',
-            'min_value': '0',
-            'max_value': '100',
-            'default': '100',
-            'step': 1,
-            'parentToggle': 'FrameEnhancerEnableToggle',
-            'requiredToggleValue': True,
-            'help': 'Blends the enhanced results back into the original frame.'
-        },
-    },
     'Face Mask':{
         'BorderBottomSlider':{
             'level': 1,

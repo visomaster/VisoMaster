@@ -717,6 +717,8 @@ def update_control(main_window: 'MainWindow', control_name, control_value, exec_
             exec_function_args = [main_window, control_value] + exec_function_args
             exec_function(*exec_function_args)
     main_window.control[control_name] = control_value
+    refresh_frame(main_window)
+
 
 def create_default_parameter(main_window: 'MainWindow', parameter_name, parameter_value):
     main_window.default_parameters[parameter_name] = parameter_value
