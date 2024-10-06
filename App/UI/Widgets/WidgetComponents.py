@@ -95,6 +95,8 @@ class TargetMediaCardButton(CardButton):
             # Immediately update the graphics view
             main_window.graphicsViewFrame.update()
 
+        # Set up videoSeekLineEdit
+        widget_actions.set_up_video_seek_line_edit(main_window)
         # Clear current target faces
         widget_actions.clear_target_faces(main_window)
         # Uncheck input faces
@@ -110,6 +112,7 @@ class TargetMediaCardButton(CardButton):
         main_window.videoSeekSlider.blockSignals(True)  # Block signals to prevent unnecessary updates
         main_window.videoSeekSlider.setMaximum(max_frames_number)
         main_window.videoSeekSlider.setValue(0)  # Set the slider to 0 for the new video
+
         main_window.videoSeekSlider.blockSignals(False)  # Unblock signals
 
         # Append the selected video button to the list
@@ -421,6 +424,30 @@ class GraphicsViewEventFilter(qtc.QObject):
                 return True  # Mark the event as handled
         return False  # Pass the event to the original handler
     
+class videoSeekSliderLineEditEventFilter(qtc.QObject):
+    def __init__(self, main_window: 'MainWindow', parent=None):
+        super().__init__(parent)
+        self.main_window = main_window
+    
+    def eventFilter(self, line_edit: QtWidgets.QLineEdit, event):
+        if event.type() == qtc.QEvent.KeyPress:
+            # Check if the pressed key is Enter/Return
+            if event.key() in (qtc.Qt.Key_Enter, qtc.Qt.Key_Return):            
+                new_value = line_edit.text()
+                # Reset the line edit value to the slider value if the user input an empty text
+                if new_value=='':
+                    new_value = str(self.main_window.videoSeekSlider.value())
+                else:
+                    new_value = int(new_value)
+                    max_frame_number = self.main_window.video_processor.max_frame_number
+                    # If the value entered by user if greater than the max no of frames in the video, set the new value to the max_frame_number
+                    if new_value > max_frame_number:
+                        new_value = max_frame_number
+                # Update values of line edit and slider
+                line_edit.setText(str(new_value))
+                self.main_window.videoSeekSlider.setValue(new_value)
+                return True
+        return False
 
 
 class ParametersWidget:
@@ -786,14 +813,14 @@ class ParameterText(QtWidgets.QLineEdit, ParametersWidget):
         """Reset the line edit to its default value."""
         self.setText(self.default_value)
         if self.data_type == 'parameter':
-            widget_actions.update_parameter(self.main_window, self.widget_name, self.text(), enable_refresh_frame=self.widget.enable_refresh_frame)
+            widget_actions.update_parameter(self.main_window, self.widget_name, self.text(), enable_refresh_frame=self.enable_refresh_frame)
         else:
             widget_actions.update_control(self.main_window, self.widget_name, self.text(), exec_function=self.exec_function, exec_function_args=self.exec_function_args)
 
     def focusOutEvent(self, event):
         """Handle the focus out event (when the QLineEdit loses focus)."""
         if self.data_type == 'parameter':
-            widget_actions.update_parameter(self.main_window, self.widget_name, self.text(), enable_refresh_frame=self.widget.enable_refresh_frame)
+            widget_actions.update_parameter(self.main_window, self.widget_name, self.text(), enable_refresh_frame=self.enable_refresh_frame)
         else:
             widget_actions.update_control(self.main_window, self.widget_name, self.text(), exec_function=self.exec_function, exec_function_args=self.exec_function_args)
 

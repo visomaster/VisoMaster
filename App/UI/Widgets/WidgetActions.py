@@ -85,6 +85,19 @@ def onClickSelectInputImages(main_window: 'MainWindow', source_type='folder', fo
     main_window.input_faces_loader_worker.thumbnail_ready.connect(partial(add_media_thumbnail_to_source_faces_list, main_window))
     main_window.input_faces_loader_worker.start()
 
+def set_up_video_seek_line_edit(main_window: 'MainWindow'):
+    video_processor = main_window.video_processor
+    videoSeekLineEdit = main_window.videoSeekLineEdit
+    videoSeekLineEdit.setText('0')
+    videoSeekLineEdit.setValidator(QtGui.QIntValidator(0, video_processor.max_frame_number))  # Restrict input to numbers
+
+def onChangevideoSeekLineEdit(main_window: 'MainWindow', new_value=False):
+    pass
+    # new_value = int(new_value)
+    # if new_value>0 and video_processor.max_frame_number:
+    #     new_value = int(new_value) % (video_processor.max_frame_number+1)
+    # main_window.videoSeekLineEdit.blockSignals(True)
+    
     
 @qtc.Slot(int)
 def OnChangeSlider(main_window: 'MainWindow', new_position=0):
@@ -189,6 +202,8 @@ def update_graphics_view(main_window: 'MainWindow' , pixmap, current_frame_numbe
     main_window.videoSeekSlider.blockSignals(True)
     main_window.videoSeekSlider.setValue(current_frame_number)
     main_window.videoSeekSlider.blockSignals(False)
+    main_window.videoSeekLineEdit.setText(str(current_frame_number))
+
     # print(main_window.graphicsViewFrame.scene, pixmap)
     main_window.graphicsViewFrame.scene().clear()
     pixmap_item = QtWidgets.QGraphicsPixmapItem(pixmap)

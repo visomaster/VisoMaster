@@ -8,7 +8,7 @@ import App.UI.Widgets.WidgetActions as widget_actions
 from functools import partial
 from App.Processors.VideoProcessor import VideoProcessor
 from App.Processors.ModelsProcessor import ModelsProcessor
-from App.UI.Widgets.WidgetComponents import GraphicsViewEventFilter, ParametersWidget, TargetFaceCardButton, InputFaceCardButton, TargetMediaCardButton, EmbeddingCardButton
+from App.UI.Widgets.WidgetComponents import GraphicsViewEventFilter, videoSeekSliderLineEditEventFilter, ParametersWidget, TargetFaceCardButton, InputFaceCardButton, TargetMediaCardButton, EmbeddingCardButton
 from App.UI.Widgets.SwapperLayoutData import SWAPPER_LAYOUT_DATA
 from App.UI.Widgets.SettingsLayoutData import SETTINGS_LAYOUT_DATA
 from typing import Dict, List
@@ -120,6 +120,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.videoSeekSlider.sliderPressed.connect(partial(widget_actions.on_slider_pressed, self))
         self.videoSeekSlider.sliderReleased.connect(partial(widget_actions.on_slider_released, self))
 
+        # Set up videoSeekLineEdit and add the event filter to handle changes
+        widget_actions.set_up_video_seek_line_edit(self)
+        video_seek_line_edit_event_filter = videoSeekSliderLineEditEventFilter(self, self.videoSeekLineEdit)
+        self.videoSeekLineEdit.installEventFilter(video_seek_line_edit_event_filter)
+        self.videoSeekLineEdit.textChanged.connect(partial(widget_actions.onChangevideoSeekLineEdit, self))
+
         # Connect the Play/Stop button to the OnClickPlayButton method
         self.buttonMediaPlay.toggled.connect(partial(widget_actions.OnClickPlayButton, self))
         # self.buttonMediaStop.clicked.connect(partial(self.video_processor.stop_processing))
@@ -133,7 +139,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.openEmbeddingButton.clicked.connect(partial(widget_actions.open_embeddings_from_file, self))
         self.saveEmbeddingButton.clicked.connect(partial(widget_actions.save_embeddings_to_file, self))
         self.saveEmbeddingAsButton.clicked.connect(partial(widget_actions.save_embeddings_to_file, self, True))
-
 
         widget_actions.initializeModelLoadDialog(self)
         widget_actions.add_widgets_to_tab_layout(self, LAYOUT_DATA=SWAPPER_LAYOUT_DATA, layoutWidget=self.swapWidgetsLayout, data_type='parameter')
