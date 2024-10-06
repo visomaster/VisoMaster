@@ -763,14 +763,14 @@ class ParameterText(QtWidgets.QLineEdit, ParametersWidget):
         """Reset the line edit to its default value."""
         self.setText(self.default_value)
         if self.data_type == 'parameter':
-            widget_actions.update_parameter(self.main_window, self.widget_name, self.text())
+            widget_actions.update_parameter(self.main_window, self.widget_name, self.text(), enable_refresh_frame=self.widget.enable_refresh_frame)
         else:
             widget_actions.update_control(self.main_window, self.widget_name, self.text(), exec_function=self.exec_function, exec_function_args=self.exec_function_args)
 
     def focusOutEvent(self, event):
         """Handle the focus out event (when the QLineEdit loses focus)."""
         if self.data_type == 'parameter':
-            widget_actions.update_parameter(self.main_window, self.widget_name, self.text())
+            widget_actions.update_parameter(self.main_window, self.widget_name, self.text(), enable_refresh_frame=self.widget.enable_refresh_frame)
         else:
             widget_actions.update_control(self.main_window, self.widget_name, self.text(), exec_function=self.exec_function, exec_function_args=self.exec_function_args)
 
