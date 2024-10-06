@@ -122,7 +122,7 @@ class TargetMediaCardButton(CardButton):
         widget_actions.set_widgets_values_using_face_id_parameters(main_window=main_window, face_id=False)
 
 class TargetFaceCardButton(CardButton):
-    def __init__(self, media_path, cropped_face, embedding: np.ndarray, face_id: int|bool=False, *args, **kwargs):
+    def __init__(self, media_path, cropped_face, embedding: np.ndarray, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.main_window.target_faces:
             self.face_id = max([target_face.face_id for target_face in self.main_window.target_faces]) + 1
@@ -208,8 +208,14 @@ class TargetFaceCardButton(CardButton):
                 if list_item.listWidget().itemWidget(list_item) == self:
                     main_window.targetFacesList.takeItem(i)   
                     main_window.target_faces.pop(i)
-                    main_window.parameters.pop(i)
-
+                    # Pop parameters using the target's face_id
+                    main_window.parameters.pop(self.face_id)
+        # Click and Select the first target face if target_faces are not empty
+        if main_window.target_faces:
+            main_window.target_faces[0].click()
+        # Otherwise reset parameter widgets value to the default
+        else:
+            widget_actions.set_widgets_values_using_face_id_parameters(main_window, face_id=False)
         widget_actions.refresh_frame(self.main_window)
         self.deleteLater()
 
