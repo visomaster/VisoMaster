@@ -433,7 +433,6 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
 
     for category, widgets in LAYOUT_DATA.items():
         group_box = FormGroupBox(main_window, title=category)
-        group_box.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         category_layout = QtWidgets.QFormLayout()
         group_box.setLayout(category_layout)
 

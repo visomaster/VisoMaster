@@ -841,9 +841,9 @@ class ParameterResetDefaultButton(QtWidgets.QPushButton):
 
         self.clicked.connect(related_widget.reset_to_default_value)
 
-
 class FormGroupBox(QtWidgets.QGroupBox):
     def __init__(self, main_window:'MainWindow', title="Form Group", parent=None,):
         super().__init__(title, parent)
         self.main_window = main_window
+        self.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
         self.setFlat(True)
