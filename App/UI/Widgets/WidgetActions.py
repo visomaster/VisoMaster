@@ -694,8 +694,7 @@ def show_hide_related_widgets(main_window: 'MainWindow', parent_widget: ToggleBu
                     result = [item.strip() for item in parentToggles.split(',')]
                     parentToggle_ischecked = False
                     for index, required_widget_name in enumerate(result):
-                        if main_window.parameter_widgets[required_widget_name].isChecked():
-                            parentToggle_ischecked = True
+                        parentToggle_ischecked = main_window.parameter_widgets[required_widget_name].isChecked()
                     # Check if the current_widget has the required toggle value of Parent Widget's (toggle) checked state to hide/show the current_widget
                     if group_layout_data[widget_name].get('requiredToggleValue') != parentToggle_ischecked:
                         current_widget.hide()

@@ -8,10 +8,12 @@ import App.UI.Widgets.WidgetActions as widget_actions
 from functools import partial
 from App.Processors.VideoProcessor import VideoProcessor
 from App.Processors.ModelsProcessor import ModelsProcessor
-from App.UI.Widgets.WidgetComponents import GraphicsViewEventFilter, videoSeekSliderLineEditEventFilter, ParametersWidget, TargetFaceCardButton, InputFaceCardButton, TargetMediaCardButton, EmbeddingCardButton
+from App.UI.Widgets.WidgetComponents import *
 from App.UI.Widgets.SwapperLayoutData import SWAPPER_LAYOUT_DATA
 from App.UI.Widgets.SettingsLayoutData import SETTINGS_LAYOUT_DATA
 from typing import Dict, List
+
+ParametersWidgetTypes = Dict[str, ToggleButton|SelectionBox|ParameterDecimalSlider|ParameterSlider|ParameterText]
 
 class FrameProcessorWorker(QtCore.QObject):
     # Signal to update the UI with the processed frame
@@ -87,7 +89,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.parameters_list = {}
         self.control = {}
-        self.parameter_widgets: Dict[str, ParametersWidget | QtWidgets.QWidget] = {}
+        self.parameter_widgets: ParametersWidgetTypes = {}
         self.loaded_embedding_filename: str = ''
         self.processed_frames = {}
         self.next_frame_to_display = None  # Index of the next frame to display

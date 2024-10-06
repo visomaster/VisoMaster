@@ -455,7 +455,7 @@ class ParametersWidget:
         self.default_value = kwargs.get('default_value', False)
         self.min_value = kwargs.get('min_value',False)
         self.max_value = kwargs.get('max_value',False)
-        self.group_layout_data: Dict[str, dict]  = kwargs.get('group_layout_data', {})
+        self.group_layout_data: Dict[str, Dict[str, str|int|float|bool]]  = kwargs.get('group_layout_data', {})
         self.widget_name = kwargs.get('widget_name', False)
         self.label_widget: QtWidgets.QLabel = kwargs.get('label_widget', False)
         self.group_widget: QtWidgets.QGroupBox = kwargs.get('group_widget', False)
