@@ -124,7 +124,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         widget_actions.set_up_video_seek_line_edit(self)
         video_seek_line_edit_event_filter = videoSeekSliderLineEditEventFilter(self, self.videoSeekLineEdit)
         self.videoSeekLineEdit.installEventFilter(video_seek_line_edit_event_filter)
-        self.videoSeekLineEdit.textChanged.connect(partial(widget_actions.onChangevideoSeekLineEdit, self))
 
         # Connect the Play/Stop button to the OnClickPlayButton method
         self.buttonMediaPlay.toggled.connect(partial(widget_actions.OnClickPlayButton, self))

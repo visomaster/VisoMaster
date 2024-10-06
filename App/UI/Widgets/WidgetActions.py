@@ -90,13 +90,6 @@ def set_up_video_seek_line_edit(main_window: 'MainWindow'):
     videoSeekLineEdit = main_window.videoSeekLineEdit
     videoSeekLineEdit.setText('0')
     videoSeekLineEdit.setValidator(QtGui.QIntValidator(0, video_processor.max_frame_number))  # Restrict input to numbers
-
-def onChangevideoSeekLineEdit(main_window: 'MainWindow', new_value=False):
-    pass
-    # new_value = int(new_value)
-    # if new_value>0 and video_processor.max_frame_number:
-    #     new_value = int(new_value) % (video_processor.max_frame_number+1)
-    # main_window.videoSeekLineEdit.blockSignals(True)
     
     
 @qtc.Slot(int)
