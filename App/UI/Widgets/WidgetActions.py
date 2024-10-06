@@ -735,11 +735,12 @@ def create_parameter_dict_for_face_id(main_window: 'MainWindow', face_id=0):
 #     main_window.parameters[parameter_name] = parameter_value
 
 def update_parameter(main_window: 'MainWindow', parameter_name, parameter_value, enable_refresh_frame=True):
-    face_id = main_window.selected_target_face_id
-    main_window.parameters[face_id][parameter_name] = parameter_value
+    if main_window.target_faces:
+        face_id = main_window.selected_target_face_id
+        main_window.parameters[face_id][parameter_name] = parameter_value
 
-    if enable_refresh_frame:
-        refresh_frame(main_window)
+        if enable_refresh_frame:
+            refresh_frame(main_window)
 
 def refresh_frame(main_window: 'MainWindow'):
     video_processor = main_window.video_processor
