@@ -426,6 +426,9 @@
    </layout>
   </widget>
   <widget class="QDockWidget" name="input_Target_DockWidget">
+   <property name="features">
+    <set>QDockWidget::DockWidgetFeature::DockWidgetFloatable|QDockWidget::DockWidgetFeature::DockWidgetMovable</set>
+   </property>
    <property name="windowTitle">
     <string>Target Videos and Input Faces</string>
    </property>
@@ -566,6 +569,9 @@
    </widget>
   </widget>
   <widget class="QDockWidget" name="controlOptionsDockWidget">
+   <property name="features">
+    <set>QDockWidget::DockWidgetFeature::DockWidgetFloatable|QDockWidget::DockWidgetFeature::DockWidgetMovable</set>
+   </property>
    <property name="windowTitle">
     <string>Control Options</string>
    </property>
