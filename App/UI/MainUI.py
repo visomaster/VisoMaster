@@ -143,6 +143,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.saveEmbeddingButton.clicked.connect(partial(widget_actions.save_embeddings_to_file, self))
         self.saveEmbeddingAsButton.clicked.connect(partial(widget_actions.save_embeddings_to_file, self, True))
 
+        self.swapfacesButton.clicked.connect(partial(widget_actions.process_swap_faces, self))
+        self.editFacesButton.clicked.connect(partial(widget_actions.process_edit_faces, self))
+
         widget_actions.initializeModelLoadDialog(self)
         widget_actions.add_widgets_to_tab_layout(self, LAYOUT_DATA=SWAPPER_LAYOUT_DATA, layoutWidget=self.swapWidgetsLayout, data_type='parameter')
         widget_actions.add_widgets_to_tab_layout(self, LAYOUT_DATA=SETTINGS_LAYOUT_DATA, layoutWidget=self.settingsWidgetsLayout, data_type='control')

@@ -412,6 +412,14 @@ def uncheck_all_merged_embeddings(main_window: 'MainWindow'):
     for embed_button in  main_window.merged_embeddings:
         embed_button.setChecked(False)
 
+def process_swap_faces(main_window: 'MainWindow'):
+    video_processor = main_window.video_processor
+    video_processor.process_current_frame()
+
+def process_edit_faces(main_window: 'MainWindow'):
+    video_processor = main_window.video_processor
+    video_processor.process_current_frame()
+
 def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layoutWidget: QtWidgets.QVBoxLayout, data_type='parameter'):
     layout = QtWidgets.QVBoxLayout()
     scroll_area = QtWidgets.QScrollArea()

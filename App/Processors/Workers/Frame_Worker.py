@@ -111,12 +111,14 @@ class FrameWorker(threading.Thread):
             # Loop through target faces to see if they match our found face embeddings
             for i, fface in enumerate(ret):
                     for target_face in self.main_window.target_faces:
-                        sim = self.models_processor.findCosineDistance(fface[2], target_face.embedding)
                         parameters = self.parameters[target_face.face_id] #Use the parameters of the target face
-                        if sim>=parameters['SimilarityThresholdSlider']:
-                            s_e = target_face.assigned_input_embedding
-                            img = self.swap_core(img, fface[0], s_e=s_e, t_e=fface[2], parameters=parameters, control=control)
 
+                        if self.main_window.swapfacesButton.isChecked():
+                            sim = self.models_processor.findCosineDistance(fface[2], target_face.embedding)
+                            if sim>=parameters['SimilarityThresholdSlider']:
+                                s_e = target_face.assigned_input_embedding
+                                img = self.swap_core(img, fface[0], s_e=s_e, t_e=fface[2], parameters=parameters, control=control)
+                        
                         if self.main_window.editFacesButton.isChecked():
                             img = self.swap_edit_face_core(img, fface[1], parameters, control)
 
