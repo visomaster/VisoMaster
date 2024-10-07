@@ -4,7 +4,7 @@ SWAPPER_LAYOUT_DATA = {
         'SwapModelSelection': {
             'level': 1,
             'label': 'Swapper Model',
-            'options': ['Inswapper128', 'SimSwap256', 'SimSwap512'],
+            'options': ['Inswapper128', 'SimSwap512', 'GhostFace-v1', 'GhostFace-v2', 'GhostFace-v3'],
             'default': 'Inswapper128',
             'help': 'Choose which swapper model to use for face swapping.'
         },

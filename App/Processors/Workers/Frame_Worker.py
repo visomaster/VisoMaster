@@ -121,7 +121,11 @@ class FrameWorker(threading.Thread):
         # parameters = self.parameters.copy()
         swapper_model = parameters['SwapModelSelection']
 
-        dst = faceutil.get_arcface_template(image_size=512, mode='arcfacemap')
+        if swapper_model != 'GhostFace-v1' and swapper_model != 'GhostFace-v2' and swapper_model != 'GhostFace-v3':
+            dst = faceutil.get_arcface_template(image_size=512, mode='arcface128')
+        else:
+            dst = faceutil.get_arcface_template(image_size=512, mode='arcfacemap')
+
         # Change the ref points
         if parameters['FaceAdjEnableToggle']:
             for k in dst:
@@ -172,6 +176,26 @@ class FrameWorker(threading.Thread):
                     dim = 4
                     input_face_affined = original_face_512
 
+            elif swapper_model == 'SimSwap512':
+                latent = torch.from_numpy(self.models_processor.calc_swapper_latent_simswap512(s_e)).float().to(self.models_processor.device)
+                if parameters['FaceLikenessEnableToggle']:
+                    factor = parameters['FaceLikenessFactorDecimalSlider']
+                    dst_latent = torch.from_numpy(self.models_processor.calc_swapper_latent_simswap512(t_e)).float().to(self.models_processor.device)
+                    latent = latent - (factor * dst_latent)
+
+                dim = 4
+                input_face_affined = original_face_512
+
+            elif swapper_model == 'GhostFace-v1' or swapper_model == 'GhostFace-v2' or swapper_model == 'GhostFace-v3':
+                latent = torch.from_numpy(self.models_processor.calc_swapper_latent_ghost(s_e)).float().to(self.models_processor.device)
+                if parameters['FaceLikenessEnableToggle']:
+                    factor = parameters['FaceLikenessFactorDecimalSlider']
+                    dst_latent = torch.from_numpy(self.models_processor.calc_swapper_latent_ghost(t_e)).float().to(self.models_processor.device)
+                    latent = latent - (factor * dst_latent)
+
+                dim = 2
+                input_face_affined = original_face_256
+
             # Optional Scaling # change the transform matrix scaling from center
             if parameters['FaceAdjEnableToggle']:
                 input_face_affined = v2.functional.affine(input_face_affined, 0, (0, 0), 1 + parameters['FaceScaleAmountSlider'] / 100, 0, center=(dim*128/2, dim*128/2), interpolation=v2.InterpolationMode.BILINEAR)
@@ -205,6 +229,42 @@ class FrameWorker(threading.Thread):
                         input_face_affined = output.clone()
                         output = torch.mul(output, 255)
                         output = torch.clamp(output, 0, 255)
+
+            elif swapper_model == 'SimSwap512':
+                for k in range(itex):
+                    input_face_disc = input_face_affined.permute(2, 0, 1)
+                    input_face_disc = torch.unsqueeze(input_face_disc, 0).contiguous()
+                    swapper_output = torch.empty((1,3,512,512), dtype=torch.float32, device=self.models_processor.device).contiguous()
+                    self.models_processor.run_swapper_simswap512(input_face_disc, latent, swapper_output)
+                    swapper_output = torch.squeeze(swapper_output)
+                    swapper_output = swapper_output.permute(1, 2, 0)
+                    prev_face = input_face_affined.clone()
+                    input_face_affined = swapper_output.clone()
+
+                    output = swapper_output.clone()
+                    output = torch.mul(output, 255)
+                    output = torch.clamp(output, 0, 255)
+
+            elif swapper_model == 'GhostFace-v1' or swapper_model == 'GhostFace-v2' or swapper_model == 'GhostFace-v3':
+                for k in range(itex):
+                    input_face_disc = torch.mul(input_face_affined, 255.0).permute(2, 0, 1)
+                    input_face_disc = torch.div(input_face_disc.float(), 127.5)
+                    input_face_disc = torch.sub(input_face_disc, 1)
+                    #input_face_disc = input_face_disc[[2, 1, 0], :, :] # Inverte i canali da BGR a RGB (assumendo che l'input sia BGR)
+                    input_face_disc = torch.unsqueeze(input_face_disc, 0).contiguous()
+                    swapper_output = torch.empty((1,3,256,256), dtype=torch.float32, device=self.models_processor.device).contiguous()
+                    self.models_processor.run_swapper_ghostface(input_face_disc, latent, swapper_output, swapper_model)
+                    swapper_output = swapper_output[0]
+                    swapper_output = swapper_output.permute(1, 2, 0)
+                    swapper_output = torch.mul(swapper_output, 127.5)
+                    swapper_output = torch.add(swapper_output, 127.5)
+                    #swapper_output = swapper_output[:, :, [2, 1, 0]] # Inverte i canali da RGB a BGR (assumendo che l'input sia RGB)
+                    prev_face = input_face_affined.clone()
+                    input_face_affined = swapper_output.clone()
+                    input_face_affined = torch.div(input_face_affined, 255)
+
+                    output = swapper_output.clone()
+                    output = torch.clamp(output, 0, 255)
 
             output = output.permute(2, 0, 1)
             swap = t512(output)
