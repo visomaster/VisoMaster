@@ -82,6 +82,10 @@ class FrameWorker(threading.Thread):
             det_scale = torch.div(new_height, img_y)
 
         control = self.main_window.control.copy()
+        # Rotate the frame
+        if control['ManualRotationEnableToggle']:
+            img = v2.functional.rotate(img, angle=control['ManualRotationAngleSlider'], interpolation=v2.InterpolationMode.BILINEAR, expand=True)
+
         bboxes, kpss_5, kpss = self.models_processor.run_detect(img, control['DetectorModelSelection'], max_num=control['MaxFacesToDetectSlider'], score=control['DetectorScoreSlider']/100.0, use_landmark_detection=control['LandmarkDetectToggle'], landmark_detect_mode=control['LandmarkDetectModelSelection'], landmark_score=control["LandmarkDetectScoreSlider"]/100.0, from_points=control["DetectFromPointsToggle"], rotation_angles=[0] if not control["AutoRotationToggle"] else [0, 90, 180, 270])
         
         ret = []
@@ -100,6 +104,9 @@ class FrameWorker(threading.Thread):
                         if sim>=parameters['SimilarityThresholdSlider']:
                             s_e = target_face.assigned_input_embedding
                             img = self.swap_core(img, fface[0], s_e=s_e, t_e=fface[2], parameters=parameters, control=control)
+
+        if control['ManualRotationEnableToggle']:
+            img = v2.functional.rotate(img, angle=-control['ManualRotationAngleSlider'], interpolation=v2.InterpolationMode.BILINEAR, expand=True)
 
         if control['FrameEnhancerEnableToggle']:
             img = self.enhance_core(img, control=control)

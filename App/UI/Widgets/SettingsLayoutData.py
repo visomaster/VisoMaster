@@ -56,6 +56,23 @@ SETTINGS_LAYOUT_DATA = {
             'default': False,
             'help': 'Automatically rotate the input to detect faces in various orientations.'
         },
+        'ManualRotationEnableToggle': {
+            'level': 1,
+            'label': 'Manual Rotation',
+            'default': False,
+            'help': 'Rotate the face detector to better detect faces at different angles.'
+        },
+        'ManualRotationAngleSlider': {
+            'level': 2,
+            'label': 'Rotation Angle',
+            'min_value': '0',
+            'max_value': '270',
+            'default': '0',
+            'step': 90,
+            'parentToggle': 'ManualRotationEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Set this to the angle of the input face angle to help with laying down/upside down/etc. Angles are read clockwise.'
+        },
         'LandmarkDetectToggle': {
             'level': 1,
             'label': 'Enable Landmark Detection',
