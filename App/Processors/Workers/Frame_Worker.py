@@ -559,10 +559,11 @@ class FrameWorker(threading.Thread):
             original_face_512 = original_face_512.permute(1, 2, 0)
 
             # Uninvert and create image from swap mask
-            swap_mask = torch.sub(1, swap_mask)
-            swap_mask = torch.cat((swap_mask,swap_mask,swap_mask),0)
-            swap_mask = swap_mask.permute(1, 2, 0)
-            swap_mask = torch.mul(swap_mask, 255.).type(torch.uint8)
+            if control['ViewFaceMaskEnableToggle']:
+                swap_mask = torch.sub(1, swap_mask)
+                swap_mask = torch.cat((swap_mask,swap_mask,swap_mask),0)
+                swap_mask = swap_mask.permute(1, 2, 0)
+                swap_mask = torch.mul(swap_mask, 255.).type(torch.uint8)
 
             # Place them side by side
             if not control['ViewFaceCompareEnableToggle']:
