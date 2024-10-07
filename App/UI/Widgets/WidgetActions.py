@@ -89,6 +89,7 @@ def onClickSelectInputImages(main_window: 'MainWindow', source_type='folder', fo
 def set_up_video_seek_line_edit(main_window: 'MainWindow'):
     video_processor = main_window.video_processor
     videoSeekLineEdit = main_window.videoSeekLineEdit
+    videoSeekLineEdit.setAlignment(qtc.Qt.AlignCenter)
     videoSeekLineEdit.setText('0')
     videoSeekLineEdit.setValidator(QtGui.QIntValidator(0, video_processor.max_frame_number))  # Restrict input to numbers
     
