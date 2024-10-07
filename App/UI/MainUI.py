@@ -94,6 +94,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.processed_frames = {}
         self.next_frame_to_display = None  # Index of the next frame to display
         self._is_slider_pressed = threading.Event()
+        self.is_full_screen = False
 
     def initialize_widgets(self):
         # Initialize QListWidget for target media
@@ -230,6 +231,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def reset_frame_counter(self):
         self.processed_frames.clear()
         self.next_frame_to_display = None
+
+    def keyPressEvent(self, event):
+        # Toggle full screen when F11 is pressed
+        if event.key() == QtCore.Qt.Key_F11:
+            if self.is_full_screen:
+                self.showNormal()  # Exit full-screen mode
+            else:
+                self.showFullScreen()  # Enter full-screen mode
+            self.is_full_screen = not self.is_full_screen
 
     def closeEvent(self, event):
         print("MainWindow: closeEvent called.")
