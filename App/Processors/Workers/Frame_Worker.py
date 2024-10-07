@@ -488,9 +488,9 @@ class FrameWorker(threading.Thread):
             gaussian_blur = transforms.GaussianBlur(kernel_size=kernel_size, sigma=sigma)
             swap = gaussian_blur(swap)
 
-            # Add blur to swap_mask results
-            gauss = transforms.GaussianBlur(parameters['OverallMaskBlendAmountSlider'] * 2 + 1, (parameters['OverallMaskBlendAmountSlider'] + 1) * 0.2)
-            swap_mask = gauss(swap_mask)
+        # Add blur to swap_mask results
+        gauss = transforms.GaussianBlur(parameters['OverallMaskBlendAmountSlider'] * 2 + 1, (parameters['OverallMaskBlendAmountSlider'] + 1) * 0.2)
+        swap_mask = gauss(swap_mask)
 
         # Combine border and swap mask, scale, and apply to swap
         swap_mask = torch.mul(swap_mask, border_mask)
@@ -498,49 +498,82 @@ class FrameWorker(threading.Thread):
 
         swap = torch.mul(swap, swap_mask)
 
-        # Calculate the area to be mergerd back to the original frame
-        IM512 = tform.inverse.params[0:2, :]
-        corners = np.array([[0,0], [0,511], [511, 0], [511, 511]])
+        if not control['ViewFaceMaskEnableToggle'] and not control['ViewFaceCompareEnableToggle']:
+            # Calculate the area to be mergerd back to the original frame
+            IM512 = tform.inverse.params[0:2, :]
+            corners = np.array([[0,0], [0,511], [511, 0], [511, 511]])
 
-        x = (IM512[0][0]*corners[:,0] + IM512[0][1]*corners[:,1] + IM512[0][2])
-        y = (IM512[1][0]*corners[:,0] + IM512[1][1]*corners[:,1] + IM512[1][2])
+            x = (IM512[0][0]*corners[:,0] + IM512[0][1]*corners[:,1] + IM512[0][2])
+            y = (IM512[1][0]*corners[:,0] + IM512[1][1]*corners[:,1] + IM512[1][2])
 
-        left = floor(np.min(x))
-        if left<0:
-            left=0
-        top = floor(np.min(y))
-        if top<0:
-            top=0
-        right = ceil(np.max(x))
-        if right>img.shape[2]:
-            right=img.shape[2]
-        bottom = ceil(np.max(y))
-        if bottom>img.shape[1]:
-            bottom=img.shape[1]
+            left = floor(np.min(x))
+            if left<0:
+                left=0
+            top = floor(np.min(y))
+            if top<0:
+                top=0
+            right = ceil(np.max(x))
+            if right>img.shape[2]:
+                right=img.shape[2]
+            bottom = ceil(np.max(y))
+            if bottom>img.shape[1]:
+                bottom=img.shape[1]
 
-        # Untransform the swap
-        swap = v2.functional.pad(swap, (0,0,img.shape[2]-512, img.shape[1]-512))
-        swap = v2.functional.affine(swap, tform.inverse.rotation*57.2958, (tform.inverse.translation[0], tform.inverse.translation[1]), tform.inverse.scale, 0,interpolation=v2.InterpolationMode.BILINEAR, center = (0,0) )
-        swap = swap[0:3, top:bottom, left:right]
-        swap = swap.permute(1, 2, 0)
+            # Untransform the swap
+            swap = v2.functional.pad(swap, (0,0,img.shape[2]-512, img.shape[1]-512))
+            swap = v2.functional.affine(swap, tform.inverse.rotation*57.2958, (tform.inverse.translation[0], tform.inverse.translation[1]), tform.inverse.scale, 0,interpolation=v2.InterpolationMode.BILINEAR, center = (0,0) )
+            swap = swap[0:3, top:bottom, left:right]
+            swap = swap.permute(1, 2, 0)
 
-        # Untransform the swap mask
-        swap_mask = v2.functional.pad(swap_mask, (0,0,img.shape[2]-512, img.shape[1]-512))
-        swap_mask = v2.functional.affine(swap_mask, tform.inverse.rotation*57.2958, (tform.inverse.translation[0], tform.inverse.translation[1]), tform.inverse.scale, 0, interpolation=v2.InterpolationMode.BILINEAR, center = (0,0) )
-        swap_mask = swap_mask[0:1, top:bottom, left:right]
-        swap_mask = swap_mask.permute(1, 2, 0)
-        swap_mask = torch.sub(1, swap_mask)
+            # Untransform the swap mask
+            swap_mask = v2.functional.pad(swap_mask, (0,0,img.shape[2]-512, img.shape[1]-512))
+            swap_mask = v2.functional.affine(swap_mask, tform.inverse.rotation*57.2958, (tform.inverse.translation[0], tform.inverse.translation[1]), tform.inverse.scale, 0, interpolation=v2.InterpolationMode.BILINEAR, center = (0,0) )
+            swap_mask = swap_mask[0:1, top:bottom, left:right]
+            swap_mask = swap_mask.permute(1, 2, 0)
+            swap_mask = torch.sub(1, swap_mask)
 
-        # Apply the mask to the original image areas
-        img_crop = img[0:3, top:bottom, left:right]
-        img_crop = img_crop.permute(1,2,0)
-        img_crop = torch.mul(swap_mask,img_crop)
-            
-        #Add the cropped areas and place them back into the original image
-        swap = torch.add(swap, img_crop)
-        swap = swap.type(torch.uint8)
-        swap = swap.permute(2,0,1)
-        img[0:3, top:bottom, left:right] = swap
+            # Apply the mask to the original image areas
+            img_crop = img[0:3, top:bottom, left:right]
+            img_crop = img_crop.permute(1,2,0)
+            img_crop = torch.mul(swap_mask,img_crop)
+                
+            #Add the cropped areas and place them back into the original image
+            swap = torch.add(swap, img_crop)
+            swap = swap.type(torch.uint8)
+            swap = swap.permute(2,0,1)
+            img[0:3, top:bottom, left:right] = swap
+
+        elif control['ViewFaceMaskEnableToggle'] or control['ViewFaceCompareEnableToggle']:
+            # Invert swap mask
+            swap_mask = torch.sub(1, swap_mask)
+
+            if control['ViewFaceCompareEnableToggle']:
+                original_face_512_clone = original_face_512.clone()
+                original_face_512_clone = original_face_512_clone.type(torch.uint8)
+                original_face_512_clone = original_face_512_clone.permute(1, 2, 0)
+
+            # Combine preswapped face with swap
+            original_face_512 = torch.mul(swap_mask, original_face_512)
+            original_face_512 = torch.add(swap, original_face_512)
+            original_face_512 = original_face_512.type(torch.uint8)
+            original_face_512 = original_face_512.permute(1, 2, 0)
+
+            # Uninvert and create image from swap mask
+            swap_mask = torch.sub(1, swap_mask)
+            swap_mask = torch.cat((swap_mask,swap_mask,swap_mask),0)
+            swap_mask = swap_mask.permute(1, 2, 0)
+            swap_mask = torch.mul(swap_mask, 255.).type(torch.uint8)
+
+            # Place them side by side
+            if not control['ViewFaceCompareEnableToggle']:
+                img = torch.hstack([original_face_512, swap_mask])
+            elif not control['ViewFaceMaskEnableToggle']:
+                img = torch.hstack([original_face_512, original_face_512_clone])
+            else:
+                img = torch.hstack([original_face_512, original_face_512_clone, swap_mask])
+
+            img = img.permute(2,0,1)
+
         return img
 
     def enhance_core(self, img, control):
