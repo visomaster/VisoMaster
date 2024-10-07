@@ -128,16 +128,28 @@ class FrameWorker(threading.Thread):
 
         # Change the ref points
         if parameters['FaceAdjEnableToggle']:
-            for k in dst:
-                k[:,0] += parameters['KpsXSlider']
-                k[:,1] += parameters['KpsYSlider']
-                k[:,0] -= 255
-                k[:,0] *= (1+parameters['KpsScaleSlider']/100)
-                k[:,0] += 255
-                k[:,1] -= 255
-                k[:,1] *= (1+parameters['KpsScaleSlider']/100)
-                k[:,1] += 255
-                    
+            kps_5[:,0] += parameters['KpsXSlider']
+            kps_5[:,1] += parameters['KpsYSlider']
+            kps_5[:,0] -= 255
+            kps_5[:,0] *= (1+parameters['KpsScaleSlider']/100)
+            kps_5[:,0] += 255
+            kps_5[:,1] -= 255
+            kps_5[:,1] *= (1+parameters['KpsScaleSlider']/100)
+            kps_5[:,1] += 255
+
+        # Face Landmarks
+        if parameters['LandmarksPositionAdjEnableToggle']:
+            kps_5[0][0] += parameters['EyeLeftXAmountSlider']
+            kps_5[0][1] += parameters['EyeLeftYAmountSlider']
+            kps_5[1][0] += parameters['EyeRightXAmountSlider']
+            kps_5[1][1] += parameters['EyeRightYAmountSlider']
+            kps_5[2][0] += parameters['NoseXAmountSlider']
+            kps_5[2][1] += parameters['NoseYAmountSlider']
+            kps_5[3][0] += parameters['MouthLeftXAmountSlider']
+            kps_5[3][1] += parameters['MouthLeftYAmountSlider']
+            kps_5[4][0] += parameters['MouthRightXAmountSlider']
+            kps_5[4][1] += parameters['MouthRightYAmountSlider']
+
         M, _ = faceutil.estimate_norm_arcface_template(kps_5, src=dst)
         tform = trans.SimilarityTransform()
         tform.params[0:2] = M

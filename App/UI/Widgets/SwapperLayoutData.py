@@ -69,6 +69,122 @@ SWAPPER_LAYOUT_DATA = {
             'requiredToggleValue': True,
             'help': 'Grows and shrinks the entire face.'
         },
+        'LandmarksPositionAdjEnableToggle': {
+            'level': 1,
+            'label': '5 - Keypoints Adjustments',
+            'default': False,
+            'help': 'This is an experimental feature to perform direct adjustments to the position of face landmarks found by the detector.'
+        },
+        'EyeLeftXAmountSlider': {
+            'level': 2,
+            'label': 'Left Eye:   X',
+            'min_value': '-100',
+            'max_value': '100',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'LandmarksPositionAdjEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Shifts the eye left detection point left and right.'
+        },
+        'EyeLeftYAmountSlider': {
+            'level': 2,
+            'label': 'Left Eye:   Y',
+            'min_value': '-100',
+            'max_value': '100',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'LandmarksPositionAdjEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Shifts the eye left detection point up and down.'
+        },
+        'EyeRightXAmountSlider': {
+            'level': 2,
+            'label': 'Right Eye:   X',
+            'min_value': '-100',
+            'max_value': '100',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'LandmarksPositionAdjEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Shifts the eye right detection point left and right.'
+        },
+        'EyeRightYAmountSlider': {
+            'level': 2,
+            'label': 'Right Eye:   Y',
+            'min_value': '-100',
+            'max_value': '100',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'LandmarksPositionAdjEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Shifts the eye right detection point up and down.'
+        },
+        'NoseXAmountSlider': {
+            'level': 2,
+            'label': 'Nose:   X',
+            'min_value': '-100',
+            'max_value': '100',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'LandmarksPositionAdjEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Shifts the nose detection point left and right.'
+        },
+        'NoseYAmountSlider': {
+            'level': 2,
+            'label': 'Nose:   Y',
+            'min_value': '-100',
+            'max_value': '100',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'LandmarksPositionAdjEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Shifts the nose detection point up and down.'
+        },
+        'MouthLeftXAmountSlider': {
+            'level': 2,
+            'label': 'Left Mouth:   X',
+            'min_value': '-100',
+            'max_value': '100',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'LandmarksPositionAdjEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Shifts the mouth left detection point left and right.'
+        },
+        'MouthLeftYAmountSlider': {
+            'level': 2,
+            'label': 'Left Mouth:   Y',
+            'min_value': '-100',
+            'max_value': '100',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'LandmarksPositionAdjEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Shifts the mouth left detection point up and down.'
+        },
+        'MouthRightXAmountSlider': {
+            'level': 2,
+            'label': 'Right Mouth:   X',
+            'min_value': '-100',
+            'max_value': '100',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'LandmarksPositionAdjEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Shifts the mouth Right detection point left and right.'
+        },
+        'MouthRightYAmountSlider': {
+            'level': 2,
+            'label': 'Right Mouth:   Y',
+            'min_value': '-100',
+            'max_value': '100',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'LandmarksPositionAdjEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Shifts the mouth Right detection point up and down.'
+        },
     },
     'Face Similarity': {
         'SimilarityThresholdSlider': {
