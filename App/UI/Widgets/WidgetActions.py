@@ -17,6 +17,7 @@ import numpy
 from torchvision.transforms import v2
 from App.UI.Widgets.SwapperLayoutData import SWAPPER_LAYOUT_DATA
 from App.UI.Widgets.SettingsLayoutData import SETTINGS_LAYOUT_DATA
+from App.UI.Widgets.FaceEditorLayoutData import FACE_EDITOR_LAYOUT_DATA
 from typing import TYPE_CHECKING
 import json
 

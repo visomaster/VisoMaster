@@ -86,7 +86,19 @@ class FrameWorker(threading.Thread):
         if control['ManualRotationEnableToggle']:
             img = v2.functional.rotate(img, angle=control['ManualRotationAngleSlider'], interpolation=v2.InterpolationMode.BILINEAR, expand=True)
 
-        bboxes, kpss_5, kpss = self.models_processor.run_detect(img, control['DetectorModelSelection'], max_num=control['MaxFacesToDetectSlider'], score=control['DetectorScoreSlider']/100.0, use_landmark_detection=control['LandmarkDetectToggle'], landmark_detect_mode=control['LandmarkDetectModelSelection'], landmark_score=control["LandmarkDetectScoreSlider"]/100.0, from_points=control["DetectFromPointsToggle"], rotation_angles=[0] if not control["AutoRotationToggle"] else [0, 90, 180, 270])
+        use_landmark_detection=control['LandmarkDetectToggle']
+        landmark_detect_mode=control['LandmarkDetectModelSelection']
+        from_points = control["DetectFromPointsToggle"]
+        if self.main_window.editFacesButton.isChecked():
+            if not use_landmark_detection or landmark_detect_mode=="5":
+                # force to use landmark detector when edit face is enabled.
+                use_landmark_detection = True
+                landmark_detect_mode = "106"
+
+            # force to use from_points in landmark detector when edit face is enabled.
+            from_points = True
+
+        bboxes, kpss_5, kpss = self.models_processor.run_detect(img, control['DetectorModelSelection'], max_num=control['MaxFacesToDetectSlider'], score=control['DetectorScoreSlider']/100.0, use_landmark_detection=use_landmark_detection, landmark_detect_mode=landmark_detect_mode, landmark_score=control["LandmarkDetectScoreSlider"]/100.0, from_points=from_points, rotation_angles=[0] if not control["AutoRotationToggle"] else [0, 90, 180, 270])
         
         ret = []
         if len(kpss_5)>0:
@@ -104,6 +116,9 @@ class FrameWorker(threading.Thread):
                         if sim>=parameters['SimilarityThresholdSlider']:
                             s_e = target_face.assigned_input_embedding
                             img = self.swap_core(img, fface[0], s_e=s_e, t_e=fface[2], parameters=parameters, control=control)
+
+                        if self.main_window.editFacesButton.isChecked():
+                            img = self.swap_edit_face_core(img, fface[1], parameters, control)
 
         if control['ManualRotationEnableToggle']:
             img = v2.functional.rotate(img, angle=-control['ManualRotationAngleSlider'], interpolation=v2.InterpolationMode.BILINEAR, expand=True)
@@ -641,5 +656,112 @@ class FrameWorker(threading.Thread):
 
                 # Converti in uint8
                 img = blended_img.type(torch.uint8)
+
+        return img
+
+    def swap_edit_face_core(self, img, kps, parameters, control, **kwargs): # img = RGB
+        # Scaling Transforms
+        t256 = v2.Resize((256, 256), interpolation=v2.InterpolationMode.BILINEAR, antialias=False)
+
+        # initial eye_ratio and lip_ratio values
+        init_source_eye_ratio = 0.0
+        init_source_lip_ratio = 0.0
+
+        # Grab 512 face from image and create 256 and 128 copys
+        if parameters['FaceEditorEnableToggle']:
+            _, lmk_crop, _ = self.models_processor.run_detect_landmark( img, bbox=[], det_kpss=kps, detect_mode='203', score=0.5, from_points=True)
+            source_eye_ratio = faceutil.calc_eye_close_ratio(lmk_crop[None])
+            source_lip_ratio = faceutil.calc_lip_close_ratio(lmk_crop[None])
+            init_source_eye_ratio = round(float(source_eye_ratio.mean()), 2)
+            init_source_lip_ratio = round(float(source_lip_ratio[0][0]), 2)
+
+            # prepare_retargeting_image
+            original_face_512, M_o2c, M_c2o = faceutil.warp_face_by_face_landmark_x(img, kps, dsize=512, scale=parameters["CropScaleDecimalSlider"], vy_ratio=-0.125, interpolation=v2.InterpolationMode.BILINEAR)
+            original_face_256 = t256(original_face_512)
+            mask_ori = faceutil.prepare_paste_back(self.models_processor.lp_mask_crop, M_c2o, dsize=(img.shape[1], img.shape[2])).contiguous()
+
+            x_s_info = self.models_processor.lp_motion_extractor(original_face_256, parameters["FaceEditorTypeSelection"])
+            x_d_info_user_pitch = x_s_info['pitch'] + parameters['HeadPitchSlider'] #input_head_pitch_variation
+            x_d_info_user_yaw = x_s_info['yaw'] + parameters['HeadYawSlider'] # input_head_yaw_variation
+            x_d_info_user_roll = x_s_info['roll'] + parameters['HeadRollSlider'] #input_head_roll_variation
+            R_s_user = faceutil.get_rotation_matrix(x_s_info['pitch'], x_s_info['yaw'], x_s_info['roll'])
+            R_d_user = faceutil.get_rotation_matrix(x_d_info_user_pitch, x_d_info_user_yaw, x_d_info_user_roll)
+            f_s_user = self.models_processor.lp_appearance_feature_extractor(original_face_256, parameters["FaceEditorTypeSelection"])
+            x_s_user = faceutil.transform_keypoint(x_s_info)
+
+            #execute_image_retargeting
+            mov_x = torch.tensor(parameters['XAxisMovementDecimalSlider']).to(self.models_processor.device)
+            mov_y = torch.tensor(parameters['YAxisMovementDecimalSlider']).to(self.models_processor.device)
+            mov_z = torch.tensor(parameters['ZAxisMovementDecimalSlider']).to(self.models_processor.device)
+            eyeball_direction_x = torch.tensor(parameters['EyeGazeHorizontalDecimalSlider']).to(self.models_processor.device)
+            eyeball_direction_y = torch.tensor(parameters['EyeGazeVerticalDecimalSlider']).to(self.models_processor.device)
+            smile = torch.tensor(parameters['MouthSmileDecimalSlider']).to(self.models_processor.device)
+            wink = torch.tensor(parameters['EyeWinkDecimalSlider']).to(self.models_processor.device)
+            eyebrow = torch.tensor(parameters['EyeBrowsDirectionDecimalSlider']).to(self.models_processor.device)
+            lip_variation_zero = torch.tensor(parameters['MouthPoutingDecimalSlider']).to(self.models_processor.device)
+            lip_variation_one = torch.tensor(parameters['MouthPursingDecimalSlider']).to(self.models_processor.device)
+            lip_variation_two = torch.tensor(parameters['MouthGrinDecimalSlider']).to(self.models_processor.device)
+            lip_variation_three = torch.tensor(parameters['LipsCloseOpenSlider']).to(self.models_processor.device)
+
+            x_c_s = x_s_info['kp']
+            delta_new = x_s_info['exp']
+            scale_new = x_s_info['scale']
+            t_new = x_s_info['t']
+            R_d_new = (R_d_user @ R_s_user.permute(0, 2, 1)) @ R_s_user
+
+            if eyeball_direction_x != 0 or eyeball_direction_y != 0:
+                delta_new = faceutil.update_delta_new_eyeball_direction(eyeball_direction_x, eyeball_direction_y, delta_new)
+            if smile != 0:
+                delta_new = faceutil.update_delta_new_smile(smile, delta_new)
+            if wink != 0:
+                delta_new = faceutil.update_delta_new_wink(wink, delta_new)
+            if eyebrow != 0:
+                delta_new = faceutil.update_delta_new_eyebrow(eyebrow, delta_new)
+            if lip_variation_zero != 0:
+                delta_new = faceutil.update_delta_new_lip_variation_zero(lip_variation_zero, delta_new)
+            if lip_variation_one !=  0:
+                delta_new = faceutil.update_delta_new_lip_variation_one(lip_variation_one, delta_new)
+            if lip_variation_two != 0:
+                delta_new = faceutil.update_delta_new_lip_variation_two(lip_variation_two, delta_new)
+            if lip_variation_three != 0:
+                delta_new = faceutil.update_delta_new_lip_variation_three(lip_variation_three, delta_new)
+            if mov_x != 0:
+                delta_new = faceutil.update_delta_new_mov_x(-mov_x, delta_new)
+            if mov_y !=0 :
+                delta_new = faceutil.update_delta_new_mov_y(mov_y, delta_new)
+
+            x_d_new = mov_z * scale_new * (x_c_s @ R_d_new + delta_new) + t_new
+            eyes_delta, lip_delta = None, None
+
+            input_eye_ratio = max(min(init_source_eye_ratio + parameters['EyesOpenRatioDecimalSlider'], 0.80), 0.00)
+            if input_eye_ratio != init_source_eye_ratio:
+                combined_eye_ratio_tensor = faceutil.calc_combined_eye_ratio([[float(input_eye_ratio)]], lmk_crop, device=self.models_processor.device)
+                eyes_delta = self.models_processor.lp_retarget_eye(x_s_user, combined_eye_ratio_tensor, parameters["FaceEditorTypeSelection"])
+
+            input_lip_ratio = max(min(init_source_lip_ratio + parameters['LipsOpenRatioDecimalSlider'], 0.80), 0.00)
+            if input_lip_ratio != init_source_lip_ratio:
+                combined_lip_ratio_tensor = faceutil.calc_combined_lip_ratio([[float(input_lip_ratio)]], lmk_crop, device=self.models_processor.device)
+                lip_delta = self.models_processor.lp_retarget_lip(x_s_user, combined_lip_ratio_tensor)
+
+            x_d_new = x_d_new + \
+                    (eyes_delta if eyes_delta is not None else 0) + \
+                    (lip_delta if lip_delta is not None else 0)
+
+            flag_stitching_retargeting_input: bool = kwargs.get('flag_stitching_retargeting_input', True)
+            if flag_stitching_retargeting_input:
+                x_d_new = self.models_processor.lp_stitching(x_s_user, x_d_new)
+
+            out = self.models_processor.lp_warp_decode(f_s_user, x_s_user, x_d_new, parameters["FaceEditorTypeSelection"])
+            out = torch.squeeze(out)
+            out = torch.clamp(out, 0, 1)  # clip to 0~1
+            out = torch.clamp(torch.mul(out, 255), 0, 255).type(torch.uint8)  # 0~1 -> 0~255
+
+            flag_do_crop_input_retargeting_image = kwargs.get('flag_do_crop_input_retargeting_image', True)
+            if flag_do_crop_input_retargeting_image:
+                gauss = transforms.GaussianBlur(parameters['FaceEditorBlendAmountSlider']*2+1, (parameters['FaceEditorBlendAmountSlider']+1)*0.2)
+                mask_ori = gauss(mask_ori)
+                img = faceutil.paste_back(out, M_c2o, img, mask_ori)
+            else:
+                img = out
 
         return img

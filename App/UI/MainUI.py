@@ -11,6 +11,7 @@ from App.Processors.ModelsProcessor import ModelsProcessor
 from App.UI.Widgets.WidgetComponents import *
 from App.UI.Widgets.SwapperLayoutData import SWAPPER_LAYOUT_DATA
 from App.UI.Widgets.SettingsLayoutData import SETTINGS_LAYOUT_DATA
+from App.UI.Widgets.FaceEditorLayoutData import FACE_EDITOR_LAYOUT_DATA
 from typing import Dict, List
 
 ParametersWidgetTypes = Dict[str, ToggleButton|SelectionBox|ParameterDecimalSlider|ParameterSlider|ParameterText]
@@ -145,6 +146,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         widget_actions.initializeModelLoadDialog(self)
         widget_actions.add_widgets_to_tab_layout(self, LAYOUT_DATA=SWAPPER_LAYOUT_DATA, layoutWidget=self.swapWidgetsLayout, data_type='parameter')
         widget_actions.add_widgets_to_tab_layout(self, LAYOUT_DATA=SETTINGS_LAYOUT_DATA, layoutWidget=self.settingsWidgetsLayout, data_type='control')
+        widget_actions.add_widgets_to_tab_layout(self, LAYOUT_DATA=FACE_EDITOR_LAYOUT_DATA, layoutWidget=self.faceEditorWidgetsLayout, data_type='parameter')
 
         # Initialize the button states
         widget_actions.resetMediaButtons(self)

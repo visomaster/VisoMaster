@@ -90,7 +90,8 @@ models_list = [
     {'LivePortraitStitchingEye': f'{models_dir}/liveportrait_onnx/stitching_eye.onnx',},
     {'LivePortraitStitchingLip': f'{models_dir}/liveportrait_onnx/stitching_lip.onnx',},
     {'LivePortraitStitching': f'{models_dir}/liveportrait_onnx/stitching.onnx',},
-    {'LivePortraitWarpingSpade': f'{models_dir}/liveportrait_onnx/warping_spade.onnx',}
+    {'LivePortraitWarpingSpade': f'{models_dir}/liveportrait_onnx/warping_spade.onnx',},
+    {'LivePortraitWarpingSpadeFix': f'{models_dir}/liveportrait_onnx/warping_spade-fix.onnx',}
 ]
 
 if 'trt' in globals():
@@ -100,7 +101,7 @@ if 'trt' in globals():
         {'LivePortraitStitchingEye': f'{models_dir}/liveportrait_onnx/stitching_eye.' + trt.__version__ + '.trt',},
         {'LivePortraitStitchingLip': f'{models_dir}/liveportrait_onnx/stitching_lip.' + trt.__version__ + '.trt',},
         {'LivePortraitStitching': f'{models_dir}/liveportrait_onnx/stitching.' + trt.__version__ + '.trt',},
-        {'LivePortraitWarpingSpade': f'{models_dir}/liveportrait_onnx/warping_spade.' + trt.__version__ + '.trt',}
+        {'LivePortraitWarpingSpadeFix': f'{models_dir}/liveportrait_onnx/warping_spade-fix.' + trt.__version__ + '.trt',}
     ]
 
 class ModelsProcessor(QObject):
@@ -2726,10 +2727,10 @@ class ModelsProcessor(QObject):
         with torch.no_grad():
             if self.provider_name == "TensorRT-Engine":
                 if face_editor_type == 'Human-Face':
-                    if not self.models_trt['LivePortraitWarpingSpade']:
-                        self.models_trt['LivePortraitWarpingSpade'] = self.load_model_trt('LivePortraitWarpingSpade', custom_plugin_path=f'{models_dir}/grid_sample_3d_plugin.dll', precision="fp16")
+                    if not self.models_trt['LivePortraitWarpingSpadeFix']:
+                        self.models_trt['LivePortraitWarpingSpadeFix'] = self.load_model_trt('LivePortraitWarpingSpadeFix', custom_plugin_path=f'{models_dir}/grid_sample_3d_plugin.dll', precision="fp16")
 
-                warping_spade_model = self.models_trt['LivePortraitWarpingSpade']
+                warping_spade_model = self.models_trt['LivePortraitWarpingSpadeFix']
 
                 feature_3d = feature_3d.contiguous()
                 kp_source = kp_source.contiguous()
