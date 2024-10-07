@@ -2,6 +2,7 @@
   <qresource prefix="media">
     <file>Media/image.png</file>
     <file>Media/video.png</file>
+    <file>Media/fullscreen.png</file>
     <file>Media/open_file.png</file>
     <file>Media/save_file_as.png</file>
     <file>Media/save_file.png</file>

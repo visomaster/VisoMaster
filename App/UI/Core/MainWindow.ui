@@ -208,7 +208,34 @@
               <enum>Qt::Orientation::Horizontal</enum>
              </property>
              <property name="sizeType">
-              <enum>QSizePolicy::Policy::MinimumExpanding</enum>
+              <enum>QSizePolicy::Policy::Minimum</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QPushButton" name="viewFullScreenButton">
+             <property name="text">
+              <string/>
+             </property>
+             <property name="icon">
+              <iconset resource="media.qrc">
+               <normaloff>:/media/Media/fullscreen.png</normaloff>:/media/Media/fullscreen.png</iconset>
+             </property>
+             <property name="flat">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_5">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
              </property>
              <property name="sizeHint" stdset="0">
               <size>

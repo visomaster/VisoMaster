@@ -136,9 +136,22 @@ class Ui_MainWindow(object):
 
         self.horizontalLayoutMediaButtons.addWidget(self.pushButton_2)
 
-        self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Minimum)
+        self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
 
         self.horizontalLayoutMediaButtons.addItem(self.horizontalSpacer_2)
+
+        self.viewFullScreenButton = QPushButton(self.widget)
+        self.viewFullScreenButton.setObjectName(u"viewFullScreenButton")
+        icon4 = QIcon()
+        icon4.addFile(u":/media/Media/fullscreen.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.viewFullScreenButton.setIcon(icon4)
+        self.viewFullScreenButton.setFlat(True)
+
+        self.horizontalLayoutMediaButtons.addWidget(self.viewFullScreenButton)
+
+        self.horizontalSpacer_5 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayoutMediaButtons.addItem(self.horizontalSpacer_5)
 
 
         self.verticalLayoutMediaControls.addLayout(self.horizontalLayoutMediaButtons)
@@ -169,27 +182,27 @@ class Ui_MainWindow(object):
 
         self.openEmbeddingButton = QPushButton(self.gridGroupBox)
         self.openEmbeddingButton.setObjectName(u"openEmbeddingButton")
-        icon4 = QIcon()
-        icon4.addFile(u":/media/Media/open_file.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.openEmbeddingButton.setIcon(icon4)
+        icon5 = QIcon()
+        icon5.addFile(u":/media/Media/open_file.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.openEmbeddingButton.setIcon(icon5)
         self.openEmbeddingButton.setFlat(True)
 
         self.horizontalLayout_3.addWidget(self.openEmbeddingButton)
 
         self.saveEmbeddingButton = QPushButton(self.gridGroupBox)
         self.saveEmbeddingButton.setObjectName(u"saveEmbeddingButton")
-        icon5 = QIcon()
-        icon5.addFile(u":/media/Media/save_file.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.saveEmbeddingButton.setIcon(icon5)
+        icon6 = QIcon()
+        icon6.addFile(u":/media/Media/save_file.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.saveEmbeddingButton.setIcon(icon6)
         self.saveEmbeddingButton.setFlat(True)
 
         self.horizontalLayout_3.addWidget(self.saveEmbeddingButton)
 
         self.saveEmbeddingAsButton = QPushButton(self.gridGroupBox)
         self.saveEmbeddingAsButton.setObjectName(u"saveEmbeddingAsButton")
-        icon6 = QIcon()
-        icon6.addFile(u":/media/Media/save_file_as.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.saveEmbeddingAsButton.setIcon(icon6)
+        icon7 = QIcon()
+        icon7.addFile(u":/media/Media/save_file_as.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.saveEmbeddingAsButton.setIcon(icon7)
         self.saveEmbeddingAsButton.setFlat(True)
 
         self.horizontalLayout_3.addWidget(self.saveEmbeddingAsButton)
@@ -302,18 +315,18 @@ class Ui_MainWindow(object):
 
         self.filterImagesCheckBox = QCheckBox(self.dockWidgetContents)
         self.filterImagesCheckBox.setObjectName(u"filterImagesCheckBox")
-        icon7 = QIcon()
-        icon7.addFile(u":/media/Media/image.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.filterImagesCheckBox.setIcon(icon7)
+        icon8 = QIcon()
+        icon8.addFile(u":/media/Media/image.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.filterImagesCheckBox.setIcon(icon8)
         self.filterImagesCheckBox.setChecked(True)
 
         self.horizontalLayout_9.addWidget(self.filterImagesCheckBox)
 
         self.filterVideosCheckBox = QCheckBox(self.dockWidgetContents)
         self.filterVideosCheckBox.setObjectName(u"filterVideosCheckBox")
-        icon8 = QIcon()
-        icon8.addFile(u":/media/Media/video.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.filterVideosCheckBox.setIcon(icon8)
+        icon9 = QIcon()
+        icon9.addFile(u":/media/Media/video.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.filterVideosCheckBox.setIcon(icon9)
         self.filterVideosCheckBox.setChecked(True)
 
         self.horizontalLayout_9.addWidget(self.filterVideosCheckBox)
@@ -441,6 +454,7 @@ class Ui_MainWindow(object):
         self.pushButton.setText("")
         self.buttonMediaPlay.setText("")
         self.pushButton_2.setText("")
+        self.viewFullScreenButton.setText("")
         self.inputEmbeddingsSearchBox.setPlaceholderText(QCoreApplication.translate("MainWindow", u"Search Embeddings", None))
 #if QT_CONFIG(tooltip)
         self.openEmbeddingButton.setToolTip(QCoreApplication.translate("MainWindow", u"Open Embedding File", None))
