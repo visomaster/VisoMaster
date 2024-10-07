@@ -216,7 +216,7 @@ def fit_image_to_view(main_window: 'MainWindow', pixmap_item: QtWidgets.QGraphic
     graphicsViewFrame.fitInView(pixmap_item, qtc.Qt.AspectRatioMode.KeepAspectRatio)
     graphicsViewFrame.update()
 
-def get_pixmap_from_frame(main_window: 'MainWindow', frame, scale=True):
+def get_pixmap_from_frame(main_window: 'MainWindow', frame,):
     height, width = frame.shape[:2]
     if len(frame.shape) == 2:
         # Frame in grayscale
@@ -227,24 +227,7 @@ def get_pixmap_from_frame(main_window: 'MainWindow', frame, scale=True):
         bytes_per_line = 3 * width
         q_img = QtGui.QImage(frame.data, width, height, bytes_per_line, QtGui.QImage.Format.Format_RGB888).rgbSwapped()
     pixmap = QtGui.QPixmap.fromImage(q_img)
-
-    if scale:
-        pixmap = scale_pixmap_to_view(main_window.graphicsViewFrame, pixmap)
     return pixmap
-
-def scale_pixmap_to_view(view: QtWidgets.QGraphicsView, pixmap: QtGui.QPixmap):
-    # Get the size of the view
-    view_size = view.viewport().size()
-    pixmap_size = pixmap.size()
-    # Calculate the scale factor
-    scale_factor = max(view_size.width() / pixmap_size.width(), view_size.height() / pixmap_size.height())
-    # Scale the pixmap
-    scaled_pixmap = pixmap.scaled(
-        pixmap_size.width() * scale_factor,
-        pixmap_size.height() * scale_factor,
-        qtc.Qt.AspectRatioMode.KeepAspectRatio
-    )
-    return scaled_pixmap
 
 def OnClickPlayButton(main_window: 'MainWindow', checked):
     video_processor = main_window.video_processor

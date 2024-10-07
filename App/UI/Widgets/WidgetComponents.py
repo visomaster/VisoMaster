@@ -82,8 +82,7 @@ class TargetMediaCardButton(CardButton):
             pixmap = QPixmap.fromImage(q_img)
 
             # Scale the pixmap if necessary
-            scaled_pixmap = widget_actions.scale_pixmap_to_view(main_window.graphicsViewFrame, pixmap)
-            pixmap_item = QtWidgets.QGraphicsPixmapItem(scaled_pixmap)
+            pixmap_item = QtWidgets.QGraphicsPixmapItem(pixmap)
 
             # Clear the scene and add the new frame
             main_window.scene.clear()
