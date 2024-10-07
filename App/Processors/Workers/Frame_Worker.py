@@ -130,8 +130,42 @@ class FrameWorker(threading.Thread):
 
         img = img.permute(1,2,0)
         img = img.cpu().numpy()
+
+        if control["ShowLandmarksEnableToggle"]:
+            if ret:
+                if img_y <= 720:
+                    p = 1
+                else:
+                    p = 2
+
+                for i, face in enumerate(ret):
+                    for target_face in self.main_window.target_faces:
+                        parameters = self.parameters[target_face.face_id] #Use the parameters of the target face
+                        sim = self.models_processor.findCosineDistance(fface[2], target_face.embedding)
+                        if sim>=parameters['SimilarityThresholdSlider']:
+                            if parameters['LandmarksPositionAdjEnableToggle']:
+                                kcolor = tuple((255, 0, 0))
+                                keypoints = face[0]
+
+                            else:
+                                kcolor = tuple((0, 255, 255))
+                                keypoints = face[1]
+
+                            for kpoint in keypoints:
+                                kpoint = kpoint / det_scale
+                                for i in range(-1, p):
+                                    for j in range(-1, p):
+                                        try:
+                                            img[int(kpoint[1])+i][int(kpoint[0])+j][0] = kcolor[0]
+                                            img[int(kpoint[1])+i][int(kpoint[0])+j][1] = kcolor[1]
+                                            img[int(kpoint[1])+i][int(kpoint[0])+j][2] = kcolor[2]
+                                        except:
+                                            #print("Key-points value {} exceed the image size {}.".format(kpoint, (img_x, img_y)))
+                                            continue
+
         # Img must be in BGR format
         img = img[..., ::-1]  # Swap the channels from RGB to BGR
+
         return np.ascontiguousarray(img)
 
     def swap_core(self, img, kps_5, kps=False, s_e=[], t_e=[], parameters={}, control={}, dfl_model=False): # img = RGB

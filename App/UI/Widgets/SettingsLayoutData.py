@@ -107,6 +107,12 @@ SETTINGS_LAYOUT_DATA = {
             'requiredToggleValue': True,
             'help': 'Enable detection of faces from specified landmark points.'
         },
+        'ShowLandmarksEnableToggle': {
+            'level': 1,
+            'label': 'Show Landmarks',
+            'default': False,
+            'help': 'Show Landmarks in realtime.'
+        },
     },
     'Frame Enhancer':{
         'FrameEnhancerEnableToggle':{
