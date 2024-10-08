@@ -653,6 +653,112 @@ SWAPPER_LAYOUT_DATA = {
             'requiredToggleValue': True,
             'help': 'Blend the value for Face Parser'
         },
+        'FaceParserHairMakeupEnableToggle': {
+            'level': 2,
+            'label': 'Hair Makeup',
+            'default': False,
+            'parentToggle': 'FaceParserEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Enable hair makeup'
+        },
+        'FaceParserHairMakeupRedSlider': {
+            'level': 3,
+            'label': 'Red',
+            'min_value': '0',
+            'max_value': '255',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'FaceParserHairMakeupEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Red color adjustments'
+        },
+        'FaceParserHairMakeupGreenSlider': {
+            'level': 3,
+            'label': 'Green',
+            'min_value': '0',
+            'max_value': '255',
+            'default': '0',
+            'step': 3,
+            'parentToggle': 'FaceParserHairMakeupEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Green color adjustments'
+        },
+        'FaceParserHairMakeupBlueSlider': {
+            'level': 3,
+            'label': 'Blue',
+            'min_value': '0',
+            'max_value': '255',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'FaceParserHairMakeupEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Blue color adjustments'
+        },
+        'FaceParserHairMakeupBlendAmountDecimalSlider': {
+            'level': 3,
+            'label': 'Blend Amount',
+            'min_value': '0.1',
+            'max_value': '1.0',
+            'default': '0.2',
+            'step': 0.1,
+            'decimals': 1,
+            'parentToggle': 'FaceParserHairMakeupEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Blend the value: 0.0 represents the original color, 1.0 represents the full target color.'
+        },
+        'FaceParserLipsMakeupEnableToggle': {
+            'level': 2,
+            'label': 'Lips Makeup',
+            'default': False,
+            'parentToggle': 'FaceParserEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Enable lips makeup'
+        },
+        'FaceParserLipsMakeupRedSlider': {
+            'level': 3,
+            'label': 'Red',
+            'min_value': '0',
+            'max_value': '255',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'FaceParserLipsMakeupEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Red color adjustments'
+        },
+        'FaceParserLipsMakeupGreenSlider': {
+            'level': 3,
+            'label': 'Green',
+            'min_value': '0',
+            'max_value': '255',
+            'default': '0',
+            'step': 3,
+            'parentToggle': 'FaceParserLipsMakeupEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Green color adjustments'
+        },
+        'FaceParserLipsMakeupBlueSlider': {
+            'level': 3,
+            'label': 'Blue',
+            'min_value': '0',
+            'max_value': '255',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'FaceParserLipsMakeupEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Blue color adjustments'
+        },
+        'FaceParserLipsMakeupBlendAmountDecimalSlider': {
+            'level': 3,
+            'label': 'Blend Amount',
+            'min_value': '0.1',
+            'max_value': '1.0',
+            'default': '0.2',
+            'step': 0.1,
+            'decimals': 1,
+            'parentToggle': 'FaceParserLipsMakeupEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Blend the value: 0.0 represents the original color, 1.0 represents the full target color.'
+        },
         'RestoreEyesEnableToggle': {
             'level': 1,
             'label': 'Restore Eyes',

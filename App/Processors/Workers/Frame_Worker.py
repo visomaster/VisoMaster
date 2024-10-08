@@ -401,9 +401,12 @@ class FrameWorker(threading.Thread):
             swap_mask = gauss(swap_mask)
 
         if parameters["FaceParserEnableToggle"]:
-            mask = self.models_processor.apply_face_parser(swap, parameters)
+            #cv2.imwrite('swap.png', cv2.cvtColor(swap.permute(1, 2, 0).cpu().numpy(), cv2.COLOR_RGB2BGR))
+            mask, swap_makeup = self.models_processor.apply_face_parser(swap, parameters)
             mask = t128(mask)
             swap_mask = torch.mul(swap_mask, mask)
+            if swap_makeup is not None:
+                swap = swap_makeup
 
         # CLIPs
         if parameters["ClipEnableToggle"]:

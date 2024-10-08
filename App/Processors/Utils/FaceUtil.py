@@ -846,6 +846,137 @@ def lab_to_rgb(lab, normalize=False):
 
     return rgb
 
+def rgb_to_hsv(image):
+    device = image.device  # Ensure operations happen on the same device as the input image
+
+    # Convert image to float if needed
+    image = image.float() / 255.0 if image.dtype == torch.uint8 else image.float()
+
+    r, g, b = image[0], image[1], image[2]  # Split the RGB channels
+
+    max_val, _ = torch.max(image, dim=0)  # Max value per pixel across RGB channels, shape [512, 512]
+    min_val, _ = torch.min(image, dim=0)  # Min value per pixel across RGB channels, shape [512, 512]
+    delta = max_val - min_val  # Difference between max and min, shape [512, 512]
+
+    # Initialize Hue, Saturation, and Value tensors as float32
+    h = torch.zeros_like(max_val, dtype=torch.float32).to(device)
+    s = torch.zeros_like(max_val, dtype=torch.float32).to(device)
+    v = max_val  # Value is max_val (no need to change dtype)
+
+    # Avoid division by zero: only compute where delta != 0
+    mask = delta != 0
+
+    # Hue calculation based on which color channel is the maximum
+    r_mask = max_val == r
+    g_mask = max_val == g
+    b_mask = max_val == b
+
+    h[mask & r_mask] = ((g - b) / delta % 6)[mask & r_mask]
+    h[mask & g_mask] = (((b - r) / delta) + 2)[mask & g_mask]
+    h[mask & b_mask] = (((r - g) / delta) + 4)[mask & b_mask]
+
+    h = h * 60.0  # Scale hue to [0, 360] range
+    h = h / 360.0  # Normalize hue to [0, 1]
+
+    # Saturation calculation: only compute where max_val != 0
+    s[max_val != 0] = (delta / max_val)[max_val != 0]
+
+    # Stack the HSV channels together
+    hsv_image = torch.stack([h, s, v], dim=0)
+
+    return hsv_image
+
+def hsv_to_rgb(hsv_image):
+    device = hsv_image.device  # Ensure operations happen on the same device as the input image
+    
+    h, s, v = hsv_image[0], hsv_image[1], hsv_image[2]  # Split the HSV channels
+
+    h = h * 360.0  # Convert hue back to [0, 360] range
+
+    c = v * s  # Chroma
+    x = c * (1 - torch.abs((h / 60.0) % 2 - 1))  # Second largest component of the color
+    m = v - c  # Match value
+
+    # Initialize r, g, b with zeros
+    r = torch.zeros_like(h, device=device)
+    g = torch.zeros_like(h, device=device)
+    b = torch.zeros_like(h, device=device)
+
+    # Conditions for different hue ranges
+    h1 = (0 <= h) & (h < 60)
+    h2 = (60 <= h) & (h < 120)
+    h3 = (120 <= h) & (h < 180)
+    h4 = (180 <= h) & (h < 240)
+    h5 = (240 <= h) & (h < 300)
+    h6 = (300 <= h) & (h < 360)
+
+    # Apply the color transformation logic based on hue ranges
+    r[h1] = c[h1]
+    g[h1] = x[h1]
+    b[h1] = 0
+
+    r[h2] = x[h2]
+    g[h2] = c[h2]
+    b[h2] = 0
+
+    r[h3] = 0
+    g[h3] = c[h3]
+    b[h3] = x[h3]
+
+    r[h4] = 0
+    g[h4] = x[h4]
+    b[h4] = c[h4]
+
+    r[h5] = x[h5]
+    g[h5] = 0
+    b[h5] = c[h5]
+
+    r[h6] = c[h6]
+    g[h6] = 0
+    b[h6] = x[h6]
+
+    # Add m to match the value and scale the RGB channels back to [0, 1]
+    r = r + m
+    g = g + m
+    b = b + m
+
+    # Stack the RGB channels together
+    rgb_image = torch.stack([r, g, b], dim=0)
+
+    return rgb_image
+
+def sharpen(img):
+    device = img.device  # Ensure we use the same device
+
+    # Convert img to float and normalize it
+    img = img.float() / 255.0
+
+    # Gaussian smoothing using PyTorch's functional API (approximation of Gaussian blur)
+    gauss_kernel = get_gaussian_kernel(5).to(device)  # Create a Gaussian kernel for blurring
+    img = img.unsqueeze(0)  # Add batch dimension for convolution
+    gauss_out = torch.nn.functional.conv2d(img, gauss_kernel, padding=2, groups=img.size(1))
+    gauss_out = gauss_out.squeeze(0)  # Remove batch dimension
+
+    alpha = 1.5
+    img_out = (img.squeeze(0) - gauss_out) * alpha + img.squeeze(0)
+
+    # Clamp values between 0 and 1, then scale back to [0, 255]
+    img_out = torch.clamp(img_out, 0.0, 1.0) * 255.0
+
+    return img_out.to(torch.uint8)
+
+def get_gaussian_kernel(sigma, kernel_size=5):
+    """Create a 2D Gaussian kernel for convolution."""
+    coords = torch.arange(kernel_size, dtype=torch.float32)
+    coords -= (kernel_size - 1) / 2.0
+
+    g = torch.exp(-(coords ** 2) / (2 * sigma ** 2))
+    g /= g.sum()
+
+    g_kernel = torch.outer(g, g)
+    g_kernel = g_kernel.unsqueeze(0).unsqueeze(0)  # Make it 4D for convolution
+    return g_kernel.expand(3, 1, kernel_size, kernel_size)  # Apply to each channels
+
 # Live Portrait
 #imported from https://github.com/KwaiVGI/LivePortrait/blob/main/src/utils/crop.py
 def parse_pt2_from_pt101(pt101, use_lip=True):

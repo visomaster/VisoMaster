@@ -2943,9 +2943,55 @@ class ModelsProcessor(QObject):
         outpred = torch.reshape(outpred, (1, 256, 256))
         return outpred
 
+    def face_parser_makeup_direct_rgb(self, img, parsing, part=(17,), color=[230, 50, 20], blend_factor=0.2):
+        device = img.device  # Ensure we use the same device
+
+        # Clamp blend factor to ensure it stays between 0 and 1
+        blend_factor = min(max(blend_factor, 0.0), 1.0)
+
+        # Normalize the target RGB color to [0, 1]
+        r, g, b = [x / 255.0 for x in color]
+        tar_color = torch.tensor([r, g, b], dtype=torch.float32).view(3, 1, 1).to(device)
+
+        #print(f"Target RGB color: {tar_color}")
+
+        # Create hair mask based on parsing for multiple parts
+        if isinstance(part, tuple):
+            hair_mask = torch.zeros_like(parsing, dtype=torch.bool)
+            for p in part:
+                hair_mask |= (parsing == p)  # Accumulate masks for all parts in the tuple
+        else:
+            hair_mask = (parsing == part)
+
+        #print(f"Hair mask shape: {hair_mask.shape}, Non-zero elements in mask: {hair_mask.sum().item()}")
+
+        # Expand mask to match the image dimensions
+        mask = hair_mask.unsqueeze(0).expand_as(img)
+        #print(f"Expanded mask shape: {mask.shape}, Non-zero elements: {mask.sum().item()}")
+
+        # Ensure that the image is normalized to [0, 1]
+        image_normalized = img.float() / 255.0
+
+        # Perform the color blending for the target region
+        # (1 - blend_factor) * original + blend_factor * target_color
+        changed = torch.where(
+            mask,
+            (1 - blend_factor) * image_normalized + blend_factor * tar_color,
+            image_normalized
+        )
+
+        # Scale back to [0, 255] for final output
+        changed = torch.clamp(changed * 255, 0, 255).to(torch.uint8)
+
+        return changed
+    
     def apply_face_parser(self, img, parameters):
         # atts = [1 'skin', 2 'l_brow', 3 'r_brow', 4 'l_eye', 5 'r_eye', 6 'eye_g', 7 'l_ear', 8 'r_ear', 9 'ear_r', 10 'nose', 11 'mouth', 12 'u_lip', 13 'l_lip', 14 'neck', 15 'neck_l', 16 'cloth', 17 'hair', 18 'hat']
         FaceAmount = parameters["BackgroundParserSlider"]
+
+        swap_makeup = None
+        if parameters['FaceParserHairMakeupEnableToggle'] or parameters['FaceParserLipsMakeupEnableToggle']:
+            swap_makeup = img.clone()
 
         img = torch.div(img, 255)
         img = v2.functional.normalize(img, (0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
@@ -2956,6 +3002,13 @@ class ModelsProcessor(QObject):
 
         outpred = torch.squeeze(outpred)
         outpred = torch.argmax(outpred, 0)
+        if parameters['FaceParserHairMakeupEnableToggle']:
+            color = [parameters['FaceParserHairMakeupRedSlider'], parameters['FaceParserHairMakeupGreenSlider'], parameters['FaceParserHairMakeupBlueSlider']]
+            swap_makeup = self.face_parser_makeup_direct_rgb(img=swap_makeup, parsing=outpred, part=17, color=color, blend_factor=parameters['FaceParserHairMakeupBlendAmountDecimalSlider'])
+
+        if parameters['FaceParserLipsMakeupEnableToggle']:
+            color = [parameters['FaceParserLipsMakeupRedSlider'], parameters['FaceParserLipsMakeupGreenSlider'], parameters['FaceParserLipsMakeupBlueSlider']]
+            swap_makeup = self.face_parser_makeup_direct_rgb(img=swap_makeup, parsing=outpred, part=(12, 13), color=color, blend_factor=parameters['FaceParserLipsMakeupBlendAmountDecimalSlider'])
 
         face_attributes = {
             1: parameters['FaceParserSlider'], #Face
@@ -3048,7 +3101,7 @@ class ModelsProcessor(QObject):
         # Final clamping to ensure the output parse is valid
         out_parse = torch.clamp(out_parse, 0, 1)
 
-        return out_parse
+        return out_parse, swap_makeup
 
     def soft_oval_mask(self, height, width, center, radius_x, radius_y, feather_radius=None):
         """
