@@ -2,9 +2,9 @@ FACE_EDITOR_LAYOUT_DATA = {
     '': {
         'FaceEditorEnableToggle': {
             'level': 1,
-            'label': 'Enable Face Editor',
+            'label': 'Enable Face Pose/Epression Editor',
             'default': False,
-            'help': 'Enable Face Editor.'
+            'help': 'Enable Face Pose/Epression Editor.'
         },
         'FaceEditorTypeSelection': {
             'level': 2,
@@ -238,6 +238,322 @@ FACE_EDITOR_LAYOUT_DATA = {
             'parentToggle': 'FaceEditorEnableToggle',
             'requiredToggleValue': True,
             'help': 'Blend amount.'
+        },
+        'FaceMakeupEnableToggle': {
+            'level': 1,
+            'label': 'Face Makeup',
+            'default': False,
+            'help': 'Enable face makeup. Except for ears, hair, eyebrows, eyes, nose and lips.'
+        },
+        'FaceMakeupRedSlider': {
+            'level': 2,
+            'label': 'Red',
+            'min_value': '0',
+            'max_value': '255',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'FaceMakeupEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Red color adjustments.'
+        },
+        'FaceMakeupGreenSlider': {
+            'level': 2,
+            'label': 'Green',
+            'min_value': '0',
+            'max_value': '255',
+            'default': '0',
+            'step': 3,
+            'parentToggle': 'FaceMakeupEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Green color adjustments.'
+        },
+        'FaceMakeupBlueSlider': {
+            'level': 2,
+            'label': 'Blue',
+            'min_value': '0',
+            'max_value': '255',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'FaceMakeupEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Blue color adjustments.'
+        },
+        'FaceMakeupBlendAmountDecimalSlider': {
+            'level': 2,
+            'label': 'Blend Amount',
+            'min_value': '0.1',
+            'max_value': '1.0',
+            'default': '0.2',
+            'decimals': 1,
+            'step': 0.1,
+            'parentToggle': 'FaceMakeupEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Blend the value: 0.0 represents the original color, 1.0 represents the full target color.'
+        },
+        'HairMakeupEnableToggle': {
+            'level': 1,
+            'label': 'Hair Makeup',
+            'default': False,
+            'help': 'Enable hair makeup.'
+        },
+        'HairMakeupRedSlider': {
+            'level': 2,
+            'label': 'Red',
+            'min_value': '0',
+            'max_value': '255',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'HairMakeupEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Red color adjustments.'
+        },
+        'HairMakeupGreenSlider': {
+            'level': 2,
+            'label': 'Green',
+            'min_value': '0',
+            'max_value': '255',
+            'default': '0',
+            'step': 3,
+            'parentToggle': 'HairMakeupEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Green color adjustments.'
+        },
+        'HairMakeupBlueSlider': {
+            'level': 2,
+            'label': 'Blue',
+            'min_value': '0',
+            'max_value': '255',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'HairMakeupEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Blue color adjustments.'
+        },
+        'HairMakeupBlendAmountDecimalSlider': {
+            'level': 2,
+            'label': 'Blend Amount',
+            'min_value': '0.1',
+            'max_value': '1.0',
+            'default': '0.2',
+            'decimals': 1,
+            'step': 0.1,
+            'parentToggle': 'HairMakeupEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Blend the value: 0.0 represents the original color, 1.0 represents the full target color.'
+        },
+        'EarsMakeupEnableToggle': {
+            'level': 1,
+            'label': 'Ears Makeup',
+            'default': False,
+            'help': 'Enable Ears makeup.'
+        },
+        'EarsMakeupRedSlider': {
+            'level': 2,
+            'label': 'Red',
+            'min_value': '0',
+            'max_value': '255',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'EarsMakeupEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Red color adjustments.'
+        },
+        'EarsMakeupGreenSlider': {
+            'level': 2,
+            'label': 'Green',
+            'min_value': '0',
+            'max_value': '255',
+            'default': '0',
+            'step': 3,
+            'parentToggle': 'EarsMakeupEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Green color adjustments.'
+        },
+        'EarsMakeupBlueSlider': {
+            'level': 2,
+            'label': 'Blue',
+            'min_value': '0',
+            'max_value': '255',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'EarsMakeupEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Blue color adjustments.'
+        },
+        'EarsMakeupBlendAmountDecimalSlider': {
+            'level': 2,
+            'label': 'Blend Amount',
+            'min_value': '0.1',
+            'max_value': '1.0',
+            'default': '0.2',
+            'decimals': 1,
+            'step': 0.1,
+            'parentToggle': 'EarsMakeupEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Blend the value: 0.0 represents the original color, 1.0 represents the full target color.'
+        },
+        'EyeBrowsMakeupEnableToggle': {
+            'level': 1,
+            'label': 'EyeBrows Makeup',
+            'default': False,
+            'help': 'Enable eyebrows makeup.'
+        },
+        'EyeBrowsMakeupRedSlider': {
+            'level': 2,
+            'label': 'Red',
+            'min_value': '0',
+            'max_value': '255',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'EyeBrowsMakeupEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Red color adjustments.'
+        },
+        'EyeBrowsMakeupGreenSlider': {
+            'level': 2,
+            'label': 'Green',
+            'min_value': '0',
+            'max_value': '255',
+            'default': '0',
+            'step': 3,
+            'parentToggle': 'EyeBrowsMakeupEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Green color adjustments.'
+        },
+        'EyeBrowsMakeupBlueSlider': {
+            'level': 2,
+            'label': 'Blue',
+            'min_value': '0',
+            'max_value': '255',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'EyeBrowsMakeupEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Blue color adjustments.'
+        },
+        'EyeBrowsMakeupBlendAmountDecimalSlider': {
+            'level': 2,
+            'label': 'Blend Amount',
+            'min_value': '0.1',
+            'max_value': '1.0',
+            'default': '0.2',
+            'decimals': 1,
+            'step': 0.1,
+            'parentToggle': 'EyeBrowsMakeupEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Blend the value: 0.0 represents the original color, 1.0 represents the full target color.'
+        },
+        'NoseMakeupEnableToggle': {
+            'level': 1,
+            'label': 'Nose Makeup',
+            'default': False,
+            'help': 'Enable nose makeup.'
+        },
+        'NoseMakeupRedSlider': {
+            'level': 2,
+            'label': 'Red',
+            'min_value': '0',
+            'max_value': '255',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'NoseMakeupEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Red color adjustments.'
+        },
+        'NoseMakeupGreenSlider': {
+            'level': 2,
+            'label': 'Green',
+            'min_value': '0',
+            'max_value': '255',
+            'default': '0',
+            'step': 3,
+            'parentToggle': 'NoseMakeupEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Green color adjustments.'
+        },
+        'NoseMakeupBlueSlider': {
+            'level': 2,
+            'label': 'Blue',
+            'min_value': '0',
+            'max_value': '255',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'NoseMakeupEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Blue color adjustments.'
+        },
+        'NoseMakeupBlendAmountDecimalSlider': {
+            'level': 2,
+            'label': 'Blend Amount',
+            'min_value': '0.1',
+            'max_value': '1.0',
+            'default': '0.2',
+            'decimals': 1,
+            'step': 0.1,
+            'parentToggle': 'NoseMakeupEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Blend the value: 0.0 represents the original color, 1.0 represents the full target color.'
+        },
+        'LipsMakeupEnableToggle': {
+            'level': 1,
+            'label': 'Lips Makeup',
+            'default': False,
+            'help': 'Enable lips makeup.'
+        },
+        'LipsMakeupRedSlider': {
+            'level': 2,
+            'label': 'Red',
+            'min_value': '0',
+            'max_value': '255',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'LipsMakeupEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Red color adjustments.'
+        },
+        'LipsMakeupGreenSlider': {
+            'level': 2,
+            'label': 'Green',
+            'min_value': '0',
+            'max_value': '255',
+            'default': '0',
+            'step': 3,
+            'parentToggle': 'LipsMakeupEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Green color adjustments.'
+        },
+        'LipsMakeupBlueSlider': {
+            'level': 2,
+            'label': 'Blue',
+            'min_value': '0',
+            'max_value': '255',
+            'default': '0',
+            'step': 1,
+            'parentToggle': 'LipsMakeupEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Blue color adjustments.'
+        },
+        'LipsMakeupBlendAmountDecimalSlider': {
+            'level': 2,
+            'label': 'Blend Amount',
+            'min_value': '0.1',
+            'max_value': '1.0',
+            'default': '0.2',
+            'decimals': 1,
+            'step': 0.1,
+            'parentToggle': 'LipsMakeupEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Blend the value: 0.0 represents the original color, 1.0 represents the full target color.'
+        },
+        'MaskMakeupBlurAmountSlider': {
+            'level': 1,
+            'label': 'Makeup Blur Amount',
+            'min_value': '0',
+            'max_value': '100',
+            'default': '15',
+            'step': 1,
+            'requiredToggleValue': True,
+            'help': 'Blur value'
         },
     }
 }

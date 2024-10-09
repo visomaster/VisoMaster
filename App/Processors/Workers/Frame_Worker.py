@@ -402,11 +402,9 @@ class FrameWorker(threading.Thread):
 
         if parameters["FaceParserEnableToggle"]:
             #cv2.imwrite('swap.png', cv2.cvtColor(swap.permute(1, 2, 0).cpu().numpy(), cv2.COLOR_RGB2BGR))
-            mask, swap_makeup = self.models_processor.apply_face_parser(swap, parameters)
+            mask = self.models_processor.apply_face_parser(swap, parameters)
             mask = t128(mask)
             swap_mask = torch.mul(swap_mask, mask)
-            if swap_makeup is not None:
-                swap = swap_makeup
 
         # CLIPs
         if parameters["ClipEnableToggle"]:
@@ -733,15 +731,15 @@ class FrameWorker(threading.Thread):
         return img
 
     def swap_edit_face_core(self, img, kps, parameters, control, **kwargs): # img = RGB
-        # Scaling Transforms
-        t256 = v2.Resize((256, 256), interpolation=v2.InterpolationMode.BILINEAR, antialias=False)
-
-        # initial eye_ratio and lip_ratio values
-        init_source_eye_ratio = 0.0
-        init_source_lip_ratio = 0.0
-
         # Grab 512 face from image and create 256 and 128 copys
         if parameters['FaceEditorEnableToggle']:
+            # Scaling Transforms
+            t256 = v2.Resize((256, 256), interpolation=v2.InterpolationMode.BILINEAR, antialias=False)
+
+            # initial eye_ratio and lip_ratio values
+            init_source_eye_ratio = 0.0
+            init_source_lip_ratio = 0.0
+
             _, lmk_crop, _ = self.models_processor.run_detect_landmark( img, bbox=[], det_kpss=kps, detect_mode='203', score=0.5, from_points=True)
             source_eye_ratio = faceutil.calc_eye_close_ratio(lmk_crop[None])
             source_lip_ratio = faceutil.calc_lip_close_ratio(lmk_crop[None])
@@ -836,5 +834,18 @@ class FrameWorker(threading.Thread):
                 img = faceutil.paste_back(out, M_c2o, img, mask_ori)
             else:
                 img = out
+
+        if parameters['FaceMakeupEnableToggle'] or parameters['HairMakeupEnableToggle'] or parameters['EarsMakeupEnableToggle'] or parameters['EyeBrowsMakeupEnableToggle'] or parameters['NoseMakeupEnableToggle'] or parameters['LipsMakeupEnableToggle']:
+            _, lmk_crop, _ = self.models_processor.run_detect_landmark( img, bbox=[], det_kpss=kps, detect_mode='203', score=0.5, from_points=True)
+
+            # prepare_retargeting_image
+            original_face_512, M_o2c, M_c2o = faceutil.warp_face_by_face_landmark_x(img, kps, dsize=512, scale=2.5, vy_ratio=-0.125, interpolation=v2.InterpolationMode.BILINEAR)
+            mask_ori = faceutil.prepare_paste_back(self.models_processor.lp_mask_crop, M_c2o, dsize=(img.shape[1], img.shape[2])).contiguous()
+
+            out = self.models_processor.apply_face_makeup(original_face_512, parameters)
+
+            gauss = transforms.GaussianBlur(5*2+1, (5+1)*0.2)
+            mask_ori = gauss(mask_ori)
+            img = faceutil.paste_back(out, M_c2o, img, mask_ori)
 
         return img

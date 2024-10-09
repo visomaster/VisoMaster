@@ -701,7 +701,7 @@ class ParameterDecimalSlider(QtWidgets.QSlider, ParametersWidget):
         new_value = current_value + (self.step_size * num_steps)
 
         # Ensure the new value is within the valid range
-        new_value = min(max(round(new_value, self.decimals), self.min_value), self.max_value)
+        new_value = min(max(round(new_value, self.decimals), self.min_value / self.scale_factor), self.max_value / self.scale_factor)
 
         # Update the slider's internal value (ensuring precision)
         self.setValue(new_value)
