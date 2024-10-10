@@ -3113,23 +3113,15 @@ class ModelsProcessor(QObject):
         # Apply makeup for each face part
         if parameters['FaceMakeupEnableToggle']:
             color = [parameters['FaceMakeupRedSlider'], parameters['FaceMakeupGreenSlider'], parameters['FaceMakeupBlueSlider']]
-            out = self.face_parser_makeup_direct_rgb(img=out, parsing=outpred, part=1, color=color, blend_factor=parameters['FaceMakeupBlendAmountDecimalSlider'])
+            out = self.face_parser_makeup_direct_rgb(img=out, parsing=outpred, part=(1, 7, 8, 10), color=color, blend_factor=parameters['FaceMakeupBlendAmountDecimalSlider'])
 
         if parameters['HairMakeupEnableToggle']:
             color = [parameters['HairMakeupRedSlider'], parameters['HairMakeupGreenSlider'], parameters['HairMakeupBlueSlider']]
             out = self.face_parser_makeup_direct_rgb(img=out, parsing=outpred, part=17, color=color, blend_factor=parameters['HairMakeupBlendAmountDecimalSlider'])
 
-        if parameters['EarsMakeupEnableToggle']:
-            color = [parameters['EarsMakeupRedSlider'], parameters['EarsMakeupGreenSlider'], parameters['EarsMakeupBlueSlider']]
-            out = self.face_parser_makeup_direct_rgb(img=out, parsing=outpred, part=(7, 8), color=color, blend_factor=parameters['EarsMakeupBlendAmountDecimalSlider'])
-
         if parameters['EyeBrowsMakeupEnableToggle']:
             color = [parameters['EyeBrowsMakeupRedSlider'], parameters['EyeBrowsMakeupGreenSlider'], parameters['EyeBrowsMakeupBlueSlider']]
             out = self.face_parser_makeup_direct_rgb(img=out, parsing=outpred, part=(2, 3), color=color, blend_factor=parameters['EyeBrowsMakeupBlendAmountDecimalSlider'])
-
-        if parameters['NoseMakeupEnableToggle']:
-            color = [parameters['NoseMakeupRedSlider'], parameters['NoseMakeupGreenSlider'], parameters['NoseMakeupBlueSlider']]
-            out = self.face_parser_makeup_direct_rgb(img=out, parsing=outpred, part=10, color=color, blend_factor=parameters['NoseMakeupBlendAmountDecimalSlider'])
 
         if parameters['LipsMakeupEnableToggle']:
             color = [parameters['LipsMakeupRedSlider'], parameters['LipsMakeupGreenSlider'], parameters['LipsMakeupBlueSlider']]
@@ -3140,9 +3132,9 @@ class ModelsProcessor(QObject):
             1: parameters['FaceMakeupEnableToggle'],  # Face
             2: parameters['EyeBrowsMakeupEnableToggle'],  # Left Eyebrow
             3: parameters['EyeBrowsMakeupEnableToggle'],  # Right Eyebrow
-            7: parameters['EarsMakeupEnableToggle'],  # Left Ear
-            8: parameters['EarsMakeupEnableToggle'],  # Right Ear
-            10: parameters['NoseMakeupEnableToggle'],  # Nose
+            7: parameters['FaceMakeupEnableToggle'],  # Left Ear
+            8: parameters['FaceMakeupEnableToggle'],  # Right Ear
+            10: parameters['FaceMakeupEnableToggle'],  # Nose
             12: parameters['LipsMakeupEnableToggle'],  # Upper Lip
             13: parameters['LipsMakeupEnableToggle'],  # Lower Lip
             17: parameters['HairMakeupEnableToggle'],  # Hair
@@ -3152,9 +3144,9 @@ class ModelsProcessor(QObject):
         kernel = torch.ones((1, 1, 3, 3), dtype=torch.float32, device=self.device)
 
         # Apply blur if blur kernel size is greater than 1
-        blur_kernel_size = parameters['MaskMakeupBlurAmountSlider'] * 2 + 1
+        blur_kernel_size = parameters['FaceEditorBlurAmountSlider'] * 2 + 1
         if blur_kernel_size > 1:
-            gauss = transforms.GaussianBlur(blur_kernel_size, (parameters['MaskMakeupBlurAmountSlider'] + 1) * 0.2)
+            gauss = transforms.GaussianBlur(blur_kernel_size, (parameters['FaceEditorBlurAmountSlider'] + 1) * 0.2)
 
         # Generate masks for each face attribute
         face_parses = []
@@ -3202,7 +3194,7 @@ class ModelsProcessor(QObject):
         # Final application of the makeup mask on the original image
         out = img * (1 - combined_mask.unsqueeze(0)) + out * combined_mask.unsqueeze(0)
 
-        return out
+        return out, combined_mask.unsqueeze(0)
 
     def soft_oval_mask(self, height, width, center, radius_x, radius_y, feather_radius=None):
         """

@@ -747,7 +747,7 @@ class FrameWorker(threading.Thread):
             init_source_lip_ratio = round(float(source_lip_ratio[0][0]), 2)
 
             # prepare_retargeting_image
-            original_face_512, M_o2c, M_c2o = faceutil.warp_face_by_face_landmark_x(img, kps, dsize=512, scale=parameters["CropScaleDecimalSlider"], vy_ratio=-0.125, interpolation=v2.InterpolationMode.BILINEAR)
+            original_face_512, M_o2c, M_c2o = faceutil.warp_face_by_face_landmark_x(img, kps, dsize=512, scale=parameters["FaceEditorCropScaleDecimalSlider"], vy_ratio=-parameters['FaceEditorVYRatioDecimalSlider'], interpolation=v2.InterpolationMode.BILINEAR)
             original_face_256 = t256(original_face_512)
             mask_ori = faceutil.prepare_paste_back(self.models_processor.lp_mask_crop, M_c2o, dsize=(img.shape[1], img.shape[2])).contiguous()
 
@@ -829,20 +829,20 @@ class FrameWorker(threading.Thread):
 
             flag_do_crop_input_retargeting_image = kwargs.get('flag_do_crop_input_retargeting_image', True)
             if flag_do_crop_input_retargeting_image:
-                gauss = transforms.GaussianBlur(parameters['FaceEditorBlendAmountSlider']*2+1, (parameters['FaceEditorBlendAmountSlider']+1)*0.2)
+                gauss = transforms.GaussianBlur(parameters['FaceEditorBlurAmountSlider']*2+1, (parameters['FaceEditorBlurAmountSlider']+1)*0.2)
                 mask_ori = gauss(mask_ori)
                 img = faceutil.paste_back(out, M_c2o, img, mask_ori)
             else:
                 img = out
 
-        if parameters['FaceMakeupEnableToggle'] or parameters['HairMakeupEnableToggle'] or parameters['EarsMakeupEnableToggle'] or parameters['EyeBrowsMakeupEnableToggle'] or parameters['NoseMakeupEnableToggle'] or parameters['LipsMakeupEnableToggle']:
+        if parameters['FaceMakeupEnableToggle'] or parameters['HairMakeupEnableToggle'] or parameters['EyeBrowsMakeupEnableToggle'] or parameters['LipsMakeupEnableToggle']:
             _, lmk_crop, _ = self.models_processor.run_detect_landmark( img, bbox=[], det_kpss=kps, detect_mode='203', score=0.5, from_points=True)
 
             # prepare_retargeting_image
-            original_face_512, M_o2c, M_c2o = faceutil.warp_face_by_face_landmark_x(img, kps, dsize=512, scale=2.5, vy_ratio=-0.125, interpolation=v2.InterpolationMode.BILINEAR)
+            original_face_512, M_o2c, M_c2o = faceutil.warp_face_by_face_landmark_x(img, kps, dsize=512, scale=parameters['FaceEditorCropScaleDecimalSlider'], vy_ratio=-parameters['FaceEditorVYRatioDecimalSlider'], interpolation=v2.InterpolationMode.BILINEAR)
             mask_ori = faceutil.prepare_paste_back(self.models_processor.lp_mask_crop, M_c2o, dsize=(img.shape[1], img.shape[2])).contiguous()
 
-            out = self.models_processor.apply_face_makeup(original_face_512, parameters)
+            out, mask_out = self.models_processor.apply_face_makeup(original_face_512, parameters)
 
             gauss = transforms.GaussianBlur(5*2+1, (5+1)*0.2)
             mask_ori = gauss(mask_ori)

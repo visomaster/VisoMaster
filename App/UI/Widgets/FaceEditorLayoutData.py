@@ -1,5 +1,34 @@
 FACE_EDITOR_LAYOUT_DATA = {
     '': {
+        'FaceEditorCropScaleDecimalSlider': {
+            'level': 1,
+            'label': 'Crop Scale',
+            'min_value': '1.50',
+            'max_value': '3.20',
+            'default': '2.50',
+            'step': 0.05,
+            'decimals': 2,
+            'help': 'Changes source crop scale. Increase the value to capture the face more distantly.'
+        },
+        'FaceEditorVYRatioDecimalSlider': {
+            'level': 1,
+            'label': 'VY Ratio',
+            'min_value': '0.100',
+            'max_value': '0.200',
+            'default': '0.125',
+            'step': 0.001,
+            'decimals': 3,
+            'help': 'Changes the vy ratio for crop scale. Decrease the value to capture the face more distantly.'
+        },
+        'FaceEditorBlurAmountSlider': {
+            'level': 1,
+            'label': 'Blur Amount',
+            'min_value': '0',
+            'max_value': '100',
+            'default': '5',
+            'step': 1,
+            'help': 'Blur amount.'
+        },
         'FaceEditorEnableToggle': {
             'level': 1,
             'label': 'Enable Face Pose/Epression Editor',
@@ -15,18 +44,6 @@ FACE_EDITOR_LAYOUT_DATA = {
             'parentToggle': 'FaceEditorEnableToggle',
             'requiredToggleValue': True,
             'help': 'Select the target type to be edited in Face Editor.'
-        },
-        'CropScaleDecimalSlider': {
-            'level': 2,
-            'label': 'Crop Scale',
-            'min_value': '1.80',
-            'max_value': '3.20',
-            'default': '2.50',
-            'step': 0.05,
-            'decimals': 2,
-            'parentToggle': 'FaceEditorEnableToggle',
-            'requiredToggleValue': True,
-            'help': 'Changes source crop scale.'
         },
         'EyesOpenRatioDecimalSlider': {
             'level': 2,
@@ -228,22 +245,11 @@ FACE_EDITOR_LAYOUT_DATA = {
             'requiredToggleValue': True,
             'help': 'Changes the vertical eyegaze direction.'
         },
-        'FaceEditorBlendAmountSlider': {
-            'level': 2,
-            'label': 'Blend Amount',
-            'min_value': '0',
-            'max_value': '100',
-            'default': '5',
-            'step': 1,
-            'parentToggle': 'FaceEditorEnableToggle',
-            'requiredToggleValue': True,
-            'help': 'Blend amount.'
-        },
         'FaceMakeupEnableToggle': {
             'level': 1,
             'label': 'Face Makeup',
             'default': False,
-            'help': 'Enable face makeup. Except for ears, hair, eyebrows, eyes, nose and lips.'
+            'help': 'Enable face makeup. Except for hair, eyebrows, eyes and lips.'
         },
         'FaceMakeupRedSlider': {
             'level': 2,
@@ -341,57 +347,6 @@ FACE_EDITOR_LAYOUT_DATA = {
             'requiredToggleValue': True,
             'help': 'Blend the value: 0.0 represents the original color, 1.0 represents the full target color.'
         },
-        'EarsMakeupEnableToggle': {
-            'level': 1,
-            'label': 'Ears Makeup',
-            'default': False,
-            'help': 'Enable Ears makeup.'
-        },
-        'EarsMakeupRedSlider': {
-            'level': 2,
-            'label': 'Red',
-            'min_value': '0',
-            'max_value': '255',
-            'default': '0',
-            'step': 1,
-            'parentToggle': 'EarsMakeupEnableToggle',
-            'requiredToggleValue': True,
-            'help': 'Red color adjustments.'
-        },
-        'EarsMakeupGreenSlider': {
-            'level': 2,
-            'label': 'Green',
-            'min_value': '0',
-            'max_value': '255',
-            'default': '0',
-            'step': 3,
-            'parentToggle': 'EarsMakeupEnableToggle',
-            'requiredToggleValue': True,
-            'help': 'Green color adjustments.'
-        },
-        'EarsMakeupBlueSlider': {
-            'level': 2,
-            'label': 'Blue',
-            'min_value': '0',
-            'max_value': '255',
-            'default': '0',
-            'step': 1,
-            'parentToggle': 'EarsMakeupEnableToggle',
-            'requiredToggleValue': True,
-            'help': 'Blue color adjustments.'
-        },
-        'EarsMakeupBlendAmountDecimalSlider': {
-            'level': 2,
-            'label': 'Blend Amount',
-            'min_value': '0.1',
-            'max_value': '1.0',
-            'default': '0.2',
-            'decimals': 1,
-            'step': 0.1,
-            'parentToggle': 'EarsMakeupEnableToggle',
-            'requiredToggleValue': True,
-            'help': 'Blend the value: 0.0 represents the original color, 1.0 represents the full target color.'
-        },
         'EyeBrowsMakeupEnableToggle': {
             'level': 1,
             'label': 'EyeBrows Makeup',
@@ -440,57 +395,6 @@ FACE_EDITOR_LAYOUT_DATA = {
             'decimals': 1,
             'step': 0.1,
             'parentToggle': 'EyeBrowsMakeupEnableToggle',
-            'requiredToggleValue': True,
-            'help': 'Blend the value: 0.0 represents the original color, 1.0 represents the full target color.'
-        },
-        'NoseMakeupEnableToggle': {
-            'level': 1,
-            'label': 'Nose Makeup',
-            'default': False,
-            'help': 'Enable nose makeup.'
-        },
-        'NoseMakeupRedSlider': {
-            'level': 2,
-            'label': 'Red',
-            'min_value': '0',
-            'max_value': '255',
-            'default': '0',
-            'step': 1,
-            'parentToggle': 'NoseMakeupEnableToggle',
-            'requiredToggleValue': True,
-            'help': 'Red color adjustments.'
-        },
-        'NoseMakeupGreenSlider': {
-            'level': 2,
-            'label': 'Green',
-            'min_value': '0',
-            'max_value': '255',
-            'default': '0',
-            'step': 3,
-            'parentToggle': 'NoseMakeupEnableToggle',
-            'requiredToggleValue': True,
-            'help': 'Green color adjustments.'
-        },
-        'NoseMakeupBlueSlider': {
-            'level': 2,
-            'label': 'Blue',
-            'min_value': '0',
-            'max_value': '255',
-            'default': '0',
-            'step': 1,
-            'parentToggle': 'NoseMakeupEnableToggle',
-            'requiredToggleValue': True,
-            'help': 'Blue color adjustments.'
-        },
-        'NoseMakeupBlendAmountDecimalSlider': {
-            'level': 2,
-            'label': 'Blend Amount',
-            'min_value': '0.1',
-            'max_value': '1.0',
-            'default': '0.2',
-            'decimals': 1,
-            'step': 0.1,
-            'parentToggle': 'NoseMakeupEnableToggle',
             'requiredToggleValue': True,
             'help': 'Blend the value: 0.0 represents the original color, 1.0 represents the full target color.'
         },
@@ -544,16 +448,6 @@ FACE_EDITOR_LAYOUT_DATA = {
             'parentToggle': 'LipsMakeupEnableToggle',
             'requiredToggleValue': True,
             'help': 'Blend the value: 0.0 represents the original color, 1.0 represents the full target color.'
-        },
-        'MaskMakeupBlurAmountSlider': {
-            'level': 1,
-            'label': 'Makeup Blur Amount',
-            'min_value': '0',
-            'max_value': '100',
-            'default': '15',
-            'step': 1,
-            'requiredToggleValue': True,
-            'help': 'Blur value'
         },
     }
 }
