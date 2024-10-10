@@ -844,8 +844,26 @@ class FrameWorker(threading.Thread):
 
             out, mask_out = self.models_processor.apply_face_makeup(original_face_512, parameters)
 
-            gauss = transforms.GaussianBlur(5*2+1, (5+1)*0.2)
-            mask_ori = gauss(mask_ori)
-            img = faceutil.paste_back(out, M_c2o, img, mask_ori)
+            if (not control['ViewFaceMaskEnableToggle'] and not control['ViewFaceCompareEnableToggle']) or self.main_window.swapfacesButton.isChecked():
+                gauss = transforms.GaussianBlur(5*2+1, (5+1)*0.2)
+                mask_ori = gauss(mask_ori)
+                img = faceutil.paste_back(out, M_c2o, img, mask_ori)
+            else:
+                out = out.type(torch.uint8)
+                original_face_512 = original_face_512.type(torch.uint8)
+
+                # Expand mask (3, H, W)
+                mask_out = mask_out.repeat(3, 1, 1)
+                # Put mask in range [0, 255]
+                mask_out = torch.mul(mask_out, 255.0)
+                mask_out = mask_out.type(torch.uint8)
+
+                # Place them side by side
+                if not control['ViewFaceCompareEnableToggle']:
+                    img = torch.cat((out, mask_out), dim=2)
+                elif not control['ViewFaceMaskEnableToggle']:
+                    img = torch.cat((out, original_face_512), dim=2)
+                else:
+                    img = torch.cat((out, original_face_512, mask_out), dim=2)
 
         return img
