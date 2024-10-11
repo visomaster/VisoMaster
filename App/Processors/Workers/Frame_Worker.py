@@ -113,14 +113,15 @@ class FrameWorker(threading.Thread):
                     for target_face in self.main_window.target_faces:
                         parameters = self.parameters[target_face.face_id] #Use the parameters of the target face
 
-                        if self.main_window.swapfacesButton.isChecked():
+                        if self.main_window.swapfacesButton.isChecked() or self.main_window.editFacesButton.isChecked():
                             sim = self.models_processor.findCosineDistance(fface[2], target_face.embedding)
                             if sim>=parameters['SimilarityThresholdSlider']:
-                                s_e = target_face.assigned_input_embedding
-                                img = self.swap_core(img, fface[0], s_e=s_e, t_e=fface[2], parameters=parameters, control=control)
+                                if self.main_window.swapfacesButton.isChecked():
+                                    s_e = target_face.assigned_input_embedding
+                                    img = self.swap_core(img, fface[0], s_e=s_e, t_e=fface[2], parameters=parameters, control=control)
                         
-                        if self.main_window.editFacesButton.isChecked():
-                            img = self.swap_edit_face_core(img, fface[1], parameters, control)
+                                if self.main_window.editFacesButton.isChecked():
+                                    img = self.swap_edit_face_core(img, fface[1], parameters, control)
 
         if control['ManualRotationEnableToggle']:
             img = v2.functional.rotate(img, angle=-control['ManualRotationAngleSlider'], interpolation=v2.InterpolationMode.BILINEAR, expand=True)
@@ -201,9 +202,14 @@ class FrameWorker(threading.Thread):
             kps_5[4][0] += parameters['MouthRightXAmountSlider']
             kps_5[4][1] += parameters['MouthRightYAmountSlider']
 
-        M, _ = faceutil.estimate_norm_arcface_template(kps_5, src=dst)
-        tform = trans.SimilarityTransform()
-        tform.params[0:2] = M
+        if swapper_model != 'GhostFace-v1' and swapper_model != 'GhostFace-v2' and swapper_model != 'GhostFace-v3':
+            tform = trans.SimilarityTransform()
+            dst = np.squeeze(dst)
+            tform.estimate(kps_5, dst)
+        else:
+            M, _ = faceutil.estimate_norm_arcface_template(kps_5, src=dst)
+            tform = trans.SimilarityTransform()
+            tform.params[0:2] = M
 
         # Scaling Transforms
         t512 = v2.Resize((512, 512), interpolation=v2.InterpolationMode.BILINEAR, antialias=False)
