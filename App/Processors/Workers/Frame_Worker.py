@@ -824,7 +824,7 @@ class FrameWorker(threading.Thread):
                     (eyes_delta if eyes_delta is not None else 0) + \
                     (lip_delta if lip_delta is not None else 0)
 
-            flag_stitching_retargeting_input: bool = kwargs.get('flag_stitching_retargeting_input', True)
+            flag_stitching_retargeting_input: bool = kwargs.get('flag_stitching_retargeting_input', False)
             if flag_stitching_retargeting_input:
                 x_d_new = self.models_processor.lp_stitching(x_s_user, x_d_new)
 
