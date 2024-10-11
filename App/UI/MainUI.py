@@ -124,6 +124,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.videoSeekSlider.sliderPressed.connect(partial(widget_actions.on_slider_pressed, self))
         self.videoSeekSlider.sliderReleased.connect(partial(widget_actions.on_slider_released, self))
 
+        self.viewFullScreenButton.clicked.connect(partial(widget_actions.view_fullscreen, self))
         # Set up videoSeekLineEdit and add the event filter to handle changes
         widget_actions.set_up_video_seek_line_edit(self)
         video_seek_line_edit_event_filter = videoSeekSliderLineEditEventFilter(self, self.videoSeekLineEdit)
@@ -240,11 +241,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def keyPressEvent(self, event):
         # Toggle full screen when F11 is pressed
         if event.key() == QtCore.Qt.Key_F11:
-            if self.is_full_screen:
-                self.showNormal()  # Exit full-screen mode
-            else:
-                self.showFullScreen()  # Enter full-screen mode
-            self.is_full_screen = not self.is_full_screen
+            widget_actions.view_fullscreen(self)
 
     def closeEvent(self, event):
         print("MainWindow: closeEvent called.")

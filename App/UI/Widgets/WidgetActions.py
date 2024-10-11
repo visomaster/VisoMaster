@@ -842,3 +842,10 @@ def set_widgets_values_using_face_id_parameters(main_window: 'MainWindow', face_
         parameter_widgets[parameter_name].enable_refresh_frame = False
         parameter_widgets[parameter_name].set_value(parameter_value)
         parameter_widgets[parameter_name].enable_refresh_frame = True
+
+def view_fullscreen(main_window: 'MainWindow'):
+    if main_window.is_full_screen:
+        main_window.showNormal()  # Exit full-screen mode
+    else:
+        main_window.showFullScreen()  # Enter full-screen mode
+    main_window.is_full_screen = not main_window.is_full_screen
