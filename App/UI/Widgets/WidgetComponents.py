@@ -588,6 +588,8 @@ class ParameterSlider(QtWidgets.QSlider, ParametersWidget):
 
         # Set the scaled value
         self.setValue(new_value)
+        if hasattr(self, 'line_edit'):
+            self.line_edit.set_value(new_value)  # Aggiorna immediatamente il valore nel line edit
         print(f"Slider moved to: {new_value}")  # Debugging: log the final value
 
     def reset_to_default_value(self):
@@ -729,6 +731,8 @@ class ParameterDecimalSlider(QtWidgets.QSlider, ParametersWidget):
 
         # Imposta il nuovo valore
         self.setValue(new_value)
+        if hasattr(self, 'line_edit'):
+            self.line_edit.set_value(new_value)  # Aggiorna immediatamente il valore nel line edit
         print(f"Slider moved to: {new_value}")  # Debugging: log the final value
 
     def reset_to_default_value(self):
