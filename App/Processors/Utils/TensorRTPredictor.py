@@ -231,7 +231,7 @@ class TensorRTPredictor:
 
             # Esecuzione asincrona con execute_async_v3()
             nvtx.range_push("execute_async")
-            noerror = context.execute_async_v3(stream)
+            noerror = context.execute_async_v3(stream.cuda_stream)
             if not noerror:
                 raise ValueError("ERROR: inference failed.")
             nvtx.range_pop()
@@ -239,6 +239,8 @@ class TensorRTPredictor:
             return self.tensors
 
         finally:
+            # Sincronizza il flusso CUDA prima di restituire il contesto
+            stream.synchronize()
             # Restituisci il contesto al pool dopo l'uso
             with self.lock:
                 self.context_pool.put(context)

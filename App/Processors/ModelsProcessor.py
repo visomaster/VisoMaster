@@ -2428,7 +2428,7 @@ class ModelsProcessor(QObject):
 
                 feed_dict = {}
                 feed_dict["img"] = I_s
-                preds_dict = motion_extractor_model.predict_async(feed_dict, torch.cuda.current_stream().cuda_stream)
+                preds_dict = motion_extractor_model.predict_async(feed_dict, torch.cuda.current_stream())
                 #preds_dict = motion_extractor_model.predict(feed_dict)
                 torch.cuda.synchronize()
                 kp_info = {
@@ -2518,7 +2518,7 @@ class ModelsProcessor(QObject):
 
                 feed_dict = {}
                 feed_dict["img"] = I_s
-                preds_dict = appearance_feature_extractor_model.predict_async(feed_dict, torch.cuda.current_stream().cuda_stream)
+                preds_dict = appearance_feature_extractor_model.predict_async(feed_dict, torch.cuda.current_stream())
                 #preds_dict = appearance_feature_extractor_model.predict(feed_dict)
                 torch.cuda.synchronize()
                 output = preds_dict["output"]
@@ -2571,7 +2571,7 @@ class ModelsProcessor(QObject):
 
                 feed_dict = {}
                 feed_dict["input"] = feat_eye
-                preds_dict = stitching_eye_model.predict_async(feed_dict, torch.cuda.current_stream().cuda_stream)
+                preds_dict = stitching_eye_model.predict_async(feed_dict, torch.cuda.current_stream())
                 #preds_dict = stitching_eye_model.predict(feed_dict)
                 torch.cuda.synchronize()
                 delta = preds_dict["output"]
@@ -2620,7 +2620,7 @@ class ModelsProcessor(QObject):
 
                 feed_dict = {}
                 feed_dict["input"] = feat_lip
-                preds_dict = stitching_lip_model.predict_async(feed_dict, torch.cuda.current_stream().cuda_stream)
+                preds_dict = stitching_lip_model.predict_async(feed_dict, torch.cuda.current_stream())
                 #preds_dict = stitching_lip_model.predict(feed_dict)
                 torch.cuda.synchronize()
                 delta = preds_dict["output"]
@@ -2669,7 +2669,7 @@ class ModelsProcessor(QObject):
 
                 feed_dict = {}
                 feed_dict["input"] = feat_stiching
-                preds_dict = stitching_model.predict_async(feed_dict, torch.cuda.current_stream().cuda_stream)
+                preds_dict = stitching_model.predict_async(feed_dict, torch.cuda.current_stream())
                 #preds_dict = stitching_model.predict(feed_dict)
                 torch.cuda.synchronize()
                 delta = preds_dict["output"]
@@ -2742,7 +2742,7 @@ class ModelsProcessor(QObject):
                 feed_dict["feature_3d"] = feature_3d
                 feed_dict["kp_source"] = kp_source
                 feed_dict["kp_driving"] = kp_driving
-                preds_dict = warping_spade_model.predict_async(feed_dict, torch.cuda.current_stream().cuda_stream)
+                preds_dict = warping_spade_model.predict_async(feed_dict, torch.cuda.current_stream())
                 #preds_dict = warping_spade_model.predict(feed_dict)
                 torch.cuda.synchronize()
                 out = preds_dict["out"]
