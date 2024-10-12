@@ -2698,15 +2698,38 @@ class ModelsProcessor(QObject):
 
         return delta
 
+    # Funzione per decidere se attivare lo stitching
+    def should_apply_stitching(self, kp_source, kp_driving, threshold=0.01):
+        # Calcola la differenza assoluta tra i due tensori
+        difference = torch.abs(kp_source - kp_driving)
+        
+        # Calcola la media o la massima differenza per ogni punto chiave
+        max_difference = torch.max(difference)
+        
+        # Stampa le differenze per debug
+        #print(f"Max difference: {max_difference}")
+        
+        # Verifica se la differenza massima supera la soglia
+        if max_difference > threshold:
+            #print("Attivazione dello stitching: variazione significativa.")
+            return True
+        else:
+            #print("Stitching non necessario: variazioni minime.")
+            return False
+        
     def lp_stitching(self, kp_source: torch.Tensor, kp_driving: torch.Tensor, face_editor_type='Human-Face') -> torch.Tensor:
         """ conduct the stitching
         kp_source: Bxnum_kpx3
         kp_driving: Bxnum_kpx3
         """
 
+        if not self.should_apply_stitching(kp_source, kp_driving, 0.01):
+            return kp_driving
+
         bs, num_kp = kp_source.shape[:2]
 
         kp_driving_new = kp_driving.clone()
+
         delta = self.lp_stitch(kp_source, kp_driving_new, face_editor_type=face_editor_type)
 
         delta_exp = delta[..., :3*num_kp].reshape(bs, num_kp, 3)  # 1x20x3
