@@ -559,6 +559,12 @@ class ParameterSlider(QtWidgets.QSlider, ParametersWidget):
         self.max_value = int(max_value)
         self.step_size = int(step_size)
         self.default_value = int(default_value)
+
+        # Debounce timer for handle_slider_moved
+        self.debounce_timer = qtc.QTimer()
+        self.debounce_timer.setSingleShot(True)  # Assicura che il timer scatti una sola volta
+        self.debounce_timer.timeout.connect(self.handle_slider_moved)  # Collega il timeout al metodo
+
         self.setMinimum(int(min_value))
         self.setMaximum(int(max_value))
         self.setValue(self.default_value)
@@ -567,18 +573,29 @@ class ParameterSlider(QtWidgets.QSlider, ParametersWidget):
         # Set a fixed width for the slider
         self.setFixedWidth(fixed_width)
 
-        # Connect the sliderMoved signal to handle the dragging behavior
-        self.sliderMoved.connect(self.handle_slider_moved)
+        # Connect sliderMoved with debounce
+        self.sliderMoved.connect(self.start_debounce)
 
-    def handle_slider_moved(self, position):
+    def start_debounce(self):
+        """Start debounce timer for slider movements."""
+        self.debounce_timer.start(300)  # Attendi 300ms dopo lo spostamento dello slider
+
+    def handle_slider_moved(self):
+        """Handle the slider movement after debounce."""
+        position = self.sliderPosition()  # Ottieni la posizione attuale dello slider
         """Handle the slider movement (dragging) and set the correct value."""
         new_value = round(position / self.step_size) * self.step_size
 
         # Set the scaled value
         self.setValue(new_value)
+        print(f"Slider moved to: {new_value}")  # Debugging: log the final value
 
     def reset_to_default_value(self):
         self.setValue(int(self.default_value))
+
+        # Aggiorna il line edit o altre componenti associate immediatamente
+        if hasattr(self, 'line_edit'):
+            self.line_edit.set_value(int(self.default_value))  # Aggiorna immediatamente il valore nel line edit
 
     def value(self):
         """Return the slider value as a float, scaled by the decimals."""
@@ -603,6 +620,10 @@ class ParameterSlider(QtWidgets.QSlider, ParametersWidget):
 
         # Update the slider's internal value (ensuring precision)
         self.setValue(new_value)
+
+        # Aggiorna il line edit o altre componenti associate immediatamente
+        if hasattr(self, 'line_edit'):
+            self.line_edit.set_value(new_value)  # Aggiorna immediatamente il valore nel line edit
 
         # Accept the event
         event.accept()
@@ -630,8 +651,32 @@ class ParameterSlider(QtWidgets.QSlider, ParametersWidget):
         # Set the new value to the slider
         self.setValue(new_value)
 
+        # Esegui immediatamente onchange_slider o l'aggiornamento necessario
+        if hasattr(self, 'line_edit'):
+            self.line_edit.set_value(new_value)  # Aggiorna il line edit con il nuovo valore
+
         # Accept the event
         event.accept()
+
+    def mousePressEvent(self, event):
+        """Handle the mouse press event to update the slider value immediately."""
+        if event.button() == QtCore.Qt.LeftButton:  # Verifica che sia il pulsante sinistro del mouse
+            # Calcola la posizione cliccata lungo la barra dello slider
+            new_position = QtWidgets.QStyle.sliderValueFromPosition(
+                self.minimum(), self.maximum(), event.pos().x(), self.width()
+            )
+            # Applica lo step size, arrotondando il valore allo step più vicino
+            new_value = round(new_position / self.step_size) * self.step_size
+
+            # Aggiorna immediatamente il valore dello slider
+            self.setValue(new_value)
+            
+            # Esegui immediatamente onchange_slider o l'aggiornamento necessario
+            if hasattr(self, 'line_edit'):
+                self.line_edit.set_value(new_value)  # Aggiorna il line edit con il nuovo valore
+
+        # Chiama il metodo della classe base per gestire il resto dell'evento
+        super().mousePressEvent(event)
 
     def set_value(self, value):
         self.setValue(value)
@@ -650,6 +695,11 @@ class ParameterDecimalSlider(QtWidgets.QSlider, ParametersWidget):
         self.step_size = step_size
         self.decimals = decimals
 
+        # Debounce timer for handle_slider_moved
+        self.debounce_timer = qtc.QTimer()
+        self.debounce_timer.setSingleShot(True)  # Assicura che il timer scatti una sola volta
+        self.debounce_timer.timeout.connect(self.handle_slider_moved)  # Collega il timeout al metodo
+
         # Scale values for internal handling (to manage decimals)
         self.scale_factor = 10 ** self.decimals
         self.min_value = int(min_value * self.scale_factor)
@@ -664,22 +714,30 @@ class ParameterDecimalSlider(QtWidgets.QSlider, ParametersWidget):
         self.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Minimum)
         self.setFixedWidth(fixed_width)
 
-        # Connect the sliderMoved signal to handle the dragging behavior
-        self.sliderMoved.connect(self.handle_slider_moved)
+        # Connect sliderMoved with debounce
+        self.sliderMoved.connect(self.start_debounce)
 
-    def handle_slider_moved(self, position):
-        """Handle the slider movement (dragging) and set the correct value."""
-        # Scale the integer position back to a float
+    def start_debounce(self):
+        """Start debounce timer for slider movements."""
+        self.debounce_timer.start(300)  # Attendi 300ms dopo lo spostamento dello slider
+
+    def handle_slider_moved(self):
+        """Handle the slider movement after debounce."""
+        position = self.sliderPosition()  # Ottieni la posizione attuale dello slider
         new_value = position / self.scale_factor
-
         new_value = round(new_value / self.step_size) * self.step_size
 
-        # Set the scaled value
+        # Imposta il nuovo valore
         self.setValue(new_value)
+        print(f"Slider moved to: {new_value}")  # Debugging: log the final value
 
     def reset_to_default_value(self):
         """Reset the slider to its default value."""
         self.setValue(float(self.default_value) / self.scale_factor)
+
+        # Aggiorna il line edit o altre componenti associate immediatamente
+        if hasattr(self, 'line_edit'):
+            self.line_edit.set_value(float(self.default_value) / self.scale_factor)  # Aggiorna immediatamente il valore nel line edit
 
     def value(self):
         """Return the slider value as a float, scaled by the decimals."""
@@ -706,6 +764,10 @@ class ParameterDecimalSlider(QtWidgets.QSlider, ParametersWidget):
         # Update the slider's internal value (ensuring precision)
         self.setValue(new_value)
 
+        # Esegui immediatamente onchange_slider o l'aggiornamento necessario
+        if hasattr(self, 'line_edit'):
+            self.line_edit.set_value(new_value)  # Aggiorna il line edit con il nuovo valore
+        
         # Accept the event
         event.accept()
 
@@ -727,13 +789,44 @@ class ParameterDecimalSlider(QtWidgets.QSlider, ParametersWidget):
             return
 
         # Ensure the new value is within the valid range
-        new_value = min(max(round(new_value, self.decimals), self.min_value), self.max_value)
+        new_value = min(max(round(new_value, self.decimals), self.min_value / self.scale_factor), self.max_value / self.scale_factor)
 
         # Set the new value to the slider
         self.setValue(new_value)
 
+        # Esegui immediatamente onchange_slider o l'aggiornamento necessario
+        if hasattr(self, 'line_edit'):
+            self.line_edit.set_value(new_value)  # Aggiorna il line edit con il nuovo valore
+
         # Accept the event
         event.accept()
+
+    def mousePressEvent(self, event):
+        """Handle the mouse press event to update the slider value immediately."""
+        if event.button() == QtCore.Qt.LeftButton:  # Verifica che sia il pulsante sinistro del mouse
+            # Calcola la posizione cliccata lungo la barra dello slider
+            new_position = QtWidgets.QStyle.sliderValueFromPosition(
+                self.minimum(), self.maximum(), event.pos().x(), self.width()
+            )
+
+            # Converti la nuova posizione nello spazio decimale
+            new_value = new_position / self.scale_factor
+
+            # Applica lo step size, arrotondando il valore allo step più vicino
+            new_value = round(new_value / self.step_size) * self.step_size
+
+            # Imposta il nuovo valore con la precisione corretta
+            new_value = round(new_value, self.decimals)
+
+            # Aggiorna immediatamente il valore dello slider
+            self.setValue(new_value)
+
+            # Esegui immediatamente onchange_slider o l'aggiornamento necessario
+            if hasattr(self, 'line_edit'):
+                self.line_edit.set_value(new_value)  # Aggiorna il line edit con il nuovo valore
+
+        # Chiama il metodo della classe base per gestire il resto dell'evento
+        super().mousePressEvent(event)
 
     def set_value(self, value):
         self.setValue(value)

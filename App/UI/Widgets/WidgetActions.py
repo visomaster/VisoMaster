@@ -544,7 +544,8 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
                         update_control(main_window, slider_widget_name, actual_value, exec_function=widget_data.get('exec_function'), exec_function_args=widget_data.get('exec_function_args', []))
                     slider_widget.line_edit.set_value(actual_value)  # Update the line edit with the actual value
 
-                widget.valueChanged.connect(partial(onchange_slider, widget, widget_name, widget_data))
+                # Invece di collegare direttamente onchange_slider, fallo dopo il debounce
+                widget.debounce_timer.timeout.connect(partial(onchange_slider, widget, widget_name, widget_data))
 
                 # When line edit value changes
                 def onchange_line_edit(slider_widget: ParameterDecimalSlider, slider_widget_name, new_value=False):
@@ -599,13 +600,21 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
                         update_control(main_window, slider_widget_name, new_value, exec_function=widget_data.get('exec_function'), exec_function_args=widget_data.get('exec_function_args', []))
                     # Update the slider text box value too
                     slider_widget.line_edit.setText(str(new_value))
-                widget.valueChanged.connect(partial(onchange_slider, widget, widget_name, widget_data))
+
+                # Invece di collegare direttamente onchange_slider, fallo dopo il debounce
+                widget.debounce_timer.timeout.connect(partial(onchange_slider, widget, widget_name, widget_data))
 
                 # When slider textbox value is changed
                 def onchange_line_edit(slider_widget: ParameterSlider, slider_widget_name, new_value=False):
+                    """Handle changes in the line edit and update the slider accordingly."""
                     if not new_value:
                         new_value = 0
-                    new_value = int(new_value) #Text box value is sent as str by default
+                    try:
+                        # Prova a convertire il valore in intero, se fallisce usa il valore corrente dello slider
+                        new_value = int(new_value)
+                    except ValueError:
+                        # Se non è possibile convertire, mantieni il valore corrente dello slider
+                        new_value = slider_widget.value()
                     # Prevent the text box value from going above the maximum value of the slider
                     if new_value > slider_widget.max_value:
                         new_value = slider_widget.max_value
