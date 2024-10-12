@@ -568,14 +568,13 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
 
                     # Update the slider's internal value
                     slider_widget.setValue(new_value)
+                    # Update the line_edit text to reflect the current value
+                    slider_widget.line_edit.set_value(new_value)
 
                     if data_type=='parameter':
                         update_parameter(main_window, slider_widget_name, new_value, enable_refresh_frame=slider_widget.enable_refresh_frame)
                     elif data_type=='control':
                         update_control(main_window, slider_widget_name, new_value, exec_function=widget_data.get('exec_function'), exec_function_args=widget_data.get('exec_function_args', []))
-
-                    # Update the line_edit text to reflect the current value
-                    slider_widget.line_edit.set_value(new_value)
 
                 widget.line_edit.textChanged.connect(partial(onchange_line_edit, widget, widget_name))
  
@@ -627,12 +626,12 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
                         new_value = slider_widget.min_value
 
                     slider_widget.line_edit.set_value(new_value)
+                    slider_widget.setValue(int(new_value)) #Update the value of slider too
                     if data_type=='parameter':
                         update_parameter(main_window, slider_widget_name, new_value, enable_refresh_frame=slider_widget.enable_refresh_frame)
                     elif data_type=='control':
                         update_control(main_window, slider_widget_name, new_value, exec_function=widget_data.get('exec_function'), exec_function_args=widget_data.get('exec_function_args', []))
 
-                    slider_widget.setValue(int(new_value)) #Update the value of slider too
                 widget.line_edit.textChanged.connect(partial(onchange_line_edit, widget, widget_name))
 
             elif 'Text' in widget_name:
