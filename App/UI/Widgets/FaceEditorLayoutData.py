@@ -8,17 +8,17 @@ FACE_EDITOR_LAYOUT_DATA = {
             'default': '2.50',
             'step': 0.05,
             'decimals': 2,
-            'help': 'Changes source crop scale. Increase the value to capture the face more distantly.'
+            'help': 'Changes source crop scale. Increase the value to capture the face more distantly. 2.2 scale factor for cropping driving video.'
         },
         'FaceEditorVYRatioDecimalSlider': {
             'level': 1,
             'label': 'VY Ratio',
-            'min_value': '0.100',
+            'min_value': '-0.200',
             'max_value': '0.200',
-            'default': '0.125',
+            'default': '-0.125',
             'step': 0.001,
             'decimals': 3,
-            'help': 'Changes the vy ratio for crop scale. Decrease the value to capture the face more distantly.'
+            'help': 'Changes the vy ratio for crop scale. Decrease the value to capture the face more distantly. -0.1 factor for cropping driving video.'
         },
         'FaceEditorBlurAmountSlider': {
             'level': 1,

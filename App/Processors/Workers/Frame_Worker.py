@@ -93,7 +93,7 @@ class FrameWorker(threading.Thread):
             if not use_landmark_detection or landmark_detect_mode=="5":
                 # force to use landmark detector when edit face is enabled.
                 use_landmark_detection = True
-                landmark_detect_mode = "106"
+                landmark_detect_mode = "203"
 
             # force to use from_points in landmark detector when edit face is enabled.
             from_points = True
@@ -753,7 +753,7 @@ class FrameWorker(threading.Thread):
             init_source_lip_ratio = round(float(source_lip_ratio[0][0]), 2)
 
             # prepare_retargeting_image
-            original_face_512, M_o2c, M_c2o = faceutil.warp_face_by_face_landmark_x(img, kps, dsize=512, scale=parameters["FaceEditorCropScaleDecimalSlider"], vy_ratio=-parameters['FaceEditorVYRatioDecimalSlider'], interpolation=v2.InterpolationMode.BILINEAR)
+            original_face_512, M_o2c, M_c2o = faceutil.warp_face_by_face_landmark_x(img, lmk_crop, dsize=512, scale=parameters["FaceEditorCropScaleDecimalSlider"], vy_ratio=parameters['FaceEditorVYRatioDecimalSlider'], interpolation=v2.InterpolationMode.BILINEAR)
             original_face_256 = t256(original_face_512)
             mask_ori = faceutil.prepare_paste_back(self.models_processor.lp_mask_crop, M_c2o, dsize=(img.shape[1], img.shape[2])).contiguous()
 
@@ -845,7 +845,7 @@ class FrameWorker(threading.Thread):
             _, lmk_crop, _ = self.models_processor.run_detect_landmark( img, bbox=[], det_kpss=kps, detect_mode='203', score=0.5, from_points=True)
 
             # prepare_retargeting_image
-            original_face_512, M_o2c, M_c2o = faceutil.warp_face_by_face_landmark_x(img, kps, dsize=512, scale=parameters['FaceEditorCropScaleDecimalSlider'], vy_ratio=-parameters['FaceEditorVYRatioDecimalSlider'], interpolation=v2.InterpolationMode.BILINEAR)
+            original_face_512, M_o2c, M_c2o = faceutil.warp_face_by_face_landmark_x(img, kps, dsize=512, scale=parameters['FaceEditorCropScaleDecimalSlider'], vy_ratio=parameters['FaceEditorVYRatioDecimalSlider'], interpolation=v2.InterpolationMode.BILINEAR)
             mask_ori = faceutil.prepare_paste_back(self.models_processor.lp_mask_crop, M_c2o, dsize=(img.shape[1], img.shape[2])).contiguous()
 
             out, mask_out = self.models_processor.apply_face_makeup(original_face_512, parameters)

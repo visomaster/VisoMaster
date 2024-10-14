@@ -749,7 +749,12 @@ class ParameterDecimalSlider(QtWidgets.QSlider, ParametersWidget):
 
     def setValue(self, value):
         """Set the slider value, scaling it from a float to the internal integer."""
-        scaled_value = int(float(value) * self.scale_factor)
+        # Arrotonda il valore a 2 decimali, come specificato in decimals
+        value = round(value, self.decimals)
+        
+        # Moltiplica per il fattore di scala e arrotonda prima di convertirlo in intero
+        scaled_value = int(round(float(value) * float(self.scale_factor)))
+
         super().setValue(scaled_value)
 
     def wheelEvent(self, event):
@@ -862,6 +867,9 @@ class ParameterLineDecimalEdit(QtWidgets.QLineEdit):
         self.setFixedWidth(fixed_width)  # Adjust the width for decimal numbers
         self.decimals = decimals
         self.step_size = step_size
+        self.min_value = min_value
+        self.max_value = max_value
+        default_value = float(default_value)
         self.setMaxLength(max_length)
         self.setValidator(QtGui.QDoubleValidator(min_value, max_value, decimals))
         # Optional: Align text to the right for better readability
@@ -871,12 +879,25 @@ class ParameterLineDecimalEdit(QtWidgets.QLineEdit):
             self.setAlignment(QtGui.Qt.AlignCenter)
         else:
             self.setAlignment(QtGui.Qt.AlignRight)
-        self.setText(default_value)
+        self.setText(f"{default_value:.{self.decimals}f}")
 
     def set_value(self, value: float):
-        """Set the line edit's value."""
-        new_value = round(value / self.step_size) * self.step_size
-        self.setText(f"{new_value:.{self.decimals}f}")
+        """Set the line edit's value with proper handling for step size and rounding."""
+        # Clamp the value to ensure it's within min and max range
+        new_value = max(min(value, self.max_value), self.min_value)
+
+        # Round the value to the nearest step size
+        rounded_value = round(new_value / self.step_size) * self.step_size
+
+        # Ensure the value is rounded to the specified number of decimals
+        rounded_value = round(rounded_value, self.decimals)
+
+        # Ensure the formatted value has exactly 'self.decimals' decimal places, even for negative numbers
+        format_string = f"{{:.{self.decimals}f}}"
+        formatted_value = format_string.format(rounded_value)
+
+        # Set the text with the correct number of decimal places
+        self.setText(formatted_value)
 
     def get_value(self) -> float:
         """Get the current value from the line edit."""

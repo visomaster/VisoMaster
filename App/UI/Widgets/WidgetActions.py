@@ -514,7 +514,9 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
                     max_value=float(widget_data['max_value']), 
                     default_value=str(widget_data['default']),
                     decimals=int(widget_data['decimals']),  # Ensure it uses decimals place for consistency
-                    step_size=float(widget_data['step'])
+                    step_size=float(widget_data['step']),
+                    fixed_width=42,
+                    max_length=7 if int(widget_data['decimals']) > 1 else 5
                 )
                 widget.reset_default_button = ParameterResetDefaultButton(related_widget=widget)
 
