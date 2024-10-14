@@ -2698,45 +2698,51 @@ class ModelsProcessor(QObject):
 
         return delta
 
-    # Funzione per decidere se attivare lo stitching
-    def should_apply_stitching(self, kp_source, kp_driving, threshold=0.01):
-        # Calcola la differenza assoluta tra i due tensori
-        difference = torch.abs(kp_source - kp_driving)
-        
-        # Calcola la media o la massima differenza per ogni punto chiave
-        max_difference = torch.max(difference)
-        
-        # Stampa le differenze per debug
-        #print(f"Max difference: {max_difference}")
-        
-        # Verifica se la differenza massima supera la soglia
-        if max_difference > threshold:
-            #print("Attivazione dello stitching: variazione significativa.")
-            return True
-        else:
-            #print("Stitching non necessario: variazioni minime.")
-            return False
-        
+
     def lp_stitching(self, kp_source: torch.Tensor, kp_driving: torch.Tensor, face_editor_type='Human-Face') -> torch.Tensor:
         """ conduct the stitching
         kp_source: Bxnum_kpx3
         kp_driving: Bxnum_kpx3
         """
-
-        if not self.should_apply_stitching(kp_source, kp_driving, 0.01):
-            return kp_driving
-
         bs, num_kp = kp_source.shape[:2]
+
+        # calculate default delta from kp_source (using kp_source as default)
+        kp_driving_default = kp_source.clone()
+
+        default_delta = self.lp_stitch(kp_source, kp_driving_default, face_editor_type=face_editor_type)
+
+        # Clone default delta values for expression and translation/rotation
+        default_delta_exp = default_delta[..., :3*num_kp].reshape(bs, num_kp, 3).clone()  # 1x20x3
+        default_delta_tx_ty = default_delta[..., 3*num_kp:3*num_kp+2].reshape(bs, 1, 2).clone()  # 1x1x2
+
+        # Debug: Print default delta values (should be close to zero)
+        #print("default_delta_exp:", default_delta_exp)
+        #print("default_delta_tx_ty:", default_delta_tx_ty)
 
         kp_driving_new = kp_driving.clone()
 
+        # calculate new delta based on kp_driving
         delta = self.lp_stitch(kp_source, kp_driving_new, face_editor_type=face_editor_type)
 
-        delta_exp = delta[..., :3*num_kp].reshape(bs, num_kp, 3)  # 1x20x3
-        delta_tx_ty = delta[..., 3*num_kp:3*num_kp+2].reshape(bs, 1, 2)  # 1x1x2
+        # Clone new delta values for expression and translation/rotation
+        delta_exp = delta[..., :3*num_kp].reshape(bs, num_kp, 3).clone()  # 1x20x3
+        delta_tx_ty = delta[..., 3*num_kp:3*num_kp+2].reshape(bs, 1, 2).clone()  # 1x1x2
 
-        kp_driving_new += delta_exp
-        kp_driving_new[..., :2] += delta_tx_ty
+        # Debug: Print new delta values
+        #print("delta_exp:", delta_exp)
+        #print("delta_tx_ty:", delta_tx_ty)
+
+        # Calculate the difference between new and default delta
+        delta_exp_diff = delta_exp - default_delta_exp
+        delta_tx_ty_diff = delta_tx_ty - default_delta_tx_ty
+
+        # Debug: Print the delta differences
+        #print("delta_exp_diff:", delta_exp_diff)
+        #print("delta_tx_ty_diff:", delta_tx_ty_diff)
+
+        # Apply delta differences to the keypoints only if significant differences are found
+        kp_driving_new += delta_exp_diff
+        kp_driving_new[..., :2] += delta_tx_ty_diff
 
         return kp_driving_new
 

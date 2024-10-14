@@ -1477,31 +1477,58 @@ def calc_lip_close_ratio(lmk: np.ndarray) -> np.ndarray:
 #imported from https://github.com/KwaiVGI/LivePortrait/blob/main/src/utils/camera.py
 def headpose_pred_to_degree(pred):
     """
-    pred: (bs, 66) or (bs, 1) or others
+    Converts a headpose prediction to degrees.
+
+    Args:
+        pred: (bs, 66) or (bs, 1) or other shapes.
+              (bs, 66) indicates a classification task with 66 classes.
+
+    Returns:
+        degree: Converted headpose prediction in degrees if input shape is (bs, 66).
+                Otherwise, returns the input as is.
     """
+    # Check if pred is (bs, 66)
     if pred.ndim > 1 and pred.shape[1] == 66:
-        # NOTE: note that the average is modified to 97.5
+        # Get the device of the input tensor
         device = pred.device
+        
+        # Create an index tensor [0, 1, 2, ..., 65]
         idx_tensor = [idx for idx in range(0, 66)]
         idx_tensor = torch.FloatTensor(idx_tensor).to(device)
+        
+        # Apply softmax to get probabilities over the 66 classes
         pred = torch.nn.functional.softmax(pred, dim=1)
-        degree = torch.sum(pred*idx_tensor, axis=1) * 3 - 97.5
-
+        
+        # Calculate the weighted sum (degree estimation)
+        # This step computes the sum of probabilities * indices and scales the result
+        degree = torch.sum(pred * idx_tensor, axis=1) * 3 - 97.5
+        
         return degree
 
+    # If input is not (bs, 66), return it unchanged
     return pred
 
 #imported from https://github.com/KwaiVGI/LivePortrait/blob/main/src/utils/camera.py
 def get_rotation_matrix(pitch_, yaw_, roll_):
-    """ the input is in degree
-    """
-    # transform to radian
-    pitch = pitch_ / 180 * np.pi
-    yaw = yaw_ / 180 * np.pi
-    roll = roll_ / 180 * np.pi
+    """ The input angles are in degrees """
+    
+    # If the inputs are scalar or lists, convert them to tensors
+    if not isinstance(pitch_, torch.Tensor):
+        pitch_ = torch.tensor(pitch_)
+    if not isinstance(yaw_, torch.Tensor):
+        yaw_ = torch.tensor(yaw_)
+    if not isinstance(roll_, torch.Tensor):
+        roll_ = torch.tensor(roll_)
 
+    # Convert degrees to radians
+    pitch = pitch_ / 180 * torch.pi
+    yaw = yaw_ / 180 * torch.pi
+    roll = roll_ / 180 * torch.pi
+
+    # Get the device (either CPU or GPU)
     device = pitch.device
 
+    # If the tensors are one-dimensional, add an extra dimension
     if pitch.ndim == 1:
         pitch = pitch.unsqueeze(1)
     if yaw.ndim == 1:
@@ -1509,62 +1536,82 @@ def get_rotation_matrix(pitch_, yaw_, roll_):
     if roll.ndim == 1:
         roll = roll.unsqueeze(1)
 
-    # calculate the euler matrix
-    bs = pitch.shape[0]
+    # Calculate rotation matrices for pitch, yaw, and roll
+    bs = pitch.shape[0]  # Batch size
     ones = torch.ones([bs, 1]).to(device)
     zeros = torch.zeros([bs, 1]).to(device)
-    x, y, z = pitch, yaw, roll
 
+    # Rotation matrix around x-axis (pitch)
     rot_x = torch.cat([
         ones, zeros, zeros,
-        zeros, torch.cos(x), -torch.sin(x),
-        zeros, torch.sin(x), torch.cos(x)
+        zeros, torch.cos(pitch), -torch.sin(pitch),
+        zeros, torch.sin(pitch), torch.cos(pitch)
     ], dim=1).reshape([bs, 3, 3])
 
+    # Rotation matrix around y-axis (yaw)
     rot_y = torch.cat([
-        torch.cos(y), zeros, torch.sin(y),
+        torch.cos(yaw), zeros, torch.sin(yaw),
         zeros, ones, zeros,
-        -torch.sin(y), zeros, torch.cos(y)
+        -torch.sin(yaw), zeros, torch.cos(yaw)
     ], dim=1).reshape([bs, 3, 3])
 
+    # Rotation matrix around z-axis (roll)
     rot_z = torch.cat([
-        torch.cos(z), -torch.sin(z), zeros,
-        torch.sin(z), torch.cos(z), zeros,
+        torch.cos(roll), -torch.sin(roll), zeros,
+        torch.sin(roll), torch.cos(roll), zeros,
         zeros, zeros, ones
     ], dim=1).reshape([bs, 3, 3])
 
+    # Combine the rotations (z, y, x)
     rot = rot_z @ rot_y @ rot_x
 
+    # Return the transposed rotation matrix
     return rot.permute(0, 2, 1)  # transpose
 
 #imported from https://github.com/KwaiVGI/LivePortrait/blob/main/src/utils/live_portrait_wrapper.py
 def transform_keypoint(kp_info: dict):
     """
-    transform the implicit keypoints with the pose, shift, and expression deformation
-    kp: BxNx3
+    Transforms the keypoints using the pose (pitch, yaw, roll), shift (translation), and expression deformation.
+    
+    Args:
+        kp_info: A dictionary containing the following keys:
+            - 'kp': Tensor of shape (bs, k, 3), the keypoints.
+            - 'pitch', 'yaw', 'roll': Tensors representing head pose angles.
+            - 't': Translation vector (bs, 3).
+            - 'exp': Expression deformation vector (bs, k, 3).
+            - 'scale': Scaling factor.
+    
+    Returns:
+        kp_transformed: Transformed keypoints of shape (bs, k, 3).
     """
-    kp = kp_info['kp']    # (bs, k, 3)
+    kp = kp_info['kp']    # (bs, k, 3) keypoints
     pitch, yaw, roll = kp_info['pitch'], kp_info['yaw'], kp_info['roll']
-
     t, exp = kp_info['t'], kp_info['exp']
     scale = kp_info['scale']
 
+    # Convert pose angles to degrees
     pitch = headpose_pred_to_degree(pitch)
     yaw = headpose_pred_to_degree(yaw)
     roll = headpose_pred_to_degree(roll)
 
+    # Determine the batch size
     bs = kp.shape[0]
+    
+    # Determine the number of keypoints
     if kp.ndim == 2:
-        num_kp = kp.shape[1] // 3  # Bx(num_kpx3)
+        num_kp = kp.shape[1] // 3  # For shape (bs, num_kpx3)
     else:
-        num_kp = kp.shape[1]  # Bxnum_kpx3
+        num_kp = kp.shape[1]  # For shape (bs, num_kp, 3)
 
-    rot_mat = get_rotation_matrix(pitch, yaw, roll)    # (bs, 3, 3)
+    # Get the rotation matrix based on pitch, yaw, and roll
+    rot_mat = get_rotation_matrix(pitch, yaw, roll)  # (bs, 3, 3)
 
-    # Eqn.2: s * (R * x_c,s + exp) + t
+    # Apply the transformation: s * (R * x_c,s + exp) + t
     kp_transformed = kp.view(bs, num_kp, 3) @ rot_mat + exp.view(bs, num_kp, 3)
-    kp_transformed *= scale[..., None]  # (bs, k, 3) * (bs, 1, 1) = (bs, k, 3)
-    kp_transformed[:, :, 0:2] += t[:, None, 0:2]  # remove z, only apply tx ty
+    kp_transformed *= scale[..., None]  # Apply scaling
+    
+    # Apply translation, only to x and y (ignore z)
+    kp_transformed[:, :, 0:2] += t[:, None, 0:2]  
 
     return kp_transformed
 
