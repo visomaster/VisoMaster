@@ -1675,6 +1675,8 @@ class ModelsProcessor(QObject):
             _scale = 224  / (max(w, h)*1.5)
 
             aimg, M = faceutil.transform(img, center, 224, _scale, rotate)
+        elif len(det_kpss) == 0:
+            return [], [], []
         else:
             if det_kpss.shape[0] == 5:
                 aimg, M = faceutil.warp_face_by_face_landmark_5(img, det_kpss, image_size=224, mode='arcface128', interpolation=v2.InterpolationMode.BILINEAR)
@@ -1702,7 +1704,7 @@ class ModelsProcessor(QObject):
 
         out_pts = out_pts.reshape((-1, 2)) * 224.0
 
-        if det_kpss.shape[0] == 5:
+        if len(det_kpss) == 0 or det_kpss.shape[0] == 5:
             IM = faceutil.invertAffineTransform(M)
 
         out_pts = faceutil.trans_points(out_pts, IM)
