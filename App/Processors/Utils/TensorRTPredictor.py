@@ -138,7 +138,7 @@ class TensorRTPredictor:
         for i, o in enumerate(self.inputs):
             specs.append((o["name"], o['shape'], o['dtype']))
             if self.debug:
-                print(f"trt input {i} -> {o['name']} -> {o['shape']}")
+                print(f"trt input {i} -> {o['name']} -> {o['shape']} -> {o['dtype']}")
         return specs
 
     def output_spec(self):
@@ -150,7 +150,7 @@ class TensorRTPredictor:
         for i, o in enumerate(self.outputs):
             specs.append((o["name"], o['shape'], o['dtype']))
             if self.debug:
-                print(f"trt output {i} -> {o['name']} -> {o['shape']}")
+                print(f"trt output {i} -> {o['name']} -> {o['shape']} -> {o['dtype']}")
         return specs
 
     def adjust_buffer(self, feed_dict, context):
@@ -203,6 +203,8 @@ class TensorRTPredictor:
             return self.tensors
 
         finally:
+            # Sincronizza il flusso CUDA prima di restituire il contesto
+            torch.cuda.synchronize()  # Sincronizza il default stream
             # Restituisci il contesto al pool dopo l'uso
             with self.lock:
                 self.context_pool.put(context)
@@ -229,6 +231,12 @@ class TensorRTPredictor:
 
             nvtx.range_pop()
 
+            # Creare un evento CUDA per tracciare il consumo dell'input
+            input_consumed_event = torch.cuda.Event()
+
+            # Impostare l'evento per l'input consumato
+            context.set_input_consumed_event(input_consumed_event.cuda_event)
+        
             # Esecuzione asincrona con execute_async_v3()
             nvtx.range_push("execute_async")
             noerror = context.execute_async_v3(stream.cuda_stream)
@@ -236,11 +244,18 @@ class TensorRTPredictor:
                 raise ValueError("ERROR: inference failed.")
             nvtx.range_pop()
 
+            # Sincronizzare l'evento dell'input consumato (se necessario)
+            input_consumed_event.synchronize()
+
             return self.tensors
 
         finally:
             # Sincronizza il flusso CUDA prima di restituire il contesto
-            stream.synchronize()
+            if stream != torch.cuda.current_stream():
+                stream.synchronize()  # Sincronizza lo stream personalizzato
+            else:
+                torch.cuda.synchronize()  # Sincronizza il default stream
+
             # Restituisci il contesto al pool dopo l'uso
             with self.lock:
                 self.context_pool.put(context)
