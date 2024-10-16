@@ -28,7 +28,7 @@ class EngineBuilder:
     Parses an ONNX graph and builds a TensorRT engine from it.
     """
 
-    def __init__(self, verbose=False, custom_plugin_path=None):
+    def __init__(self, verbose=False, custom_plugin_path=None, builder_optimization_level=3):
         """
         :param verbose: If enabled, a higher verbosity level will be set on the TensorRT logger.
         :param custom_plugin_path: Path to the custom plugin library (DLL or SO).
@@ -45,6 +45,9 @@ class EngineBuilder:
         self.config = self.builder.create_builder_config()
         # Imposta il limite di memoria del pool di lavoro a 3 GB
         self.config.set_memory_pool_limit(trt.MemoryPoolType.WORKSPACE, 3 * (2 ** 30))  # 3 GB
+
+        # Imposta il livello di ottimizzazione del builder (se fornito)
+        self.config.builder_optimization_level = builder_optimization_level
 
         # Crea un profilo di ottimizzazione, se necessario
         profile = self.builder.create_optimization_profile()
@@ -100,6 +103,9 @@ class EngineBuilder:
         os.makedirs(engine_dir, exist_ok=True)
         log.info("Building {} Engine in {}".format(precision, engine_path))
 
+        # Forza TensorRT a rispettare i vincoli di precisione
+        self.config.set_flag(trt.BuilderFlag.PREFER_PRECISION_CONSTRAINTS)
+    
         if precision == "fp16":
             if not self.builder.platform_has_fast_fp16:
                 log.warning("FP16 is not supported natively on this platform/device")
