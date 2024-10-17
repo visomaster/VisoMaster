@@ -459,13 +459,13 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
                 else:
                     create_control(main_window, widget_name, widget_data['default'])
                 # Set onclick function for toggle button
-                def onchange(toggle_widget: ToggleButton, toggle_widget_name, widget_data: dict):
+                def onchange(toggle_widget: ToggleButton, toggle_widget_name, widget_data: dict, *args):
                     toggle_state = toggle_widget.isChecked()
                     if data_type=='parameter':
                         update_parameter(main_window, toggle_widget_name, toggle_state, enable_refresh_frame=toggle_widget.enable_refresh_frame)    
                     elif data_type=='control':
-                        update_control(main_window, toggle_widget_name, toggle_state, exec_function=widget_data.get('exec_function'), exec_function_args = widget_data.get('exec_function_args',[]))
-                widget.clicked.connect(partial(onchange, widget, widget_name, widget_data))
+                        update_control(main_window, toggle_widget_name, toggle_state, exec_function=widget_data.get('exec_function'), exec_function_args=widget_data.get('exec_function_args', []))
+                widget.toggled.connect(partial(onchange, widget, widget_name, widget_data))
 
             elif 'Selection' in widget_name:
                 widget = SelectionBox(label=widget_data['label'], widget_name=widget_name, group_layout_data=widgets, label_widget=label, main_window=main_window, default_value=widget_data['default'])
@@ -704,6 +704,8 @@ def show_hide_related_widgets(main_window: 'MainWindow', parent_widget: ToggleBu
             # Loop through all widgets data in the parent widget's group layout data
             for widget_name in group_layout_data.keys():
                 # Store the widget object (instance) from the parameters_widgets Dictionary
+                if not widget_name in main_window.parameter_widgets:
+                    continue
                 current_widget = main_window.parameter_widgets[widget_name]
                 # Check if the current_widget depends on the Parent Widget's (toggle) value 
                 parentToggles = group_layout_data[widget_name].get('parentToggle', '')
