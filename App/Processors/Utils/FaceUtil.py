@@ -1,6 +1,6 @@
 import cv2
 import math
-from math import sin, cos, acos, degrees
+from math import sin, cos, acos, degrees, floor, ceil
 import numpy as np
 from skimage import transform as trans
 import torch
@@ -1242,6 +1242,38 @@ def parse_rect_from_landmark(
     return center, size, angle
 
 #imported from https://github.com/KwaiVGI/LivePortrait/blob/main/src/utils/crop.py
+def parse_bbox_from_landmark(pts, **kwargs):
+    center, size, angle = parse_rect_from_landmark(pts, **kwargs)
+    cx, cy = center
+    w, h = size
+
+    # calculate the vertex positions before rotation
+    bbox = np.array([
+        [cx-w/2, cy-h/2],  # left, top
+        [cx+w/2, cy-h/2],
+        [cx+w/2, cy+h/2],  # right, bottom
+        [cx-w/2, cy+h/2]
+    ], dtype=np.float32)
+
+    # construct rotation matrix
+    bbox_rot = bbox.copy()
+    R = np.array([
+        [np.cos(angle), -np.sin(angle)],
+        [np.sin(angle),  np.cos(angle)]
+    ], dtype=np.float32)
+
+    # calculate the relative position of each vertex from the rotation center, then rotate these positions, and finally add the coordinates of the rotation center
+    bbox_rot = (bbox_rot - center) @ R.T + center
+
+    return {
+        'center': center,  # 2x1
+        'size': size,  # scalar
+        'angle': angle,  # rad, counterclockwise
+        'bbox': bbox,  # 4x2
+        'bbox_rot': bbox_rot,  # 4x2
+    }
+
+#imported from https://github.com/KwaiVGI/LivePortrait/blob/main/src/utils/crop.py
 def _estimate_similar_transform_from_pts(
     pts,
     dsize,
@@ -1363,9 +1395,9 @@ def create_faded_inner_mask(size, border_thickness, fade_thickness, blur_radius=
     mask[white_region] = 1.0
 
     # Apply Gaussian blur to smooth the white edges
-    mask = mask.unsqueeze(0).unsqueeze(0)  # Add batch and channel dimensions for Gaussian blur
+    mask = mask[None, None, :, :]  # Aggiungi batch e channel
     mask = torchvision.transforms.functional.gaussian_blur(mask, kernel_size=(blur_radius, blur_radius), sigma=(blur_radius / 2))
-    mask = mask.squeeze()  # Remove extra dimensions
+    mask = mask[0, 0, :, :]  # Rimuovi batch e channel
 
     return mask
 
@@ -1381,7 +1413,6 @@ def prepare_paste_back(mask_crop, crop_M_c2o, dsize, interpolation=v2.Interpolat
 
     mask_ori = v2.functional.affine(mask_crop, t.rotation*57.2958, translate=(t.translation[0], t.translation[1]), scale=t.scale, shear=(0.0, 0.0), interpolation=interpolation, center=(0, 0))
     mask_ori = v2.functional.crop(mask_ori, 0,0, dsize[0], dsize[1]) # cols, rows
-    mask_ori = torch.div(mask_ori.type(torch.float32), 255.)
 
     return mask_ori
 
@@ -1394,14 +1425,13 @@ def paste_back(img_crop, M_c2o, img_ori, mask_ori, interpolation=v2.Interpolatio
     t.params[0:2] = M_c2o
 
     # pad image by image size
-    img_crop = pad_image_by_size(img_crop, (img_ori.shape[1], img_ori.shape[2]))
+    img_crop = pad_image_by_size(img_crop, dsize)
 
     output = v2.functional.affine(img_crop, t.rotation*57.2958, translate=(t.translation[0], t.translation[1]), scale=t.scale, shear=(0.0, 0.0), interpolation=interpolation, center=(0, 0))
     output = v2.functional.crop(output, 0,0, dsize[0], dsize[1]) # cols, rows
 
     # Converti i tensor al tipo appropriato prima delle operazioni in-place
     output = output.float()  # Converte output in torch.float32
-    mask_ori = mask_ori.float()  # Assicura che mask_ori sia float per operazioni compatibili
     img_ori = img_ori.float()  # Assicura che img_ori sia float
 
     # Ottimizzazione con operazioni in-place
@@ -1411,6 +1441,73 @@ def paste_back(img_crop, M_c2o, img_ori, mask_ori, interpolation=v2.Interpolatio
     output = output.to(torch.uint8)
 
     return output
+
+def paste_back_adv(img_crop, M_c2o, img, mask_crop, interpolation=v2.InterpolationMode.BILINEAR):
+    """
+    Paste back the transformed cropped image onto the original image with a mask.
+
+    Parameters:
+    - img_crop (torch.Tensor: float32): Cropped image tensor (C x H x W).
+    - M_c2o (numpy array): Rotation/Translation matrix.
+    - img (torch.Tensor: uint8): Original image tensor (C x H x W).
+    - mask_crop (torch.Tensor: float32): Mask image tensor (1 x H x W) con bordi sfumati.
+    - interpolation: InterpolationMode.
+
+    Returns:
+    - img (torch.Tensor: uint8): Modified image tensor.
+    """
+    
+    tform = trans.SimilarityTransform()
+    tform.params[0:2] = M_c2o
+    corners = np.array([[0, 0], [0, 511], [511, 0], [511, 511]])
+
+    # Calcola i nuovi limiti
+    x = (M_c2o[0][0] * corners[:, 0] + M_c2o[0][1] * corners[:, 1] + M_c2o[0][2])
+    y = (M_c2o[1][0] * corners[:, 0] + M_c2o[1][1] * corners[:, 1] + M_c2o[1][2])
+
+    left = max(floor(np.min(x)), 0)
+    top = max(floor(np.min(y)), 0)
+    right = min(ceil(np.max(x)), img.shape[2])
+    bottom = min(ceil(np.max(y)), img.shape[1])
+
+    # Converti img in float32 [0, 1]
+    img = torch.clamp(img.float() / 255.0, 0, 1)
+
+    # Trasforma img_crop senza inverso
+    img_crop = v2.functional.pad(img_crop, (0, 0, img.shape[2] - 512, img.shape[1] - 512))
+    img_crop = v2.functional.affine(img_crop, tform.rotation * 57.2958, 
+                                    (tform.translation[0], tform.translation[1]), 
+                                    tform.scale, 0, interpolation=interpolation, center=(0, 0))
+    img_crop = img_crop[:, top:bottom, left:right]  # Ritaglia l'area trasformata
+
+    # Trasforma mask_crop nello stesso modo di img_crop
+    mask_crop = v2.functional.pad(mask_crop, (0, 0, img.shape[2] - 512, img.shape[1] - 512))
+    mask_crop = v2.functional.affine(mask_crop, tform.rotation * 57.2958, 
+                                     (tform.translation[0], tform.translation[1]), 
+                                     tform.scale, 0, interpolation=interpolation, center=(0, 0))
+    mask_crop = mask_crop[:, top:bottom, left:right]
+    
+    # Clampa la maschera tra 0 e 1
+    mask_crop = torch.clamp(mask_crop, 0, 1)
+
+    # Crea il complemento della maschera per l'area dell'immagine originale
+    mask_inv = 1 - mask_crop
+
+    # Applica mask_crop a img_crop e mask_inv a img_diff
+    img_diff = img[:, top:bottom, left:right]
+    img_crop = torch.mul(mask_crop, img_crop)  # Applica la maschera sfumata al ritaglio
+    img_diff = torch.mul(mask_inv, img_diff)   # Applica il complemento all'area originale
+
+    # Somma img_crop (trasformato) all'area ritagliata dell'immagine originale
+    img_crop = torch.add(img_crop, img_diff)
+
+    # Inserisci l'area modificata nell'immagine originale (ancora in float)
+    img[:, top:bottom, left:right] = img_crop
+
+    # Alla fine converti tutto in uint8
+    img = torch.clamp(img * 255.0, 0, 255).to(torch.uint8)
+
+    return img
 
 def paste_back_kgm(img_crop, M_c2o, img_ori, mask_ori):
     """paste back the image
@@ -1728,7 +1825,9 @@ def update_delta_new_mov_y(mov_y, delta_new, **kwargs):
 def calc_combined_eye_ratio(c_d_eyes_i, source_lmk, device='cuda'):
     c_s_eyes = calc_eye_close_ratio(source_lmk[None])
     c_s_eyes_tensor = torch.from_numpy(c_s_eyes).float().to(device)
-    c_d_eyes_i_tensor = torch.Tensor([c_d_eyes_i[0][0]]).reshape(1, 1).to(device)
+    #c_d_eyes_i_tensor = torch.Tensor([c_d_eyes_i[0][0]]).reshape(1, 1).to(device)
+    c_d_eyes_i_numpy = np.array([c_d_eyes_i[0][0]], dtype=np.float32)  # Assicurati che sia un array NumPy
+    c_d_eyes_i_tensor = torch.from_numpy(c_d_eyes_i_numpy).reshape(1, 1).to(device)
     # [c_s,eyes, c_d,eyes,i]
     combined_eye_ratio_tensor = torch.cat([c_s_eyes_tensor, c_d_eyes_i_tensor], dim=1)
 
@@ -1738,7 +1837,9 @@ def calc_combined_eye_ratio(c_d_eyes_i, source_lmk, device='cuda'):
 def calc_combined_lip_ratio(c_d_lip_i, source_lmk, device='cuda'):
     c_s_lip = calc_lip_close_ratio(source_lmk[None])
     c_s_lip_tensor = torch.from_numpy(c_s_lip).float().to(device)
-    c_d_lip_i_tensor = torch.Tensor([c_d_lip_i[0]]).to(device).reshape(1, 1) # 1x1
+    #c_d_lip_i_tensor = torch.Tensor([c_d_lip_i[0]]).to(device).reshape(1, 1) # 1x1
+    c_d_lip_i_numpy = np.array([c_d_lip_i[0]], dtype=np.float32)  # Assicurati che sia un array NumPy
+    c_d_lip_i_tensor = torch.from_numpy(c_d_lip_i_numpy).to(device).reshape(1, 1)  # 1x1
     # [c_s,lip, c_d,lip,i]
     combined_lip_ratio_tensor = torch.cat([c_s_lip_tensor, c_d_lip_i_tensor], dim=1) # 1x2
 
@@ -2218,3 +2319,68 @@ def get_face_orientation_t(face_size, lmk):
     angle_deg = torch.rad2deg(angle_rad)
 
     return angle_deg
+
+def calculate_lmk_rotation_translation(source_landmarks, target_landmarks):
+    """
+    Calcola la matrice di rotazione e traslazione tra due insiemi di punti di landmark.
+    
+    :param source_landmarks: numpy array di dimensione (203, 2) o (203, 3) - Landmark sorgente.
+    :param target_landmarks: numpy array di dimensione (203, 2) o (203, 3) - Landmark target.
+    :return: (R, t) - Matrice di rotazione e vettore di traslazione.
+    """
+    
+    # Step 1: Calcola i centri di massa di ciascun insieme di punti
+    source_center = np.mean(source_landmarks, axis=0)
+    target_center = np.mean(target_landmarks, axis=0)
+
+    # Step 2: Centra i punti rispetto al centro di massa
+    centered_source = source_landmarks - source_center
+    centered_target = target_landmarks - target_center
+
+    # Step 3: Calcola la matrice di covarianza
+    covariance_matrix = np.dot(centered_source.T, centered_target)
+
+    # Step 4: Applica la decomposizione SVD
+    U, S, Vt = np.linalg.svd(covariance_matrix)
+
+    # Step 5: Calcola la matrice di rotazione
+    R = np.dot(Vt.T, U.T)
+
+    # Step 6: Correggi eventuali riflessioni (per mantenere la det(R) = 1)
+    if np.linalg.det(R) < 0:
+        Vt[-1, :] *= -1
+        R = np.dot(Vt.T, U.T)
+
+    # Step 7: Calcola la traslazione
+    t = target_center - np.dot(source_center, R)
+
+    return R, t
+
+def rotation_matrix_to_angle(R):
+    """
+    Converti la matrice di rotazione 2x2 in un angolo (in gradi).
+    """
+    # Calcola l'angolo di rotazione in radianti
+    angle_rad = np.arctan2(R[1, 0], R[0, 0])  # Usando la matrice di rotazione
+    # Converti l'angolo in gradi
+    angle_deg = np.degrees(angle_rad)
+
+    return angle_deg
+
+def get_matrix_lmk_rotation_translation(R, t):
+    """
+    Combina la matrice di rotazione e il vettore di traslazione in un'istanza SimilarityTransform.
+    
+    :param R: Matrice di rotazione 2x2.
+    :param t: Vettore di traslazione 2x1.
+    :return: Istanza di SimilarityTransform con rotazione e traslazione.
+    """
+    # Estrai l'angolo di rotazione dalla matrice di rotazione
+    rotation_angle = rotation_matrix_to_angle(R)
+
+    # Crea un'istanza di SimilarityTransform usando l'angolo di rotazione e la traslazione
+    t = trans.SimilarityTransform(rotation=np.radians(rotation_angle), translation=t)
+
+    M = t.params[0:2]
+    
+    return M

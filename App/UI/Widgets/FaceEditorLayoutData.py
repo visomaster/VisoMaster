@@ -18,7 +18,7 @@ FACE_EDITOR_LAYOUT_DATA = {
             'default': '-0.125',
             'step': 0.001,
             'decimals': 3,
-            'help': 'Changes the vy ratio for crop scale. Decrease the value to capture the face more distantly. -0.1 factor for cropping driving video.'
+            'help': 'Changes the vy ratio for crop scale. Increase the value to capture the face more distantly. -0.1 factor for cropping driving video.'
         },
         'FaceEditorBlurAmountSlider': {
             'level': 1,

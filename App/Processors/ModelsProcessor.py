@@ -94,6 +94,10 @@ models_list = [
     {'LivePortraitWarpingSpadeFix': f'{models_dir}/liveportrait_onnx/warping_spade-fix.onnx',}
 ]
 
+def load_lip_array():
+    with open(f'{models_dir}/liveportrait_onnx/lip_array.pkl', 'rb') as f:
+        return pickle.load(f)
+
 if 'trt' in globals():
     models_trt_list = [
         {'LivePortraitMotionExtractor': f'{models_dir}/liveportrait_onnx/motion_extractor.' + trt.__version__ + '.trt',},
@@ -173,7 +177,7 @@ class ModelsProcessor(QObject):
                                       std = [ 1/1.0, 1/1.0, 1/1.0 ])
         self.lp_mask_crop = faceutil.create_faded_inner_mask(size=(512, 512), border_thickness=5, fade_thickness=15, blur_radius=5, device=self.device)
         self.lp_mask_crop = torch.unsqueeze(self.lp_mask_crop, 0)
-        self.lp_mask_crop = torch.mul(self.lp_mask_crop, 255.)
+        self.lp_lip_array = np.array(load_lip_array())
 
     def load_model(self, model_name, session_options=None):
         # self.showModelLoadingProgressBar()
@@ -186,7 +190,7 @@ class ModelsProcessor(QObject):
         # self.hideModelLoadProgressBar()
         return model_instance
 
-    def load_model_trt(self, model_name, custom_plugin_path=None, precision='fp16'):
+    def load_model_trt(self, model_name, custom_plugin_path=None, precision='fp16', debug=False):
         # self.showModelLoadingProgressBar()
         #time.sleep(0.5)
         if not os.path.exists(self.models_trt_path[model_name]):
@@ -196,7 +200,7 @@ class ModelsProcessor(QObject):
                      custom_plugin_path=custom_plugin_path,
                      verbose=False
                     )
-        model_instance = TensorRTPredictor(model_path=self.models_trt_path[model_name], custom_plugin_path=custom_plugin_path, pool_size=self.nThreads, device=self.device)
+        model_instance = TensorRTPredictor(model_path=self.models_trt_path[model_name], custom_plugin_path=custom_plugin_path, pool_size=self.nThreads, device=self.device, debug=debug)
 
         # model_instance = 'FAsfd'
         # self.hideModelLoadProgressBar()
@@ -2414,12 +2418,16 @@ class ModelsProcessor(QObject):
     def lp_motion_extractor(self, img, face_editor_type='Human-Face', **kwargs) -> dict:
         kp_info = {}
         with torch.no_grad():
-            if self.provider_name == "TensorRT-Engine":
+            # We force to use TensorRT because it doesn't work well in trt
+            #if self.provider_name == "TensorRT-Engine":
+            if self.provider_name == "!TensorRT-Engine":
                 if face_editor_type == 'Human-Face':
                     if not self.models_trt['LivePortraitMotionExtractor']:
                         self.models_trt['LivePortraitMotionExtractor'] = self.load_model_trt('LivePortraitMotionExtractor', custom_plugin_path=None, precision="fp32")
 
                 motion_extractor_model = self.models_trt['LivePortraitMotionExtractor']
+                input_spec = motion_extractor_model.input_spec()
+                output_spec = motion_extractor_model.output_spec()
 
                 # prepare_source
                 I_s = torch.div(img.type(torch.float32), 255.)
@@ -2430,9 +2438,11 @@ class ModelsProcessor(QObject):
 
                 feed_dict = {}
                 feed_dict["img"] = I_s
+                #stream = torch.cuda.Stream()
+                #preds_dict = motion_extractor_model.predict_async(feed_dict, stream)
                 preds_dict = motion_extractor_model.predict_async(feed_dict, torch.cuda.current_stream())
                 #preds_dict = motion_extractor_model.predict(feed_dict)
-                torch.cuda.synchronize()
+
                 kp_info = {
                     'pitch': preds_dict["pitch"],
                     'yaw': preds_dict["yaw"],
@@ -2504,7 +2514,9 @@ class ModelsProcessor(QObject):
 
     def lp_appearance_feature_extractor(self, img, face_editor_type='Human-Face'):
         with torch.no_grad():
-            if self.provider_name == "TensorRT-Engine":
+            # We force to use TensorRT. 
+            #if self.provider_name == "TensorRT-Engine":
+            if self.provider_name == "!TensorRT-Engine":
                 if face_editor_type == 'Human-Face':
                     if not self.models_trt['LivePortraitAppearanceFeatureExtractor']:
                         self.models_trt['LivePortraitAppearanceFeatureExtractor'] = self.load_model_trt('LivePortraitAppearanceFeatureExtractor', custom_plugin_path=None, precision="fp16")
@@ -2522,7 +2534,7 @@ class ModelsProcessor(QObject):
                 feed_dict["img"] = I_s
                 preds_dict = appearance_feature_extractor_model.predict_async(feed_dict, torch.cuda.current_stream())
                 #preds_dict = appearance_feature_extractor_model.predict(feed_dict)
-                torch.cuda.synchronize()
+
                 output = preds_dict["output"]
 
                 nvtx.range_pop()
@@ -2560,7 +2572,9 @@ class ModelsProcessor(QObject):
         Return: Bx(3*num_kp)
         """
         with torch.no_grad():
-            if self.provider_name == "TensorRT-Engine":
+            # We force to use TensorRT. 
+            #if self.provider_name == "TensorRT-Engine":
+            if self.provider_name == "!TensorRT-Engine":
                 if face_editor_type == 'Human-Face':
                     if not self.models_trt['LivePortraitStitchingEye']:
                         self.models_trt['LivePortraitStitchingEye'] = self.load_model_trt('LivePortraitStitchingEye', custom_plugin_path=None, precision="fp16")
@@ -2575,7 +2589,7 @@ class ModelsProcessor(QObject):
                 feed_dict["input"] = feat_eye
                 preds_dict = stitching_eye_model.predict_async(feed_dict, torch.cuda.current_stream())
                 #preds_dict = stitching_eye_model.predict(feed_dict)
-                torch.cuda.synchronize()
+
                 delta = preds_dict["output"]
 
                 nvtx.range_pop()
@@ -2609,7 +2623,9 @@ class ModelsProcessor(QObject):
         Return: Bx(3*num_kp)
         """
         with torch.no_grad():
-            if self.provider_name == "TensorRT-Engine":
+            # We force to use TensorRT. 
+            #if self.provider_name == "TensorRT-Engine":
+            if self.provider_name == "!TensorRT-Engine":
                 if face_editor_type == 'Human-Face':
                     if not self.models_trt['LivePortraitStitchingLip']:
                         self.models_trt['LivePortraitStitchingLip'] = self.load_model_trt('LivePortraitStitchingLip', custom_plugin_path=None, precision="fp16")
@@ -2624,7 +2640,7 @@ class ModelsProcessor(QObject):
                 feed_dict["input"] = feat_lip
                 preds_dict = stitching_lip_model.predict_async(feed_dict, torch.cuda.current_stream())
                 #preds_dict = stitching_lip_model.predict(feed_dict)
-                torch.cuda.synchronize()
+
                 delta = preds_dict["output"]
 
                 nvtx.range_pop()
@@ -2658,7 +2674,9 @@ class ModelsProcessor(QObject):
         Return: Bx(3*num_kp+2)
         """
         with torch.no_grad():
-            if self.provider_name == "TensorRT-Engine":
+            # We force to use TensorRT. 
+            #if self.provider_name == "TensorRT-Engine":
+            if self.provider_name == "!TensorRT-Engine":
                 if face_editor_type == 'Human-Face':
                     if not self.models_trt['LivePortraitStitching']:
                         self.models_trt['LivePortraitStitching'] = self.load_model_trt('LivePortraitStitching', custom_plugin_path=None, precision="fp16")
@@ -2673,7 +2691,7 @@ class ModelsProcessor(QObject):
                 feed_dict["input"] = feat_stiching
                 preds_dict = stitching_model.predict_async(feed_dict, torch.cuda.current_stream())
                 #preds_dict = stitching_model.predict(feed_dict)
-                torch.cuda.synchronize()
+
                 delta = preds_dict["output"]
 
                 nvtx.range_pop()
@@ -2699,7 +2717,6 @@ class ModelsProcessor(QObject):
                 stitching_model.run_with_iobinding(io_binding)
 
         return delta
-
 
     def lp_stitching(self, kp_source: torch.Tensor, kp_driving: torch.Tensor, face_editor_type='Human-Face') -> torch.Tensor:
         """ conduct the stitching
@@ -2773,9 +2790,11 @@ class ModelsProcessor(QObject):
                 feed_dict["feature_3d"] = feature_3d
                 feed_dict["kp_source"] = kp_source
                 feed_dict["kp_driving"] = kp_driving
-                preds_dict = warping_spade_model.predict_async(feed_dict, torch.cuda.current_stream())
+                stream = torch.cuda.Stream()
+                preds_dict = warping_spade_model.predict_async(feed_dict, stream)
+                #preds_dict = warping_spade_model.predict_async(feed_dict, torch.cuda.current_stream())
                 #preds_dict = warping_spade_model.predict(feed_dict)
-                torch.cuda.synchronize()
+
                 out = preds_dict["out"]
 
                 nvtx.range_pop()

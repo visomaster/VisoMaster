@@ -503,6 +503,9 @@ class FrameWorker(threading.Thread):
         swap_mask = torch.mul(swap_mask, border_mask)
         swap_mask = t512(swap_mask)
 
+        if parameters['FaceExpressionEnableToggle']:
+            swap = self.apply_face_expression_restorer(original_face_512, swap, parameters)
+
         swap = torch.mul(swap, swap_mask)
 
         if not control['ViewFaceMaskEnableToggle'] and not control['ViewFaceCompareEnableToggle']:
@@ -736,6 +739,218 @@ class FrameWorker(threading.Thread):
 
         return img
 
+    def apply_face_expression_restorer(self, driving, target, parameters):
+        """ Apply face expression restorer from driving to target.
+
+        Args:
+        driving (torch.Tensor: uint8): Driving image tensor (C x H x W)
+        target (torch.Tensor: float32): Target image tensor (C x H x W)
+        parameters (dict).
+        
+        Returns:
+        torch.Tensor (uint8 -> float32): Transformed image (C x H x W)
+        """
+        t256 = v2.Resize((256, 256), interpolation=v2.InterpolationMode.BILINEAR, antialias=False)
+
+        #cv2.imwrite("driving.png", cv2.cvtColor(driving.permute(1,2,0).cpu().numpy(), cv2.COLOR_RGB2BGR))
+        _, driving_lmk_crop, _ = self.models_processor.run_detect_landmark(driving, bbox=np.array([0, 0, 512, 512]), det_kpss=[], detect_mode='203', score=0.5, from_points=False)
+        driving_face_512 = driving.clone()
+        #cv2.imshow("driving", cv2.cvtColor(driving_face_512.permute(1,2,0).cpu().numpy(), cv2.COLOR_RGB2BGR))
+        #cv2.waitKey(0)
+        #cv2.destroyAllWindows()
+        driving_face_256 = t256(driving_face_512)
+
+        # Making motion templates: driving_template_dct
+        c_d_eyes_lst = faceutil.calc_eye_close_ratio(driving_lmk_crop[None]) #c_d_eyes_lst
+        c_d_lip_lst = faceutil.calc_lip_close_ratio(driving_lmk_crop[None]) #c_d_lip_lst
+        x_d_i_info = self.models_processor.lp_motion_extractor(driving_face_256, 'Human-Face')
+        R_d_i = faceutil.get_rotation_matrix(x_d_i_info['pitch'], x_d_i_info['yaw'], x_d_i_info['roll'])
+        ##
+        
+        R_d_0, x_d_0_info = None, None
+        driving_multiplier=parameters['FaceExpressionFriendlyFactorDecimalSlider'] # 1.0 # be used only when driving_option is "expression-friendly"
+        animation_region = parameters['FaceExpressionAnimationRegionSelection'] # 'all' # lips, eyes, pose, exp
+
+        flag_normalize_lip = parameters['FaceExpressionNormalizeLipsEnableToggle'] # True #inf_cfg.flag_normalize_lip  # not overwrite
+        lip_normalize_threshold = parameters['FaceExpressionNormalizeLipsThresholdDecimalSlider'] # 0.03 # threshold for flag_normalize_lip
+        flag_eye_retargeting = parameters['FaceExpressionRetargetingEyesEnableToggle'] # False #inf_cfg.flag_eye_retargeting
+        eye_retargeting_multiplier = parameters['FaceExpressionRetargetingEyesMultiplierDecimalSlider']  # 1.00
+        flag_lip_retargeting = parameters['FaceExpressionRetargetingLipsEnableToggle'] # False #inf_cfg.flag_lip_retargeting
+        lip_retargeting_multiplier = parameters['FaceExpressionRetargetingLipsMultiplierDecimalSlider'] # 1.00
+        
+        # fix:
+        if animation_region == 'all':
+            animation_region = 'eyes,lips'
+
+        flag_relative_motion = True #inf_cfg.flag_relative_motion
+        flag_stitching = True #inf_cfg.flag_stitching
+        flag_pasteback = True #inf_cfg.flag_pasteback
+        flag_do_crop = True #inf_cfg.flag_do_crop
+        
+        lip_delta_before_animation, eye_delta_before_animation = None, None
+
+        target = torch.clamp(target, 0, 255).type(torch.uint8)
+        #cv2.imwrite("target.png", cv2.cvtColor(target.permute(1,2,0).cpu().numpy(), cv2.COLOR_RGB2BGR))
+        _, source_lmk, _ = self.models_processor.run_detect_landmark(target, bbox=np.array([0, 0, 512, 512]), det_kpss=[], detect_mode='203', score=0.5, from_points=False)
+        target_face_512, M_o2c, M_c2o = faceutil.warp_face_by_face_landmark_x(target, source_lmk, dsize=512, scale=parameters['FaceExpressionCropScaleDecimalSlider'], vy_ratio=parameters['FaceExpressionVYRatioDecimalSlider'], interpolation=v2.InterpolationMode.BILINEAR)
+        #cv2.imshow("target", cv2.cvtColor(target_face_512.permute(1,2,0).cpu().numpy(), cv2.COLOR_RGB2BGR))
+        #cv2.waitKey(0)
+        #cv2.destroyAllWindows()
+        target_face_256 = t256(target_face_512)
+
+        x_s_info = self.models_processor.lp_motion_extractor(target_face_256, 'Human-Face')
+        x_c_s = x_s_info['kp']
+        R_s = faceutil.get_rotation_matrix(x_s_info['pitch'], x_s_info['yaw'], x_s_info['roll'])
+        f_s = self.models_processor.lp_appearance_feature_extractor(target_face_256, 'Human-Face')
+        x_s = faceutil.transform_keypoint(x_s_info)
+
+        # let lip-open scalar to be 0 at first
+        if flag_normalize_lip and flag_relative_motion and source_lmk is not None:
+            c_d_lip_before_animation = [0.]
+            combined_lip_ratio_tensor_before_animation = faceutil.calc_combined_lip_ratio(c_d_lip_before_animation, source_lmk, device=self.models_processor.device)
+            if combined_lip_ratio_tensor_before_animation[0][0] >= lip_normalize_threshold:
+                lip_delta_before_animation = self.models_processor.lp_retarget_lip(x_s, combined_lip_ratio_tensor_before_animation)
+
+        #R_d_0 = R_d_i.clone()
+        #x_d_0_info = x_d_i_info.copy()
+
+        delta_new = x_s_info['exp'].clone()
+        if flag_relative_motion:
+            if animation_region == "all" or animation_region == "pose":
+                #R_new = (R_d_i @ R_d_0.permute(0, 2, 1)) @ R_s
+                R_new = (R_d_i @ R_d_i.permute(0, 2, 1)) @ R_s
+            else:
+                R_new = R_s
+            if animation_region == "all" or animation_region == "exp":
+                delta_new = x_s_info['exp'] + (x_d_i_info['exp'] - torch.from_numpy(self.models_processor.lp_lip_array).to(dtype=torch.float32, device=self.models_processor.device))
+            else:
+                if "lips" in animation_region:
+                    for lip_idx in [6, 12, 14, 17, 19, 20]:
+                        delta_new[:, lip_idx, :] = (x_s_info['exp'] + (x_d_i_info['exp'] - torch.from_numpy(self.models_processor.lp_lip_array).to(dtype=torch.float32, device=self.models_processor.device)))[:, lip_idx, :]
+
+                if "eyes" in animation_region:
+                    for eyes_idx in [11, 13, 15, 16, 18]:
+                        delta_new[:, eyes_idx, :] = (x_s_info['exp'] + (x_d_i_info['exp'] - 0))[:, eyes_idx, :]
+            '''
+            elif animation_region == "lips":
+                for lip_idx in [6, 12, 14, 17, 19, 20]:
+                    delta_new[:, lip_idx, :] = (x_s_info['exp'] + (x_d_i_info['exp'] - torch.from_numpy(self.models_processor.lp_lip_array).to(dtype=torch.float32, device=self.models_processor.device)))[:, lip_idx, :]
+            elif animation_region == "eyes":
+                for eyes_idx in [11, 13, 15, 16, 18]:
+                    delta_new[:, eyes_idx, :] = (x_s_info['exp'] + (x_d_i_info['exp'] - 0))[:, eyes_idx, :]
+            '''
+            if animation_region == "all":
+                #scale_new = x_s_info['scale'] * (x_d_i_info['scale'] / x_d_0_info['scale'])
+                scale_new = x_s_info['scale']
+            else:
+                scale_new = x_s_info['scale']
+            if animation_region == "all" or animation_region == "pose":
+                #t_new = x_s_info['t'] + (x_d_i_info['t'] - x_d_0_info['t'])
+                t_new = x_s_info['t']
+            else:
+                t_new = x_s_info['t']
+        else:
+            if animation_region == "all" or animation_region == "pose":
+                R_new = R_d_i
+            else:
+                R_new = R_s
+            if animation_region == "all" or animation_region == "exp":
+                for idx in [1,2,6,11,12,13,14,15,16,17,18,19,20]:
+                    delta_new[:, idx, :] = x_d_i_info['exp'][:, idx, :]
+                delta_new[:, 3:5, 1] = x_d_i_info['exp'][:, 3:5, 1]
+                delta_new[:, 5, 2] = x_d_i_info['exp'][:, 5, 2]
+                delta_new[:, 8, 2] = x_d_i_info['exp'][:, 8, 2]
+                delta_new[:, 9, 1:] = x_d_i_info['exp'][:, 9, 1:]
+            else:
+                if "lips" in animation_region:
+                    for lip_idx in [6, 12, 14, 17, 19, 20]:
+                        delta_new[:, lip_idx, :] = x_d_i_info['exp'][:, lip_idx, :]
+
+                if "eyes" in animation_region:
+                    for eyes_idx in [11, 13, 15, 16, 18]:
+                        delta_new[:, eyes_idx, :] = x_d_i_info['exp'][:, eyes_idx, :]
+            '''
+            elif animation_region == "lips":
+                for lip_idx in [6, 12, 14, 17, 19, 20]:
+                    delta_new[:, lip_idx, :] = x_d_i_info['exp'][:, lip_idx, :]
+            elif animation_region == "eyes":
+                for eyes_idx in [11, 13, 15, 16, 18]:
+                    delta_new[:, eyes_idx, :] = x_d_i_info['exp'][:, eyes_idx, :]
+            '''
+            scale_new = x_s_info['scale']
+            if animation_region == "all" or animation_region == "pose":
+                t_new = x_d_i_info['t']
+            else:
+                t_new = x_s_info['t']
+
+        t_new[..., 2].fill_(0)  # zero tz
+        x_d_i_new = scale_new * (x_c_s @ R_new + delta_new) + t_new
+        
+        if not flag_stitching and not flag_eye_retargeting and not flag_lip_retargeting:
+            # without stitching or retargeting
+            if flag_normalize_lip and lip_delta_before_animation is not None:
+                x_d_i_new += lip_delta_before_animation
+
+        elif flag_stitching and not flag_eye_retargeting and not flag_lip_retargeting:
+            # with stitching and without retargeting
+            if flag_normalize_lip and lip_delta_before_animation is not None:
+                x_d_i_new = self.models_processor.lp_stitching(x_s, x_d_i_new, parameters["FaceEditorTypeSelection"]) + lip_delta_before_animation
+            else:
+                x_d_i_new = self.models_processor.lp_stitching(x_s, x_d_i_new, parameters["FaceEditorTypeSelection"])
+
+        else:
+            eyes_delta, lip_delta = None, None
+            if flag_eye_retargeting and source_lmk is not None:
+                c_d_eyes_i = c_d_eyes_lst
+                combined_eye_ratio_tensor = faceutil.calc_combined_eye_ratio(c_d_eyes_i, source_lmk, device=self.models_processor.device)
+                combined_eye_ratio_tensor = combined_eye_ratio_tensor * eye_retargeting_multiplier
+                # ∆_eyes,i = R_eyes(x_s; c_s,eyes, c_d,eyes,i)                
+                eyes_delta = self.models_processor.lp_retarget_eye(x_s, combined_eye_ratio_tensor, parameters["FaceEditorTypeSelection"])
+
+            if flag_lip_retargeting and source_lmk is not None:
+                c_d_lip_i = c_d_lip_lst
+                combined_lip_ratio_tensor = faceutil.calc_combined_lip_ratio(c_d_lip_i, source_lmk, device=self.models_processor.device)
+                combined_lip_ratio_tensor = combined_lip_ratio_tensor * lip_retargeting_multiplier
+                # ∆_lip,i = R_lip(x_s; c_s,lip, c_d,lip,i)
+                lip_delta = self.models_processor.lp_retarget_lip(x_s, combined_lip_ratio_tensor, parameters["FaceEditorTypeSelection"])
+
+            if flag_relative_motion:  # use x_s
+                x_d_i_new = x_s + \
+                    (eyes_delta if eyes_delta is not None else 0) + \
+                    (lip_delta if lip_delta is not None else 0)
+            else:  # use x_d,i
+                x_d_i_new = x_d_i_new + \
+                    (eyes_delta if eyes_delta is not None else 0) + \
+                    (lip_delta if lip_delta is not None else 0)
+
+            if flag_stitching:
+                x_d_i_new = self.models_processor.lp_stitching(x_s, x_d_i_new, parameters["FaceEditorTypeSelection"])
+
+        x_d_i_new = x_s + (x_d_i_new - x_s) * driving_multiplier
+
+        out = self.models_processor.lp_warp_decode(f_s, x_s, x_d_i_new, parameters["FaceEditorTypeSelection"])
+        out = torch.squeeze(out)
+        out = torch.clamp(out, 0, 1)  # Clip i valori tra 0 e 1
+
+        # Applica la maschera
+        #out = torch.mul(out, self.models_processor.lp_mask_crop)  # Applica la maschera
+
+        if flag_pasteback and flag_do_crop and flag_stitching:
+            t = trans.SimilarityTransform()
+            t.params[0:2] = M_c2o
+            dsize = (target.shape[1], target.shape[2])
+            # pad image by image size
+            out = faceutil.pad_image_by_size(out, dsize)
+            out = v2.functional.affine(out, t.rotation*57.2958, translate=(t.translation[0], t.translation[1]), scale=t.scale, shear=(0.0, 0.0), interpolation=v2.InterpolationMode.BILINEAR, center=(0, 0))
+            out = v2.functional.crop(out, 0,0, dsize[0], dsize[1]) # cols, rows
+
+        out = torch.clamp(torch.mul(out, 255.0), 0, 255).type(torch.float32)
+        #cv2.imshow("output", cv2.cvtColor(out.permute(1,2,0).cpu().numpy(), cv2.COLOR_RGB2BGR))
+        #cv2.waitKey(0)
+        #cv2.destroyAllWindows()
+
+        return out
+
     def swap_edit_face_core(self, img, kps, parameters, control, **kwargs): # img = RGB
         # Grab 512 face from image and create 256 and 128 copys
         if parameters['FaceEditorEnableToggle']:
@@ -755,7 +970,6 @@ class FrameWorker(threading.Thread):
             # prepare_retargeting_image
             original_face_512, M_o2c, M_c2o = faceutil.warp_face_by_face_landmark_x(img, lmk_crop, dsize=512, scale=parameters["FaceEditorCropScaleDecimalSlider"], vy_ratio=parameters['FaceEditorVYRatioDecimalSlider'], interpolation=v2.InterpolationMode.BILINEAR)
             original_face_256 = t256(original_face_512)
-            mask_ori = faceutil.prepare_paste_back(self.models_processor.lp_mask_crop, M_c2o, dsize=(img.shape[1], img.shape[2])).contiguous()
 
             x_s_info = self.models_processor.lp_motion_extractor(original_face_256, parameters["FaceEditorTypeSelection"])
             x_d_info_user_pitch = x_s_info['pitch'] + parameters['HeadPitchSlider'] #input_head_pitch_variation
@@ -818,7 +1032,7 @@ class FrameWorker(threading.Thread):
             input_lip_ratio = max(min(init_source_lip_ratio + parameters['LipsOpenRatioDecimalSlider'], 0.80), 0.00)
             if input_lip_ratio != init_source_lip_ratio:
                 combined_lip_ratio_tensor = faceutil.calc_combined_lip_ratio([[float(input_lip_ratio)]], lmk_crop, device=self.models_processor.device)
-                lip_delta = self.models_processor.lp_retarget_lip(x_s_user, combined_lip_ratio_tensor)
+                lip_delta = self.models_processor.lp_retarget_lip(x_s_user, combined_lip_ratio_tensor, parameters["FaceEditorTypeSelection"])
 
             x_d_new = x_d_new + \
                     (eyes_delta if eyes_delta is not None else 0) + \
@@ -826,37 +1040,36 @@ class FrameWorker(threading.Thread):
 
             flag_stitching_retargeting_input: bool = kwargs.get('flag_stitching_retargeting_input', True)
             if flag_stitching_retargeting_input:
-                x_d_new = self.models_processor.lp_stitching(x_s_user, x_d_new)
+                x_d_new = self.models_processor.lp_stitching(x_s_user, x_d_new, parameters["FaceEditorTypeSelection"])
 
             out = self.models_processor.lp_warp_decode(f_s_user, x_s_user, x_d_new, parameters["FaceEditorTypeSelection"])
             out = torch.squeeze(out)
             out = torch.clamp(out, 0, 1)  # clip to 0~1
-            out = torch.clamp(torch.mul(out, 255), 0, 255).type(torch.uint8)  # 0~1 -> 0~255
 
             flag_do_crop_input_retargeting_image = kwargs.get('flag_do_crop_input_retargeting_image', True)
             if flag_do_crop_input_retargeting_image:
                 gauss = transforms.GaussianBlur(parameters['FaceEditorBlurAmountSlider']*2+1, (parameters['FaceEditorBlurAmountSlider']+1)*0.2)
-                mask_ori = gauss(mask_ori)
-                img = faceutil.paste_back(out, M_c2o, img, mask_ori)
+                mask_crop = gauss(self.models_processor.lp_mask_crop)
+                img = faceutil.paste_back_adv(out, M_c2o, img, mask_crop)
             else:
-                img = out
+                img = out                
+                img = torch.mul(img, 255.0)
+                img = torch.clamp(img, 0, 255).type(torch.uint8)
 
         if parameters['FaceMakeupEnableToggle'] or parameters['HairMakeupEnableToggle'] or parameters['EyeBrowsMakeupEnableToggle'] or parameters['LipsMakeupEnableToggle']:
             _, lmk_crop, _ = self.models_processor.run_detect_landmark( img, bbox=[], det_kpss=kps, detect_mode='203', score=0.5, from_points=True)
 
             # prepare_retargeting_image
             original_face_512, M_o2c, M_c2o = faceutil.warp_face_by_face_landmark_x(img, lmk_crop, dsize=512, scale=parameters['FaceEditorCropScaleDecimalSlider'], vy_ratio=parameters['FaceEditorVYRatioDecimalSlider'], interpolation=v2.InterpolationMode.BILINEAR)
-            mask_ori = faceutil.prepare_paste_back(self.models_processor.lp_mask_crop, M_c2o, dsize=(img.shape[1], img.shape[2])).contiguous()
 
             out, mask_out = self.models_processor.apply_face_makeup(original_face_512, parameters)
-
             if (not control['ViewFaceMaskEnableToggle'] and not control['ViewFaceCompareEnableToggle']) or self.main_window.swapfacesButton.isChecked():
                 gauss = transforms.GaussianBlur(5*2+1, (5+1)*0.2)
-                mask_ori = gauss(mask_ori)
-                img = faceutil.paste_back(out, M_c2o, img, mask_ori)
+                out = torch.clamp(torch.div(out, 255.0), 0, 1).type(torch.float32)
+                mask_crop = gauss(self.models_processor.lp_mask_crop)
+                img = faceutil.paste_back_adv(out, M_c2o, img, mask_crop)
             else:
                 out = out.type(torch.uint8)
-                original_face_512 = original_face_512.type(torch.uint8)
 
                 # Expand mask (3, H, W)
                 mask_out = mask_out.repeat(3, 1, 1)
