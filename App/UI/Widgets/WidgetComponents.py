@@ -26,6 +26,13 @@ class TargetMediaCardButton(CardButton):
         self.setCheckable(True)
         self.setToolTip(media_path)
         self.clicked.connect(self.loadMediaOnClick)
+        # Imposta lo stylesheet solo per questo pulsante
+        self.setStyleSheet("""
+        CardButton:checked {
+            background-color: #555555;
+            border: 2px solid #1abc9c;
+        }
+        """)
 
     def loadMediaOnClick(self):
 
@@ -139,6 +146,14 @@ class TargetFaceCardButton(CardButton):
         self.setCheckable(True)
         self.clicked.connect(self.loadTargetFace)
 
+        # Imposta lo stylesheet solo per questo pulsante
+        self.setStyleSheet("""
+        CardButton:checked {
+            background-color: #555555;
+            border: 2px solid #1abc9c;
+        }
+        """)
+        
         # Set the context menu policy to trigger the custom context menu on right-click
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         # Connect the custom context menu request signal to the custom slot
@@ -243,6 +258,14 @@ class InputFaceCardButton(CardButton):
         self.setCheckable(True)
         self.setToolTip(media_path)
         self.clicked.connect(self.loadInputFace)
+
+        # Imposta lo stylesheet solo per questo pulsante
+        self.setStyleSheet("""
+        CardButton:checked {
+            background-color: #555555;
+            border: 2px solid #1abc9c;
+        }
+        """)
 
         # Set the context menu policy to trigger the custom context menu on right-click
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)

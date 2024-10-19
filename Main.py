@@ -1,14 +1,15 @@
 from App.UI import MainUI
 from PySide6 import QtWidgets 
 import sys
+import qdarkstyle
 
 
 if __name__=="__main__":
 
     app = QtWidgets.QApplication(sys.argv)
-    with open("App/UI/Styles/styles.qss", "r") as f:
-        _style = f.read()
-        app.setStyleSheet(_style)
+
+    app.setStyleSheet(qdarkstyle.load_stylesheet())
+
     window = MainUI.MainWindow()
     window.show()
     app.exec()

@@ -1,5 +1,16 @@
 import App.UI.Widgets.ControlActions as control_actions
 SETTINGS_LAYOUT_DATA = {
+    'Appearance': {
+        'ThemeSelection': {
+            'level': 1,
+            'label': 'Theme',
+            'options': ['Default', 'Dark', 'Custom'],
+            'default': 'Dark',
+            'help': 'Select the providers priority to be used with the system.',
+            'exec_function': control_actions.change_theme,
+            'exec_function_args': [],
+        },
+    },
     'General': {
         'ProvidersPrioritySelection': {
             'level': 1,
@@ -22,7 +33,6 @@ SETTINGS_LAYOUT_DATA = {
             'exec_function_args': [],
         },
     },
-
     'Detectors': {
         'DetectorModelSelection': {
             'level': 1,
