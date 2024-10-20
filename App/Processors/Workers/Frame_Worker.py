@@ -147,13 +147,11 @@ class FrameWorker(threading.Thread):
                             if parameters['LandmarksPositionAdjEnableToggle']:
                                 kcolor = tuple((255, 0, 0))
                                 keypoints = face[0]
-
                             else:
                                 kcolor = tuple((0, 255, 255))
                                 keypoints = face[1]
 
                             for kpoint in keypoints:
-                                kpoint = kpoint / det_scale
                                 for i in range(-1, p):
                                     for j in range(-1, p):
                                         try:
