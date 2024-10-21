@@ -1,10 +1,12 @@
+import App.UI.Widgets.WidgetActions as widget_actions
+import App.Helpers.Misc_Helpers as misc_helpers
 # Widgets in Face Swap tab are created from this Layout
 SWAPPER_LAYOUT_DATA = {
     'Swapper': {
         'SwapModelSelection': {
             'level': 1,
             'label': 'Swapper Model',
-            'options': ['Inswapper128', 'SimSwap512', 'GhostFace-v1', 'GhostFace-v2', 'GhostFace-v3'],
+            'options': ['Inswapper128', 'DeepFaceLive (DFM)', 'SimSwap512', 'GhostFace-v1', 'GhostFace-v2', 'GhostFace-v3'],
             'default': 'Inswapper128',
             'help': 'Choose which swapper model to use for face swapping.'
         },
@@ -17,6 +19,15 @@ SWAPPER_LAYOUT_DATA = {
             'requiredSelectionValue': 'Inswapper128',
             'help': 'Select the resolution for the swapped face in pixels. Higher values offer better quality but are slower to process.'
         },
+        'DFMModelSelection': {
+            'level': 2,
+            'label': 'DFM Model',
+            'options': misc_helpers.get_dfm_models_selection_values,
+            'default': misc_helpers.get_dfm_models_default_value,
+            'parentSelection': 'SwapModelSelection',
+            'requiredSelectionValue': 'DeepFaceLive (DFM)',
+            'help': 'Select which pretrained DeepFaceLive (DFM) Model to use for swapping.'
+        }
     },
     'Face Landmarks Correction': {
         'FaceAdjEnableToggle': {

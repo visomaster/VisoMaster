@@ -503,10 +503,17 @@ class SelectionBox(QtWidgets.QComboBox, ParametersWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         ParametersWidget.__init__(self, *args, **kwargs)
+        self.selection_values = kwargs.get('selection_values', [])
         self.currentTextChanged.connect(partial(widget_actions.show_hide_related_widgets, self.main_window, self, self.widget_name, ))
 
     def reset_to_default_value(self):
-        self.setCurrentText(self.default_value)
+        # Check if selection values are dynamically retrieved
+        if callable(self.selection_values) and callable(self.default_value):
+            self.clear()
+            self.addItems(self.selection_values())
+            self.setCurrentText(self.default_value())
+        else:
+            self.setCurrentText(self.default_value)
 
     def set_value(self, value):
         self.setCurrentText(value)

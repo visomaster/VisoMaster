@@ -161,7 +161,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.setupUi(self)
         self.initialize_variables()
         self.initialize_widgets()
-
         # Create an event to signal when processing is complete
         self.processing_finished_event = threading.Event()
         self.processing_finished_event.set()

@@ -21,6 +21,8 @@ from App.UI.Widgets.FaceEditorLayoutData import FACE_EDITOR_LAYOUT_DATA
 from typing import TYPE_CHECKING
 import json
 
+from App.Helpers.Misc_Helpers import DFM_MODELS_DATA
+
 if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
 def clear_stop_loading_target_media(main_window: 'MainWindow'):
@@ -327,6 +329,7 @@ def initializeModelLoadDialog(main_window: 'MainWindow'):
     main_window.model_load_dialog.close()
 
 def find_target_faces(main_window: 'MainWindow'):
+    print(misc_helpers.get_dfm_models_data())
     control = main_window.control.copy()
     video_processor = main_window.video_processor
     if video_processor.media_path:
@@ -468,9 +471,13 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
                 widget.toggled.connect(partial(onchange, widget, widget_name, widget_data))
 
             elif 'Selection' in widget_name:
-                widget = SelectionBox(label=widget_data['label'], widget_name=widget_name, group_layout_data=widgets, label_widget=label, main_window=main_window, default_value=widget_data['default'])
-                widget.addItems(widget_data['options'])
-                widget.setCurrentText(widget_data['default'])
+                widget = SelectionBox(label=widget_data['label'], widget_name=widget_name, group_layout_data=widgets, label_widget=label, main_window=main_window, default_value=widget_data['default'], selection_values=widget_data['options'])
+                if callable(widget_data['options']):
+                    widget.addItems(widget_data['options']())
+                    widget.setCurrentText(widget_data['default']())
+                else:
+                    widget.addItems(widget_data['options'])
+                    widget.setCurrentText(widget_data['default'])
 
                 widget.reset_default_button = ParameterResetDefaultButton(related_widget=widget)
 
