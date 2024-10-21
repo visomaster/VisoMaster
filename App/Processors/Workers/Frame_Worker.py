@@ -15,7 +15,8 @@ torchvision.disable_beta_transforms_warning()
 import numpy as np
 from App.Processors.Utils import FaceUtil as faceutil
 import threading
-
+from App.Processors.Utils.DFMModel import DFMModel
+import traceback
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
@@ -42,7 +43,8 @@ class FrameWorker(threading.Thread):
             self.main_window.update_frame_signal.emit(self.frame_number, pixmap)
 
         except Exception as e:
-            print(f"Error in FrameWorker: {e}")
+            print(f"Error in FrameWorker: {e}", self.main_window.dfm_models_data)
+            traceback.print_exc()
 
     def process_swap(self):
         # Load frame into VRAM
@@ -118,7 +120,7 @@ class FrameWorker(threading.Thread):
                             if sim>=parameters['SimilarityThresholdSlider']:
                                 if self.main_window.swapfacesButton.isChecked():
                                     s_e = target_face.assigned_input_embedding
-                                    img = self.swap_core(img, fface[0], s_e=s_e, t_e=fface[2], parameters=parameters, control=control)
+                                    img = self.swap_core(img, fface[0], s_e=s_e, t_e=fface[2], parameters=parameters, control=control, dfm_model=parameters['DFMModelSelection'])
                         
                                 if self.main_window.editFacesButton.isChecked():
                                     img = self.swap_edit_face_core(img, fface[1], parameters, control)
@@ -167,7 +169,7 @@ class FrameWorker(threading.Thread):
 
         return np.ascontiguousarray(img)
 
-    def swap_core(self, img, kps_5, kps=False, s_e=[], t_e=[], parameters={}, control={}, dfl_model=False): # img = RGB
+    def swap_core(self, img, kps_5, kps=False, s_e=[], t_e=[], parameters={}, control={}, dfm_model=False): # img = RGB
         # parameters = self.parameters.copy()
         swapper_model = parameters['SwapModelSelection']
 
@@ -221,7 +223,7 @@ class FrameWorker(threading.Thread):
         original_face_384 = t384(original_face_512)
         original_face_256 = t256(original_face_512)
         original_face_128 = t128(original_face_256)
-        if s_e is not None and len(s_e) > 0:
+        if (s_e is not None and len(s_e) > 0) or (swapper_model == 'DeepFaceLive (DFM)' and dfm_model):
             if swapper_model == 'Inswapper128':
                 latent = torch.from_numpy(self.models_processor.calc_swapper_latent(s_e)).float().to(self.models_processor.device)
                 if parameters['FaceLikenessEnableToggle']:
@@ -262,6 +264,13 @@ class FrameWorker(threading.Thread):
 
                 dim = 2
                 input_face_affined = original_face_256
+
+            
+            elif swapper_model == 'DeepFaceLive (DFM)' and dfm_model:
+                dfm_model = self.models_processor.load_dfm_model(dfm_model)
+                latent = []
+                input_face_affined = original_face_512
+                dim = 4
 
             # Optional Scaling # change the transform matrix scaling from center
             if parameters['FaceAdjEnableToggle']:
@@ -332,9 +341,16 @@ class FrameWorker(threading.Thread):
 
                     output = swapper_output.clone()
                     output = torch.clamp(output, 0, 255)
+            
+            elif swapper_model == 'DeepFaceLive (DFM)' and dfm_model:
+                out_celeb, out_celeb_mask, out_face_mask = dfm_model.convert(original_face_512, parameters['DFMAmpMorphSlider']/100, rct=parameters['DFMRCTColorToggle'])
+                prev_face = input_face_affined.clone()
+                input_face_affined = out_celeb.clone()
+                output = out_celeb.clone()
 
             output = output.permute(2, 0, 1)
             swap = t512(output)
+        
         else:
             swap = original_face_512
             if parameters['StrengthEnableToggle']:

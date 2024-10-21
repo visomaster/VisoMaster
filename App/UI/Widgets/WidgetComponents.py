@@ -516,7 +516,10 @@ class SelectionBox(QtWidgets.QComboBox, ParametersWidget):
             self.setCurrentText(self.default_value)
 
     def set_value(self, value):
-        self.setCurrentText(value)
+        if callable(value):
+            self.setCurrentText(value())
+        else:
+            self.setCurrentText(value)
     
 class ToggleButton(QtWidgets.QPushButton, ParametersWidget):
     _circle_position = None

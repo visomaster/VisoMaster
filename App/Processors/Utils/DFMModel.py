@@ -1,6 +1,6 @@
 import torch
 import onnxruntime
-import App.Processors.Utils as faceutil
+import App.Processors.Utils.FaceUtil as faceutil
 import numpy as np
 
 onnxruntime.set_default_logger_severity(4)

@@ -28,7 +28,10 @@ from App.Processors.external.clipseg import CLIPDensePredT
 import cv2
 import os
 import math
-from typing import Dict
+from App.Processors.Utils.DFMModel import DFMModel
+from typing import Dict, TYPE_CHECKING
+if TYPE_CHECKING:
+    from App.UI.MainUI import MainWindow
 try:
     from torch.cuda import nvtx
     import tensorrt as trt
@@ -37,6 +40,7 @@ except ModuleNotFoundError:
 
 import onnx
 models_dir = './App/ONNXModels'
+
 
 onnxruntime.set_default_logger_severity(4)
 onnxruntime.log_verbosity_level = -1
@@ -112,7 +116,7 @@ class ModelsProcessor(QObject):
     processing_complete = Signal()
     model_loaded = Signal()  # Signal emitted with Onnx InferenceSession
 
-    def __init__(self, main_window, device='cuda'):
+    def __init__(self, main_window: 'MainWindow', device='cuda'):
         super().__init__()
         self.main_window = main_window
         self.provider_name = 'TensorRT'
@@ -144,6 +148,8 @@ class ModelsProcessor(QObject):
             model_name, model_path = list(model_data.items())[0]
             self.models[model_name] = None #Model Instance
             self.models_path[model_name] = model_path
+
+        self.dfm_models: Dict[str, DFMModel] = {}
 
         if 'trt' in globals():
             # Initialize models_trt and models_trt_path
@@ -189,6 +195,12 @@ class ModelsProcessor(QObject):
         # model_instance = 'FAsfd'
         # self.hideModelLoadProgressBar()
         return model_instance
+    
+    def load_dfm_model(self, dfm_model):
+        if not self.dfm_models.get(dfm_model):
+            self.dfm_models[dfm_model] = DFMModel(self.main_window.dfm_models_data[dfm_model], self.providers, self.device)
+        return self.dfm_models[dfm_model]
+
 
     def load_model_trt(self, model_name, custom_plugin_path=None, precision='fp16', debug=False):
         # self.showModelLoadingProgressBar()

@@ -27,6 +27,25 @@ SWAPPER_LAYOUT_DATA = {
             'parentSelection': 'SwapModelSelection',
             'requiredSelectionValue': 'DeepFaceLive (DFM)',
             'help': 'Select which pretrained DeepFaceLive (DFM) Model to use for swapping.'
+        },
+        'DFMAmpMorphSlider': {
+            'level': 2,
+            'label': 'AMP Morph Factor',
+            'min_value': '1',
+            'max_value': '100',
+            'default': '50',
+            'step': 1,
+            'parentSelection': 'SwapModelSelection',
+            'requiredSelectionValue': 'DeepFaceLive (DFM)',
+            'help': 'AMP Morph Factor for DFM AMP Models',
+        },
+        'DFMRCTColorToggle': {
+            'level': 2,
+            'label': 'RCT Color Transfer',
+            'default': False,
+            'parentSelection': 'SwapModelSelection',
+            'requiredSelectionValue': 'DeepFaceLive (DFM)',
+            'help': 'RCT Color Transfer for DFM Models',
         }
     },
     'Face Landmarks Correction': {

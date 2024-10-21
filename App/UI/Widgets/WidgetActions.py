@@ -21,8 +21,6 @@ from App.UI.Widgets.FaceEditorLayoutData import FACE_EDITOR_LAYOUT_DATA
 from typing import TYPE_CHECKING
 import json
 
-from App.Helpers.Misc_Helpers import DFM_MODELS_DATA
-
 if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
 def clear_stop_loading_target_media(main_window: 'MainWindow'):
@@ -329,7 +327,6 @@ def initializeModelLoadDialog(main_window: 'MainWindow'):
     main_window.model_load_dialog.close()
 
 def find_target_faces(main_window: 'MainWindow'):
-    print(misc_helpers.get_dfm_models_data())
     control = main_window.control.copy()
     video_processor = main_window.video_processor
     if video_processor.media_path:
@@ -490,9 +487,9 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
 
                 if data_type=='parameter':
                     # Initialize parameter value
-                    create_default_parameter(main_window, widget_name, widget_data['default'])
+                    create_default_parameter(main_window, widget_name, widget_data['default'] if not callable(widget_data['default']) else widget_data['default']())
                 else:
-                    create_control(main_window, widget_name, widget_data['default'])
+                    create_control(main_window, widget_name, widget_data['default'] if not callable(widget_data['default']) else widget_data['default']())
                 # Set onchange function for select box (Selected value is passed by the signal)
                 def onchange(selection_widget: SelectionBox, selection_widget_name, widget_data: dict = {}, selected_value=False):
                     # selected_value = selection_widget.currentText()
@@ -702,10 +699,14 @@ def show_hide_related_widgets(main_window: 'MainWindow', parent_widget: ToggleBu
                         current_widget.hide()
                         current_widget.label_widget.hide()
                         current_widget.reset_default_button.hide()
+                        if current_widget.line_edit:
+                            current_widget.line_edit.hide()
                     else:
                         current_widget.show()
                         current_widget.label_widget.show()
                         current_widget.reset_default_button.show()
+                        if current_widget.line_edit:
+                            current_widget.line_edit.show()
 
         elif 'Toggle' in parent_widget_name:
             # Loop through all widgets data in the parent widget's group layout data

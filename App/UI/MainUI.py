@@ -13,6 +13,7 @@ from App.UI.Widgets.SwapperLayoutData import SWAPPER_LAYOUT_DATA
 from App.UI.Widgets.SettingsLayoutData import SETTINGS_LAYOUT_DATA
 from App.UI.Widgets.FaceEditorLayoutData import FACE_EDITOR_LAYOUT_DATA
 from typing import Dict, List
+from App.Helpers.Misc_Helpers import DFM_MODELS_DATA
 
 ParametersWidgetTypes = Dict[str, ToggleButton|SelectionBox|ParameterDecimalSlider|ParameterSlider|ParameterText]
 
@@ -96,6 +97,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.next_frame_to_display = None  # Index of the next frame to display
         self._is_slider_pressed = threading.Event()
         self.is_full_screen = False
+        self.dfm_models_data = DFM_MODELS_DATA
 
     def initialize_widgets(self):
         # Initialize QListWidget for target media

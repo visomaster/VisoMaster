@@ -35,8 +35,7 @@ def get_file_type(file_name):
     return None
 
 def get_dfm_models_data():
-    global DFM_MODELS_DATA
-    DFM_MODELS_DATA = {}
+    DFM_MODELS_DATA.clear()
     for dfm_file in os.listdir(DFM_MODELS_PATH):
         if dfm_file.endswith(('.dfm','.onnx')):
             DFM_MODELS_DATA[dfm_file] = f'{DFM_MODELS_PATH}/{dfm_file}'
