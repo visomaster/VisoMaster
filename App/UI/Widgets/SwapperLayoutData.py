@@ -449,7 +449,7 @@ SWAPPER_LAYOUT_DATA = {
             'default': '1.00',
             'decimals': 2,
             'step': 0.01,
-            'parentToggle': 'FaceExpressionRetargetingEyesEnableToggle',
+            'parentToggle': 'FaceExpressionRetargetingEyesEnableToggle|FaceExpressionEnableToggle',
             'requiredToggleValue': True,
             'help': 'Multiplier value for Retargeting Eyes.'
         },
@@ -469,7 +469,7 @@ SWAPPER_LAYOUT_DATA = {
             'default': '1.00',
             'decimals': 2,
             'step': 0.01,
-            'parentToggle': 'FaceExpressionRetargetingLipsEnableToggle',
+            'parentToggle': 'FaceExpressionRetargetingLipsEnableToggle|FaceExpressionEnableToggle',
             'requiredToggleValue': True,
             'help': 'Multiplier value for Retargeting Lips.'
         },
