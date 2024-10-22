@@ -3,11 +3,12 @@ from PySide6 import QtCore as qtc
 from PySide6.QtGui import QPixmap, QImage, Qt
 from App.Helpers import Misc_Helpers as misc_helpers
 from App.UI.Widgets import WidgetActions as widget_actions
+from App.UI.Widgets.SettingsLayoutData import SETTINGS_LAYOUT_DATA
 import os
 import cv2
 import torch
 import numpy
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict
 if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
 
@@ -62,7 +63,7 @@ class TargetMediaLoaderWorker(qtc.QThread):
 
 class InputFacesLoaderWorker(qtc.QThread):
     # Define signals to emit when loading is done or if there are updates
-    thumbnail_ready = qtc.Signal(str, numpy.ndarray, numpy.ndarray, QPixmap)
+    thumbnail_ready = qtc.Signal(str, numpy.ndarray, object, QPixmap)
     finished = qtc.Signal()  # Signal to indicate completion
     def __init__(self, main_window: 'MainWindow', media_path=False, folder_name=False, files_list=[],  parent=None):
         super().__init__(parent)
@@ -100,11 +101,22 @@ class InputFacesLoaderWorker(qtc.QThread):
             except:
                 continue
             if face_kps.any():
-                face_emb, cropped_img = self.main_window.models_processor.run_recognize(img, face_kps)
+                face_emb, cropped_img = self.main_window.models_processor.run_recognize_direct(img, face_kps, control['SimilarityTypeSelection'], control['RecognitionModelSelection'])
                 face_img = numpy.ascontiguousarray(cropped_img.cpu().numpy())
                 # crop = cv2.resize(face[2].cpu().numpy(), (82, 82))
                 pixmap = widget_actions.get_pixmap_from_frame(self.main_window, face_img)
-                self.thumbnail_ready.emit(image_file_path, face_img, face_emb, pixmap)
+
+                embedding_store: Dict[str, np.ndarray] = {}
+                # Ottenere i valori di 'options'
+                options = SETTINGS_LAYOUT_DATA['Face Recognition']['RecognitionModelSelection']['options']
+                for option in options:
+                    if option != control['RecognitionModelSelection']:
+                        target_emb, _ = self.main_window.models_processor.run_recognize_direct(img, face_kps, control['SimilarityTypeSelection'], option)
+                        embedding_store[option] = target_emb
+                    else:
+                        embedding_store[control['RecognitionModelSelection']] = face_emb
+
+                self.thumbnail_ready.emit(image_file_path, face_img, embedding_store, pixmap)
 
         torch.cuda.empty_cache()
 

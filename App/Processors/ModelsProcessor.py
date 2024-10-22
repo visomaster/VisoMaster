@@ -45,6 +45,14 @@ models_dir = './App/ONNXModels'
 onnxruntime.set_default_logger_severity(4)
 onnxruntime.log_verbosity_level = -1
 
+arcface_mapping_model_dict = {
+    'Inswapper128': 'Inswapper128ArcFace',
+    'SimSwap512': 'SimSwapArcFace',
+    'GhostFace-v1': 'GhostArcFace',
+    'GhostFace-v2': 'GhostArcFace',
+    'GhostFace-v3': 'GhostArcFace',
+}
+
 models_list = [
     {'Inswapper128': f'{models_dir}/inswapper_128.fp16.onnx',},
     {'SimSwap512': f'{models_dir}/simswap_512_unoff.onnx',},
@@ -63,7 +71,7 @@ models_list = [
     {'FaceLandmark203': f'{models_dir}/landmark.onnx',},
     {'FaceLandmark478': f'{models_dir}/face_landmarks_detector_Nx3x256x256.onnx',},
     {'FaceBlendShapes': f'{models_dir}/face_blendshapes_Nx146x2.onnx',},
-    {'Webface600k': f'{models_dir}/w600k_r50.onnx',},
+    {'Inswapper128ArcFace': f'{models_dir}/w600k_r50.onnx',},
     {'SimSwapArcFace': f'{models_dir}/simswap_arcface_model.onnx',},
     {'GhostArcFace': f'{models_dir}/ghost_arcface_backbone.onnx',},
     {'GFPGANv1.4': f'{models_dir}/GFPGANv1.4.onnx',},
@@ -1803,28 +1811,30 @@ class ModelsProcessor(QObject):
         #return landmark, landmark_score
         return landmark_5, landmark, []
 
+    def get_arcface_model(self, face_swapper_model): 
+        if face_swapper_model in arcface_mapping_model_dict:
+            return arcface_mapping_model_dict[face_swapper_model]
+        else:
+            raise ValueError(f"Face swapper model {face_swapper_model} not found.")
+
+    def run_recognize_direct(self, img, kps, similarity_type='Opal', arcface_model='Inswapper128ArcFace'):
+        if not self.models[arcface_model]:
+            self.models[arcface_model] = self.load_model(arcface_model)
+
+        embedding, cropped_image = self.recognize(arcface_model, img, kps, similarity_type=similarity_type)
+
+        return embedding, cropped_image
+        
     def run_recognize(self, img, kps, similarity_type='Opal', face_swapper_model='Inswapper128'):
-        if face_swapper_model == 'Inswapper128':
-            if not self.models['Webface600k']:
-                self.models['Webface600k'] = self.load_model('Webface600k')
+        arcface_model = self.get_arcface_model(face_swapper_model)
+        if not self.models[arcface_model]:
+            self.models[arcface_model] = self.load_model(arcface_model)
 
-            embedding, cropped_image = self.recognize(self.models['Webface600k'], img, kps, similarity_type=similarity_type)
-
-        elif face_swapper_model == 'SimSwap512':
-            if not self.models['SimSwapArcFace']:
-                self.models['SimSwapArcFace'] = self.load_model('SimSwapArcFace')
-
-            embedding, cropped_image = self.recognize(self.models['SimSwapArcFace'], img, kps, similarity_type=similarity_type)
-
-        elif face_swapper_model == 'GhostFace-v1' or face_swapper_model == 'GhostFace-v2' or face_swapper_model == 'GhostFace-v3':
-            if not self.models['GhostArcFace']:
-                self.models['GhostArcFace'] = self.load_model('GhostArcFace')
-
-            embedding, cropped_image = self.recognize(self.models['GhostArcFace'], img, kps, similarity_type=similarity_type)
+        embedding, cropped_image = self.recognize(arcface_model, img, kps, similarity_type=similarity_type)
 
         return embedding, cropped_image
 
-    def recognize(self, recognition_model, img, face_kps, similarity_type):
+    def recognize(self, arcface_model, img, face_kps, similarity_type):
         if similarity_type == 'Optimal':
             # Find transform & Transform
             img, _ = faceutil.warp_face_by_face_landmark_5(img, face_kps, mode='arcfacemap', interpolation=v2.InterpolationMode.BILINEAR)
@@ -1849,7 +1859,7 @@ class ModelsProcessor(QObject):
             img = v2.functional.affine(img, tform.rotation*57.2958, (tform.translation[0], tform.translation[1]) , tform.scale, 0, center = (0,0) )
             img = v2.functional.crop(img, 0,0, 112, 112)
 
-        if recognition_model == self.models['Webface600k'] or recognition_model == self.models['SimSwapArcFace']:
+        if arcface_model == 'Inswapper128ArcFace' or arcface_model == 'SimSwapArcFace':
             # Switch to BGR and normalize
             img = img.permute(1,2,0) #112,112,3
             cropped_image = img
@@ -1865,14 +1875,14 @@ class ModelsProcessor(QObject):
 
         # Prepare data and find model parameters
         img = torch.unsqueeze(img, 0).contiguous()
-        input_name = recognition_model.get_inputs()[0].name
+        input_name = self.models[arcface_model].get_inputs()[0].name
 
-        outputs = recognition_model.get_outputs()
+        outputs = self.models[arcface_model].get_outputs()
         output_names = []
         for o in outputs:
             output_names.append(o.name)
 
-        io_binding = recognition_model.io_binding()
+        io_binding = self.models[arcface_model].io_binding()
         io_binding.bind_input(name=input_name, device_type=self.device, device_id=0, element_type=np.float32,  shape=img.size(), buffer_ptr=img.data_ptr())
 
         for i in range(len(output_names)):
@@ -1883,7 +1893,7 @@ class ModelsProcessor(QObject):
             torch.cuda.synchronize()
         elif self.device != "cpu":
             self.syncvec.cpu()
-        recognition_model.run_with_iobinding(io_binding)
+        self.models[arcface_model].run_with_iobinding(io_binding)
 
         # Return embedding
         return np.array(io_binding.copy_outputs_to_cpu()).flatten(), cropped_image

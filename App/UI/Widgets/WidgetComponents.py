@@ -131,7 +131,7 @@ class TargetMediaCardButton(CardButton):
         widget_actions.set_widgets_values_using_face_id_parameters(main_window=main_window, face_id=False)
 
 class TargetFaceCardButton(CardButton):
-    def __init__(self, media_path, cropped_face, embedding: np.ndarray, *args, **kwargs):
+    def __init__(self, media_path, cropped_face, embedding_store: Dict[str, np.ndarray], *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.main_window.target_faces:
             self.face_id = max([target_face.face_id for target_face in self.main_window.target_faces]) + 1
@@ -139,10 +139,13 @@ class TargetFaceCardButton(CardButton):
             self.face_id = 0
         self.media_path = media_path
         self.cropped_face = cropped_face
-        self.embedding = embedding
-        self.assigned_input_face_buttons: Dict[InputFaceCardButton, np.ndarray] = {} # Key: InputFaceCardButton, Value: Face Embedding
-        self.assigned_embed_buttons: Dict[EmbeddingCardButton, np.ndarray] = {} # Key: EmbeddingCardButton, Value: Face Embedding
-        self.assigned_input_embedding = np.array([])
+
+        self.embedding_store = embedding_store  # Key: embedding_swap_model, Value: embedding
+
+        self.assigned_input_face_buttons: Dict[InputFaceCardButton, Dict[str, np.ndarray]] = {}  # Key: embedding_swap_model, Value: InputFaceCardButton.embedding_store
+        self.assigned_embed_buttons: Dict[EmbeddingCardButton, Dict[str, np.ndarray]] = {}  # Key: embedding_swap_model, Value: EmbeddingCardButton.embedding_store
+        self.assigned_input_embedding = {}  # Key: embedding_swap_model, Value: np.ndarray
+        
         self.setCheckable(True)
         self.clicked.connect(self.loadTargetFace)
 
@@ -163,6 +166,12 @@ class TargetFaceCardButton(CardButton):
         # Create parameter dict for the target
         if not self.main_window.parameters.get(self.face_id):
             widget_actions.create_parameter_dict_for_face_id(self.main_window, self.face_id)
+
+    def set_embedding(self, embedding_swap_model: str, embedding: np.ndarray):
+        self.embedding_store[embedding_swap_model] = embedding
+
+    def get_embedding(self, embedding_swap_model: str) -> np.ndarray:
+        return self.embedding_store.get(embedding_swap_model, np.array([]))
 
     def loadTargetFace(self):
         main_window = self.main_window
@@ -187,18 +196,39 @@ class TargetFaceCardButton(CardButton):
 
         # widget_actions.refresh_frame(main_window)
 
-    def calculateAssignedInputEmbedding(self,):
+    def calculateAssignedInputEmbedding(self):
         control = self.main_window.control.copy()
-        input_face_embeddings = [embedding for embedding in self.assigned_input_face_buttons.values()]
-        merged_embeddings = [embedding for embedding in self.assigned_embed_buttons.values()]
-        all_input_embeddings = input_face_embeddings + merged_embeddings
-        if len(all_input_embeddings)>0:
+
+        all_input_embeddings = []
+        all_embedding_swap_models = set()
+
+        # Itera su `assigned_input_face_buttons` e raccogli gli embedding e i modelli
+        for face_button, embedding_store in self.assigned_input_face_buttons.items():
+            if embedding_store:  # Verifica se l'embedding_store non è vuoto
+                all_embedding_swap_models.update(embedding_store.keys())
+                all_input_embeddings.append(embedding_store)  # Aggiungi l'intero store
+        
+        # Itera su `assigned_embed_buttons` e raccogli gli embedding e i modelli
+        for embed_button, embedding_store in self.assigned_embed_buttons.items():
+            if embedding_store:  # Verifica se l'embedding_store non è vuoto
+                all_embedding_swap_models.update(embedding_store.keys())
+                all_input_embeddings.append(embedding_store)  # Aggiungi l'intero store
+
+        # Calcolo degli embedding se presenti
+        if len(all_input_embeddings) > 0:
             if control['EmbMergeMethodSelection'] == 'Mean':
-                self.assigned_input_embedding = np.mean(all_input_embeddings, 0)
+                self.assigned_input_embedding = {
+                    model: np.mean([store[model] for store in all_input_embeddings if model in store], axis=0)
+                    for model in all_embedding_swap_models
+                }
             elif control['EmbMergeMethodSelection'] == 'Median':
-                self.assigned_input_embedding = np.median(all_input_embeddings, 0)
+                self.assigned_input_embedding = {
+                    model: np.median([store[model] for store in all_input_embeddings if model in store], axis=0)
+                    for model in all_embedding_swap_models
+                }
+
         else:
-            self.assigned_input_embedding = np.array([])
+            self.assigned_input_embedding = {}
 
     def create_context_menu(self):
         # create context menu
@@ -249,10 +279,10 @@ class TargetFaceCardButton(CardButton):
             widget_actions.refresh_frame(main_window=self.main_window)
 
 class InputFaceCardButton(CardButton):
-    def __init__(self, media_path, cropped_face, embedding, *args, **kwargs):
+    def __init__(self, media_path, cropped_face, embedding_store: Dict[str, np.ndarray], *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.cropped_face = cropped_face
-        self.embedding = embedding
+        self.embedding_store = embedding_store  # Key: embedding_swap_model, Value: embedding
         self.media_path = media_path
 
         self.setCheckable(True)
@@ -273,6 +303,12 @@ class InputFaceCardButton(CardButton):
         self.customContextMenuRequested.connect(self.on_context_menu)
         self.create_context_menu()
 
+    def set_embedding(self, embedding_swap_model: str, embedding: np.ndarray):
+        self.embedding_store[embedding_swap_model] = embedding
+
+    def get_embedding(self, embedding_swap_model: str) -> np.ndarray:
+        return self.embedding_store.get(embedding_swap_model, np.array([]))
+
     def loadInputFace(self):
         main_window = self.main_window
 
@@ -284,7 +320,7 @@ class InputFaceCardButton(CardButton):
                         input_face_button.setChecked(False)
                 cur_selected_target_face_button.assigned_input_face_buttons = {}
 
-            cur_selected_target_face_button.assigned_input_face_buttons[self] = self.embedding
+            cur_selected_target_face_button.assigned_input_face_buttons[self] = self.embedding_store
 
             if not self.isChecked():
                 cur_selected_target_face_button.assigned_input_face_buttons.pop(self)
@@ -310,17 +346,30 @@ class InputFaceCardButton(CardButton):
         self.popMenu.exec_(self.mapToGlobal(point))
 
     def create_embedding_from_selected_faces(self):
-        selected_faces_embeddings = [input_face.embedding for input_face in self.main_window.input_faces if input_face.isChecked()]
-        if len(selected_faces_embeddings)==0:
-            widget_actions.create_and_show_messagebox(self.main_window, "No Faces Selected!", "You need to select atleast one face to create a merged embedding!", self)
+        # Raccogli l'intero embedding_store dalle facce selezionate
+        selected_faces_embeddings_store = [
+            input_face.embedding_store 
+            for input_face in self.main_window.input_faces 
+            if input_face.isChecked()
+        ]
+
+        # Controlla se ci sono facce selezionate
+        if len(selected_faces_embeddings_store) == 0:
+            widget_actions.create_and_show_messagebox(
+                self.main_window, 
+                "No Faces Selected!", 
+                "You need to select at least one face to create a merged embedding!", 
+                self
+            )
         else:
-            embed_create_dialog = CreateEmbeddingDialog(self.main_window, selected_faces_embeddings)
+            # Passa l'intero embedding_store al dialogo per la creazione dell'embedding
+            embed_create_dialog = CreateEmbeddingDialog(self.main_window, selected_faces_embeddings_store)
             embed_create_dialog.exec_()
 
 class EmbeddingCardButton(CardButton):
-    def __init__(self, embedding_name: str, embedding: np.ndarray, *args, **kwargs):
+    def __init__(self, embedding_name: str, embedding_store: Dict[str, np.ndarray], *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.embedding = embedding
+        self.embedding_store = embedding_store  # Key: embedding_swap_model, Value: embedding
         self.embedding_name = embedding_name
         self.setCheckable(True)
         self.setText(embedding_name)
@@ -341,6 +390,13 @@ class EmbeddingCardButton(CardButton):
         self.customContextMenuRequested.connect(self.on_context_menu)
         self.create_context_menu()
 
+    def set_embedding(self, embedding_swap_model: str, embedding: np.ndarray):
+        self.embedding_store[embedding_swap_model] = embedding
+
+    def get_embedding(self, embedding_swap_model: str):
+        """Restituisce l'embedding associato a un embedding_swap_model, se esiste."""
+        return self.embedding_store.get(embedding_swap_model, None)
+
     def loadEmbedding(self):
         main_window = self.main_window
         if main_window.cur_selected_target_face_button:
@@ -352,7 +408,7 @@ class EmbeddingCardButton(CardButton):
                         embed_button.setChecked(False)
                 cur_selected_target_face_button.assigned_embed_buttons = {}
 
-            cur_selected_target_face_button.assigned_embed_buttons[self] = self.embedding
+            cur_selected_target_face_button.assigned_embed_buttons[self] = self.embedding_store
 
             if not self.isChecked():
                 cur_selected_target_face_button.assigned_embed_buttons.pop(self)
@@ -385,14 +441,13 @@ class EmbeddingCardButton(CardButton):
                 main_window.inputEmbeddingsList.takeItem(i)   
                 main_window.merged_embeddings.pop(i)
         widget_actions.refresh_frame(self.main_window)
-        self.deleteLater()        
-
+        self.deleteLater()
 
 class CreateEmbeddingDialog(QtWidgets.QDialog):
-    def __init__(self, main_window: 'MainWindow', embeddings: list = []):
+    def __init__(self, main_window: 'MainWindow', embedding_stores: list = []):
         super().__init__()
         self.main_window = main_window
-        self.embeddings = embeddings
+        self.embedding_stores = embedding_stores  # Lista di embedding_store (dizionari)
         self.embedding_name = ''
         self.merge_type = ''
         self.setWindowTitle("Create Embedding")
@@ -423,18 +478,36 @@ class CreateEmbeddingDialog(QtWidgets.QDialog):
         self.setLayout(layout)
 
     def create_embedding(self):
-        if self.embeddings:
-            self.embedding_name = self.embed_name_edit.text().strip()
-            self.merge_type = self.merge_type_selection.currentText()
-            if self.embedding_name == '':
-                widget_actions.create_and_show_messagebox(self.main_window, 'Empty Embedding Name!', 'Embedding Name cannot be empty!', self)
-            else:
+        self.embedding_name = self.embed_name_edit.text().strip()
+        self.merge_type = self.merge_type_selection.currentText()
+
+        if self.embedding_name == '':
+            widget_actions.create_and_show_messagebox(self.main_window, 'Empty Embedding Name!', 'Embedding Name cannot be empty!', self)
+        else:
+            # Estrai tutti gli embedding per ogni embedding_swap_model
+            merged_embedding_store = {}
+            
+            for embedding_store in self.embedding_stores:
+                for embedding_swap_model, embedding in embedding_store.items():
+                    if embedding_swap_model not in merged_embedding_store:
+                        merged_embedding_store[embedding_swap_model] = []
+                    merged_embedding_store[embedding_swap_model].append(embedding)
+
+            # Calcola l'embedding unito per ciascun embedding_swap_model
+            final_embedding_store = {}
+            for swap_model, embeddings in merged_embedding_store.items():
                 if self.merge_type == 'Mean':
-                    merged_embedding = np.mean(self.embeddings, 0)
+                    final_embedding_store[swap_model] = np.mean(embeddings, axis=0)
                 elif self.merge_type == 'Median':
-                    merged_embedding = np.median(self.embeddings, 0)
-                widget_actions.create_and_add_embed_button_to_list(main_window=self.main_window, embedding_name=self.embedding_name, merged_embedding = merged_embedding)
-                self.accept()
+                    final_embedding_store[swap_model] = np.median(embeddings, axis=0)
+
+            # Crea e aggiungi il nuovo embedding_store con tutti i modelli di swap
+            widget_actions.create_and_add_embed_button_to_list(
+                main_window=self.main_window, 
+                embedding_name=self.embedding_name, 
+                embedding_store=final_embedding_store  # Passa l'intero embedding_store
+            )
+            self.accept()
 
 # Custom progress dialog
 class ProgressDialog(QtWidgets.QProgressDialog):

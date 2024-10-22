@@ -107,7 +107,7 @@ class FrameWorker(threading.Thread):
             for i in range(kpss_5.shape[0]):
                 face_kps_5 = kpss_5[i]
                 face_kps = kpss[i]
-                face_emb, _ = self.models_processor.run_recognize(img, face_kps_5)
+                face_emb, _ = self.models_processor.run_recognize_direct(img, face_kps_5, control['SimilarityTypeSelection'], control['RecognitionModelSelection'])
                 ret.append([face_kps_5, face_kps, face_emb])
         if ret:
             # Loop through target faces to see if they match our found face embeddings
@@ -116,11 +116,15 @@ class FrameWorker(threading.Thread):
                         parameters = self.parameters[target_face.face_id] #Use the parameters of the target face
 
                         if self.main_window.swapfacesButton.isChecked() or self.main_window.editFacesButton.isChecked():
-                            sim = self.models_processor.findCosineDistance(fface[2], target_face.embedding)
+                            sim = self.models_processor.findCosineDistance(fface[2], target_face.get_embedding(control['RecognitionModelSelection'])) # Recognition for comparing
                             if sim>=parameters['SimilarityThresholdSlider']:
                                 if self.main_window.swapfacesButton.isChecked():
-                                    s_e = target_face.assigned_input_embedding
-                                    img = self.swap_core(img, fface[0], s_e=s_e, t_e=fface[2], parameters=parameters, control=control, dfm_model=parameters['DFMModelSelection'])
+                                    arcface_model = self.models_processor.get_arcface_model(parameters['SwapModelSelection'])
+                                    s_e = target_face.assigned_input_embedding.get(arcface_model, None)
+                                    if s_e is not None and np.isnan(s_e).any():
+                                        s_e = None
+
+                                    img = self.swap_core(img, fface[0], s_e=s_e, t_e=target_face.get_embedding(arcface_model), parameters=parameters, control=control, dfm_model=parameters['DFMModelSelection'])
                         
                                 if self.main_window.editFacesButton.isChecked():
                                     img = self.swap_edit_face_core(img, fface[1], parameters, control)

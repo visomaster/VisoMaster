@@ -226,13 +226,6 @@ SWAPPER_LAYOUT_DATA = {
             'step': 1,
             'help': 'Set the similarity threshold to control how similar the detected face should be to the reference (target) face.'
         },
-        'SimilarityTypeSelection': {
-            'level': 1,
-            'label': 'Similarity Type',
-            'options': ['Opal', 'Pearl', 'Optimal'],
-            'default': 'Opal',
-            'help': 'Choose the type of similarity calculation for face detection and matching.'
-        },
         'StrengthEnableToggle': {
             'level': 1,
             'label': 'Strength',

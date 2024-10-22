@@ -18,7 +18,7 @@ from torchvision.transforms import v2
 from App.UI.Widgets.SwapperLayoutData import SWAPPER_LAYOUT_DATA
 from App.UI.Widgets.SettingsLayoutData import SETTINGS_LAYOUT_DATA
 from App.UI.Widgets.FaceEditorLayoutData import FACE_EDITOR_LAYOUT_DATA
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict
 import json
 
 if TYPE_CHECKING:
@@ -139,19 +139,19 @@ def add_media_thumbnail_to_target_videos_list(main_window: 'MainWindow', media_p
     add_media_thumbnail_button(main_window, TargetMediaCardButton, main_window.targetVideosList, main_window.target_videos, pixmap, media_path=media_path, file_type=file_type)
 
 @qtc.Slot()
-def add_media_thumbnail_to_target_faces_list(main_window: 'MainWindow', cropped_face, embedding, pixmap):
-    add_media_thumbnail_button(main_window, TargetFaceCardButton, main_window.targetFacesList, main_window.target_faces, pixmap, cropped_face=cropped_face, embedding=embedding )
+def add_media_thumbnail_to_target_faces_list(main_window: 'MainWindow', cropped_face, embedding_store, pixmap):
+    add_media_thumbnail_button(main_window, TargetFaceCardButton, main_window.targetFacesList, main_window.target_faces, pixmap, cropped_face=cropped_face, embedding_store=embedding_store )
 
 @qtc.Slot()
-def add_media_thumbnail_to_source_faces_list(main_window: 'MainWindow', media_path, cropped_face, embedding, pixmap):
-    add_media_thumbnail_button(main_window, InputFaceCardButton, main_window.inputFacesList, main_window.input_faces, pixmap, media_path=media_path, cropped_face=cropped_face, embedding=embedding )
+def add_media_thumbnail_to_source_faces_list(main_window: 'MainWindow', media_path, cropped_face, embedding_store, pixmap):
+    add_media_thumbnail_button(main_window, InputFaceCardButton, main_window.inputFacesList, main_window.input_faces, pixmap, media_path=media_path, cropped_face=cropped_face, embedding_store=embedding_store )
 
 
 def add_media_thumbnail_button(main_window: 'MainWindow', buttonClass: CardButton, listWidget:QtWidgets.QListWidget, buttons_list:list, pixmap, **kwargs):
     if buttonClass==TargetMediaCardButton:
         constructor_args = (kwargs.get('media_path'), kwargs.get('file_type'))
     elif buttonClass in (TargetFaceCardButton, InputFaceCardButton):
-        constructor_args = (kwargs.get('media_path',''), kwargs.get('cropped_face'), kwargs.get('embedding'))
+        constructor_args = (kwargs.get('media_path',''), kwargs.get('cropped_face'), kwargs.get('embedding_store'))
     button_size = qtc.QSize(70, 70)  # Set a fixed size for the buttons
     button: CardButton = buttonClass(*constructor_args, main_window=main_window)
     button.setIcon(QtGui.QIcon(pixmap))
@@ -349,8 +349,8 @@ def find_target_faces(main_window: 'MainWindow'):
 
         ret = []
         for face_kps in kpss_5:
-            face_emb, cropped_img = main_window.models_processor.run_recognize(img, face_kps)
-            ret.append([face_kps, face_emb, cropped_img])
+            face_emb, cropped_img = main_window.models_processor.run_recognize_direct(img, face_kps, control['SimilarityTypeSelection'], control['RecognitionModelSelection'])
+            ret.append([face_kps, face_emb, cropped_img, img])
 
         if ret:
             # Loop through all faces in video frame
@@ -360,14 +360,25 @@ def find_target_faces(main_window: 'MainWindow'):
                 for target_face in main_window.target_faces:
                     parameters = main_window.parameters[target_face.face_id]
                     threshhold = parameters['SimilarityThresholdSlider']
-                    if main_window.models_processor.findCosineDistance(target_face.embedding, face[1]) >= threshhold:
+                    if main_window.models_processor.findCosineDistance(target_face.get_embedding(control['RecognitionModelSelection']), face[1]) >= threshhold:
                         found = True
                         break
                 if not found:
                     face_img = numpy.ascontiguousarray(face[2].cpu().numpy())
                     # crop = cv2.resize(face[2].cpu().numpy(), (82, 82))
                     pixmap = get_pixmap_from_frame(main_window, face_img)
-                    add_media_thumbnail_to_target_faces_list(main_window, face_img, face[1], pixmap)
+
+                    embedding_store: Dict[str, np.ndarray] = {}
+                    # Ottenere i valori di 'options'
+                    options = SETTINGS_LAYOUT_DATA['Face Recognition']['RecognitionModelSelection']['options']
+                    for option in options:
+                        if option != control['RecognitionModelSelection']:
+                            target_emb, _ = main_window.models_processor.run_recognize_direct(face[3], face[0], control['SimilarityTypeSelection'], option)
+                            embedding_store[option] = target_emb
+                        else:
+                            embedding_store[control['RecognitionModelSelection']] = face[1]
+
+                    add_media_thumbnail_to_target_faces_list(main_window, face_img, embedding_store, pixmap)
 
 def clear_target_faces(main_window: 'MainWindow'):
     main_window.targetFacesList.clear()
@@ -820,20 +831,25 @@ def create_and_show_messagebox(main_window: 'MainWindow', window_title: str, mes
     messagebox.setText(message)
     messagebox.exec_()
 
-
-def create_and_add_embed_button_to_list(main_window: 'MainWindow', embedding_name, merged_embedding):
+def create_and_add_embed_button_to_list(main_window: 'MainWindow', embedding_name, embedding_store):
     inputEmbeddingsList = main_window.inputEmbeddingsList
-    embed_button = EmbeddingCardButton(main_window=main_window, embedding_name=embedding_name, embedding=merged_embedding)
-    button_size = qtc.QSize(120, 30)  # Set a fixed size for the buttons
+    # Passa l'intero embedding_store
+    embed_button = EmbeddingCardButton(main_window=main_window, embedding_name=embedding_name, embedding_store=embedding_store)
+
+    button_size = qtc.QSize(120, 30)  # Imposta una dimensione fissa per i pulsanti
     embed_button.setFixedSize(button_size)
+    
     list_item = QtWidgets.QListWidgetItem(inputEmbeddingsList)
     list_item.setSizeHint(button_size)
     embed_button.list_item = list_item
     list_item.setTextAlignment(qtc.Qt.AlignmentFlag.AlignCenter)
+    
     inputEmbeddingsList.setItemWidget(list_item, embed_button)
-    grid_size_with_padding = button_size + qtc.QSize(4, 4)  # Add padding around the buttons
-    inputEmbeddingsList.setGridSize(grid_size_with_padding)  # Set grid size with padding
-    inputEmbeddingsList.setWrapping(True)  # Enable wrapping to have items in rows
+    
+    # Aggiungi padding attorno ai pulsanti
+    grid_size_with_padding = button_size + qtc.QSize(4, 4)
+    inputEmbeddingsList.setGridSize(grid_size_with_padding)  # Add padding around the buttons
+    inputEmbeddingsList.setWrapping(True)  # Set grid size with padding
     inputEmbeddingsList.setFlow(QtWidgets.QListView.LeftToRight)  # Set flow direction
     inputEmbeddingsList.setResizeMode(QtWidgets.QListView.Adjust)  # Adjust layout automatically
 
@@ -846,30 +862,53 @@ def open_embeddings_from_file(main_window: 'MainWindow'):
             embeddings_list = json.load(embed_file)
             clear_merged_embeddings(main_window)
 
+            # Reset per ogni target face
             for target_face in main_window.target_faces:
                 target_face.assigned_embed_buttons = {}
-                target_face.assigned_input_embedding = numpy.array([])
+                target_face.assigned_input_embedding = {}
 
-            for embed_data in  embeddings_list:
-                embed_data['embedding'] = numpy.array(embed_data['embedding'])
-                widget_actions.create_and_add_embed_button_to_list(main_window, embed_data['name'], embed_data['embedding'])
+            # Carica gli embedding dal file e crea il dizionario embedding_store
+            for embed_data in embeddings_list:
+                embedding_store = embed_data.get('embedding_store', {})
+                # Converte ogni embedding in numpy array
+                for key, value in embedding_store.items():
+                    embedding_store[key] = numpy.array(value)
+
+                # Passa l'intero embedding_store alla funzione
+                widget_actions.create_and_add_embed_button_to_list(
+                    main_window, 
+                    embed_data['name'], 
+                    embedding_store  # Passa l'intero embedding_store
+                )
 
     main_window.loaded_embedding_filename = embedding_filename or main_window.loaded_embedding_filename
 
 def save_embeddings_to_file(main_window: 'MainWindow', save_as=False):
     if not main_window.merged_embeddings:
-        create_and_show_messagebox(main_window, 'Embeddings List Empty!',  'No Embeddings available to save', parent_widget=main_window)
+        create_and_show_messagebox(main_window, 'Embeddings List Empty!', 'No Embeddings available to save', parent_widget=main_window)
         return
-    embedding_filename = main_window.loaded_embedding_filename
-    if not embedding_filename or save_as==True:
-        embedding_filename, _ = QtWidgets.QFileDialog.getSaveFileName(main_window,filter='JSON (*.json)')
 
-    embeddings_list = [{'name': embed_button.embedding_name, 'embedding': embed_button.embedding.tolist()} for embed_button in main_window.merged_embeddings]
+    # Definisce il nome del file di salvataggio
+    embedding_filename = main_window.loaded_embedding_filename
+    if not embedding_filename or save_as:
+        embedding_filename, _ = QtWidgets.QFileDialog.getSaveFileName(main_window, filter='JSON (*.json)')
+
+    # Crea una lista di dizionari, ciascuno con il nome dell'embedding e il relativo embedding_store
+    embeddings_list = [
+        {
+            'name': embed_button.embedding_name,
+            'embedding_store': {k: v.tolist() for k, v in embed_button.embedding_store.items()}  # Converti gli embedding in liste
+        }
+        for embed_button in main_window.merged_embeddings
+    ]
+
+    # Salva su file
     if embedding_filename:
         with open(embedding_filename, 'w') as embed_file:
-            embeddings_as_json = json.dumps(embeddings_list)
+            embeddings_as_json = json.dumps(embeddings_list, indent=4)  # Salva con indentazione per leggibilità
             embed_file.write(embeddings_as_json)
 
+            # Mostra un messaggio di conferma
             create_and_show_toast_message(main_window, 'Embeddings Saved', f'Saved Embeddings to file: {embedding_filename}')
 
         main_window.loaded_embedding_filename = embedding_filename

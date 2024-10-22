@@ -210,6 +210,22 @@ SETTINGS_LAYOUT_DATA = {
             'help': 'Set the maximum frames per second (FPS) for webcam input.'
         },
     },
+    'Face Recognition': {
+        'RecognitionModelSelection': {
+            'level': 1,
+            'label': 'Recognition Model',
+            'options': ['Inswapper128ArcFace', 'SimSwapArcFace', 'GhostArcFace'],
+            'default': 'Inswapper128ArcFace',
+            'help': 'Choose the ArcFace model to be used for comparing the similarity of faces.'
+        },
+        'SimilarityTypeSelection': {
+            'level': 1,
+            'label': 'Swapping Similarity Type',
+            'options': ['Opal', 'Pearl', 'Optimal'],
+            'default': 'Opal',
+            'help': 'Choose the type of similarity calculation for face detection and matching during the face swapping process.'
+        },
+    },
     'Embedding Merge Method':{
         'EmbMergeMethodSelection':{
             'level': 1,
