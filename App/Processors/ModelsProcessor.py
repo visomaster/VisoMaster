@@ -47,6 +47,7 @@ onnxruntime.log_verbosity_level = -1
 
 arcface_mapping_model_dict = {
     'Inswapper128': 'Inswapper128ArcFace',
+    'DeepFaceLive (DFM)': 'Inswapper128ArcFace',
     'SimSwap512': 'SimSwapArcFace',
     'GhostFace-v1': 'GhostArcFace',
     'GhostFace-v2': 'GhostArcFace',

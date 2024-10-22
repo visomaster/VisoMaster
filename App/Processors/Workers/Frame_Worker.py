@@ -118,12 +118,14 @@ class FrameWorker(threading.Thread):
                         if self.main_window.swapfacesButton.isChecked() or self.main_window.editFacesButton.isChecked():
                             sim = self.models_processor.findCosineDistance(fface[2], target_face.get_embedding(control['RecognitionModelSelection'])) # Recognition for comparing
                             if sim>=parameters['SimilarityThresholdSlider']:
+                                s_e = None
                                 if self.main_window.swapfacesButton.isChecked():
                                     arcface_model = self.models_processor.get_arcface_model(parameters['SwapModelSelection'])
-                                    s_e = target_face.assigned_input_embedding.get(arcface_model, None)
-                                    if s_e is not None and np.isnan(s_e).any():
-                                        s_e = None
-
+                                    if parameters['SwapModelSelection'] != 'DeepFaceLive (DFM)':
+                                        s_e = target_face.assigned_input_embedding.get(arcface_model, None)
+                                        if s_e is not None and np.isnan(s_e).any():
+                                            s_e = None
+                                    
                                     img = self.swap_core(img, fface[0], s_e=s_e, t_e=target_face.get_embedding(arcface_model), parameters=parameters, control=control, dfm_model=parameters['DFMModelSelection'])
                         
                                 if self.main_window.editFacesButton.isChecked():
