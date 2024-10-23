@@ -373,7 +373,7 @@ def find_target_faces(main_window: 'MainWindow'):
                     # crop = cv2.resize(face[2].cpu().numpy(), (82, 82))
                     pixmap = get_pixmap_from_frame(main_window, face_img)
 
-                    embedding_store: Dict[str, np.ndarray] = {}
+                    embedding_store: Dict[str, numpy.ndarray] = {}
                     # Ottenere i valori di 'options'
                     options = SETTINGS_LAYOUT_DATA['Face Recognition']['RecognitionModelSelection']['options']
                     for option in options:
@@ -875,9 +875,10 @@ def open_embeddings_from_file(main_window: 'MainWindow'):
             # Carica gli embedding dal file e crea il dizionario embedding_store
             for embed_data in embeddings_list:
                 embedding_store = embed_data.get('embedding_store', {})
+                print('embedding_store',embedding_store)
                 # Converte ogni embedding in numpy array
-                for key, value in embedding_store.items():
-                    embedding_store[key] = numpy.array(value)
+                for recogn_model, embed in embedding_store.items():
+                    embedding_store[recogn_model] = numpy.array(embed)
 
                 # Passa l'intero embedding_store alla funzione
                 widget_actions.create_and_add_embed_button_to_list(

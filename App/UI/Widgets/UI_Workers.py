@@ -111,7 +111,7 @@ class InputFacesLoaderWorker(qtc.QThread):
                 # crop = cv2.resize(face[2].cpu().numpy(), (82, 82))
                 pixmap = widget_actions.get_pixmap_from_frame(self.main_window, face_img)
 
-                embedding_store: Dict[str, np.ndarray] = {}
+                embedding_store: Dict[str, numpy.ndarray] = {}
                 # Ottenere i valori di 'options'
                 options = SETTINGS_LAYOUT_DATA['Face Recognition']['RecognitionModelSelection']['options']
                 for option in options:
