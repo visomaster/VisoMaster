@@ -214,7 +214,7 @@ SETTINGS_LAYOUT_DATA = {
         'RecognitionModelSelection': {
             'level': 1,
             'label': 'Recognition Model',
-            'options': ['Inswapper128ArcFace', 'SimSwapArcFace', 'GhostArcFace'],
+            'options': ['Inswapper128ArcFace', 'SimSwapArcFace', 'GhostArcFace', 'CSCSArcFace'],
             'default': 'Inswapper128ArcFace',
             'help': 'Choose the ArcFace model to be used for comparing the similarity of faces.'
         },

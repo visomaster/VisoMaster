@@ -52,6 +52,7 @@ arcface_mapping_model_dict = {
     'GhostFace-v1': 'GhostArcFace',
     'GhostFace-v2': 'GhostArcFace',
     'GhostFace-v3': 'GhostArcFace',
+    'CSCS': 'CSCSArcFace',
 }
 
 models_list = [
@@ -60,6 +61,7 @@ models_list = [
     {'GhostFacev1': f'{models_dir}/ghost_unet_1_block.onnx',},
     {'GhostFacev2': f'{models_dir}/ghost_unet_2_block.onnx',},
     {'GhostFacev3': f'{models_dir}/ghost_unet_3_block.onnx',},
+    {'CSCS': f'{models_dir}/cscs_256.onnx',},
     {'RetinaFace': f'{models_dir}/det_10g.onnx',},
     {'SCRFD2.5g': f'{models_dir}/scrfd_2.5g_bnkps.onnx',},
     {'YoloFace8n': f'{models_dir}/yoloface_8n.onnx',},
@@ -75,6 +77,8 @@ models_list = [
     {'Inswapper128ArcFace': f'{models_dir}/w600k_r50.onnx',},
     {'SimSwapArcFace': f'{models_dir}/simswap_arcface_model.onnx',},
     {'GhostArcFace': f'{models_dir}/ghost_arcface_backbone.onnx',},
+    {'CSCSArcFace': f'{models_dir}/cscs_arcface_model.onnx',},
+    {'CSCSIDArcFace': f'{models_dir}/cscs_id_adapter.onnx',},
     {'GFPGANv1.4': f'{models_dir}/GFPGANv1.4.onnx',},
     {'GPENBFR256': f'{models_dir}/GPEN-BFR-256.onnx',},
     {'GPENBFR512': f'{models_dir}/GPEN-BFR-512.onnx',},
@@ -1822,7 +1826,10 @@ class ModelsProcessor(QObject):
         if not self.models[arcface_model]:
             self.models[arcface_model] = self.load_model(arcface_model)
 
-        embedding, cropped_image = self.recognize(arcface_model, img, kps, similarity_type=similarity_type)
+        if arcface_model == 'CSCSArcFace':
+            embedding, cropped_image = self.recognize_cscs(img, kps)
+        else:
+            embedding, cropped_image = self.recognize(arcface_model, img, kps, similarity_type=similarity_type)
 
         return embedding, cropped_image
         
@@ -1830,8 +1837,11 @@ class ModelsProcessor(QObject):
         arcface_model = self.get_arcface_model(face_swapper_model)
         if not self.models[arcface_model]:
             self.models[arcface_model] = self.load_model(arcface_model)
-
-        embedding, cropped_image = self.recognize(arcface_model, img, kps, similarity_type=similarity_type)
+        
+        if arcface_model == 'CSCSArcFace':
+            embedding, cropped_image = self.recognize_cscs(img, kps)
+        else:
+            embedding, cropped_image = self.recognize(arcface_model, img, kps, similarity_type=similarity_type)
 
         return embedding, cropped_image
 
@@ -1904,6 +1914,74 @@ class ModelsProcessor(QObject):
         # Return embedding
         return np.array(io_binding.copy_outputs_to_cpu()).flatten(), cropped_image
 
+    def preprocess_image_cscs(self, img, face_kps):
+        tform = trans.SimilarityTransform()
+        tform.estimate(face_kps, self.FFHQ_kps)
+
+        temp = v2.functional.affine(img, tform.rotation*57.2958, (tform.translation[0], tform.translation[1]) , tform.scale, 0, center = (0,0) )
+        temp = v2.functional.crop(temp, 0,0, 512, 512)
+        
+        image = v2.Resize((112, 112), interpolation=v2.InterpolationMode.BILINEAR, antialias=False)(temp)
+        
+        cropped_image = image.permute(1, 2, 0).clone()
+        if image.dtype == torch.uint8:
+            image = torch.div(image.to(torch.float32), 255.0)
+
+        image = v2.functional.normalize(image, (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=False)
+
+        # Ritorna l'immagine e l'immagine ritagliata
+        return torch.unsqueeze(image, 0).contiguous(), cropped_image  # (C, H, W) e (H, W, C)
+    
+    def recognize_cscs(self, img, face_kps):
+        # Usa la funzione di preprocessamento
+        img, cropped_image = self.preprocess_image_cscs(img, face_kps)
+
+        io_binding = self.models['CSCSArcFace'].io_binding()
+        io_binding.bind_input(name='input', device_type=self.device, device_id=0, element_type=np.float32, shape=img.size(), buffer_ptr=img.data_ptr())
+        io_binding.bind_output(name='output', device_type=self.device)
+
+        if self.device == "cuda":
+            torch.cuda.synchronize()
+        elif self.device != "cpu":
+            self.syncvec.cpu()
+
+        self.models['CSCSArcFace'].run_with_iobinding(io_binding)
+
+        output = io_binding.copy_outputs_to_cpu()[0]
+        embedding = torch.from_numpy(output).to('cpu')
+        embedding = torch.nn.functional.normalize(embedding, dim=-1, p=2)
+        embedding = embedding.numpy().flatten()
+
+        embedding_id = self.recognize_cscs_id_adapter(img, None)
+        embedding = embedding + embedding_id
+
+        return embedding, cropped_image
+
+    def recognize_cscs_id_adapter(self, img, face_kps):
+        if not self.models['CSCSIDArcFace']:
+            self.models['CSCSIDArcFace'] = self.load_model('CSCSIDArcFace')
+
+        # Use preprocess_image_cscs when face_kps is not None. When it is None img is already preprocessed.
+        if face_kps is not None:
+            img, _ = self.preprocess_image_cscs(img, face_kps)
+
+        io_binding = self.models['CSCSIDArcFace'].io_binding()
+        io_binding.bind_input(name='input', device_type=self.device, device_id=0, element_type=np.float32, shape=img.size(), buffer_ptr=img.data_ptr())
+        io_binding.bind_output(name='output', device_type=self.device)
+
+        if self.device == "cuda":
+            torch.cuda.synchronize()
+        elif self.device != "cpu":
+            self.syncvec.cpu()
+            
+        self.models['CSCSIDArcFace'].run_with_iobinding(io_binding)
+
+        output = io_binding.copy_outputs_to_cpu()[0]
+        embedding_id = torch.from_numpy(output).to('cpu')
+        embedding_id = torch.nn.functional.normalize(embedding_id, dim=-1, p=2)
+
+        return embedding_id.numpy().flatten()
+    
     def calc_swapper_latent(self, source_embedding):
         if not self.models['Inswapper128']:
             graph = onnx.load(self.models_path['Inswapper128']).graph
@@ -1988,6 +2066,26 @@ class ModelsProcessor(QObject):
         elif self.device != "cpu":
             self.syncvec.cpu()
         ghostfaceswap_model.run_with_iobinding(io_binding)
+
+    def calc_swapper_latent_cscs(self, source_embedding):
+        latent = source_embedding.reshape((1,-1))
+
+        return latent
+
+    def run_swapper_cscs(self, image, embedding, output):
+        if not self.models['CSCS']:
+            self.models['CSCS'] = self.load_model('CSCS')
+
+        io_binding = self.models['CSCS'].io_binding()
+        io_binding.bind_input(name='input_1', device_type=self.device, device_id=0, element_type=np.float32, shape=(1,3,256,256), buffer_ptr=image.data_ptr())
+        io_binding.bind_input(name='input_2', device_type=self.device, device_id=0, element_type=np.float32, shape=(1,512), buffer_ptr=embedding.data_ptr())
+        io_binding.bind_output(name='output', device_type=self.device, device_id=0, element_type=np.float32, shape=(1,3,256,256), buffer_ptr=output.data_ptr())
+
+        if self.device == "cuda":
+            torch.cuda.synchronize()
+        elif self.device != "cpu":
+            self.syncvec.cpu()
+        self.models['CSCS'].run_with_iobinding(io_binding)
 
     def run_GFPGAN(self, image, output):
         if not self.models['GFPGANv1.4']:

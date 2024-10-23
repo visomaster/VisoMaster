@@ -179,7 +179,7 @@ class FrameWorker(threading.Thread):
         # parameters = self.parameters.copy()
         swapper_model = parameters['SwapModelSelection']
 
-        if swapper_model != 'GhostFace-v1' and swapper_model != 'GhostFace-v2' and swapper_model != 'GhostFace-v3':
+        if swapper_model != 'GhostFace-v1' and swapper_model != 'GhostFace-v2' and swapper_model != 'GhostFace-v3' and swapper_model != 'CSCS':
             dst = faceutil.get_arcface_template(image_size=512, mode='arcface128')
         else:
             dst = faceutil.get_arcface_template(image_size=512, mode='arcfacemap')
@@ -208,13 +208,14 @@ class FrameWorker(threading.Thread):
             kps_5[4][0] += parameters['MouthRightXAmountSlider']
             kps_5[4][1] += parameters['MouthRightYAmountSlider']
 
-        if swapper_model != 'GhostFace-v1' and swapper_model != 'GhostFace-v2' and swapper_model != 'GhostFace-v3':
-            tform = trans.SimilarityTransform()
+        tform = trans.SimilarityTransform()
+        if swapper_model != 'GhostFace-v1' and swapper_model != 'GhostFace-v2' and swapper_model != 'GhostFace-v3' and swapper_model != 'CSCS':
             dst = np.squeeze(dst)
             tform.estimate(kps_5, dst)
+        elif swapper_model == "CSCS":
+            tform.estimate(kps_5, self.models_processor.FFHQ_kps)
         else:
             M, _ = faceutil.estimate_norm_arcface_template(kps_5, src=dst)
-            tform = trans.SimilarityTransform()
             tform.params[0:2] = M
 
         # Scaling Transforms
@@ -271,7 +272,16 @@ class FrameWorker(threading.Thread):
                 dim = 2
                 input_face_affined = original_face_256
 
-            
+            elif swapper_model == 'CSCS':
+                latent = torch.from_numpy(self.models_processor.calc_swapper_latent_cscs(s_e)).float().to(self.models_processor.device)
+                if parameters['FaceLikenessEnableToggle']:
+                    factor = parameters['FaceLikenessFactorDecimalSlider']
+                    dst_latent = torch.from_numpy(self.models_processor.calc_swapper_latent_cscs(t_e)).float().to(self.models_processor.device)
+                    latent = latent - (factor * dst_latent)
+
+                dim = 2
+                input_face_affined = original_face_256
+
             elif swapper_model == 'DeepFaceLive (DFM)' and dfm_model:
                 dfm_model = self.models_processor.load_dfm_model(dfm_model)
                 latent = []
@@ -346,6 +356,23 @@ class FrameWorker(threading.Thread):
                     input_face_affined = torch.div(input_face_affined, 255)
 
                     output = swapper_output.clone()
+                    output = torch.clamp(output, 0, 255)
+
+            elif swapper_model == 'CSCS':
+                for k in range(itex):
+                    input_face_disc = input_face_affined.permute(2, 0, 1)
+                    input_face_disc = v2.functional.normalize(input_face_disc, (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=False)
+                    input_face_disc = torch.unsqueeze(input_face_disc, 0).contiguous()
+                    swapper_output = torch.empty((1,3,256,256), dtype=torch.float32, device=self.models_processor.device).contiguous()
+                    self.models_processor.run_swapper_cscs(input_face_disc, latent, swapper_output)
+                    swapper_output = torch.squeeze(swapper_output)
+                    swapper_output = torch.add(torch.mul(swapper_output, 0.5), 0.5)
+                    swapper_output = swapper_output.permute(1, 2, 0)
+                    prev_face = input_face_affined.clone()
+                    input_face_affined = swapper_output.clone()
+
+                    output = swapper_output.clone()
+                    output = torch.mul(output, 255)
                     output = torch.clamp(output, 0, 255)
             
             elif swapper_model == 'DeepFaceLive (DFM)' and dfm_model:
