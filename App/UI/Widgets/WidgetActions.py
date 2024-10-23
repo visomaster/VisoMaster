@@ -339,9 +339,12 @@ def find_target_faces(main_window: 'MainWindow'):
             ret,frame = media_capture.read()
             media_capture.release()
         
+        # Frame must be in RGB format
+        frame = frame[..., ::-1]  # Swap the channels from BGR to RGB
+
         # print(frame)
         img = torch.from_numpy(frame.astype('uint8')).to(main_window.models_processor.device)
-        img = img.permute(2,0,1)        
+        img = img.permute(2,0,1)
         if control['ManualRotationEnableToggle']:
             img = v2.functional.rotate(img, angle=control['ManualRotationAngleSlider'], interpolation=v2.InterpolationMode.BILINEAR, expand=True)
 
@@ -364,7 +367,9 @@ def find_target_faces(main_window: 'MainWindow'):
                         found = True
                         break
                 if not found:
-                    face_img = numpy.ascontiguousarray(face[2].cpu().numpy())
+                    face_img = face[2].cpu().numpy()
+                    face_img = face_img[..., ::-1]  # Swap the channels from RGB to BGR
+                    face_img = numpy.ascontiguousarray(face_img)
                     # crop = cv2.resize(face[2].cpu().numpy(), (82, 82))
                     pixmap = get_pixmap_from_frame(main_window, face_img)
 

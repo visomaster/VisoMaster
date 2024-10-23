@@ -444,7 +444,7 @@ class ModelsProcessor(QObject):
         det_img[:new_height,:new_width,  :] = img
 
         # Switch to RGB and normalize
-        det_img = det_img[:, :, [2,1,0]]
+        #det_img = det_img[:, :, [2,1,0]]
         det_img = torch.sub(det_img, 127.5)
         det_img = torch.div(det_img, 128.0)
         det_img = det_img.permute(2, 0, 1) #3,128,128
@@ -705,7 +705,7 @@ class ModelsProcessor(QObject):
         det_img[:new_height,:new_width,  :] = img
 
         # Switch to RGB and normalize
-        det_img = det_img[:, :, [2,1,0]]
+        #det_img = det_img[:, :, [2,1,0]]
         det_img = torch.sub(det_img, 127.5)
         det_img = torch.div(det_img, 128.0)
         det_img = det_img.permute(2, 0, 1) #3,128,128
@@ -1864,7 +1864,7 @@ class ModelsProcessor(QObject):
             # Switch to BGR and normalize
             img = img.permute(1,2,0) #112,112,3
             cropped_image = img
-            img = img[:, :, [2,1,0]]
+            #img = img[:, :, [2,1,0]] # img must be in RGB format
             img = torch.sub(img, 127.5)
             img = torch.div(img, 127.5)
             img = img.permute(2, 0, 1) #3,112,112

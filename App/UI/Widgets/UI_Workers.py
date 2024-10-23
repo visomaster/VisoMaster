@@ -89,6 +89,9 @@ class InputFacesLoaderWorker(qtc.QThread):
             if folder_name:
                 image_file_path = os.path.join(folder_name, image_file_path)
             frame = cv2.imread(image_file_path)
+            # Frame must be in RGB format
+            frame = frame[..., ::-1]  # Swap the channels from BGR to RGB
+
             img = torch.from_numpy(frame.astype('uint8')).to(self.main_window.models_processor.device)
             img = img.permute(2,0,1)
             bboxes, kpss_5, _ = self.main_window.models_processor.run_detect(img, control['DetectorModelSelection'], max_num=1, score=control['DetectorScoreSlider']/100.0, use_landmark_detection=control['LandmarkDetectToggle'], landmark_detect_mode=control['LandmarkDetectModelSelection'], landmark_score=control["LandmarkDetectScoreSlider"]/100.0, from_points=control["DetectFromPointsToggle"], rotation_angles=[0] if not control["AutoRotationToggle"] else [0, 90, 180, 270])
@@ -102,7 +105,9 @@ class InputFacesLoaderWorker(qtc.QThread):
                 continue
             if face_kps.any():
                 face_emb, cropped_img = self.main_window.models_processor.run_recognize_direct(img, face_kps, control['SimilarityTypeSelection'], control['RecognitionModelSelection'])
-                face_img = numpy.ascontiguousarray(cropped_img.cpu().numpy())
+                cropped_img = cropped_img.cpu().numpy()
+                cropped_img = cropped_img[..., ::-1]  # Swap the channels from RGB to BGR
+                face_img = numpy.ascontiguousarray(cropped_img)
                 # crop = cv2.resize(face[2].cpu().numpy(), (82, 82))
                 pixmap = widget_actions.get_pixmap_from_frame(self.main_window, face_img)
 
