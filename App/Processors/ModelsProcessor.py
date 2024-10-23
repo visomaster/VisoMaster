@@ -1860,18 +1860,23 @@ class ModelsProcessor(QObject):
             img = v2.functional.affine(img, tform.rotation*57.2958, (tform.translation[0], tform.translation[1]) , tform.scale, 0, center = (0,0) )
             img = v2.functional.crop(img, 0,0, 112, 112)
 
-        if arcface_model == 'Inswapper128ArcFace' or arcface_model == 'SimSwapArcFace':
-            # Switch to BGR and normalize
-            img = img.permute(1,2,0) #112,112,3
-            cropped_image = img
-            #img = img[:, :, [2,1,0]] # img must be in RGB format
+        if arcface_model == 'Inswapper128ArcFace':
+            cropped_image = img.permute(1, 2, 0).clone()
+            if img.dtype == torch.uint8:
+                img = img.to(torch.float32)  # Convert to float32 if uint8
             img = torch.sub(img, 127.5)
             img = torch.div(img, 127.5)
-            img = img.permute(2, 0, 1) #3,112,112
+        elif arcface_model == 'SimSwapArcFace':
+            cropped_image = img.permute(1, 2, 0).clone()
+            if img.dtype == torch.uint8:
+                img = torch.div(img.to(torch.float32), 255.0)
+            img = v2.functional.normalize(img, (0.485, 0.456, 0.406), (0.229, 0.224, 0.225), inplace=False)
         else:
-            cropped_image = img.permute(1,2,0) #112,112,3
-            # Converti a float32 e normalizza
-            img = torch.div(img.float(), 127.5)
+            cropped_image = img.permute(1,2,0).clone() #112,112,3
+            if img.dtype == torch.uint8:
+                img = img.to(torch.float32)  # Convert to float32 if uint8
+            # Normalize
+            img = torch.div(img, 127.5)
             img = torch.sub(img, 1)
 
         # Prepare data and find model parameters
@@ -1927,8 +1932,8 @@ class ModelsProcessor(QObject):
 
     def calc_swapper_latent_simswap512(self, source_embedding):
         latent = source_embedding.reshape(1, -1)
-        latent /= np.linalg.norm(latent)
-
+        #latent /= np.linalg.norm(latent)
+        latent = latent/np.linalg.norm(latent,axis=1,keepdims=True)
         return latent
 
     def run_swapper_simswap512(self, image, embedding, output):
