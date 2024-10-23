@@ -150,7 +150,7 @@ class FrameWorker(threading.Thread):
                 for i, face in enumerate(ret):
                     for target_face in self.main_window.target_faces:
                         parameters = self.parameters[target_face.face_id] #Use the parameters of the target face
-                        sim = self.models_processor.findCosineDistance(fface[2], target_face.embedding)
+                        sim = self.models_processor.findCosineDistance(fface[2], target_face.get_embedding(control['RecognitionModelSelection']))
                         if sim>=parameters['SimilarityThresholdSlider']:
                             if parameters['LandmarksPositionAdjEnableToggle']:
                                 kcolor = tuple((255, 0, 0))
