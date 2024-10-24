@@ -875,7 +875,6 @@ def open_embeddings_from_file(main_window: 'MainWindow'):
             # Carica gli embedding dal file e crea il dizionario embedding_store
             for embed_data in embeddings_list:
                 embedding_store = embed_data.get('embedding_store', {})
-                print('embedding_store',embedding_store)
                 # Converte ogni embedding in numpy array
                 for recogn_model, embed in embedding_store.items():
                     embedding_store[recogn_model] = numpy.array(embed)
