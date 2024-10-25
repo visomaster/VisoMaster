@@ -1,3 +1,8 @@
+QPushButton {
+    color: #9dcbd9;
+    font-weight: bold;
+}
+
 /* Base button style */
 TargetMediaCardButton, TargetFaceCardButton, InputFaceCardButton {
     background-color: #141516;  /* Dark blue background */
@@ -16,18 +21,18 @@ TargetMediaCardButton::icon, TargetFaceCardButton::icon, InputFaceCardButton:ico
 /* Hover state */
 TargetMediaCardButton:hover, TargetFaceCardButton:hover, InputFaceCardButton:hover {
     background-color: #34495e;  /* Slightly lighter on hover */
-    border: 1px solid #1abc9c;  /* Turquoise border on hover */
+    border: 1px solid #4facc9;  /* Turquoise border on hover */
 }
 
 /* Pressed state */
 TargetMediaCardButton:pressed {
-    background-color: #1abc9c;  /* Turquoise background when pressed */
-    border: 1px solid #16a085;  /* Darker turquoise border */
+    background-color: #4facc9;  /* Turquoise background when pressed */
+    border: 1px solid #4facc9;  /* Darker turquoise border */
 }
 
 /* Pressed state */
 TargetMediaCardButton:checked, TargetFaceCardButton:checked, InputFaceCardButton:checked, EmbeddingCardButton:checked {
-    border: 1px solid #1abc9c;  /* Darker turquoise border */
+    border: 1px solid #4facc9;  /* Darker turquoise border */
 }
 
 /* Disabled state */
@@ -40,30 +45,30 @@ TargetMediaCardButton:disabled, TargetFaceCardButton:disabled, InputFaceCardButt
 /* Focused state */
 TargetMediaCardButton:focus {
     outline: none;              /* Remove the default focus outline */
-    border: 2px solid #1abc9c;  /* Thicker turquoise border on focus */
+    border: 2px solid #4facc9;  /* Thicker turquoise border on focus */
 }
 
 
 /* QSlider --------------------------------------  */
 #videoSeekSlider::groove:horizontal {
     border-radius: 10px;              /* Rounded corners to match the button */
-    height: 8px;                      /* Increase groove thickness */
+    height: 10px;                      /* Increase groove thickness */
     margin: 0px;
     background-color: #34495e;        /* Background groove color (slightly lighter blue) */
 }
 
 #videoSeekSlider::groove:horizontal:hover {
-    background-color: #1abc9c;        /* Turquoise color on hover */
+    background-color: #4facc9;        /* Turquoise color on hover */
 }
 
 #videoSeekSlider::sub-page:horizontal {
-    background-color: #1abc9c;        /* Turquoise for completed part */
+    background-color: #197996;        /* Turquoise for completed part */
     border-radius: 10px;              /* Rounded corners */
     height: 8px;
 }
 
 #videoSeekSlider::sub-page:horizontal:hover {
-    background-color: #16a085;        /* Darker turquoise on hover */
+    background-color: #4facc9;        /* Darker turquoise on hover */
 }
 
 #videoSeekSlider::add-page:horizontal {
@@ -82,11 +87,11 @@ TargetMediaCardButton:focus {
 }
 
 #videoSeekSlider::handle:horizontal:hover {
-    background-color: #1abc9c;        /* Turquoise handle on hover */
+    background-color: #4facc9;        /* Turquoise handle on hover */
 }
 
 #videoSeekSlider::handle:horizontal:pressed {
-    background-color: #16a085;        /* Darker turquoise when pressed */
+    background-color: #4facc9;        /* Darker turquoise when pressed */
 }
 
 /* #videoSeekSlider state */

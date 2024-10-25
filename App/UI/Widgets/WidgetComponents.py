@@ -597,7 +597,7 @@ class SelectionBox(QtWidgets.QComboBox, ParametersWidget):
 class ToggleButton(QtWidgets.QPushButton, ParametersWidget):
     _circle_position = None
 
-    def __init__(self, bg_color="#000000", circle_color="#ffffff", active_color="#16a085", default_value=False, *args, **kwargs):
+    def __init__(self, bg_color="#000000", circle_color="#ffffff", active_color="#4facc9", default_value=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
         ParametersWidget.__init__(self, *args, **kwargs)
 

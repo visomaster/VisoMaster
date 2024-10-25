@@ -159,7 +159,7 @@ class Ui_MainWindow(object):
 
         self.verticalLayout.addLayout(self.verticalLayoutMediaControls)
 
-        self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Preferred)
+        self.verticalSpacer = QSpacerItem(20, 5, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Preferred)
 
         self.verticalLayout.addItem(self.verticalSpacer)
 
@@ -167,7 +167,8 @@ class Ui_MainWindow(object):
         self.gridGroupBox.setObjectName(u"gridGroupBox")
         sizePolicy1.setHeightForWidth(self.gridGroupBox.sizePolicy().hasHeightForWidth())
         self.gridGroupBox.setSizePolicy(sizePolicy1)
-        self.gridGroupBox.setMaximumSize(QSize(16777215, 180))
+        self.gridGroupBox.setMinimumSize(QSize(0, 180))
+        self.gridGroupBox.setMaximumSize(QSize(16777215, 225))
         self.gridGroupBox.setAutoFillBackground(False)
         self.gridGroupBox.setFlat(True)
         self.gridGroupBox.setCheckable(False)
