@@ -1,5 +1,5 @@
 QPushButton {
-    color: #9dcbd9;
+    color: #379bb9;
     font-weight: bold;
 }
 

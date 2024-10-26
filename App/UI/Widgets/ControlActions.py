@@ -24,18 +24,18 @@ def change_threads_number(main_window: 'MainWindow', new_threads_number):
 
 def change_theme(main_window: 'MainWindow', new_theme):
 
-    def get_style_data(filename, theme='dark', ):
+    def get_style_data(filename, theme='dark', custom_colors={"primary": "#4facc9"}):
         with open(f"App/UI/Styles/{filename}", "r") as f:
             _style = f.read()
-            _style = qdarktheme.load_stylesheet(theme=theme, custom_colors={"primary": "#4facc9"})+'\n'+_style
+            _style = qdarktheme.load_stylesheet(theme=theme, custom_colors=custom_colors)+'\n'+_style
         return _style
     app = QtWidgets.QApplication.instance()
 
     if new_theme == "Dark":
-        _style = get_style_data('dark_styles.qss', 'dark')
+        _style = get_style_data('dark_styles.qss', 'dark',)
 
     elif new_theme == "Light":
-        _style = get_style_data('light_styles.qss', 'light')
+        _style = get_style_data('light_styles.qss', 'light',)
 
     app.setStyleSheet(_style)
 
