@@ -1,0 +1,176 @@
+QPushButton {
+    color: #9dcbd9;
+    font-weight: bold;
+}
+
+/* Base button style */
+TargetMediaCardButton, TargetFaceCardButton, InputFaceCardButton {
+    background-color: #141516;  /* Dark blue background */
+    border-radius: 5px;        /* Rounded corners */
+    border: 1px solid #34495e;  /* Slightly darker border */
+    color: white;               /* White text color */
+    padding: 10px;              /* Padding around the icon */
+    font-size: 14px;            /* Default font size */
+}
+
+/* Icon inside the button */
+TargetMediaCardButton::icon, TargetFaceCardButton::icon, InputFaceCardButton:icon {
+    margin: 5px;           /* Spacing around the icon */
+}
+
+/* Hover state */
+TargetMediaCardButton:hover, TargetFaceCardButton:hover, InputFaceCardButton:hover {
+    background-color: #34495e;  /* Slightly lighter on hover */
+    border: 1px solid #4facc9;  /* Turquoise border on hover */
+}
+
+/* Pressed state */
+TargetMediaCardButton:pressed {
+    background-color: #4facc9;  /* Turquoise background when pressed */
+    border: 1px solid #4facc9;  /* Darker turquoise border */
+}
+
+/* Pressed state */
+TargetMediaCardButton:checked, TargetFaceCardButton:checked, InputFaceCardButton:checked, EmbeddingCardButton:checked {
+    border: 1px solid #4facc9;  /* Darker turquoise border */
+}
+
+/* Disabled state */
+TargetMediaCardButton:disabled, TargetFaceCardButton:disabled, InputFaceCardButton:disabled, EmbeddingCardButton:disabled {
+    background-color: #95a5a6;  /* Gray background when disabled */
+    border: 1px solid #7f8c8d;  /* Darker gray border */
+    color: #bdc3c7;             /* Lighter gray text color */
+}
+
+/* Focused state */
+TargetMediaCardButton:focus {
+    outline: none;              /* Remove the default focus outline */
+    border: 2px solid #4facc9;  /* Thicker turquoise border on focus */
+}
+
+
+/* QSlider --------------------------------------  */
+#videoSeekSlider::groove:horizontal {
+    border-radius: 10px;              /* Rounded corners to match the button */
+    height: 10px;                      /* Increase groove thickness */
+    margin: 0px;
+    background-color: #34495e;        /* Background groove color (slightly lighter blue) */
+}
+
+#videoSeekSlider::groove:horizontal:hover {
+    background-color: #4facc9;        /* Turquoise color on hover */
+}
+
+#videoSeekSlider::sub-page:horizontal {
+    background-color: #197996;        /* Turquoise for completed part */
+    border-radius: 10px;              /* Rounded corners */
+    height: 8px;
+}
+
+#videoSeekSlider::sub-page:horizontal:hover {
+    background-color: #4facc9;        /* Darker turquoise on hover */
+}
+
+#videoSeekSlider::add-page:horizontal {
+    background-color: #2c3e50;        /* Dark blue for uncompleted part */
+    border-radius: 10px;
+    height: 8px;
+}
+
+#videoSeekSlider::handle:horizontal {
+    background-color: #bdc3c7;        /* Lighter gray handle color */
+    border: 1px solid #7f8c8d;        /* Darker gray border */
+    height: 20px;                     /* Handle height */
+    width: 8px;                      /* Handle width */
+    margin: -6px 0;                   /* Adjust handle position */
+    border-radius: 2px;              /* Rounded handle */
+}
+
+#videoSeekSlider::handle:horizontal:hover {
+    background-color: #4facc9;        /* Turquoise handle on hover */
+}
+
+#videoSeekSlider::handle:horizontal:pressed {
+    background-color: #4facc9;        /* Darker turquoise when pressed */
+}
+
+/* #videoSeekSlider state */
+#videoSeekSlider::handle:horizontal:disabled {
+    background-color: #95a5a6;        /* Gray background when disabled */
+    border: 1px solid #7f8c8d;        /* Darker gray border */
+}
+
+#videoSeekSlider::groove:horizontal:disabled {
+    background-color: #7f8c8d;        /* Dark gray groove when disabled */
+}
+
+#videoSeekSlider::sub-page:horizontal:disabled {
+    background-color: #bdc3c7;        /* Lighter gray completed part when disabled */
+}
+
+
+ToggleButton {
+    border: 0px;
+    border-radius: 6px;
+    background-color: #dc2626;
+    text-align: center;
+    padding: 2px;
+
+}
+ToggleButton:hover {
+    background-color: #232323;
+} 
+ToggleButton:pressed {
+    background-color: #38b845;
+}
+ToggleButton:checked {
+    background-color: #38b845;
+}
+ToggleButton:default {
+    border-color: none; /* make the default button prominent */
+} 
+
+
+
+/* ParameterSlider - Thin Groove and Handle */
+/* -------------------------------------- */
+
+ParameterSlider::groove:horizontal,ParameterDecimalSlider::groove:horizontal {
+    border-radius: 1px;              /* Rounded corners */
+    height: 6px;                     /* Thinner groove */
+    margin: 0px;
+    background-color: #34495e;       /* Background groove color */
+}
+
+/* Remove the completed part color by making it transparent */
+ParameterSlider::sub-page:horizontal,ParameterDecimalSlider::sub-page:horizontal {
+    background-color: transparent;   /* No color for completed part */
+}
+
+ParameterSlider::add-page:horizontal,ParameterDecimalSlider::add-page:horizontal {
+    background-color: #2c3e50;       /* Dark blue for uncompleted part */
+    border-radius: 1px;              /* Thinner radius */
+    height: 4px;                     /* Thinner groove */
+}
+
+ParameterSlider::handle:horizontal,ParameterDecimalSlider::handle:horizontal {
+    background-color: #ffffff;       /* Lighter gray handle color */
+    border: 1px solid #7f8c8d;       /* Darker gray border */
+    height: 16px;                    /* Thinner handle */
+    width: 4px;                     /* Thinner handle */
+    margin: -4px 0;                  /* Adjust handle position for thinner groove */
+}
+
+/* Disabled state */
+ParameterSlider::handle:horizontal:disabled,ParameterDecimalSlider::handle:horizontal:disabled {
+    background-color: #95a5a6;       /* Gray background when disabled */
+    border: 1px solid #7f8c8d;       /* Darker gray border */
+}
+
+ParameterSlider::groove:horizontal:disabled,ParameterDecimalSlider::groove:horizontal:disabled {
+    background-color: #7f8c8d;       /* Dark gray groove when disabled */
+}
+
+ParameterSlider::sub-page:horizontal:disabled,ParameterDecimalSlider::sub-page:horizontal:disabled {
+    background-color: transparent;   /* No color for completed part when disabled */
+}

@@ -5,6 +5,7 @@ if TYPE_CHECKING:
 import torch
 import qdarkstyle
 from PySide6 import QtWidgets 
+import qdarktheme
 
 '''
     Define functions here that has to be executed when value of a control widget (In the settings tab) is changed.
@@ -22,17 +23,20 @@ def change_threads_number(main_window: 'MainWindow', new_threads_number):
     torch.cuda.empty_cache()
 
 def change_theme(main_window: 'MainWindow', new_theme):
+
+    def get_style_data(filename, theme='dark', ):
+        with open(f"App/UI/Styles/{filename}", "r") as f:
+            _style = f.read()
+            _style = qdarktheme.load_stylesheet(theme=theme, custom_colors={"primary": "#4facc9"})+'\n'+_style
+        return _style
     app = QtWidgets.QApplication.instance()
 
-    if new_theme == "Default":
-        with open("App/UI/Styles/styles.qss", "r") as f:
-            _style = f.read()
-            app.setStyleSheet(_style)  # Applica lo stile predefinito
-    elif new_theme == "Dark":  # Correzione: usa "==" invece di "="
-        app.setStyleSheet(qdarkstyle.load_stylesheet())  # Applica lo stile dark
-    elif new_theme == "Custom":
-        with open("App/UI/Styles/custom_theme.qss", "r") as f:
-            _style = f.read()
-            app.setStyleSheet(_style)  # Applica lo stile custom
+    if new_theme == "Dark":
+        _style = get_style_data('dark_styles.qss', 'dark')
+
+    elif new_theme == "Light":
+        _style = get_style_data('light_styles.qss', 'light')
+
+    app.setStyleSheet(_style)
 
     main_window.update()  # Aggiorna la finestra principale
