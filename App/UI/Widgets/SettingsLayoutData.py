@@ -4,7 +4,7 @@ SETTINGS_LAYOUT_DATA = {
         'ThemeSelection': {
             'level': 1,
             'label': 'Theme',
-            'options': ['Dark', 'Light'],
+            'options': ['Dark', 'Dark-Blue', 'Light'],
             'default': 'Dark',
             'help': 'Select the providers priority to be used with the system.',
             'exec_function': control_actions.change_theme,
