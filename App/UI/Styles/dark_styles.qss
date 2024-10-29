@@ -25,7 +25,7 @@ TargetMediaCardButton:hover, TargetFaceCardButton:hover, InputFaceCardButton:hov
 }
 
 /* Pressed state */
-TargetMediaCardButton:pressed {
+TargetMediaCardButton:pressed, TargetFaceCardButton:pressed, InputFaceCardButton:pressed, EmbeddingCardButton:pressed {
     background-color: #4facc9;  /* Turquoise background when pressed */
     border: 1px solid #4facc9;  /* Darker turquoise border */
 }

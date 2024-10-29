@@ -265,55 +265,27 @@ def setPlayButtonIcon(main_window: 'MainWindow'):
         main_window.buttonMediaPlay.setToolTip("Play")
 
 def filterTargetVideos(main_window: 'MainWindow', search_text: str = ''):
-    search_text = main_window.targetVideosSearchBox.text()
-    include_file_types = []
-    if main_window.filterImagesCheckBox.isChecked():
-        include_file_types.append('image')
-    if main_window.filterVideosCheckBox.isChecked():
-        include_file_types.append('video')
-    if search_text:
-        search_text = search_text.lower()
-        for i in range(main_window.targetVideosList.count()):
-            list_item = main_window.targetVideosList.item(i)
-            if search_text not in main_window.target_videos[i].media_path.lower() or main_window.target_videos[i].file_type not in include_file_types:
-                list_item.setHidden(True)
+    main_window.target_videos_filter_worker.search_text = search_text
+    main_window.target_videos_filter_worker.terminate()
+    main_window.target_videos_filter_worker.start()
 
-            else:
-                list_item.setHidden(False)
-    else:
-        for i in range(main_window.targetVideosList.count()):
-            if main_window.target_videos[i].file_type in include_file_types:
-                main_window.targetVideosList.item(i).setHidden(False)
-            else:
-                main_window.targetVideosList.item(i).setHidden(True)
+def filterInputFaces(main_window: 'MainWindow', search_text: str = ''):
+    main_window.input_faces_filter_worker.search_text = search_text
+    main_window.input_faces_filter_worker.stop_thread()
+    main_window.input_faces_filter_worker.start()
 
-def filterInputFaces(main_window: 'MainWindow', search_text: str):
-    search_text = search_text.lower()
-    if search_text:
-        for i in range(main_window.inputFacesList.count()):
-            list_item = main_window.inputFacesList.item(i)
-            if search_text not in main_window.input_faces[i].media_path.lower():
-                list_item.setHidden(True)
+def filterMergedEmbeddings(main_window: 'MainWindow', search_text: str = ''):
+    main_window.merged_embeddings_filter_worker.search_text = search_text
+    main_window.merged_embeddings_filter_worker.stop_thread()
+    main_window.merged_embeddings_filter_worker.start()
 
-            else:
-                list_item.setHidden(False)
-    else:
-        for i in range(main_window.inputFacesList.count()):
-            main_window.inputFacesList.item(i).setHidden(False)
+def updateFilteredList(main_window: 'MainWindow', filter_list_widget: QtWidgets.QListWidget, visible_indices: list):
+    for i in range(filter_list_widget.count()):
+        filter_list_widget.item(i).setHidden(True)
 
-def filterMergedEmbeddings(main_window: 'MainWindow', search_text: str):
-    search_text = search_text.lower()
-    if search_text:
-        for i in range(main_window.inputEmbeddingsList.count()):
-            list_item = main_window.inputEmbeddingsList.item(i)
-            if search_text not in main_window.merged_embeddings[i].embedding_name.lower():
-                list_item.setHidden(True)
-
-            else:
-                list_item.setHidden(False)
-    else:
-        for i in range(main_window.inputEmbeddingsList.count()):
-            main_window.inputEmbeddingsList.item(i).setHidden(False)
+    # Show only the items in the visible_indices list
+    for i in visible_indices:
+        filter_list_widget.item(i).setHidden(False)
 
 def initializeModelLoadDialog(main_window: 'MainWindow'):
     main_window.model_load_dialog = ProgressDialog("Loading Models...This is gonna take a while.", "Cancel", 0, 100, main_window)

@@ -9,11 +9,13 @@ from functools import partial
 from App.Processors.VideoProcessor import VideoProcessor
 from App.Processors.ModelsProcessor import ModelsProcessor
 from App.UI.Widgets.WidgetComponents import *
+from App.UI.Widgets.UI_Workers import *
 from App.UI.Widgets.SwapperLayoutData import SWAPPER_LAYOUT_DATA
 from App.UI.Widgets.SettingsLayoutData import SETTINGS_LAYOUT_DATA
 from App.UI.Widgets.FaceEditorLayoutData import FACE_EDITOR_LAYOUT_DATA
 from typing import Dict, List
 from App.Helpers.Misc_Helpers import DFM_MODELS_DATA
+
 
 ParametersWidgetTypes = Dict[str, ToggleButton|SelectionBox|ParameterDecimalSlider|ParameterSlider|ParameterText]
 
@@ -62,8 +64,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     update_frame_signal = QtCore.Signal(int, QtGui.QPixmap)
 
     def initialize_variables(self):
-        self.video_loader_worker = False
-        self.input_faces_loader_worker = False
+        self.video_loader_worker: TargetMediaLoaderWorker|bool = False
+        self.input_faces_loader_worker: InputFacesLoaderWorker|bool = False
+        self.target_videos_filter_worker = FilterWorker(main_window=self, search_text='', filter_list='target_videos')
+        self.input_faces_filter_worker = FilterWorker(main_window=self, search_text='', filter_list='input_faces')
+        self.merged_embeddings_filter_worker = FilterWorker(main_window=self, search_text='', filter_list='merged_embeddings')
         self.video_processor = VideoProcessor(self)
         self.models_processor = ModelsProcessor(self)
         self.target_videos: List[TargetMediaCardButton] = [] #Contains button objects of target videos (Set as list instead of single video to support batch processing in future)

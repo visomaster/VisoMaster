@@ -8,6 +8,7 @@ import os
 import cv2
 import torch
 import numpy
+from functools import partial
 from typing import TYPE_CHECKING, Dict
 if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
@@ -128,4 +129,77 @@ class InputFacesLoaderWorker(qtc.QThread):
     def stop(self):
         """Stop the thread by setting the running flag to False."""
         self._running = False
+        self.wait()
+
+class FilterWorker(qtc.QThread):
+    filtered_results = qtc.Signal(list)
+
+    def __init__(self, main_window: 'MainWindow', search_text='', filter_list='target_videos', *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.main_window = main_window
+        self.search_text = search_text
+        self.filter_list = filter_list
+        self.filter_list_widget = self.get_list_widget()
+        self.filtered_results.connect(partial(widget_actions.updateFilteredList, main_window, self.filter_list_widget))
+
+    def get_list_widget(self,):
+        list_widget = False
+        if self.filter_list == 'target_videos':
+            list_widget = self.main_window.targetVideosList
+        elif self.filter_list == 'input_faces':
+            list_widget = self.main_window.inputFacesList
+        elif self.filter_list == 'merged_embeddings':
+            list_widget = self.main_window.inputEmbeddingsList
+        return list_widget
+
+    def run(self,):
+        if self.filter_list == 'target_videos':
+            self.filterTargetVideos(self.main_window, self.search_text)
+        elif self.filter_list == 'input_faces':
+            self.filterInputFaces(self.main_window, self.search_text)
+        elif self.filter_list == 'merged_embeddings':
+            self.filterMergedEmbeddings(self.main_window, self.search_text)
+
+
+    def filterTargetVideos(self, main_window: 'MainWindow', search_text: str = ''):
+        search_text = main_window.targetVideosSearchBox.text().lower()
+        include_file_types = []
+        if main_window.filterImagesCheckBox.isChecked():
+            include_file_types.append('image')
+        if main_window.filterVideosCheckBox.isChecked():
+            include_file_types.append('video')
+
+        visible_indices = []
+        for i in range(main_window.targetVideosList.count()):
+            item = main_window.target_videos[i]
+            if ((not search_text or search_text in item.media_path.lower()) and 
+                (not include_file_types or item.file_type in include_file_types)):
+                visible_indices.append(i)
+
+        self.filtered_results.emit(visible_indices)
+
+    def filterInputFaces(self, main_window: 'MainWindow', search_text: str):
+        search_text = search_text.lower()
+        visible_indices = []
+
+        for i in range(main_window.inputFacesList.count()):
+            item = main_window.input_faces[i]
+            if not search_text or search_text in item.media_path.lower():
+                visible_indices.append(i)
+
+        self.filtered_results.emit(visible_indices)
+
+    def filterMergedEmbeddings(self, main_window: 'MainWindow', search_text: str):
+        search_text = search_text.lower()
+        visible_indices = []
+
+        for i in range(main_window.inputEmbeddingsList.count()):
+            item = main_window.merged_embeddings[i]
+            if not search_text or search_text in item.embedding_name.lower():
+                visible_indices.append(i)
+
+        self.filtered_results.emit(visible_indices)
+
+    def stop_thread(self):
+        self.quit()
         self.wait()
