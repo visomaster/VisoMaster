@@ -287,17 +287,6 @@ def updateFilteredList(main_window: 'MainWindow', filter_list_widget: QtWidgets.
     for i in visible_indices:
         filter_list_widget.item(i).setHidden(False)
 
-def initializeModelLoadDialog(main_window: 'MainWindow'):
-    main_window.model_load_dialog = ProgressDialog("Loading Models...This is gonna take a while.", "Cancel", 0, 100, main_window)
-    main_window.model_load_dialog.setWindowModality(qtc.Qt.ApplicationModal)
-    main_window.model_load_dialog.setMinimumDuration(2000)
-    main_window.model_load_dialog.setWindowTitle("Loading Models")
-    main_window.model_load_dialog.setAutoClose(True)  # Close the dialog when finished
-    main_window.model_load_dialog.setCancelButton(None)
-    main_window.model_load_dialog.setWindowFlag(qtc.Qt.WindowCloseButtonHint, False)
-    main_window.model_load_dialog.setValue(0)
-    main_window.model_load_dialog.close()
-
 def find_target_faces(main_window: 'MainWindow'):
     control = main_window.control.copy()
     video_processor = main_window.video_processor

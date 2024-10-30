@@ -567,11 +567,6 @@ class ParametersWidget:
         self.reset_default_button: QPushButton = False
         self.enable_refresh_frame = True #This flag can be used to temporarily disable refreshing the frame when the widget value is changed
 
-class ToggleSwitchButton(QtWidgets.QPushButton, ParametersWidget):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        ParametersWidget.__init__(self, *args, **kwargs)
-
 class SelectionBox(QtWidgets.QComboBox, ParametersWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
