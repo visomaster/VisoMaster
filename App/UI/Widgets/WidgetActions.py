@@ -265,18 +265,18 @@ def setPlayButtonIcon(main_window: 'MainWindow'):
         main_window.buttonMediaPlay.setToolTip("Play")
 
 def filterTargetVideos(main_window: 'MainWindow', search_text: str = ''):
+    main_window.target_videos_filter_worker.stop_thread()
     main_window.target_videos_filter_worker.search_text = search_text
-    main_window.target_videos_filter_worker.terminate()
     main_window.target_videos_filter_worker.start()
 
 def filterInputFaces(main_window: 'MainWindow', search_text: str = ''):
-    main_window.input_faces_filter_worker.search_text = search_text
     main_window.input_faces_filter_worker.stop_thread()
+    main_window.input_faces_filter_worker.search_text = search_text
     main_window.input_faces_filter_worker.start()
 
 def filterMergedEmbeddings(main_window: 'MainWindow', search_text: str = ''):
-    main_window.merged_embeddings_filter_worker.search_text = search_text
     main_window.merged_embeddings_filter_worker.stop_thread()
+    main_window.merged_embeddings_filter_worker.search_text = search_text
     main_window.merged_embeddings_filter_worker.start()
 
 def updateFilteredList(main_window: 'MainWindow', filter_list_widget: QtWidgets.QListWidget, visible_indices: list):
