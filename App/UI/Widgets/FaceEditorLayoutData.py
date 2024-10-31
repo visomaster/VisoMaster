@@ -4,7 +4,7 @@ FACE_EDITOR_LAYOUT_DATA = {
             'level': 1,
             'label': 'Crop Scale',
             'min_value': '1.50',
-            'max_value': '3.20',
+            'max_value': '4.00',
             'default': '2.50',
             'step': 0.05,
             'decimals': 2,
@@ -287,14 +287,14 @@ FACE_EDITOR_LAYOUT_DATA = {
         'FaceMakeupBlendAmountDecimalSlider': {
             'level': 2,
             'label': 'Blend Amount',
-            'min_value': '0.1',
-            'max_value': '1.0',
-            'default': '0.2',
-            'decimals': 1,
-            'step': 0.1,
+            'min_value': '0.01',
+            'max_value': '1.00',
+            'default': '0.02',
+            'decimals': 2,
+            'step': 0.01,
             'parentToggle': 'FaceMakeupEnableToggle',
             'requiredToggleValue': True,
-            'help': 'Blend the value: 0.0 represents the original color, 1.0 represents the full target color.'
+            'help': 'Blend the value: 0.00 represents the original color, 1.00 represents the full target color.'
         },
         'HairMakeupEnableToggle': {
             'level': 1,
@@ -338,14 +338,14 @@ FACE_EDITOR_LAYOUT_DATA = {
         'HairMakeupBlendAmountDecimalSlider': {
             'level': 2,
             'label': 'Blend Amount',
-            'min_value': '0.1',
-            'max_value': '1.0',
-            'default': '0.2',
-            'decimals': 1,
-            'step': 0.1,
+            'min_value': '0.01',
+            'max_value': '1.00',
+            'default': '0.02',
+            'decimals': 2,
+            'step': 0.01,
             'parentToggle': 'HairMakeupEnableToggle',
             'requiredToggleValue': True,
-            'help': 'Blend the value: 0.0 represents the original color, 1.0 represents the full target color.'
+            'help': 'Blend the value: 0.00 represents the original color, 1.00 represents the full target color.'
         },
         'EyeBrowsMakeupEnableToggle': {
             'level': 1,
@@ -389,14 +389,14 @@ FACE_EDITOR_LAYOUT_DATA = {
         'EyeBrowsMakeupBlendAmountDecimalSlider': {
             'level': 2,
             'label': 'Blend Amount',
-            'min_value': '0.1',
-            'max_value': '1.0',
-            'default': '0.2',
-            'decimals': 1,
-            'step': 0.1,
+            'min_value': '0.01',
+            'max_value': '1.00',
+            'default': '0.02',
+            'decimals': 2,
+            'step': 0.01,
             'parentToggle': 'EyeBrowsMakeupEnableToggle',
             'requiredToggleValue': True,
-            'help': 'Blend the value: 0.0 represents the original color, 1.0 represents the full target color.'
+            'help': 'Blend the value: 0.00 represents the original color, 1.00 represents the full target color.'
         },
         'LipsMakeupEnableToggle': {
             'level': 1,
