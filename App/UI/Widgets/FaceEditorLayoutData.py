@@ -440,11 +440,11 @@ FACE_EDITOR_LAYOUT_DATA = {
         'LipsMakeupBlendAmountDecimalSlider': {
             'level': 2,
             'label': 'Blend Amount',
-            'min_value': '0.1',
-            'max_value': '1.0',
-            'default': '0.2',
-            'decimals': 1,
-            'step': 0.1,
+            'min_value': '0.01',
+            'max_value': '1.00',
+            'default': '0.02',
+            'decimals': 2,
+            'step': 0.01,
             'parentToggle': 'LipsMakeupEnableToggle',
             'requiredToggleValue': True,
             'help': 'Blend the value: 0.0 represents the original color, 1.0 represents the full target color.'
