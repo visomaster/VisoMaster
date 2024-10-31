@@ -1087,6 +1087,22 @@ SWAPPER_LAYOUT_DATA = {
             'help': 'Adjust the blur of mask border.'
         },
     },
+
+    'Face Compare':{
+        'ViewFaceMaskEnableToggle':{
+            'level': 1,
+            'label': 'View Face Mask',
+            'default': False,
+            'help': 'Show Face Mask'
+        },
+        'ViewFaceCompareEnableToggle':{
+            'level': 1,
+            'label': 'View Face Compare',
+            'default': False,
+            'help': 'Show Face Compare'
+        },
+    },
+    
     'Face Color Correction':{
         'AutoColorEnableToggle': {
             'level': 1,

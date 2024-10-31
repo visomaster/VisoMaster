@@ -152,20 +152,6 @@ SETTINGS_LAYOUT_DATA = {
             'help': 'Blends the enhanced results back into the original frame.'
         },
     },
-    'Face Compare':{
-        'ViewFaceMaskEnableToggle':{
-            'level': 1,
-            'label': 'View Face Mask',
-            'default': False,
-            'help': 'Show Face Mask'
-        },
-        'ViewFaceCompareEnableToggle':{
-            'level': 1,
-            'label': 'View Face Compare',
-            'default': False,
-            'help': 'Show Face Compare'
-        },
-    },
     'Webcam Settings': {
         'WebcamEnableToggle': {
             'level': 1,

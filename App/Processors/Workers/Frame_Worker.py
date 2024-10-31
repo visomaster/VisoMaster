@@ -555,7 +555,7 @@ class FrameWorker(threading.Thread):
 
         swap = torch.mul(swap, swap_mask)
 
-        if not control['ViewFaceMaskEnableToggle'] and not control['ViewFaceCompareEnableToggle']:
+        if not parameters['ViewFaceMaskEnableToggle'] and not parameters['ViewFaceCompareEnableToggle']:
             # Calculate the area to be mergerd back to the original frame
             IM512 = tform.inverse.params[0:2, :]
             corners = np.array([[0,0], [0,511], [511, 0], [511, 511]])
@@ -600,11 +600,11 @@ class FrameWorker(threading.Thread):
             swap = swap.permute(2,0,1)
             img[0:3, top:bottom, left:right] = swap
 
-        elif control['ViewFaceMaskEnableToggle'] or control['ViewFaceCompareEnableToggle']:
+        elif parameters['ViewFaceMaskEnableToggle'] or parameters['ViewFaceCompareEnableToggle']:
             # Invert swap mask
             swap_mask = torch.sub(1, swap_mask)
 
-            if control['ViewFaceCompareEnableToggle']:
+            if parameters['ViewFaceCompareEnableToggle']:
                 original_face_512_clone = original_face_512.clone()
                 original_face_512_clone = original_face_512_clone.type(torch.uint8)
                 original_face_512_clone = original_face_512_clone.permute(1, 2, 0)
@@ -616,16 +616,16 @@ class FrameWorker(threading.Thread):
             original_face_512 = original_face_512.permute(1, 2, 0)
 
             # Uninvert and create image from swap mask
-            if control['ViewFaceMaskEnableToggle']:
+            if parameters['ViewFaceMaskEnableToggle']:
                 swap_mask = torch.sub(1, swap_mask)
                 swap_mask = torch.cat((swap_mask,swap_mask,swap_mask),0)
                 swap_mask = swap_mask.permute(1, 2, 0)
                 swap_mask = torch.mul(swap_mask, 255.).type(torch.uint8)
 
             # Place them side by side
-            if not control['ViewFaceCompareEnableToggle']:
+            if not parameters['ViewFaceCompareEnableToggle']:
                 img = torch.hstack([original_face_512, swap_mask])
-            elif not control['ViewFaceMaskEnableToggle']:
+            elif not parameters['ViewFaceMaskEnableToggle']:
                 img = torch.hstack([original_face_512, original_face_512_clone])
             else:
                 img = torch.hstack([original_face_512, original_face_512_clone, swap_mask])
@@ -1110,7 +1110,7 @@ class FrameWorker(threading.Thread):
             original_face_512, M_o2c, M_c2o = faceutil.warp_face_by_face_landmark_x(img, lmk_crop, dsize=512, scale=parameters['FaceEditorCropScaleDecimalSlider'], vy_ratio=parameters['FaceEditorVYRatioDecimalSlider'], interpolation=v2.InterpolationMode.BILINEAR)
 
             out, mask_out = self.models_processor.apply_face_makeup(original_face_512, parameters)
-            if (not control['ViewFaceMaskEnableToggle'] and not control['ViewFaceCompareEnableToggle']) or self.main_window.swapfacesButton.isChecked():
+            if (not parameters['ViewFaceMaskEnableToggle'] and not parameters['ViewFaceCompareEnableToggle']) or self.main_window.swapfacesButton.isChecked():
                 gauss = transforms.GaussianBlur(5*2+1, (5+1)*0.2)
                 out = torch.clamp(torch.div(out, 255.0), 0, 1).type(torch.float32)
                 mask_crop = gauss(self.models_processor.lp_mask_crop)
@@ -1125,9 +1125,9 @@ class FrameWorker(threading.Thread):
                 mask_out = mask_out.type(torch.uint8)
 
                 # Place them side by side
-                if not control['ViewFaceCompareEnableToggle']:
+                if not parameters['ViewFaceCompareEnableToggle']:
                     img = torch.cat((out, mask_out), dim=2)
-                elif not control['ViewFaceMaskEnableToggle']:
+                elif not parameters['ViewFaceMaskEnableToggle']:
                     img = torch.cat((out, original_face_512), dim=2)
                 else:
                     img = torch.cat((out, original_face_512, mask_out), dim=2)
