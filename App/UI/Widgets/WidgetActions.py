@@ -589,7 +589,7 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
                     slider_widget.line_edit.setText(str(new_value))
 
                 # Invece di collegare direttamente onchange_slider, fallo dopo il debounce
-                widget.debounce_timer.timeout.connect(partial(onchange_slider, widget, widget_name, widget_data))
+                widget.valueChanged.connect(partial(onchange_slider, widget, widget_name, widget_data))
 
                 # When slider textbox value is changed
                 def onchange_line_edit(slider_widget: ParameterSlider, slider_widget_name, new_value=False):

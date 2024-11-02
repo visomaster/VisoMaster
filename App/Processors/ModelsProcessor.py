@@ -199,15 +199,16 @@ class ModelsProcessor(QObject):
         self.lp_lip_array = np.array(load_lip_array())
 
     def load_model(self, model_name, session_options=None):
-        # self.showModelLoadingProgressBar()
-        #time.sleep(0.5)
-        if session_options is None:
-            model_instance = onnxruntime.InferenceSession(self.models_path[model_name], providers=self.providers)
-        else:
-            model_instance = onnxruntime.InferenceSession(self.models_path[model_name], sess_options=session_options, providers=self.providers)
-        # model_instance = 'FAsfd'
-        # self.hideModelLoadProgressBar()
-        return model_instance
+        with self.model_lock:
+            # self.showModelLoadingProgressBar()
+            #time.sleep(0.5)
+            if session_options is None:
+                model_instance = onnxruntime.InferenceSession(self.models_path[model_name], providers=self.providers)
+            else:
+                model_instance = onnxruntime.InferenceSession(self.models_path[model_name], sess_options=session_options, providers=self.providers)
+            # model_instance = 'FAsfd'
+            # self.hideModelLoadProgressBar()
+            return model_instance
     
     def load_dfm_model(self, dfm_model):
         if not self.dfm_models.get(dfm_model):

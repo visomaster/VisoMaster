@@ -1,14 +1,11 @@
 import threading
-import concurrent.futures
 import cv2
 import queue
-import torch
 from PySide6.QtCore import QObject, QTimer, Signal
-
 from App.Processors.Workers.Frame_Worker import FrameWorker
 from App.UI.Widgets import WidgetActions as widget_actions
-
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
 
@@ -18,28 +15,36 @@ class VideoProcessor(QObject):
     def __init__(self, main_window: 'MainWindow', num_threads=5):
         super().__init__()
         self.main_window = main_window
-        self.frame_queue = queue.Queue(maxsize=num_threads)  # Queue to limit the number of pending frames
-        self.executor = None
-        self.media_capture: cv2.VideoCapture = None
+        self.frame_queue = queue.Queue(maxsize=num_threads)
+        self.media_capture = None
         self.file_type = None
         self.processing = False
         self.current_frame_number = 0
         self.max_frame_number = 0
         self.media_path = None
         self.num_threads = num_threads
+        self._stop_frame_display = threading.Event()
 
-        # QTimer managed by the main thread
+        # Timer to manage frame reading intervals
         self.frame_read_timer = QTimer()
         self.frame_read_timer.timeout.connect(self.process_next_frame)
 
+    def set_number_of_threads(self, value):
+        self.stop_processing()
+        self.main_window.models_processor.set_number_of_threads(value)
+        self.num_threads = value
+        self.frame_queue = queue.Queue(maxsize=self.num_threads)
+        print(f"Max Threads set as {value} ")
+
     def process_video(self):
-        """Start video processing by reading frames and enqueuing them."""
+        """Start video processing by reading frames and enqueueing them."""
         if self.processing:
             print("Processing already in progress. Ignoring start request.")
             return
 
         print("Starting video processing.")
         self.processing = True
+        self._stop_frame_display.clear()
 
         if self.file_type == 'video':
             self.reset_frame_counter()
@@ -48,128 +53,73 @@ class VideoProcessor(QObject):
                 fps = self.media_capture.get(cv2.CAP_PROP_FPS)
                 interval = 1000 / fps if fps > 0 else 30
                 print(f"Starting frame_read_timer with an interval of {interval} ms.")
-
-                # Create thread pool limited to num_threads
-                self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=self.num_threads)
-
-                # Start the timer to read frames
                 self.frame_read_timer.start(interval)
             else:
-                print("Error: unable to open video.")
+                print("Error: Unable to open the video.")
                 self.processing = False
+                self.frame_read_timer.stop()
                 widget_actions.setPlayButtonIconToPlay(self.main_window)
 
         elif self.file_type == 'image':
-            self.process_current_frame(ignore_processing=True)
+            self.process_current_frame()
 
     def process_next_frame(self):
         """Read the next frame and add it to the queue for processing."""
-        if not self.processing:
+
+        if self.current_frame_number > self.max_frame_number:
+            print("Stopping frame_read_timer as all frames have been read!")
+            self.frame_read_timer.stop()
+
+        if self.frame_queue.qsize() >= self.num_threads:
+            print(f"Queue is full ({self.frame_queue.qsize()} frames). Throttling frame reading.")
             return
 
-        # Check if the queue is full and throttle the reading of new frames
-        if self.frame_queue.full():
-            print(f"Queue full ({self.frame_queue.qsize()} frames). Throttling frame reading.")
-            return  # Skip reading a new frame
-
         if self.file_type == 'video' and self.media_capture:
-            if self.current_frame_number > self.max_frame_number:
-                self.stop_processing()
-                return
-
             ret, frame = self.media_capture.read()
-
             if ret:
-                # Frame must be in RGB format
-                frame = frame[..., ::-1]  # Swap the channels from BGR to RGB
-
-                print(f"Enqueueing frame {self.current_frame_number}")
-                try:
-                    # Put the frame in the queue and submit the task for processing
-                    self.frame_queue.put_nowait((self.current_frame_number, frame))
-                    self.executor.submit(self.process_frame)
-                except queue.Full:
-                    print("Frame queue full, frame discarded.")
+                frame = frame[..., ::-1]  # Convert BGR to RGB
+                print(f"Enqueuing frame {self.current_frame_number}")
+                self.frame_queue.put((self.current_frame_number, frame))
+                self.start_frame_worker(self.current_frame_number, frame)
+                self.current_frame_number += 1
             else:
-                print(f"Error reading frame at position {self.current_frame_number}")
+                print("Cannot read frame!.")
+                # self.stop_processing()
 
-            self.current_frame_number = int(self.media_capture.get(cv2.CAP_PROP_POS_FRAMES))
+    def start_frame_worker(self, frame_number, frame):
+        """Start a FrameWorker to process the given frame."""
+        worker = FrameWorker(frame, self.main_window, frame_number, self.frame_queue)
+        worker.start()
 
-    def process_frame(self):
-        """Process the current frame by retrieving it from the queue."""
-        try:
-            frame_number, frame = self.frame_queue.get()
-            print(f"Processing frame {frame_number}")
-            worker = FrameWorker(frame, self.main_window, frame_number)
-            worker.start()
+    def process_current_frame(self):
 
-            # Wait for the worker to finish (join waits for the thread to terminate)
-            worker.join()  # This blocks until the worker completes
-        
-            # Mark the task as done
-            self.frame_queue.task_done()
-        except queue.Empty:
-            print("Queue empty, no frame to process.")
-        except Exception as e:
-            print(f"Error processing frame: {e}")
-
-    def process_current_frame(self, ignore_processing=False):
-        """Read and process the current frame immediately."""
-        if self.processing and not ignore_processing:
-            print("Processing already in progress. Ignoring start request.")
-            return
-
-        self.processing = True
-        self.reset_frame_counter()
-
+        print("Called process_current_frame()")
+        self.main_window.processed_frames.clear()
+        self.main_window.next_frame_to_display = self.current_frame_number
         if self.file_type == 'video' and self.media_capture:
-            # Restore the last frame position if necessary
-            if self.current_frame_number > self.max_frame_number:
-                self.current_frame_number = self.max_frame_number
-                self.media_capture.set(cv2.CAP_PROP_POS_FRAMES, self.current_frame_number)
-
-            # Read the current frame
             ret, frame = self.media_capture.read()
-
             if ret:
-                # Frame must be in RGB format
-                frame = frame[..., ::-1]  # Swap the channels from BGR to RGB
-
-                print(f"Enqueueing frame {self.current_frame_number}")
-                worker = FrameWorker(frame, self.main_window, self.current_frame_number)
-                worker.start()
-
-                # Wait for the worker to finish (join waits for the thread to terminate)
-                worker.join()  # This blocks until the worker completes
-
-                # After reading, reset the position to avoid advancing
+                self._stop_frame_display.clear()
+                frame = frame[..., ::-1]  # Convert BGR to RGB
+                print(f"Enqueuing frame {self.current_frame_number}")
+                self.frame_queue.put((self.current_frame_number, frame))
+                self.start_frame_worker(self.current_frame_number, frame)
+                
                 self.media_capture.set(cv2.CAP_PROP_POS_FRAMES, self.current_frame_number)
             else:
-                print(f"Error reading frame at position {self.current_frame_number}")
+                print("Cannot read frame!")
 
-        elif self.file_type == 'image':
+        """Process a single image frame directly without queuing."""
+        if self.file_type == 'image':
             frame = cv2.imread(self.media_path)
             if frame is not None:
-                # Frame must be in RGB format
-                frame = frame[..., ::-1]  # Swap the channels from BGR to RGB
+                self._stop_frame_display.clear()
 
-                print(f"Enqueueing frame {self.current_frame_number}")
-                worker = FrameWorker(frame, self.main_window, self.current_frame_number)
-                worker.start()
-
-                # Wait for the worker to finish (join waits for the thread to terminate)
-                worker.join()  # This blocks until the worker completes
-
+                frame = frame[..., ::-1]  # Convert BGR to RGB
+                print("Processing current frame as image.")
+                self.start_frame_worker(self.current_frame_number, frame)
             else:
-                print(f"Error reading image at path {self.media_path}")
-
-        self.processing = False
-
-    def set_number_of_threads(self, value):
-        self.stop_processing()
-        self.main_window.models_processor.set_number_of_threads(value)
-        self.num_threads = value
-        self.frame_queue = queue.Queue(maxsize=self.num_threads)
+                print("Error: Unable to read image file.")
 
     def stop_processing(self):
         """Stop video processing and signal completion."""
@@ -179,28 +129,17 @@ class VideoProcessor(QObject):
 
         print("Stopping video processing.")
         self.processing = False
-
-        # Stop the QTimer only from the main thread
+        self._stop_frame_display.set()
         self.frame_read_timer.stop()
+        self.processing_complete.emit()
 
-        # Stop all running threads
-        if self.executor:
-            self.executor.shutdown(wait=True)
-            self.executor = None
-
-        # Immediately clear the frame queue
         with self.frame_queue.mutex:
             self.frame_queue.queue.clear()
-        print("Frame queue cleared.")
 
-        # Reset multimedia control buttons
+        self.current_frame_number = self.main_window.videoSeekSlider.value()
+        self.media_capture.set(cv2.CAP_PROP_POS_FRAMES, self.current_frame_number)
+
         widget_actions.resetMediaButtons(self.main_window)
-
-        self.processing_complete.emit()
-        print("Signal processing_complete emitted.")
-
-        torch.cuda.empty_cache()
-
         return True
 
     def reset_frame_counter(self):

@@ -22,29 +22,39 @@ if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
 
 class FrameWorker(threading.Thread):
-    def __init__(self, frame, main_window: 'MainWindow', frame_number):
+    def __init__(self, frame, main_window: 'MainWindow', frame_number, frame_queue,):
         super().__init__()
+        self.frame_queue = frame_queue
         self.frame = frame
         self.main_window = main_window
         self.frame_number = frame_number
         self.models_processor = main_window.models_processor
-        # self.graphicsViewFrame = graphicsViewFrame
+        self.video_processor = main_window.video_processor
 
     def run(self):
         try:
             self.parameters = self.main_window.parameters.copy()
+
             # Process the frame with model inference
+            print(f"Processing frame {self.frame_number}")
             self.frame = self.process_swap()
 
-            # Check if processing is still allowed before displaying the frame
-            print(f"Displaying frame {self.frame_number}")
-            # Convert the frame (which is a NumPy array) to QImage
-            pixmap = widget_actions.get_pixmap_from_frame(self.main_window, self.frame)
-            self.main_window.update_frame_signal.emit(self.frame_number, pixmap)
+            # Display the frame if processing is still active
+            if not self.video_processor._stop_frame_display.is_set():
+                print(f"Displaying frame {self.frame_number}")
+                pixmap = widget_actions.get_pixmap_from_frame(self.main_window, self.frame)
+                self.main_window.update_frame_signal.emit(self.frame_number, pixmap)
+
+            # Mark the frame as done in the queue
+            self.video_processor.frame_queue.get()
+            self.video_processor.frame_queue.task_done()
+
+            # Check if playback is complete
+            if self.video_processor.frame_queue.empty() and not self.video_processor.processing and self.main_window.next_frame_to_display >= self.video_processor.max_frame_number:
+                self.video_processor.stop_processing()
 
         except Exception as e:
-            print(f"Error in FrameWorker: {e}", self.main_window.dfm_models_data)
-            traceback.print_exc()
+            print(f"Error in FrameWorker: {e}")
 
     def process_swap(self):
         # Load frame into VRAM

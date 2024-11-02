@@ -43,10 +43,7 @@ class TargetMediaCardButton(CardButton):
             main_window.selected_video_buttons.pop(0)
         
         # Stop the current video processing
-        processing = main_window.video_processor.stop_processing()
-        if processing:
-            main_window.wait_for_processing_to_finish()
-            qtc.QThread.msleep(200)  # Sleep per 200 ms
+        main_window.video_processor.stop_processing()
 
         # Reset the frame counter
         main_window.video_processor.current_frame_number = 0
