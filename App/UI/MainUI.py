@@ -156,7 +156,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 return  # No frames processed yet
 
         # Display available frames in the correct order
-        while self.next_frame_to_display in self.processed_frames:
+        if self.next_frame_to_display in self.processed_frames:
             pixmap = self.processed_frames.pop(self.next_frame_to_display)
             widget_actions.update_graphics_view(self, pixmap, self.next_frame_to_display)
             self.video_processor.threads.pop(self.next_frame_to_display)

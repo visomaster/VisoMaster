@@ -128,6 +128,10 @@ class VideoProcessor(QObject):
         if not self.processing:
             print("Processing not active. No action to perform.")
             return False
+        
+
+        for ind, thread in self.threads.items():
+            thread.join()
 
         self.main_window.processed_frames.clear()
         self.main_window.next_frame_to_display = self.current_frame_number
@@ -137,9 +141,6 @@ class VideoProcessor(QObject):
         self._stop_frame_display.set()
         self.frame_read_timer.stop()
         self.processing_complete.emit()
-
-        for ind, thread in self.threads.items():
-            thread.join()
 
         with self.frame_queue.mutex:
             self.frame_queue.queue.clear()
