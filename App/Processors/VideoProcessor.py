@@ -4,7 +4,7 @@ import queue
 from PySide6.QtCore import QObject, QTimer, Signal
 from App.Processors.Workers.Frame_Worker import FrameWorker
 from App.UI.Widgets import WidgetActions as widget_actions
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict
 
 if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
@@ -23,6 +23,7 @@ class VideoProcessor(QObject):
         self.max_frame_number = 0
         self.media_path = None
         self.num_threads = num_threads
+        self.threads: Dict[int, threading.Thread] = {}
         self._stop_frame_display = threading.Event()
 
         # Timer to manage frame reading intervals
@@ -89,6 +90,7 @@ class VideoProcessor(QObject):
     def start_frame_worker(self, frame_number, frame):
         """Start a FrameWorker to process the given frame."""
         worker = FrameWorker(frame, self.main_window, frame_number, self.frame_queue)
+        self.threads[frame_number] = worker
         worker.start()
 
     def process_current_frame(self):
@@ -127,11 +129,17 @@ class VideoProcessor(QObject):
             print("Processing not active. No action to perform.")
             return False
 
+        self.main_window.processed_frames.clear()
+        self.main_window.next_frame_to_display = self.current_frame_number
+
         print("Stopping video processing.")
         self.processing = False
         self._stop_frame_display.set()
         self.frame_read_timer.stop()
         self.processing_complete.emit()
+
+        for ind, thread in self.threads.items():
+            thread.join()
 
         with self.frame_queue.mutex:
             self.frame_queue.queue.clear()

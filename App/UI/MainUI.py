@@ -159,6 +159,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         while self.next_frame_to_display in self.processed_frames:
             pixmap = self.processed_frames.pop(self.next_frame_to_display)
             widget_actions.update_graphics_view(self, pixmap, self.next_frame_to_display)
+            self.video_processor.threads.pop(self.next_frame_to_display)
             self.next_frame_to_display += 1
 
         if not self.video_processor.processing or self.next_frame_to_display > self.video_processor.max_frame_number:
