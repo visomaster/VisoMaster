@@ -68,6 +68,7 @@ class TargetMediaCardButton(CardButton):
             ret, frame = media_capture.read()
             main_window.video_processor.media_capture = media_capture
             main_window.video_processor.max_frame_number = max_frames_number
+            main_window.next_frame_to_display = 0
 
         elif self.file_type == 'image':
             frame = cv2.imread(self.media_path)

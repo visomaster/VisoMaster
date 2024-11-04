@@ -104,6 +104,7 @@ def OnChangeSlider(main_window: 'MainWindow', new_position=0):
         print("OnChangeSlider: Processing in progress. Stopping current processing.")
 
     video_processor.current_frame_number = new_position
+    video_processor.next_frame_to_display = new_position
     if video_processor.media_capture:
         video_processor.media_capture.set(cv2.CAP_PROP_POS_FRAMES, new_position)
         ret, frame = video_processor.media_capture.read()
@@ -194,7 +195,7 @@ def extract_frame_as_pixmap(media_file_path, file_type):
 
 # from App.UI.MainUI import Ui_MainWindow
 def update_graphics_view(main_window: 'MainWindow' , pixmap, current_frame_number):
-    print(current_frame_number)
+    print('(update_graphics_view) current_frame_number', current_frame_number)
     main_window.videoSeekSlider.blockSignals(True)
     main_window.videoSeekSlider.setValue(current_frame_number)
     main_window.videoSeekSlider.blockSignals(False)

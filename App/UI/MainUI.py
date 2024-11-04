@@ -20,8 +20,7 @@ from App.Helpers.Misc_Helpers import DFM_MODELS_DATA
 ParametersWidgetTypes = Dict[str, ToggleButton|SelectionBox|ParameterDecimalSlider|ParameterSlider|ParameterText]
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
-    update_frame_signal = QtCore.Signal(int, QtGui.QPixmap)
-
+    
     def initialize_variables(self):
         self.video_loader_worker: TargetMediaLoaderWorker|bool = False
         self.input_faces_loader_worker: InputFacesLoaderWorker|bool = False
@@ -126,15 +125,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.setupUi(self)
         self.initialize_variables()
         self.initialize_widgets()
-        # Create an event to signal when processing is complete
-        self.processing_finished_event = threading.Event()
-        self.processing_finished_event.set()
-
-        # Queue to store frames to process
-        self.frame_queue = queue.Queue()
-
-        self.update_frame_signal.connect(self.handle_processed_frame)
-
 
     def resizeEvent(self, event: QtGui.QResizeEvent):
         super().resizeEvent(event)
@@ -142,32 +132,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         if self.scene.items():
             widget_actions.fit_image_to_view(self, self.scene.items()[0])
 
-
-    @QtCore.Slot(int, QtGui.QPixmap)
-    def handle_processed_frame(self, frame_number, pixmap):
-        self.processed_frames[frame_number] = pixmap
-        self.display_frames_in_order()
-
-    def display_frames_in_order(self):
-        if self.next_frame_to_display == -1:
-            if self.processed_frames:
-                self.next_frame_to_display = min(self.processed_frames.keys())
-            else:
-                return  # No frames processed yet
-
-        # Display available frames in the correct order
-        if self.next_frame_to_display in self.processed_frames:
-            pixmap = self.processed_frames.pop(self.next_frame_to_display)
-            widget_actions.update_graphics_view(self, pixmap, self.next_frame_to_display)
-            self.video_processor.threads.pop(self.next_frame_to_display)
-            self.next_frame_to_display += 1
-
-        if not self.video_processor.processing or self.next_frame_to_display > self.video_processor.max_frame_number:
-            self.video_processor.stop_processing()
-
     def reset_frame_counter(self):
         self.processed_frames.clear()
-        self.next_frame_to_display = -1
+        self.next_frame_to_display = self.video_processor.current_frame_number or 0
 
     def keyPressEvent(self, event):
         # Toggle full screen when F11 is pressed

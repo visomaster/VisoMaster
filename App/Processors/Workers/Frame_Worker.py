@@ -17,12 +17,13 @@ from App.Processors.Utils import FaceUtil as faceutil
 import threading
 from App.Processors.Utils.DFMModel import DFMModel
 import traceback
+import time
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
 
 class FrameWorker(threading.Thread):
-    def __init__(self, frame, main_window: 'MainWindow', frame_number, frame_queue,):
+    def __init__(self, frame, main_window: 'MainWindow', frame_number, frame_queue, is_single_frame=False):
         super().__init__()
         self.frame_queue = frame_queue
         self.frame = frame
@@ -30,6 +31,7 @@ class FrameWorker(threading.Thread):
         self.frame_number = frame_number
         self.models_processor = main_window.models_processor
         self.video_processor = main_window.video_processor
+        self.is_single_frame = is_single_frame
 
     def run(self):
         try:
@@ -40,10 +42,16 @@ class FrameWorker(threading.Thread):
             self.frame = self.process_swap()
 
             # Display the frame if processing is still active
-            if not self.video_processor._stop_frame_display.is_set():
-                print(f"Displaying frame {self.frame_number}")
-                pixmap = widget_actions.get_pixmap_from_frame(self.main_window, self.frame)
-                self.main_window.update_frame_signal.emit(self.frame_number, pixmap)
+            # if not self.video_processor._stop_frame_display.is_set():
+
+            pixmap = widget_actions.get_pixmap_from_frame(self.main_window, self.frame)
+
+            if not self.is_single_frame:
+                self.video_processor.frame_processed_signal.emit(self.frame_number, pixmap)
+            else:
+                print('Emitted single_frame_processed_signal')
+                self.video_processor.single_frame_processed_signal.emit(self.frame_number, pixmap)
+
 
             # Mark the frame as done in the queue
             self.video_processor.frame_queue.get()
