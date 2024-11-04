@@ -42,7 +42,6 @@ class FrameWorker(threading.Thread):
             self.frame = self.process_swap()
 
             # Display the frame if processing is still active
-            # if not self.video_processor._stop_frame_display.is_set():
 
             pixmap = widget_actions.get_pixmap_from_frame(self.main_window, self.frame)
 

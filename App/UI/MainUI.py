@@ -56,8 +56,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.control = {}
         self.parameter_widgets: ParametersWidgetTypes = {}
         self.loaded_embedding_filename: str = ''
-        self.processed_frames = {}
-        self.next_frame_to_display = -1  # Index of the next frame to display
         self._is_slider_pressed = threading.Event()
         self.is_full_screen = False
         self.dfm_models_data = DFM_MODELS_DATA
@@ -131,10 +129,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # Call the method to fit the image to the view whenever the window resizes
         if self.scene.items():
             widget_actions.fit_image_to_view(self, self.scene.items()[0])
-
-    def reset_frame_counter(self):
-        self.processed_frames.clear()
-        self.next_frame_to_display = self.video_processor.current_frame_number or 0
 
     def keyPressEvent(self, event):
         # Toggle full screen when F11 is pressed

@@ -27,7 +27,6 @@ class VideoProcessor(QObject):
         self.media_path = None
         self.num_threads = num_threads
         self.threads: Dict[int, threading.Thread] = {}
-        self._stop_frame_display = threading.Event()
 
         self.start_time = 0
         self.end_time = 0
@@ -79,16 +78,14 @@ class VideoProcessor(QObject):
         print("Starting video processing.")
         self.start_time = time.time()
         self.processing = True
-        self._stop_frame_display.clear()
 
         if self.file_type == 'video':
-            self.reset_frame_counter()
 
             if self.media_capture and self.media_capture.isOpened():
                 fps = self.media_capture.get(cv2.CAP_PROP_FPS)
                 interval = 1000 / fps if fps > 0 else 30
                 print(f"Starting frame_read_timer with an interval of {interval} ms.")
-                self.frame_read_timer.start(interval)
+                self.frame_read_timer.start()
                 self.frame_display_timer.start()
 
             else:
@@ -138,7 +135,6 @@ class VideoProcessor(QObject):
         if self.file_type == 'video' and self.media_capture:
             ret, frame = self.media_capture.read()
             if ret:
-                self._stop_frame_display.clear()
                 frame = frame[..., ::-1]  # Convert BGR to RGB
                 print(f"Enqueuing frame {self.current_frame_number}")
                 self.frame_queue.put((self.current_frame_number, frame))
@@ -152,7 +148,6 @@ class VideoProcessor(QObject):
         if self.file_type == 'image':
             frame = cv2.imread(self.media_path)
             if frame is not None:
-                self._stop_frame_display.clear()
 
                 frame = frame[..., ::-1]  # Convert BGR to RGB
                 print("Processing current frame as image.")
@@ -178,12 +173,9 @@ class VideoProcessor(QObject):
         print(f"Processing completed in {self.end_time - self.start_time} seconds")
 
         self.frames_to_display.clear()
-        self.main_window.processed_frames.clear()
-        self.main_window.next_frame_to_display = self.current_frame_number
 
         print("Stopping video processing.")
         self.processing = False
-        self._stop_frame_display.set()
         self.processing_complete.emit()
 
         with self.frame_queue.mutex:
@@ -194,6 +186,3 @@ class VideoProcessor(QObject):
 
         widget_actions.resetMediaButtons(self.main_window)
         return True
-
-    def reset_frame_counter(self):
-        self.main_window.reset_frame_counter()
