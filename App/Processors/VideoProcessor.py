@@ -7,7 +7,7 @@ from PySide6.QtCore import QObject, QTimer, Signal
 
 from App.Processors.Workers.Frame_Worker import FrameWorker
 from App.UI.Widgets import WidgetActions as widget_actions
-
+import time
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
@@ -32,6 +32,9 @@ class VideoProcessor(QObject):
         self.frame_read_timer = QTimer()
         self.frame_read_timer.timeout.connect(self.process_next_frame)
 
+        self.start_time = 0
+        self.end_time = 0
+
     def process_video(self):
         """Start video processing by reading frames and enqueuing them."""
         if self.processing:
@@ -39,6 +42,7 @@ class VideoProcessor(QObject):
             return
 
         print("Starting video processing.")
+        self.start_time = time.time()
         self.processing = True
 
         if self.file_type == 'video':
@@ -53,7 +57,7 @@ class VideoProcessor(QObject):
                 self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=self.num_threads)
 
                 # Start the timer to read frames
-                self.frame_read_timer.start(interval)
+                self.frame_read_timer.start()
             else:
                 print("Error: unable to open video.")
                 self.processing = False
@@ -187,6 +191,9 @@ class VideoProcessor(QObject):
         if self.executor:
             self.executor.shutdown(wait=True)
             self.executor = None
+
+        self.end_time = time.time()
+        print(f"Processing completed in {self.end_time-self.start_time} seconds")
 
         # Immediately clear the frame queue
         with self.frame_queue.mutex:
