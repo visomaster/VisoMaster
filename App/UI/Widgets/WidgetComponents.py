@@ -67,6 +67,7 @@ class TargetMediaCardButton(CardButton):
             max_frames_number = int(media_capture.get(cv2.CAP_PROP_FRAME_COUNT)) - 1
             ret, frame = media_capture.read()
             main_window.video_processor.media_capture = media_capture
+            main_window.video_processor.fps = media_capture.get(cv2.CAP_PROP_FPS)
             main_window.video_processor.max_frame_number = max_frames_number
             main_window.next_frame_to_display = 0
 

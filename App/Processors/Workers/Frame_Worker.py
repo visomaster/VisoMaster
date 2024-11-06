@@ -46,7 +46,7 @@ class FrameWorker(threading.Thread):
             pixmap = widget_actions.get_pixmap_from_frame(self.main_window, self.frame)
 
             if not self.is_single_frame:
-                self.video_processor.frame_processed_signal.emit(self.frame_number, pixmap)
+                self.video_processor.frame_processed_signal.emit(self.frame_number, pixmap, self.frame)
             else:
                 print('Emitted single_frame_processed_signal')
                 self.video_processor.single_frame_processed_signal.emit(self.frame_number, pixmap)

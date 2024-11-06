@@ -7,13 +7,17 @@ from App.Processors.Workers.Frame_Worker import FrameWorker
 from App.UI.Widgets import WidgetActions as widget_actions
 from typing import TYPE_CHECKING, Dict
 import time
-
+import subprocess
+from PIL import Image
+import numpy
+from pathlib import Path
+import os
 if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
 
 class VideoProcessor(QObject):
     processing_complete = Signal()
-    frame_processed_signal = Signal(int, QPixmap)
+    frame_processed_signal = Signal(int, QPixmap, numpy.ndarray)
     single_frame_processed_signal = Signal(int, QPixmap)
     def __init__(self, main_window: 'MainWindow', num_threads=5):
         super().__init__()
@@ -21,6 +25,7 @@ class VideoProcessor(QObject):
         self.frame_queue = queue.Queue(maxsize=num_threads)
         self.media_capture: cv2.VideoCapture|None = None
         self.file_type = None
+        self.fps = 0
         self.processing = False
         self.current_frame_number = 0
         self.max_frame_number = 0
@@ -28,8 +33,15 @@ class VideoProcessor(QObject):
         self.num_threads = num_threads
         self.threads: Dict[int, threading.Thread] = {}
 
-        self.start_time = 0
-        self.end_time = 0
+        self.recording_sp: subprocess.Popen|None = None 
+
+        #Used to calculate the total processing time
+        self.start_time = 0.0
+        self.end_time = 0.0
+
+        #Used to store the video start and enc seek time
+        self.play_start_time = 0.0
+        self.play_end_time = 0.0
 
         # Timer to manage frame reading intervals
         self.frame_read_timer = QTimer()
@@ -43,9 +55,9 @@ class VideoProcessor(QObject):
 
         self.single_frame_processed_signal.connect(self.display_current_frame)
 
-    Slot(int, QPixmap)
-    def store_frame_to_display(self, frame_number, pixmap):
-        self.frames_to_display[frame_number] = pixmap
+    Slot(int, QPixmap, numpy.ndarray)
+    def store_frame_to_display(self, frame_number, pixmap, frame):
+        self.frames_to_display[frame_number] = (pixmap, frame)
 
     Slot(int, QPixmap)
     def display_current_frame(self, frame_number, pixmap):
@@ -57,7 +69,14 @@ class VideoProcessor(QObject):
         if self.next_frame_to_display not in self.frames_to_display:
             return
         else:
-            pixmap = self.frames_to_display.pop(self.next_frame_to_display)
+            pixmap, frame = self.frames_to_display.pop(self.next_frame_to_display)
+
+
+            pil_image = Image.fromarray(frame[..., ::-1])
+            # pil_image.save('test.jpg')
+            pil_image.save(self.recording_sp.stdin, 'BMP')
+
+
             widget_actions.update_graphics_view(self.main_window, pixmap, self.next_frame_to_display)
             self.threads.pop(self.next_frame_to_display)
             self.next_frame_to_display += 1
@@ -83,7 +102,12 @@ class VideoProcessor(QObject):
 
         if self.file_type == 'video':
 
+
             if self.media_capture and self.media_capture.isOpened():
+                
+                self.create_ffmpeg_subprocess()
+                self.play_start_time = float(self.media_capture.get(cv2.CAP_PROP_POS_FRAMES) / float(self.fps))
+
                 fps = self.media_capture.get(cv2.CAP_PROP_FPS)
                 interval = 1000 / fps if fps > 0 else 30
                 print(f"Starting frame_read_timer with an interval of {interval} ms.")
@@ -187,6 +211,50 @@ class VideoProcessor(QObject):
         self.current_frame_number = self.main_window.videoSeekSlider.value()
         self.media_capture.set(cv2.CAP_PROP_POS_FRAMES, self.current_frame_number)
 
+        self.recording_sp.stdin.close()
+        self.recording_sp.wait()
+
+        self.play_end_time = float(self.media_capture.get(cv2.CAP_PROP_POS_FRAMES) / float(self.fps))
+
+        final_file = 'temp_video_with_audio.mp4'
+        if Path(final_file).is_file():
+            os.remove(final_file)
+        print("Adding audio...")
+        args = ["ffmpeg",
+                '-hide_banner',
+                '-loglevel',    'error',
+                "-i", self.temp_file,
+                "-ss", str(self.play_start_time), "-to", str(self.play_end_time), "-i",  self.media_path,
+                "-c",  "copy", # may be c:v
+                "-map", "0:v:0", "-map", "1:a:0?",
+                "-shortest",
+                final_file]
+        subprocess.run(args) #Add Audio
+        os.remove(self.temp_file)
+
         widget_actions.resetMediaButtons(self.main_window)
         return True
     
+    def create_ffmpeg_subprocess(self):
+        frame_width = int(self.media_capture.get(3))
+        frame_height = int(self.media_capture.get(4))
+
+        self.temp_file = r'temp_output.mp4'
+        if Path(self.temp_file).is_file():
+            os.remove(self.temp_file)
+
+        args =  ["ffmpeg",
+                '-hide_banner',
+                '-loglevel',    'error',
+                "-an",
+                "-r",           str(self.fps),
+                "-i",           "pipe:",
+                # '-g',           '25',
+                "-vf",          "format=yuvj420p",
+                "-c:v",         "libx264",
+                "-crf",         '23',
+                "-r",           str(self.fps),
+                "-s",           str(frame_width)+"x"+str(frame_height),
+                self.temp_file]
+
+        self.recording_sp = subprocess.Popen(args, stdin=subprocess.PIPE)
