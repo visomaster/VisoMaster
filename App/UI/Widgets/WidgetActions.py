@@ -254,7 +254,9 @@ def setPlayButtonIconToStop(main_window: 'MainWindow'):
     main_window.buttonMediaPlay.setToolTip("Stop")
 
 def resetMediaButtons(main_window: 'MainWindow'):
+    main_window.buttonMediaPlay.blockSignals(True)
     main_window.buttonMediaPlay.setChecked(False)
+    main_window.buttonMediaPlay.blockSignals(False)
     setPlayButtonIcon(main_window)
 
 def setPlayButtonIcon(main_window: 'MainWindow'):

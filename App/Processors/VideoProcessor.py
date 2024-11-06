@@ -16,7 +16,6 @@ if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
 
 class VideoProcessor(QObject):
-    processing_complete = Signal()
     frame_processed_signal = Signal(int, QPixmap, numpy.ndarray)
     single_frame_processed_signal = Signal(int, QPixmap)
     def __init__(self, main_window: 'MainWindow', num_threads=5):
@@ -182,21 +181,22 @@ class VideoProcessor(QObject):
             print("Processing not active. No action to perform.")
             return False
         
+        print("Stopping video processing.")
+        self.processing = False
+        
         if self.file_type=='video':
 
-
+            print("Stopping Timers")
             self.frame_read_timer.stop()
             self.frame_display_timer.stop()
 
+            print("Joining Threads")
             for ind, thread in self.threads.items():
                 thread.join()
 
+            print("Clearing Threads and Queues")
             self.threads.clear()
             self.frames_to_display.clear()
-
-            print("Stopping video processing.")
-            self.processing = False
-            self.processing_complete.emit()
 
             with self.frame_queue.mutex:
                 self.frame_queue.queue.clear()
@@ -226,13 +226,14 @@ class VideoProcessor(QObject):
                 subprocess.run(args) #Add Audio
                 os.remove(self.temp_file)
 
-            self.end_time = time.time()
-            processing_time = self.end_time - self.start_time
-            print(f"\nProcessing completed in {processing_time} seconds")
-            avg_fps = ((self.play_end_time - self.play_start_time) * self.fps) / processing_time
-            print(f'Average FPS: {avg_fps}\n')
+                self.end_time = time.time()
+                processing_time = self.end_time - self.start_time
+                print(f"\nProcessing completed in {processing_time} seconds")
+                avg_fps = ((self.play_end_time - self.play_start_time) * self.fps) / processing_time
+                print(f'Average FPS: {avg_fps}\n')
 
             widget_actions.resetMediaButtons(self.main_window)
+            print("Successfully Stopped Processing")
             return True
     
     def create_ffmpeg_subprocess(self):
