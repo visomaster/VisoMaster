@@ -19,7 +19,6 @@ tqdm
 ftfy
 regex
 pyvirtualcam==0.11.1
-tensorrt-cu11==10.4.0
 numexpr
 onnxsim
 requests
