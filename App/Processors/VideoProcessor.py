@@ -94,17 +94,15 @@ class VideoProcessor(QObject):
             print("Processing already in progress. Ignoring start request.")
             return
 
-        print("Starting video processing.")
-        self.start_time = time.time()
-        self.processing = True
-        self.frames_to_display.clear()
-        self.threads.clear()
-
         if self.file_type == 'video':
 
-
             if self.media_capture and self.media_capture.isOpened():
-                
+                print("Starting video processing.")
+                self.start_time = time.time()
+                self.processing = True
+                self.frames_to_display.clear()
+                self.threads.clear()
+
                 self.create_ffmpeg_subprocess()
                 self.play_start_time = float(self.media_capture.get(cv2.CAP_PROP_POS_FRAMES) / float(self.fps))
 
@@ -119,9 +117,6 @@ class VideoProcessor(QObject):
                 self.processing = False
                 self.frame_read_timer.stop()
                 widget_actions.setPlayButtonIconToPlay(self.main_window)
-
-        elif self.file_type == 'image':
-            self.process_current_frame()
 
     def process_next_frame(self):
         """Read the next frame and add it to the queue for processing."""
@@ -186,54 +181,58 @@ class VideoProcessor(QObject):
         if not self.processing:
             print("Processing not active. No action to perform.")
             return False
+        
+        if self.file_type=='video':
 
-        self.frame_read_timer.stop()
-        self.frame_display_timer.stop()
 
-        for ind, thread in self.threads.items():
-            thread.join()
+            self.frame_read_timer.stop()
+            self.frame_display_timer.stop()
 
-        self.end_time = time.time()
-        processing_time = self.end_time - self.start_time
-        print(f"Processing completed in {processing_time} seconds")
-        print(f'Average FPS: {self.max_frame_number/processing_time}')
+            for ind, thread in self.threads.items():
+                thread.join()
 
-        self.threads.clear()
-        self.frames_to_display.clear()
+            self.end_time = time.time()
+            processing_time = self.end_time - self.start_time
+            print(f"Processing completed in {processing_time} seconds")
+            print(f'Average FPS: {self.max_frame_number/processing_time}')
 
-        print("Stopping video processing.")
-        self.processing = False
-        self.processing_complete.emit()
+            self.threads.clear()
+            self.frames_to_display.clear()
 
-        with self.frame_queue.mutex:
-            self.frame_queue.queue.clear()
+            print("Stopping video processing.")
+            self.processing = False
+            self.processing_complete.emit()
 
-        self.current_frame_number = self.main_window.videoSeekSlider.value()
-        self.media_capture.set(cv2.CAP_PROP_POS_FRAMES, self.current_frame_number)
+            with self.frame_queue.mutex:
+                self.frame_queue.queue.clear()
 
-        self.recording_sp.stdin.close()
-        self.recording_sp.wait()
+            self.current_frame_number = self.main_window.videoSeekSlider.value()
+            self.media_capture.set(cv2.CAP_PROP_POS_FRAMES, self.current_frame_number)
 
-        self.play_end_time = float(self.media_capture.get(cv2.CAP_PROP_POS_FRAMES) / float(self.fps))
+            self.recording_sp.stdin.close()
+            self.recording_sp.wait()
 
-        final_file = 'temp_video_with_audio.mp4'
-        if Path(final_file).is_file():
-            os.remove(final_file)
-        print("Adding audio...")
-        args = ["ffmpeg",
-                '-hide_banner',
-                '-loglevel',    'error',
-                "-i", self.temp_file,
-                "-ss", str(self.play_start_time), "-to", str(self.play_end_time), "-i",  self.media_path,
-                "-c",  "copy", # may be c:v
-                "-map", "0:v:0", "-map", "1:a:0?",
-                "-shortest",
-                final_file]
-        subprocess.run(args) #Add Audio
-        os.remove(self.temp_file)
+            self.play_end_time = float(self.media_capture.get(cv2.CAP_PROP_POS_FRAMES) / float(self.fps))
 
-        widget_actions.resetMediaButtons(self.main_window)
-        return True
+            if self.file_type=='video':
+                final_file = 'temp_video_with_audio.mp4'
+                if Path(final_file).is_file():
+                    os.remove(final_file)
+                print("Adding audio...")
+                args = ["ffmpeg",
+                        '-hide_banner',
+                        '-loglevel',    'error',
+                        "-i", self.temp_file,
+                        "-ss", str(self.play_start_time), "-to", str(self.play_end_time), "-i",  self.media_path,
+                        "-c",  "copy", # may be c:v
+                        "-map", "0:v:0", "-map", "1:a:0?",
+                        "-shortest",
+                        final_file]
+                subprocess.run(args) #Add Audio
+                os.remove(self.temp_file)
+
+            widget_actions.resetMediaButtons(self.main_window)
+            return True
     
     def create_ffmpeg_subprocess(self):
         frame_width = int(self.media_capture.get(3))
