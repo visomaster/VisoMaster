@@ -57,7 +57,7 @@ class FrameWorker(threading.Thread):
             self.video_processor.frame_queue.task_done()
 
             # Check if playback is complete
-            if self.video_processor.frame_queue.empty() and not self.video_processor.processing and self.main_window.next_frame_to_display >= self.video_processor.max_frame_number:
+            if self.video_processor.frame_queue.empty() and not self.video_processor.processing and self.video_processor.next_frame_to_display >= self.video_processor.max_frame_number:
                 self.video_processor.stop_processing()
 
         except Exception as e:

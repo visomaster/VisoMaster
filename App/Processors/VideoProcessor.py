@@ -19,7 +19,7 @@ class VideoProcessor(QObject):
         super().__init__()
         self.main_window = main_window
         self.frame_queue = queue.Queue(maxsize=num_threads)
-        self.media_capture = None
+        self.media_capture: cv2.VideoCapture|None = None
         self.file_type = None
         self.processing = False
         self.current_frame_number = 0
@@ -78,6 +78,8 @@ class VideoProcessor(QObject):
         print("Starting video processing.")
         self.start_time = time.time()
         self.processing = True
+        self.frames_to_display.clear()
+        self.threads.clear()
 
         if self.file_type == 'video':
 
@@ -113,7 +115,7 @@ class VideoProcessor(QObject):
             if ret:
                 frame = frame[..., ::-1]  # Convert BGR to RGB
                 print(f"Enqueuing frame {self.current_frame_number}")
-                self.frame_queue.put((self.current_frame_number, frame))
+                self.frame_queue.put(self.current_frame_number)
                 self.start_frame_worker(self.current_frame_number, frame)
                 self.current_frame_number += 1
             else:
@@ -137,7 +139,7 @@ class VideoProcessor(QObject):
             if ret:
                 frame = frame[..., ::-1]  # Convert BGR to RGB
                 print(f"Enqueuing frame {self.current_frame_number}")
-                self.frame_queue.put((self.current_frame_number, frame))
+                self.frame_queue.put(self.current_frame_number)
                 self.start_frame_worker(self.current_frame_number, frame, is_single_frame=True)
                 
                 self.media_capture.set(cv2.CAP_PROP_POS_FRAMES, self.current_frame_number)
@@ -164,14 +166,15 @@ class VideoProcessor(QObject):
         self.frame_read_timer.stop()
         self.frame_display_timer.stop()
 
-
         for ind, thread in self.threads.items():
             thread.join()
 
         self.end_time = time.time()
+        processing_time = self.end_time - self.start_time
+        print(f"Processing completed in {processing_time} seconds")
+        print(f'Average FPS: {self.max_frame_number/processing_time}')
 
-        print(f"Processing completed in {self.end_time - self.start_time} seconds")
-
+        self.threads.clear()
         self.frames_to_display.clear()
 
         print("Stopping video processing.")
@@ -186,3 +189,4 @@ class VideoProcessor(QObject):
 
         widget_actions.resetMediaButtons(self.main_window)
         return True
+    
