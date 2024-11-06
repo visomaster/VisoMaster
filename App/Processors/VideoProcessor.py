@@ -191,11 +191,6 @@ class VideoProcessor(QObject):
             for ind, thread in self.threads.items():
                 thread.join()
 
-            self.end_time = time.time()
-            processing_time = self.end_time - self.start_time
-            print(f"Processing completed in {processing_time} seconds")
-            print(f'Average FPS: {self.max_frame_number/processing_time}')
-
             self.threads.clear()
             self.frames_to_display.clear()
 
@@ -231,6 +226,12 @@ class VideoProcessor(QObject):
                 subprocess.run(args) #Add Audio
                 os.remove(self.temp_file)
 
+            self.end_time = time.time()
+            processing_time = self.end_time - self.start_time
+            print(f"\nProcessing completed in {processing_time} seconds")
+            avg_fps = ((self.play_end_time - self.play_start_time) * self.fps) / processing_time
+            print(f'Average FPS: {avg_fps}\n')
+
             widget_actions.resetMediaButtons(self.main_window)
             return True
     
@@ -251,7 +252,7 @@ class VideoProcessor(QObject):
                 # '-g',           '25',
                 "-vf",          "format=yuvj420p",
                 "-c:v",         "libx264",
-                "-crf",         '23',
+                "-crf",         '18',
                 "-r",           str(self.fps),
                 "-s",           str(frame_width)+"x"+str(frame_height),
                 self.temp_file]
