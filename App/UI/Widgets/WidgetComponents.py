@@ -69,7 +69,6 @@ class TargetMediaCardButton(CardButton):
             main_window.video_processor.media_capture = media_capture
             main_window.video_processor.fps = media_capture.get(cv2.CAP_PROP_FPS)
             main_window.video_processor.max_frame_number = max_frames_number
-            main_window.next_frame_to_display = 0
 
         elif self.file_type == 'image':
             frame = cv2.imread(self.media_path)
@@ -81,24 +80,8 @@ class TargetMediaCardButton(CardButton):
                 # restore initial video position after reading. == 0
                 media_capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
 
-            # Convert the frame to QPixmap
-            height, width, channel = frame.shape
-            bytes_per_line = 3 * width
-            q_img = QImage(frame.data, width, height, bytes_per_line, QImage.Format.Format_RGB888).rgbSwapped()
-            pixmap = QPixmap.fromImage(q_img)
-
-            # Scale the pixmap if necessary
-            pixmap_item = QtWidgets.QGraphicsPixmapItem(pixmap)
-
-            # Clear the scene and add the new frame
-            main_window.scene.clear()
-            main_window.scene.addItem(pixmap_item)
-
-            # Fit the image to the view
-            widget_actions.fit_image_to_view(main_window, pixmap_item)
-
-            # Immediately update the graphics view
-            main_window.graphicsViewFrame.update()
+            pixmap = widget_actions.get_pixmap_from_frame(main_window, frame)
+            widget_actions.update_graphics_view(main_window, pixmap, 0)
 
         # Set up videoSeekLineEdit
         widget_actions.set_up_video_seek_line_edit(main_window)
