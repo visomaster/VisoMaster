@@ -307,7 +307,7 @@ class ModelsProcessor(QObject):
 
         return memory_used, memory_total[0]
 
-    def run_detect(self, img, detect_mode='Retinaface', max_num=1, score=0.5, use_landmark_detection=False, landmark_detect_mode='203', landmark_score=0.5, from_points=False, rotation_angles:list[int]=[0]):
+    def run_detect(self, img, detect_mode='Retinaface', max_num=1, score=0.5, input_size=(512, 512), use_landmark_detection=False, landmark_detect_mode='203', landmark_score=0.5, from_points=False, rotation_angles:list[int]=[0]):
         bboxes = []
         kpss_5 = []
         kpss = []
@@ -316,13 +316,13 @@ class ModelsProcessor(QObject):
             if not self.models['RetinaFace']:
                 self.models['RetinaFace'] = self.load_model('RetinaFace')
 
-            bboxes, kpss_5, kpss = self.detect_retinaface(img, max_num=max_num, score=score, use_landmark_detection=use_landmark_detection, landmark_detect_mode=landmark_detect_mode, landmark_score=landmark_score, from_points=from_points, rotation_angles=rotation_angles)
+            bboxes, kpss_5, kpss = self.detect_retinaface(img, max_num=max_num, score=score, input_size=input_size, use_landmark_detection=use_landmark_detection, landmark_detect_mode=landmark_detect_mode, landmark_score=landmark_score, from_points=from_points, rotation_angles=rotation_angles)
 
         elif detect_mode=='SCRFD':
             if not self.models['SCRFD2.5g']:
                 self.models['SCRFD2.5g'] = self.load_model('SCRFD2.5g')
 
-            bboxes, kpss_5, kpss = self.detect_scrdf(img, max_num=max_num, score=score, use_landmark_detection=use_landmark_detection, landmark_detect_mode=landmark_detect_mode, landmark_score=landmark_score, from_points=from_points, rotation_angles=rotation_angles)
+            bboxes, kpss_5, kpss = self.detect_scrdf(img, max_num=max_num, score=score, input_size=input_size, use_landmark_detection=use_landmark_detection, landmark_detect_mode=landmark_detect_mode, landmark_score=landmark_score, from_points=from_points, rotation_angles=rotation_angles)
 
         elif detect_mode=='Yolov8':
             if not self.models['YoloFace8n']:
@@ -425,12 +425,13 @@ class ModelsProcessor(QObject):
 
         return [], [], []
 
-    def detect_retinaface(self, img, max_num, score, use_landmark_detection, landmark_detect_mode, landmark_score, from_points, rotation_angles:list[int]=[0]):
+    def detect_retinaface(self, img, max_num, score, input_size, use_landmark_detection, landmark_detect_mode, landmark_score, from_points, rotation_angles:list[int]=[0]):
         if use_landmark_detection:
             img_landmark = img.clone()
 
         # Resize image to fit within the input_size
-        input_size = (640, 640)
+        if not isinstance(input_size, tuple):
+            input_size = (input_size, input_size)
         img_height, img_width = (img.size()[1], img.size()[2])
         im_ratio = torch.div(img_height, img_width)
 
@@ -686,12 +687,13 @@ class ModelsProcessor(QObject):
 
         return det, kpss_5, kpss
 
-    def detect_scrdf(self, img, max_num, score, use_landmark_detection, landmark_detect_mode, landmark_score, from_points, rotation_angles:list[int]=[0]):
+    def detect_scrdf(self, img, max_num, score, input_size, use_landmark_detection, landmark_detect_mode, landmark_score, from_points, rotation_angles:list[int]=[0]):
         if use_landmark_detection:
             img_landmark = img.clone()
 
         # Resize image to fit within the input_size
-        input_size = (640, 640)
+        if not isinstance(input_size, tuple):
+            input_size = (input_size, input_size)
         img_height, img_width = (img.size()[1], img.size()[2])
         im_ratio = torch.div(img_height, img_width)
 
