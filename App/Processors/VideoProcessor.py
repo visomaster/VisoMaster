@@ -70,7 +70,6 @@ class VideoProcessor(QObject):
         else:
             pixmap, frame = self.frames_to_display.pop(self.next_frame_to_display)
 
-
             pil_image = Image.fromarray(frame[..., ::-1])
             # pil_image.save('test.jpg')
             pil_image.save(self.recording_sp.stdin, 'BMP')
@@ -148,7 +147,7 @@ class VideoProcessor(QObject):
 
     def process_current_frame(self):
 
-        print("Called process_current_frame()")
+        print("\nCalled process_current_frame()",self.current_frame_number)
         # self.main_window.processed_frames.clear()
 
         self.next_frame_to_display = self.current_frame_number
@@ -170,10 +169,12 @@ class VideoProcessor(QObject):
             if frame is not None:
 
                 frame = frame[..., ::-1]  # Convert BGR to RGB
+                self.frame_queue.put(self.current_frame_number)
                 print("Processing current frame as image.")
                 self.start_frame_worker(self.current_frame_number, frame, is_single_frame=True)
             else:
                 print("Error: Unable to read image file.")
+        self.join_and_clear_threads()
 
     def stop_processing(self):
         """Stop video processing and signal completion."""
@@ -192,9 +193,7 @@ class VideoProcessor(QObject):
             self.frame_read_timer.stop()
             self.frame_display_timer.stop()
 
-            print("Joining Threads")
-            for ind, thread in self.threads.items():
-                thread.join()
+            self.join_and_clear_threads()
 
             print("Clearing Threads and Queues")
             self.threads.clear()
@@ -237,7 +236,13 @@ class VideoProcessor(QObject):
             widget_actions.resetMediaButtons(self.main_window)
             print("Successfully Stopped Processing")
             return True
-
+        
+    def join_and_clear_threads(self):
+        print("Joining Threads")
+        for ind, thread in self.threads.items():
+            thread.join()
+        print('Clearing Threads')
+        self.threads.clear()
     
     def create_ffmpeg_subprocess(self):
         frame_width = int(self.media_capture.get(3))

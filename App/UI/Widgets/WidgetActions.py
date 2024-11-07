@@ -97,6 +97,7 @@ def set_up_video_seek_line_edit(main_window: 'MainWindow'):
     
 @qtc.Slot(int)
 def OnChangeSlider(main_window: 'MainWindow', new_position=0):
+    print("Called OnChangeSlider()")
     video_processor = main_window.video_processor
 
     was_processing = video_processor.stop_processing()
@@ -120,11 +121,15 @@ def OnChangeSlider(main_window: 'MainWindow', new_position=0):
     print("OnChangeSlider: Video stopped after slider movement.")
 
 def on_slider_pressed(main_window: 'MainWindow'):
+    print("Called on_slider_pressed()")
+
     main_window._is_slider_pressed.set()
     position = main_window.videoSeekSlider.value()
     print(f"Slider pressed. position: {position}")
 
 def on_slider_released(main_window: 'MainWindow'):
+    print("Called on_slider_released()")
+
     new_position = main_window.videoSeekSlider.value()
     main_window._is_slider_pressed.clear()
     print(f"Slider released. New position: {new_position}")
@@ -133,7 +138,6 @@ def on_slider_released(main_window: 'MainWindow'):
     video_processor = main_window.video_processor
     if video_processor.media_capture:
         video_processor.process_current_frame()  # Process the current frame
-
 # Functions to add Buttons with thumbnail for selecting videos/images and faces
 @qtc.Slot(str, QtGui.QPixmap)
 def add_media_thumbnail_to_target_videos_list(main_window: 'MainWindow', media_path, pixmap, file_type):
@@ -535,7 +539,7 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
                 widget.debounce_timer.timeout.connect(partial(onchange_slider, widget, widget_name, widget_data))
 
                 # When line edit value changes
-                def onchange_line_edit(slider_widget: ParameterDecimalSlider, slider_widget_name, new_value=False):
+                def onchange_line_edit(slider_widget: ParameterDecimalSlider, slider_widget_name, widget_data, new_value=False):
                     """Handle changes in the line edit and update the slider accordingly."""
                     if not new_value:
                         new_value = 0.0
@@ -563,7 +567,7 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
                     elif data_type=='control':
                         update_control(main_window, slider_widget_name, new_value, exec_function=widget_data.get('exec_function'), exec_function_args=widget_data.get('exec_function_args', []))
 
-                widget.line_edit.textChanged.connect(partial(onchange_line_edit, widget, widget_name))
+                widget.line_edit.textChanged.connect(partial(onchange_line_edit, widget, widget_name, widget_data))
  
             elif 'Slider' in widget_name:
                 widget = ParameterSlider(label=widget_data['label'], widget_name=widget_name, group_layout_data=widgets, label_widget=label, min_value=widget_data['min_value'], max_value=widget_data['max_value'], default_value=widget_data['default'], step_size=widget_data['step'], main_window=main_window)
@@ -593,10 +597,10 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
                     slider_widget.line_edit.setText(str(new_value))
 
                 # Invece di collegare direttamente onchange_slider, fallo dopo il debounce
-                widget.valueChanged.connect(partial(onchange_slider, widget, widget_name, widget_data))
+                widget.debounce_timer.timeout.connect(partial(onchange_slider, widget, widget_name, widget_data))
 
                 # When slider textbox value is changed
-                def onchange_line_edit(slider_widget: ParameterSlider, slider_widget_name, new_value=False):
+                def onchange_line_edit(slider_widget: ParameterSlider, slider_widget_name, widget_data, new_value=False):
                     """Handle changes in the line edit and update the slider accordingly."""
                     if not new_value:
                         new_value = 0
@@ -619,7 +623,7 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
                     elif data_type=='control':
                         update_control(main_window, slider_widget_name, new_value, exec_function=widget_data.get('exec_function'), exec_function_args=widget_data.get('exec_function_args', []))
 
-                widget.line_edit.textChanged.connect(partial(onchange_line_edit, widget, widget_name))
+                widget.line_edit.textChanged.connect(partial(onchange_line_edit, widget, widget_name, widget_data))
 
             elif 'Text' in widget_name:
                 widget = ParameterText(label=widget_data['label'], widget_name=widget_name, group_layout_data=widgets, label_widget=label, default_value=widget_data['default'], fixed_width=widget_data['width'], main_window=main_window, data_type=data_type, exec_function=widget_data.get('exec_function'), exec_function_args=widget_data.get('exec_function_args', []))
