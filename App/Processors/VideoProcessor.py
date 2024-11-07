@@ -179,6 +179,8 @@ class VideoProcessor(QObject):
         """Stop video processing and signal completion."""
         if not self.processing:
             print("Processing not active. No action to perform.")
+            widget_actions.resetMediaButtons(self.main_window)
+
             return False
         
         print("Stopping video processing.")
@@ -235,6 +237,7 @@ class VideoProcessor(QObject):
             widget_actions.resetMediaButtons(self.main_window)
             print("Successfully Stopped Processing")
             return True
+
     
     def create_ffmpeg_subprocess(self):
         frame_width = int(self.media_capture.get(3))

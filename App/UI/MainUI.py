@@ -78,6 +78,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         graphics_event_filter = GraphicsViewEventFilter(self, self.graphicsViewFrame,)
         self.graphicsViewFrame.installEventFilter(graphics_event_filter)
 
+        widget_actions.enable_zoom_and_pan(self.graphicsViewFrame)
+
         self.buttonSelectTargetVideos.clicked.connect(partial(widget_actions.onClickSelectTargetVideos, self, 'folder'))
         self.buttonSelectTargetVideoFiles.clicked.connect(partial(widget_actions.onClickSelectTargetVideos, self, 'files'))
         self.buttonSelectInputFaces.clicked.connect(partial(widget_actions.onClickSelectInputImages, self, 'folder'))

@@ -234,9 +234,10 @@ def get_pixmap_from_frame(main_window: 'MainWindow', frame,):
 def OnClickPlayButton(main_window: 'MainWindow', checked):
     video_processor = main_window.video_processor
     if checked:
-        if video_processor.processing:
+        if video_processor.processing or video_processor.current_frame_number==video_processor.max_frame_number:
             print("OnClickPlayButton: Video already playing. Stopping the current video before starting a new one.")
             video_processor.stop_processing()
+            return
         print("OnClickPlayButton: Starting video processing.")
         setPlayButtonIconToStop(main_window)
         video_processor.process_video()
@@ -922,3 +923,49 @@ def view_fullscreen(main_window: 'MainWindow'):
     else:
         main_window.showFullScreen()  # Enter full-screen mode
     main_window.is_full_screen = not main_window.is_full_screen
+
+
+
+def enable_zoom_and_pan(view: QtWidgets.QGraphicsView):
+    SCALE_FACTOR = 1.5
+    """Add zoom and pan functionality to an existing QGraphicsView."""
+    view._zoom = 0  # Track zoom level
+
+    def zoom(self, step):
+        """Zoom in or out by a step."""
+        self._zoom += step
+        factor = SCALE_FACTOR ** step
+        self.scale(factor, factor)
+
+    def wheelEvent(self, event):
+        """Handle mouse wheel event for zooming."""
+        delta = event.angleDelta().y()
+        if delta != 0:
+            zoom(self, delta // abs(delta))
+    
+    def resetZoom(self):
+        """Reset zoom level to fit the view."""
+        self._zoom = 0
+        if not self.scene():
+            return
+        items = self.scene().items()
+        if not items:
+            return
+        rect = self.scene().itemsBoundingRect()
+        self.setSceneRect(rect)
+        unity = self.transform().mapRect(qtc.QRectF(0, 0, 1, 1))
+        self.scale(1 / unity.width(), 1 / unity.height())
+        view_rect = self.viewport().rect()
+        scene_rect = self.transform().mapRect(rect)
+        factor = min(view_rect.width() / scene_rect.width(),
+                    view_rect.height() / scene_rect.height())
+        self.scale(factor, factor)
+
+    # Attach methods to the view
+    view.zoom = zoom.__get__(view)
+    view.resetZoom = resetZoom.__get__(view)
+    view.wheelEvent = wheelEvent.__get__(view)
+
+    # Set anchors for better interaction
+    view.setTransformationAnchor(QtWidgets.QGraphicsView.ViewportAnchor.AnchorUnderMouse)
+    view.setResizeAnchor(QtWidgets.QGraphicsView.ViewportAnchor.AnchorUnderMouse)
