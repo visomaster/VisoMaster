@@ -30,6 +30,7 @@ import os
 import math
 from App.Processors.Utils.DFMModel import DFMModel
 from typing import Dict, TYPE_CHECKING
+import gc
 if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
 try:
@@ -202,14 +203,17 @@ class ModelsProcessor(QObject):
 
     def load_model(self, model_name, session_options=None):
         with self.model_lock:
-            # self.showModelLoadingProgressBar()
-            #time.sleep(0.5)
             if session_options is None:
                 model_instance = onnxruntime.InferenceSession(self.models_path[model_name], providers=self.providers)
             else:
                 model_instance = onnxruntime.InferenceSession(self.models_path[model_name], sess_options=session_options, providers=self.providers)
-            # model_instance = 'FAsfd'
-            # self.hideModelLoadProgressBar()
+
+            # Check if another thread has already loaded an instance for this model, if yes then delete the current one and return that instead
+            if self.models[model_name]:
+                del model_instance
+                gc.collect()
+                return self.models[model_name]
+
             return model_instance
     
     def load_dfm_model(self, dfm_model):

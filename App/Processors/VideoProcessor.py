@@ -12,6 +12,8 @@ from PIL import Image
 import numpy
 from pathlib import Path
 import os
+import torch
+import gc
 if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
 
@@ -233,6 +235,9 @@ class VideoProcessor(QObject):
                 avg_fps = ((self.play_end_time - self.play_start_time) * self.fps) / processing_time
                 print(f'Average FPS: {avg_fps}\n')
 
+            print("Clearing Cache")
+            torch.cuda.empty_cache()
+            gc.collect()
             widget_actions.resetMediaButtons(self.main_window)
             print("Successfully Stopped Processing")
             return True
