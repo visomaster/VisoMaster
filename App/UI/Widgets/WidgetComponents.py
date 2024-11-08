@@ -545,7 +545,7 @@ class ParametersWidget:
         self.label_widget: QtWidgets.QLabel = kwargs.get('label_widget', False)
         self.group_widget: QtWidgets.QGroupBox = kwargs.get('group_widget', False)
         self.main_window: 'MainWindow' = kwargs.get('main_window', False)
-        self.line_edit: QtWidgets.QLineEdit = False #Only sliders have textbox currently
+        self.line_edit: ParameterLineEdit|ParameterLineDecimalEdit = False #Only sliders have textbox currently
         self.reset_default_button: QPushButton = False
         self.enable_refresh_frame = True #This flag can be used to temporarily disable refreshing the frame when the widget value is changed
 
@@ -679,16 +679,11 @@ class ParameterSlider(QtWidgets.QSlider, ParametersWidget):
 
         # Set the scaled value
         self.setValue(new_value)
-        if hasattr(self, 'line_edit'):
-            self.line_edit.set_value(new_value)  # Aggiorna immediatamente il valore nel line edit
+
         print(f"Slider moved to: {new_value}")  # Debugging: log the final value
 
     def reset_to_default_value(self):
         self.setValue(int(self.default_value))
-
-        # Aggiorna il line edit o altre componenti associate immediatamente
-        if hasattr(self, 'line_edit'):
-            self.line_edit.set_value(int(self.default_value))  # Aggiorna immediatamente il valore nel line edit
 
     def value(self):
         """Return the slider value as a float, scaled by the decimals."""
@@ -697,6 +692,8 @@ class ParameterSlider(QtWidgets.QSlider, ParametersWidget):
     def setValue(self, value):
         """Set the slider value, scaling it from a float to the internal integer."""
         super().setValue(int(value))
+        if self.line_edit:
+            self.line_edit.set_value(int(value))  # Aggiorna immediatamente il valore nel line edit
 
     def wheelEvent(self, event):
         """Override wheel event to define custom increments/decrements with the mouse wheel."""
@@ -713,10 +710,6 @@ class ParameterSlider(QtWidgets.QSlider, ParametersWidget):
 
         # Update the slider's internal value (ensuring precision)
         self.setValue(new_value)
-
-        # Aggiorna il line edit o altre componenti associate immediatamente
-        if hasattr(self, 'line_edit'):
-            self.line_edit.set_value(new_value)  # Aggiorna immediatamente il valore nel line edit
 
         # Accept the event
         event.accept()
@@ -744,10 +737,6 @@ class ParameterSlider(QtWidgets.QSlider, ParametersWidget):
         # Set the new value to the slider
         self.setValue(new_value)
 
-        # Esegui immediatamente onchange_slider o l'aggiornamento necessario
-        if hasattr(self, 'line_edit'):
-            self.line_edit.set_value(new_value)  # Aggiorna il line edit con il nuovo valore
-
         # Accept the event
         event.accept()
 
@@ -763,10 +752,6 @@ class ParameterSlider(QtWidgets.QSlider, ParametersWidget):
 
             # Aggiorna immediatamente il valore dello slider
             self.setValue(new_value)
-            
-            # Esegui immediatamente onchange_slider o l'aggiornamento necessario
-            if hasattr(self, 'line_edit'):
-                self.line_edit.set_value(new_value)  # Aggiorna il line edit con il nuovo valore
 
         # Chiama il metodo della classe base per gestire il resto dell'evento
         super().mousePressEvent(event)
@@ -822,17 +807,12 @@ class ParameterDecimalSlider(QtWidgets.QSlider, ParametersWidget):
 
         # Imposta il nuovo valore
         self.setValue(new_value)
-        if hasattr(self, 'line_edit'):
-            self.line_edit.set_value(new_value)  # Aggiorna immediatamente il valore nel line edit
+
         print(f"Slider moved to: {new_value}")  # Debugging: log the final value
 
     def reset_to_default_value(self):
         """Reset the slider to its default value."""
         self.setValue(float(self.default_value) / self.scale_factor)
-
-        # Aggiorna il line edit o altre componenti associate immediatamente
-        if hasattr(self, 'line_edit'):
-            self.line_edit.set_value(float(self.default_value) / self.scale_factor)  # Aggiorna immediatamente il valore nel line edit
 
     def value(self):
         """Return the slider value as a float, scaled by the decimals."""
@@ -847,6 +827,8 @@ class ParameterDecimalSlider(QtWidgets.QSlider, ParametersWidget):
         scaled_value = int(round(float(value) * float(self.scale_factor)))
 
         super().setValue(scaled_value)
+        if self.line_edit:
+            self.line_edit.set_value(float(value))
 
     def wheelEvent(self, event):
         """Override wheel event to define custom increments/decrements with the mouse wheel."""
@@ -863,10 +845,6 @@ class ParameterDecimalSlider(QtWidgets.QSlider, ParametersWidget):
 
         # Update the slider's internal value (ensuring precision)
         self.setValue(new_value)
-
-        # Esegui immediatamente onchange_slider o l'aggiornamento necessario
-        if hasattr(self, 'line_edit'):
-            self.line_edit.set_value(new_value)  # Aggiorna il line edit con il nuovo valore
         
         # Accept the event
         event.accept()
@@ -894,10 +872,6 @@ class ParameterDecimalSlider(QtWidgets.QSlider, ParametersWidget):
         # Set the new value to the slider
         self.setValue(new_value)
 
-        # Esegui immediatamente onchange_slider o l'aggiornamento necessario
-        if hasattr(self, 'line_edit'):
-            self.line_edit.set_value(new_value)  # Aggiorna il line edit con il nuovo valore
-
         # Accept the event
         event.accept()
 
@@ -920,10 +894,6 @@ class ParameterDecimalSlider(QtWidgets.QSlider, ParametersWidget):
 
             # Aggiorna immediatamente il valore dello slider
             self.setValue(new_value)
-
-            # Esegui immediatamente onchange_slider o l'aggiornamento necessario
-            if hasattr(self, 'line_edit'):
-                self.line_edit.set_value(new_value)  # Aggiorna il line edit con il nuovo valore
 
         # Chiama il metodo della classe base per gestire il resto dell'evento
         super().mousePressEvent(event)
@@ -985,6 +955,7 @@ class ParameterLineDecimalEdit(QtWidgets.QLineEdit):
 
         # Ensure the formatted value has exactly 'self.decimals' decimal places, even for negative numbers
         format_string = f"{{:.{self.decimals}f}}"
+
         formatted_value = format_string.format(rounded_value)
 
         # Set the text with the correct number of decimal places

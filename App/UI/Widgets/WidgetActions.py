@@ -505,7 +505,7 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
                     default_value=str(widget_data['default']),
                     decimals=int(widget_data['decimals']),  # Ensure it uses decimals place for consistency
                     step_size=float(widget_data['step']),
-                    fixed_width=42,
+                    fixed_width=48,
                     max_length=7 if int(widget_data['decimals']) > 1 else 5
                 )
                 widget.reset_default_button = ParameterResetDefaultButton(related_widget=widget)
@@ -917,7 +917,7 @@ def set_widgets_values_using_face_id_parameters(main_window: 'MainWindow', face_
         parameters = main_window.parameters[face_id].copy()
     parameter_widgets = main_window.parameter_widgets
     for parameter_name, parameter_value in parameters.items():
-        # temporarily disable refreshing the frame to prevent slowing due to unecessary processing
+        # temporarily disable refreshing the frame to prevent slowing due to unnecessary processing
         parameter_widgets[parameter_name].enable_refresh_frame = False
         parameter_widgets[parameter_name].set_value(parameter_value)
         parameter_widgets[parameter_name].enable_refresh_frame = True
