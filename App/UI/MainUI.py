@@ -56,7 +56,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.control = {}
         self.parameter_widgets: ParametersWidgetTypes = {}
         self.loaded_embedding_filename: str = ''
-        self._is_slider_pressed = threading.Event()
+        
         self.is_full_screen = False
         self.dfm_models_data = DFM_MODELS_DATA
 
@@ -88,6 +88,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.videoSeekSlider.valueChanged.connect(partial(widget_actions.OnChangeSlider, self))
         self.videoSeekSlider.sliderPressed.connect(partial(widget_actions.on_slider_pressed, self))
         self.videoSeekSlider.sliderReleased.connect(partial(widget_actions.on_slider_released, self))
+        self.videoSeekSlider.sliderMoved.connect(partial(print, 'Slider Moved ()'))
 
         self.viewFullScreenButton.clicked.connect(partial(widget_actions.view_fullscreen, self))
         # Set up videoSeekLineEdit and add the event filter to handle changes

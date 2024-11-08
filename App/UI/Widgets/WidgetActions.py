@@ -114,30 +114,31 @@ def OnChangeSlider(main_window: 'MainWindow', new_position=0):
             widget_actions.update_graphics_view(main_window, pixmap, new_position)
             # restore slider position 
             video_processor.media_capture.set(cv2.CAP_PROP_POS_FRAMES, new_position)
-            if not main_window._is_slider_pressed.is_set():
-                video_processor.process_current_frame()  # Process the current frame
 
     # Do not automatically restart the video, let the user press Play to resume
     print("OnChangeSlider: Video stopped after slider movement.")
 
-def on_slider_pressed(main_window: 'MainWindow'):
-    print("Called on_slider_pressed()")
-
-    main_window._is_slider_pressed.set()
+def on_slider_moved(main_window: 'MainWindow'):
+    # print("Called on_slider_moved()")
     position = main_window.videoSeekSlider.value()
-    print(f"Slider pressed. position: {position}")
+    print(f"\nSlider Moved. position: {position}\n")
+
+def on_slider_pressed(main_window: 'MainWindow'):
+
+    position = main_window.videoSeekSlider.value()
+    print(f"\nSlider Pressed. position: {position}\n")
 
 def on_slider_released(main_window: 'MainWindow'):
-    print("Called on_slider_released()")
+    # print("Called on_slider_released()")
 
     new_position = main_window.videoSeekSlider.value()
-    main_window._is_slider_pressed.clear()
-    print(f"Slider released. New position: {new_position}")
+    print(f"\nSlider released. New position: {new_position}\n")
 
     # Perform the update to the new frame
     video_processor = main_window.video_processor
     if video_processor.media_capture:
         video_processor.process_current_frame()  # Process the current frame
+
 # Functions to add Buttons with thumbnail for selecting videos/images and faces
 @qtc.Slot(str, QtGui.QPixmap)
 def add_media_thumbnail_to_target_videos_list(main_window: 'MainWindow', media_path, pixmap, file_type):
