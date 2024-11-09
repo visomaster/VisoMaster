@@ -533,6 +533,8 @@ class videoSeekSliderLineEditEventFilter(qtc.QObject):
                 # Update values of line edit and slider
                 line_edit.setText(str(new_value))
                 self.main_window.videoSeekSlider.setValue(new_value)
+                self.main_window.video_processor.process_current_frame()  # Process the current frame
+
                 return True
         return False
 
