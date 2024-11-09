@@ -76,6 +76,7 @@ class TargetMediaCardButton(CardButton):
             main_window.video_processor.max_frame_number = max_frames_number
 
         if frame is not None:
+            main_window.scene.clear()
             if self.file_type == 'video':
                 # restore initial video position after reading. == 0
                 media_capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
