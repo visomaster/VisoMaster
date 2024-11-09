@@ -59,6 +59,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         
         self.is_full_screen = False
         self.dfm_models_data = DFM_MODELS_DATA
+        # This flag is used to make sure new loaded media is properly fit into the graphics frame on the first load
+        self.loading_new_media = False
 
     def initialize_widgets(self):
         # Initialize QListWidget for target media

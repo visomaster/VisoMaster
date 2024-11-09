@@ -198,22 +198,44 @@ def extract_frame_as_pixmap(media_file_path, file_type):
         return pixmap
     return None
 
-# from App.UI.MainUI import Ui_MainWindow
-def update_graphics_view(main_window: 'MainWindow' , pixmap, current_frame_number):
+def update_graphics_view(main_window: 'MainWindow', pixmap, current_frame_number, reset_fit=False):
     print('(update_graphics_view) current_frame_number', current_frame_number)
+    
+    # Update the video seek slider and line edit
     main_window.videoSeekSlider.blockSignals(True)
     main_window.videoSeekSlider.setValue(current_frame_number)
     main_window.videoSeekSlider.blockSignals(False)
     main_window.videoSeekLineEdit.setText(str(current_frame_number))
 
-    # print(main_window.graphicsViewFrame.scene, pixmap)
+    # Preserve the current transform (zoom and pan state)
+    current_transform = main_window.graphicsViewFrame.transform()
+
+    # Clear the scene and add the new pixmap
     main_window.graphicsViewFrame.scene().clear()
     pixmap_item = QtWidgets.QGraphicsPixmapItem(pixmap)
     main_window.graphicsViewFrame.scene().addItem(pixmap_item)
-    # Optionally fit the image to the view
-    fit_image_to_view(main_window, pixmap_item)
+
+    # Optionally set the scene rectangle (helps keep boundaries consistent)
+    main_window.graphicsViewFrame.setSceneRect(pixmap_item.boundingRect())
+
+    if reset_fit:
+        # Reset the view to fit the new frame
+        fit_image_to_view(main_window, pixmap_item)
+    else:
+        # Restore the previous zoom and pan state
+        zoom_and_fit_image_to_view(main_window, current_transform)
+
+
+def zoom_and_fit_image_to_view(main_window: 'MainWindow', new_transform):
+    print("Called zoom_and_fit_image_to_view()")
+    """Restore the previous transform (zoom and pan state) and update the view."""
+    main_window.graphicsViewFrame.setTransform(new_transform)
+    main_window.graphicsViewFrame.update()
+
 
 def fit_image_to_view(main_window: 'MainWindow', pixmap_item: QtWidgets.QGraphicsPixmapItem):
+    """Reset the view and fit the image to the view, keeping the aspect ratio."""
+    print("Called fit_image_to_view()")
     graphicsViewFrame = main_window.graphicsViewFrame
     # Reset the transform to ensure no previous transformations affect the new fit
     graphicsViewFrame.resetTransform()
@@ -355,7 +377,7 @@ def find_target_faces(main_window: 'MainWindow'):
 
                     add_media_thumbnail_to_target_faces_list(main_window, face_img, embedding_store, pixmap)
 
-def clear_target_faces(main_window: 'MainWindow'):
+def clear_target_faces(main_window: 'MainWindow', refresh_frame=True):
     main_window.targetFacesList.clear()
     for target_face in main_window.target_faces:
         target_face.deleteLater()
@@ -364,7 +386,8 @@ def clear_target_faces(main_window: 'MainWindow'):
 
     # Set Parameter widget values to default
     widget_actions.set_widgets_values_using_face_id_parameters(main_window=main_window, face_id=False)
-    widget_actions.refresh_frame(main_window=main_window)
+    if refresh_frame:
+        widget_actions.refresh_frame(main_window=main_window)
     
 def clear_input_faces(main_window: 'MainWindow'):
     main_window.inputFacesList.clear()
@@ -933,14 +956,19 @@ def view_fullscreen(main_window: 'MainWindow'):
 
 def enable_zoom_and_pan(view: QtWidgets.QGraphicsView):
     SCALE_FACTOR = 1.5
-    """Add zoom and pan functionality to an existing QGraphicsView."""
     view._zoom = 0  # Track zoom level
+    view._last_scale_factor = 1.0  # Track the last scale factor (1.0 = no scaling)
 
-    def zoom(self, step):
+    def zoom(self, step=False):
         """Zoom in or out by a step."""
-        self._zoom += step
-        factor = SCALE_FACTOR ** step
-        self.scale(factor, factor)
+        if not step:
+            factor = self._last_scale_factor
+        else:
+            self._zoom += step
+            factor = SCALE_FACTOR ** step
+            self._last_scale_factor *= factor  # Update the last scale factor
+        if factor > 0:
+            self.scale(factor, factor)
 
     def wheelEvent(self, event):
         """Handle mouse wheel event for zooming."""
@@ -949,6 +977,7 @@ def enable_zoom_and_pan(view: QtWidgets.QGraphicsView):
             zoom(self, delta // abs(delta))
     
     def resetZoom(self):
+        print("Called resetZoom()")
         """Reset zoom level to fit the view."""
         self._zoom = 0
         if not self.scene():

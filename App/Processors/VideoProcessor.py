@@ -62,8 +62,12 @@ class VideoProcessor(QObject):
 
     Slot(int, QPixmap)
     def display_current_frame(self, frame_number, pixmap):
-        widget_actions.update_graphics_view(self.main_window, pixmap, frame_number)
+        if self.main_window.loading_new_media:
+            widget_actions.update_graphics_view(self.main_window, pixmap, frame_number, reset_fit=True)
+            self.main_window.loading_new_media = False
 
+        else:
+            widget_actions.update_graphics_view(self.main_window, pixmap, frame_number,)
     def display_next_frame(self):
         if not self.processing or (self.next_frame_to_display > self.max_frame_number):
             self.stop_processing()

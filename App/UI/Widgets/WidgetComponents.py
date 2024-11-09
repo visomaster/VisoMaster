@@ -81,12 +81,12 @@ class TargetMediaCardButton(CardButton):
                 media_capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
 
             pixmap = widget_actions.get_pixmap_from_frame(main_window, frame)
-            widget_actions.update_graphics_view(main_window, pixmap, 0)
+            widget_actions.update_graphics_view(main_window, pixmap, 0, reset_fit=True)
 
         # Set up videoSeekLineEdit
         widget_actions.set_up_video_seek_line_edit(main_window)
         # Clear current target faces
-        widget_actions.clear_target_faces(main_window)
+        widget_actions.clear_target_faces(main_window, refresh_frame=False)
         # Uncheck input faces
         widget_actions.uncheck_all_input_faces(main_window)
         # Uncheck merged embeddings
@@ -111,7 +111,9 @@ class TargetMediaCardButton(CardButton):
 
         # Set Parameter widget values to default
         widget_actions.set_widgets_values_using_face_id_parameters(main_window=main_window, face_id=False)
-
+        
+        main_window.loading_new_media = True
+        widget_actions.refresh_frame(main_window)
 class TargetFaceCardButton(CardButton):
     def __init__(self, media_path, cropped_face, embedding_store: Dict[str, np.ndarray], *args, **kwargs):
         super().__init__(*args, **kwargs)
