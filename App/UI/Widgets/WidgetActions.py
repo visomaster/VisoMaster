@@ -198,7 +198,7 @@ def extract_frame_as_pixmap(media_file_path, file_type):
         return pixmap
     return None
 
-def update_graphics_view(main_window: 'MainWindow', pixmap, current_frame_number, reset_fit=False):
+def update_graphics_view(main_window: 'MainWindow', pixmap: QtGui.QPixmap, current_frame_number, reset_fit=False):
     print('(update_graphics_view) current_frame_number', current_frame_number)
     
     # Update the video seek slider and line edit
@@ -209,6 +209,13 @@ def update_graphics_view(main_window: 'MainWindow', pixmap, current_frame_number
 
     # Preserve the current transform (zoom and pan state)
     current_transform = main_window.graphicsViewFrame.transform()
+
+    #Check if there is any Previous QGraphicsItem, if yes then resize the current pixmap to size of that item 
+    #This is to handle cases where the size of processed frame if larger than the previous one (Eg: Using the Frame Enhancer)
+    previous_graphics_item = main_window.scene.items()[0] if len(main_window.scene.items())>0 else False
+    if previous_graphics_item:
+        bounding_rect = previous_graphics_item.boundingRect()
+        pixmap = pixmap.scaled(bounding_rect.width(), bounding_rect.height())
 
     # Clear the scene and add the new pixmap
     main_window.graphicsViewFrame.scene().clear()
