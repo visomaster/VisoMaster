@@ -217,9 +217,18 @@ class ModelsProcessor(QObject):
             return model_instance
     
     def load_dfm_model(self, dfm_model):
-        if not self.dfm_models.get(dfm_model):
-            self.dfm_models[dfm_model] = DFMModel(self.main_window.dfm_models_data[dfm_model], self.providers, self.device)
-        return self.dfm_models[dfm_model]
+        with self.model_lock:
+            if not self.dfm_models.get(dfm_model):
+                max_models_to_keep = self.main_window.control['MaxDFMModelsSlider']
+                total_loaded_models = len(self.dfm_models)
+                if total_loaded_models==max_models_to_keep:
+                    print("Clearing DFM Model")
+                    model_name, model_instance = list(self.dfm_models.items())[0]
+                    del model_instance
+                    self.dfm_models.pop(model_name)
+                    gc.collect()
+                self.dfm_models[dfm_model] = DFMModel(self.main_window.dfm_models_data[dfm_model], self.providers, self.device)
+            return self.dfm_models[dfm_model]
 
 
     def load_model_trt(self, model_name, custom_plugin_path=None, precision='fp16', debug=False):

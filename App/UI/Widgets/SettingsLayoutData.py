@@ -124,6 +124,17 @@ SETTINGS_LAYOUT_DATA = {
             'help': 'Show Landmarks in realtime.'
         },
     },
+    'DFM Settings':{
+        'MaxDFMModelsSlider':{
+            'level': 1,
+            'label': 'Maximum DFM Models to use',
+            'min_value': '1',
+            'max_value': '5',
+            'default': '1',
+            'step': 1,
+            'help': "Set the maximum number of DFM Models to keep in memory at a time. Set this based on your GPU's VRAM",
+        }
+    },
     'Frame Enhancer':{
         'FrameEnhancerEnableToggle':{
             'level': 1,

@@ -35,17 +35,17 @@ def clear_stop_loading_target_media(main_window: 'MainWindow'):
 def onClickSelectTargetVideos(main_window: 'MainWindow', source_type='folder', folder_name=False, files_list=[]):
     if source_type=='folder':
         folder_name = QtWidgets.QFileDialog.getExistingDirectory()
+        if not folder_name:
+            return
         main_window.labelTargetVideosPath.setText(misc_helpers.truncate_text(folder_name))
         main_window.labelTargetVideosPath.setToolTip(folder_name)
 
-        if not folder_name:
-            return
     elif source_type=='files':
         files_list = QtWidgets.QFileDialog.getOpenFileNames()[0]
-        main_window.labelTargetVideosPath.setText('Selected Files') #Just a temp text until i think of something better
-        main_window.labelTargetVideosPath.setToolTip('Selected Files')
         if not files_list:
             return
+        main_window.labelTargetVideosPath.setText('Selected Files') #Just a temp text until i think of something better
+        main_window.labelTargetVideosPath.setToolTip('Selected Files')
 
     clear_stop_loading_target_media(main_window)
     clear_target_faces(main_window)
