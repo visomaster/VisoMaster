@@ -15,12 +15,14 @@ import qdarktheme
 def change_execution_provider(main_window: 'MainWindow', new_provider):
     main_window.video_processor.stop_processing()
     main_window.models_processor.switch_providers_priority(new_provider)
-    main_window.models_processor.delete_models()
-    torch.cuda.empty_cache()
+    main_window.models_processor.clear_gpu_memory()
+    widget_actions.update_gpu_memory_progressbar(main_window)
 
 def change_threads_number(main_window: 'MainWindow', new_threads_number):
     main_window.video_processor.set_number_of_threads(new_threads_number)
     torch.cuda.empty_cache()
+    widget_actions.update_gpu_memory_progressbar(main_window)
+
 
 def change_theme(main_window: 'MainWindow', new_theme):
 
