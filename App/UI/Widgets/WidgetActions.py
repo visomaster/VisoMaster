@@ -384,6 +384,8 @@ def find_target_faces(main_window: 'MainWindow'):
 
                     add_media_thumbnail_to_target_faces_list(main_window, face_img, embedding_store, pixmap)
 
+    update_gpu_memory_progressbar(main_window)
+
 def clear_target_faces(main_window: 'MainWindow', refresh_frame=True):
     main_window.targetFacesList.clear()
     for target_face in main_window.target_faces:
