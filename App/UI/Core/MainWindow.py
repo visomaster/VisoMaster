@@ -17,8 +17,8 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
 from PySide6.QtWidgets import (QApplication, QCheckBox, QDockWidget, QGraphicsView,
     QGridLayout, QGroupBox, QHBoxLayout, QLabel,
     QLineEdit, QListWidget, QListWidgetItem, QMainWindow,
-    QPushButton, QSizePolicy, QSlider, QSpacerItem,
-    QTabWidget, QVBoxLayout, QWidget)
+    QProgressBar, QPushButton, QSizePolicy, QSlider,
+    QSpacerItem, QTabWidget, QVBoxLayout, QWidget)
 from App.UI.Core import media_rc
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -209,6 +209,9 @@ class Ui_MainWindow(object):
         self.editFacesButton.setFlat(True)
         self.verticalLayout_8.addWidget(self.editFacesButton)
         self.gridLayout_2.addWidget(self.widget_2, 1, 0, 1, 1)
+        self.verticalLayout_5 = QVBoxLayout()
+        self.verticalLayout_5.setObjectName(u"verticalLayout_5")
+        self.gridLayout_2.addLayout(self.verticalLayout_5, 0, 1, 1, 1)
         self.verticalLayout.addWidget(self.gridGroupBox)
         self.horizontalLayout.addWidget(self.widget)
         MainWindow.setCentralWidget(self.centralwidget)
@@ -330,12 +333,23 @@ class Ui_MainWindow(object):
         self.settingsWidgetsLayout.setObjectName(u"settingsWidgetsLayout")
         self.verticalLayout_2.addLayout(self.settingsWidgetsLayout)
         self.tabWidget.addTab(self.settings_tab, "")
-        self.gridLayout_5.addWidget(self.tabWidget, 0, 0, 1, 1)
+        self.gridLayout_5.addWidget(self.tabWidget, 1, 0, 1, 1)
+        self.horizontalLayout_2 = QHBoxLayout()
+        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
+        self.vramProgressBar = QProgressBar(self.dockWidgetContents_2)
+        self.vramProgressBar.setObjectName(u"vramProgressBar")
+        self.vramProgressBar.setValue(24)
+        self.horizontalLayout_2.addWidget(self.vramProgressBar)
+        self.clearMemoryButton = QPushButton(self.dockWidgetContents_2)
+        self.clearMemoryButton.setObjectName(u"clearMemoryButton")
+        self.clearMemoryButton.setFlat(True)
+        self.horizontalLayout_2.addWidget(self.clearMemoryButton)
+        self.gridLayout_5.addLayout(self.horizontalLayout_2, 0, 0, 1, 1)
         self.controlOptionsDockWidget.setWidget(self.dockWidgetContents_2)
         MainWindow.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.controlOptionsDockWidget)
         self.retranslateUi(MainWindow)
         self.editFacesButton.setDefault(False)
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(2)
         QMetaObject.connectSlotsByName(MainWindow)
     # setupUi
     def retranslateUi(self, MainWindow):
@@ -395,4 +409,5 @@ class Ui_MainWindow(object):
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.face_swap_tab), QCoreApplication.translate("MainWindow", u"Face Swap", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.face_editor_tab), QCoreApplication.translate("MainWindow", u"Face Editor", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.settings_tab), QCoreApplication.translate("MainWindow", u"Settings", None))
+        self.clearMemoryButton.setText(QCoreApplication.translate("MainWindow", u"Clear VRAM", None))
     # retranslateUi

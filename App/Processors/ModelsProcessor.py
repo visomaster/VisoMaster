@@ -248,11 +248,11 @@ class ModelsProcessor(QObject):
         return model_instance
 
     def delete_models(self):
-        for model_data in models_list:
-            model_name, _ = list(model_data.items())[0]
-            self.models[model_name] = None #Model Instance
-
+        for model_name, model_instance in self.models.items():
+            del model_instance
+            self.models[model_name] = None
         self.clip_session = []
+        gc.collect()
 
     def delete_models_trt(self):
         if 'trt' in globals():
@@ -263,6 +263,14 @@ class ModelsProcessor(QObject):
                     self.models_trt[model_name].cleanup()
                     del self.models_trt[model_name]
                     self.models_trt[model_name] = None #Model Instance
+            gc.collect()
+
+    def delete_models_dfm(self):
+        for model_name, model_instance in self.dfm_models.items():
+            del model_instance
+            self.dfm_models.pop(model_name)
+        self.clip_session = []
+        gc.collect()
 
     def showModelLoadingProgressBar(self):
         self.main_window.model_load_dialog.show()
@@ -319,6 +327,12 @@ class ModelsProcessor(QObject):
         memory_used = memory_total[0] - memory_free[0]
 
         return memory_used, memory_total[0]
+    
+    def clear_gpu_memory(self):
+        self.delete_models()
+        self.delete_models_dfm()
+        self.delete_models_trt()
+        torch.cuda.empty_cache()
 
     def run_detect(self, img, detect_mode='Retinaface', max_num=1, score=0.5, input_size=(512, 512), use_landmark_detection=False, landmark_detect_mode='203', landmark_score=0.5, from_points=False, rotation_angles:list[int]=[0]):
         bboxes = []

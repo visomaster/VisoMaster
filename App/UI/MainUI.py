@@ -115,12 +115,17 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.swapfacesButton.clicked.connect(partial(widget_actions.process_swap_faces, self))
         self.editFacesButton.clicked.connect(partial(widget_actions.process_edit_faces, self))
 
+        self.clearMemoryButton.clicked.connect(partial(widget_actions.clear_gpu_memory, self))
+
         widget_actions.add_widgets_to_tab_layout(self, LAYOUT_DATA=SWAPPER_LAYOUT_DATA, layoutWidget=self.swapWidgetsLayout, data_type='parameter')
         widget_actions.add_widgets_to_tab_layout(self, LAYOUT_DATA=SETTINGS_LAYOUT_DATA, layoutWidget=self.settingsWidgetsLayout, data_type='control')
         widget_actions.add_widgets_to_tab_layout(self, LAYOUT_DATA=FACE_EDITOR_LAYOUT_DATA, layoutWidget=self.faceEditorWidgetsLayout, data_type='parameter')
 
         # Initialize the button states
         widget_actions.resetMediaButtons(self)
+
+        #Set GPU Memory Progressbar
+        widget_actions.update_gpu_memory_progressbar(self)
 
         # widget_actions.add_groupbox_and_widgets_from_layout_map(self)
     def __init__(self):

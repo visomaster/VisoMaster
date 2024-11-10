@@ -54,6 +54,10 @@ class VideoProcessor(QObject):
         self.frame_display_timer.timeout.connect(self.display_next_frame)
         self.frames_to_display = {}
 
+        # Timer to update the gpu memory usage progressbar 
+        self.gpu_memory_update_timer = QTimer()
+        self.gpu_memory_update_timer.timeout.connect(widget_actions.update_gpu_memory_progressbar)
+
         self.single_frame_processed_signal.connect(self.display_current_frame)
 
     Slot(int, QPixmap, numpy.ndarray)
@@ -69,6 +73,8 @@ class VideoProcessor(QObject):
         else:
             widget_actions.update_graphics_view(self.main_window, pixmap, frame_number,)
         torch.cuda.empty_cache()
+        #Set GPU Memory Progressbar
+        widget_actions.update_gpu_memory_progressbar(self.main_window)
     def display_next_frame(self):
         if not self.processing or (self.next_frame_to_display > self.max_frame_number):
             self.stop_processing()
@@ -80,7 +86,6 @@ class VideoProcessor(QObject):
             pil_image = Image.fromarray(frame[..., ::-1])
             # pil_image.save('test.jpg')
             pil_image.save(self.recording_sp.stdin, 'BMP')
-
 
             widget_actions.update_graphics_view(self.main_window, pixmap, self.next_frame_to_display)
             self.threads.pop(self.next_frame_to_display)
@@ -116,6 +121,7 @@ class VideoProcessor(QObject):
                 print(f"Starting frame_read_timer with an interval of {interval} ms.")
                 self.frame_read_timer.start()
                 self.frame_display_timer.start()
+                self.gpu_memory_update_timer.start(5000) #Update GPU memory progressbar every 5 Seconds
 
             else:
                 print("Error: Unable to open the video.")
@@ -199,7 +205,7 @@ class VideoProcessor(QObject):
             print("Stopping Timers")
             self.frame_read_timer.stop()
             self.frame_display_timer.stop()
-
+            self.gpu_memory_update_timer.stop()
             self.join_and_clear_threads()
 
             print("Clearing Threads and Queues")

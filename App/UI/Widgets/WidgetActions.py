@@ -1010,3 +1010,17 @@ def enable_zoom_and_pan(view: QtWidgets.QGraphicsView):
     # Set anchors for better interaction
     view.setTransformationAnchor(QtWidgets.QGraphicsView.ViewportAnchor.AnchorUnderMouse)
     view.setResizeAnchor(QtWidgets.QGraphicsView.ViewportAnchor.AnchorUnderMouse)
+
+def update_gpu_memory_progressbar(main_window: 'MainWindow'):
+    memory_used, memory_total = main_window.models_processor.get_gpu_memory()
+    main_window.vramProgressBar.setMaximum(memory_total)
+    main_window.vramProgressBar.setValue(memory_used)
+    main_window.vramProgressBar.setFormat(f'{round(memory_used/1024,2)} GB / {round(memory_total/1024,2)} GB (%p%)')
+    main_window.update()
+
+def clear_gpu_memory(main_window: 'MainWindow'):
+    main_window.video_processor.stop_processing()
+    main_window.models_processor.clear_gpu_memory()
+    main_window.swapfacesButton.setChecked(False)
+    main_window.editFacesButton.setChecked(False)
+    update_gpu_memory_progressbar(main_window)
