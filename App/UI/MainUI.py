@@ -125,6 +125,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         widget_actions.resetMediaButtons(self)
 
         #Set GPU Memory Progressbar
+        font = self.vramProgressBar.font()
+        font.setBold(True)
+        self.vramProgressBar.setFont(font)
         widget_actions.update_gpu_memory_progressbar(self)
 
         # widget_actions.add_groupbox_and_widgets_from_layout_map(self)

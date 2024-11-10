@@ -14,6 +14,7 @@ from pathlib import Path
 import os
 import torch
 import gc
+from functools import partial
 if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
 
@@ -56,7 +57,7 @@ class VideoProcessor(QObject):
 
         # Timer to update the gpu memory usage progressbar 
         self.gpu_memory_update_timer = QTimer()
-        self.gpu_memory_update_timer.timeout.connect(widget_actions.update_gpu_memory_progressbar)
+        self.gpu_memory_update_timer.timeout.connect(partial(widget_actions.update_gpu_memory_progressbar, main_window))
 
         self.single_frame_processed_signal.connect(self.display_current_frame)
 
