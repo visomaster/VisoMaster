@@ -100,6 +100,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         # Connect the Play/Stop button to the OnClickPlayButton method
         self.buttonMediaPlay.toggled.connect(partial(widget_actions.OnClickPlayButton, self))
+        self.buttonMediaRecord.toggled.connect(partial(widget_actions.OnClickRecordButton, self))
         # self.buttonMediaStop.clicked.connect(partial(self.video_processor.stop_processing))
         self.findTargetFacesButton.clicked.connect(partial(widget_actions.find_target_faces, self))
         self.clearTargetFacesButton.clicked.connect(partial(widget_actions.clear_target_faces, self))

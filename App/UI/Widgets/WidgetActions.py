@@ -276,9 +276,38 @@ def OnClickPlayButton(main_window: 'MainWindow', checked):
         setPlayButtonIconToStop(main_window)
         video_processor.process_video()
     else:
+        video_processor = main_window.video_processor
         print("OnClickPlayButton: Stopping video processing.")
         setPlayButtonIconToPlay(main_window)
         video_processor.stop_processing()
+        main_window.buttonMediaRecord.blockSignals(True)
+        main_window.buttonMediaRecord.setChecked(False)
+        main_window.buttonMediaRecord.blockSignals(False)
+        setRecordButtonIconToPlay(main_window)
+
+
+def OnClickRecordButton(main_window: 'MainWindow', checked):
+    video_processor = main_window.video_processor
+    if checked:
+        if video_processor.processing or video_processor.current_frame_number==video_processor.max_frame_number:
+            print("OnClickRecordButton: Video already playing. Stopping the current video before starting a new one.")
+            video_processor.stop_processing()
+        video_processor.recording = True
+        main_window.buttonMediaPlay.setChecked(True)
+        setRecordButtonIconToStop(main_window)
+
+    else:
+        main_window.buttonMediaPlay.setChecked(False)
+        video_processor.stop_processing()
+        setPlayButtonIconToPlay(main_window)
+        setRecordButtonIconToPlay(main_window)
+
+def setRecordButtonIconToPlay(main_window: 'MainWindow'):
+    main_window.buttonMediaRecord.setIcon(QtGui.QIcon(":/media/Media/rec_off.png"))
+    main_window.buttonMediaRecord.setToolTip("Start Recording")
+def setRecordButtonIconToStop(main_window: 'MainWindow'):
+    main_window.buttonMediaRecord.setIcon(QtGui.QIcon(":/media/Media/rec_on.png"))
+    main_window.buttonMediaRecord.setToolTip("Stop Recording")
 
 def setPlayButtonIconToPlay(main_window: 'MainWindow'):
     main_window.buttonMediaPlay.setIcon(QtGui.QIcon(":/media/Media/play_off.png"))
@@ -289,10 +318,16 @@ def setPlayButtonIconToStop(main_window: 'MainWindow'):
     main_window.buttonMediaPlay.setToolTip("Stop")
 
 def resetMediaButtons(main_window: 'MainWindow'):
+    # Rest the state and icons of the buttons without triggering Onchange methods
     main_window.buttonMediaPlay.blockSignals(True)
     main_window.buttonMediaPlay.setChecked(False)
     main_window.buttonMediaPlay.blockSignals(False)
+    main_window.buttonMediaRecord.blockSignals(True)
+    main_window.buttonMediaRecord.setChecked(False)
+    main_window.buttonMediaRecord.blockSignals(False)
     setPlayButtonIcon(main_window)
+    setRecordButtonIcon(main_window)
+
 
 def setPlayButtonIcon(main_window: 'MainWindow'):
     if main_window.buttonMediaPlay.isChecked(): 
@@ -301,6 +336,14 @@ def setPlayButtonIcon(main_window: 'MainWindow'):
     else:
         main_window.buttonMediaPlay.setIcon(QtGui.QIcon(":/media/Media/play_off.png"))
         main_window.buttonMediaPlay.setToolTip("Play")
+
+def setRecordButtonIcon(main_window: 'MainWindow'):
+    if main_window.buttonMediaRecord.isChecked(): 
+        main_window.buttonMediaRecord.setIcon(QtGui.QIcon(":/media/Media/rec_on.png"))
+        main_window.buttonMediaRecord.setToolTip("Stop Recording")
+    else:
+        main_window.buttonMediaRecord.setIcon(QtGui.QIcon(":/media/Media/rec_off.png"))
+        main_window.buttonMediaRecord.setToolTip("Start Recording")
 
 def filterTargetVideos(main_window: 'MainWindow', search_text: str = ''):
     main_window.target_videos_filter_worker.stop_thread()

@@ -35,6 +35,8 @@ class VideoProcessor(QObject):
         self.num_threads = num_threads
         self.threads: Dict[int, threading.Thread] = {}
 
+        self.recording = False
+
         self.recording_sp: subprocess.Popen|None = None 
 
         #Used to calculate the total processing time
@@ -84,9 +86,9 @@ class VideoProcessor(QObject):
         else:
             pixmap, frame = self.frames_to_display.pop(self.next_frame_to_display)
 
-            pil_image = Image.fromarray(frame[..., ::-1])
-            # pil_image.save('test.jpg')
-            pil_image.save(self.recording_sp.stdin, 'BMP')
+            if self.recording:
+                pil_image = Image.fromarray(frame[..., ::-1])
+                pil_image.save(self.recording_sp.stdin, 'BMP')
 
             widget_actions.update_graphics_view(self.main_window, pixmap, self.next_frame_to_display)
             self.threads.pop(self.next_frame_to_display)
@@ -114,7 +116,9 @@ class VideoProcessor(QObject):
                 self.frames_to_display.clear()
                 self.threads.clear()
 
-                self.create_ffmpeg_subprocess()
+                if self.recording:
+                    self.create_ffmpeg_subprocess()
+
                 self.play_start_time = float(self.media_capture.get(cv2.CAP_PROP_POS_FRAMES) / float(self.fps))
 
                 fps = self.media_capture.get(cv2.CAP_PROP_FPS)
@@ -219,33 +223,37 @@ class VideoProcessor(QObject):
             self.current_frame_number = self.main_window.videoSeekSlider.value()
             self.media_capture.set(cv2.CAP_PROP_POS_FRAMES, self.current_frame_number)
 
-            self.recording_sp.stdin.close()
-            self.recording_sp.wait()
+            if self.recording:
+                self.recording_sp.stdin.close()
+                self.recording_sp.wait()
 
             self.play_end_time = float(self.media_capture.get(cv2.CAP_PROP_POS_FRAMES) / float(self.fps))
 
             if self.file_type=='video':
-                final_file = 'temp_video_with_audio.mp4'
-                if Path(final_file).is_file():
-                    os.remove(final_file)
-                print("Adding audio...")
-                args = ["ffmpeg",
-                        '-hide_banner',
-                        '-loglevel',    'error',
-                        "-i", self.temp_file,
-                        "-ss", str(self.play_start_time), "-to", str(self.play_end_time), "-i",  self.media_path,
-                        "-c",  "copy", # may be c:v
-                        "-map", "0:v:0", "-map", "1:a:0?",
-                        "-shortest",
-                        final_file]
-                subprocess.run(args) #Add Audio
-                os.remove(self.temp_file)
+                if self.recording:
+                    final_file = 'temp_video_with_audio.mp4'
+                    if Path(final_file).is_file():
+                        os.remove(final_file)
+                    print("Adding audio...")
+                    args = ["ffmpeg",
+                            '-hide_banner',
+                            '-loglevel',    'error',
+                            "-i", self.temp_file,
+                            "-ss", str(self.play_start_time), "-to", str(self.play_end_time), "-i",  self.media_path,
+                            "-c",  "copy", # may be c:v
+                            "-map", "0:v:0", "-map", "1:a:0?",
+                            "-shortest",
+                            final_file]
+                    subprocess.run(args) #Add Audio
+                    os.remove(self.temp_file)
 
                 self.end_time = time.time()
                 processing_time = self.end_time - self.start_time
                 print(f"\nProcessing completed in {processing_time} seconds")
                 avg_fps = ((self.play_end_time - self.play_start_time) * self.fps) / processing_time
                 print(f'Average FPS: {avg_fps}\n')
+
+            self.recording = False #Set recording as False to make sure the next process_video() call doesnt not record the video, unless the user press the record button
 
             print("Clearing Cache")
             torch.cuda.empty_cache()
