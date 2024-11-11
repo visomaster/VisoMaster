@@ -292,6 +292,7 @@ def OnClickRecordButton(main_window: 'MainWindow', checked):
         if video_processor.processing or video_processor.current_frame_number==video_processor.max_frame_number:
             print("OnClickRecordButton: Video already playing. Stopping the current video before starting a new one.")
             video_processor.stop_processing()
+            return
         video_processor.recording = True
         main_window.buttonMediaPlay.setChecked(True)
         setRecordButtonIconToStop(main_window)
