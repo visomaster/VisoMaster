@@ -20,7 +20,7 @@ from App.Helpers.Misc_Helpers import DFM_MODELS_DATA
 ParametersWidgetTypes = Dict[str, ToggleButton|SelectionBox|ParameterDecimalSlider|ParameterSlider|ParameterText]
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
-    
+    gpu_memory_update_signal = qtc.Signal(int, int)
     def initialize_variables(self):
         self.video_loader_worker: TargetMediaLoaderWorker|bool = False
         self.input_faces_loader_worker: InputFacesLoaderWorker|bool = False
@@ -61,6 +61,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.dfm_models_data = DFM_MODELS_DATA
         # This flag is used to make sure new loaded media is properly fit into the graphics frame on the first load
         self.loading_new_media = False
+
+        self.gpu_memory_update_signal.connect(partial(widget_actions.set_gpu_memory_progressbar_value, self))
 
     def initialize_widgets(self):
         # Initialize QListWidget for target media

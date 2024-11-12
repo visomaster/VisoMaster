@@ -20,6 +20,7 @@ from App.UI.Widgets.SettingsLayoutData import SETTINGS_LAYOUT_DATA
 from App.UI.Widgets.FaceEditorLayoutData import FACE_EDITOR_LAYOUT_DATA
 from typing import TYPE_CHECKING, Dict
 import json
+import threading
 
 if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
@@ -1058,11 +1059,18 @@ def enable_zoom_and_pan(view: QtWidgets.QGraphicsView):
     view.setResizeAnchor(QtWidgets.QGraphicsView.ViewportAnchor.AnchorUnderMouse)
 
 def update_gpu_memory_progressbar(main_window: 'MainWindow'):
+    threading.Thread(target=partial(_update_gpu_memory_progressbar, main_window)).start()
+
+def _update_gpu_memory_progressbar(main_window: 'MainWindow'):
     memory_used, memory_total = main_window.models_processor.get_gpu_memory()
+    main_window.gpu_memory_update_signal.emit(memory_used, memory_total)
+
+@qtc.Slot(int, int)
+def set_gpu_memory_progressbar_value(main_window: 'MainWindow', memory_used, memory_total):
     main_window.vramProgressBar.setMaximum(memory_total)
     main_window.vramProgressBar.setValue(memory_used)
     main_window.vramProgressBar.setFormat(f'{round(memory_used/1024,2)} GB / {round(memory_total/1024,2)} GB (%p%)')
-    main_window.update()
+    main_window.vramProgressBar.update()
 
 def clear_gpu_memory(main_window: 'MainWindow'):
     main_window.video_processor.stop_processing()
