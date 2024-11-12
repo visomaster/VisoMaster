@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 class VideoProcessor(QObject):
     frame_processed_signal = Signal(int, QPixmap, numpy.ndarray)
-    single_frame_processed_signal = Signal(int, QPixmap)
+    single_frame_processed_signal = Signal(int, QPixmap, numpy.ndarray)
     def __init__(self, main_window: 'MainWindow', num_threads=5):
         super().__init__()
         self.main_window = main_window
@@ -35,6 +35,7 @@ class VideoProcessor(QObject):
         self.num_threads = num_threads
         self.threads: Dict[int, threading.Thread] = {}
 
+        self.current_frame: numpy.ndarray = []
         self.recording = False
 
         self.recording_sp: subprocess.Popen|None = None 
@@ -67,14 +68,15 @@ class VideoProcessor(QObject):
     def store_frame_to_display(self, frame_number, pixmap, frame):
         self.frames_to_display[frame_number] = (pixmap, frame)
 
-    Slot(int, QPixmap)
-    def display_current_frame(self, frame_number, pixmap):
+    Slot(int, QPixmap, numpy.ndarray)
+    def display_current_frame(self, frame_number, pixmap, frame):
         if self.main_window.loading_new_media:
             widget_actions.update_graphics_view(self.main_window, pixmap, frame_number, reset_fit=True)
             self.main_window.loading_new_media = False
 
         else:
             widget_actions.update_graphics_view(self.main_window, pixmap, frame_number,)
+        self.current_frame = frame
         torch.cuda.empty_cache()
         #Set GPU Memory Progressbar
         widget_actions.update_gpu_memory_progressbar(self.main_window)
@@ -85,6 +87,7 @@ class VideoProcessor(QObject):
             return
         else:
             pixmap, frame = self.frames_to_display.pop(self.next_frame_to_display)
+            self.current_frame = frame
 
             if self.recording:
                 pil_image = Image.fromarray(frame[..., ::-1])

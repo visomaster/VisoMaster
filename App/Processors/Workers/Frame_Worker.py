@@ -53,7 +53,7 @@ class FrameWorker(threading.Thread):
                 self.video_processor.frame_processed_signal.emit(self.frame_number, pixmap, self.frame)
             else:
                 print('Emitted single_frame_processed_signal')
-                self.video_processor.single_frame_processed_signal.emit(self.frame_number, pixmap)
+                self.video_processor.single_frame_processed_signal.emit(self.frame_number, pixmap, self.frame)
 
 
             # Mark the frame as done in the queue
