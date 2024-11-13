@@ -21,6 +21,8 @@ from App.UI.Widgets.FaceEditorLayoutData import FACE_EDITOR_LAYOUT_DATA
 from typing import TYPE_CHECKING, Dict
 import json
 import threading
+from PIL import Image
+import os
 
 if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
@@ -1078,3 +1080,14 @@ def clear_gpu_memory(main_window: 'MainWindow'):
     main_window.swapfacesButton.setChecked(False)
     main_window.editFacesButton.setChecked(False)
     update_gpu_memory_progressbar(main_window)
+
+def save_current_frame_to_file(main_window: 'MainWindow'):
+    frame = main_window.video_processor.current_frame.copy()
+    if isinstance(frame, numpy.ndarray):
+        save_filename, extension = os.path.splitext(main_window.video_processor.media_path)
+        save_filename, _ = QtWidgets.QFileDialog.getSaveFileName(main_window, 'Save Frame as Image', f'{save_filename}.png', filter='PNG (*.png)',)
+        if save_filename:
+            pil_image = Image.fromarray(frame[..., ::-1])
+            pil_image.save(save_filename, 'PNG')
+    else:
+        create_and_show_messagebox(main_window, 'Invalid Frame', 'Cannot save the current frame!', parent_widget=main_window.saveImageButton)

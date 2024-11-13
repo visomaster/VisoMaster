@@ -118,6 +118,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.swapfacesButton.clicked.connect(partial(widget_actions.process_swap_faces, self))
         self.editFacesButton.clicked.connect(partial(widget_actions.process_edit_faces, self))
 
+        self.saveImageButton.clicked.connect(partial(widget_actions.save_current_frame_to_file, self))
         self.clearMemoryButton.clicked.connect(partial(widget_actions.clear_gpu_memory, self))
 
         widget_actions.add_widgets_to_tab_layout(self, LAYOUT_DATA=SWAPPER_LAYOUT_DATA, layoutWidget=self.swapWidgetsLayout, data_type='parameter')
