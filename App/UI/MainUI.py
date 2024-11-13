@@ -93,7 +93,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.videoSeekSlider.sliderPressed.connect(partial(widget_actions.on_slider_pressed, self))
         self.videoSeekSlider.sliderReleased.connect(partial(widget_actions.on_slider_released, self))
         self.videoSeekSlider.sliderMoved.connect(partial(print, 'Slider Moved ()'))
-
+        widget_actions.set_up_video_seek_slider(self)
+        
         self.viewFullScreenButton.clicked.connect(partial(widget_actions.view_fullscreen, self))
         # Set up videoSeekLineEdit and add the event filter to handle changes
         widget_actions.set_up_video_seek_line_edit(self)
@@ -133,7 +134,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         font.setBold(True)
         self.vramProgressBar.setFont(font)
         widget_actions.update_gpu_memory_progressbar(self)
-
         # widget_actions.add_groupbox_and_widgets_from_layout_map(self)
     def __init__(self):
         super(MainWindow, self).__init__()
