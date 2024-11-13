@@ -1177,7 +1177,7 @@ def set_up_video_seek_slider(main_window: 'MainWindow'):
 
         # Draw the thin groove (line-like) under the handle
         groove_y = (groove_rect.top() + groove_rect.bottom()) // 2  # Midpoint for the groove
-        painter.setPen(QtGui.QPen(QtGui.QColor("gray"), 1))  # Set groove color (light gray)
+        painter.setPen(QtGui.QPen(QtGui.QColor("gray"), 3))  # Set groove color (light gray)
         painter.drawLine(opt.rect.left(), groove_y, opt.rect.right(), groove_y)  # Draw the groove line
 
     main_window.videoSeekSlider.addMarker = addMarker.__get__(main_window.videoSeekSlider)
