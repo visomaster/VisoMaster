@@ -23,6 +23,7 @@ import json
 import threading
 from PIL import Image
 import os
+import copy
 
 if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
@@ -117,8 +118,15 @@ def OnChangeSlider(main_window: 'MainWindow', new_position=0):
             widget_actions.update_graphics_view(main_window, pixmap, new_position)
             # restore slider position 
             video_processor.media_capture.set(cv2.CAP_PROP_POS_FRAMES, new_position)
+            update_parameters_and_widget_values_from_markers(main_window, new_position)
     # Do not automatically restart the video, let the user press Play to resume
     print("OnChangeSlider: Video stopped after slider movement.")
+
+def update_parameters_and_widget_values_from_markers(main_window: 'MainWindow', new_position):
+    if main_window.markers.get(new_position):
+        main_window.parameters = copy.deepcopy(main_window.markers[new_position])
+        if main_window.selected_target_face_id is not None:
+            widget_actions.set_widgets_values_using_face_id_parameters(main_window, main_window.selected_target_face_id)
 
 def on_slider_moved(main_window: 'MainWindow'):
     # print("Called on_slider_moved()")
@@ -1178,7 +1186,8 @@ def add_video_slider_marker(main_window: 'MainWindow'):
         create_and_show_messagebox(main_window, 'Marker Already Exists!', 'A Marker already exists for this position!', main_window.videoSeekSlider)
     else:
         main_window.videoSeekSlider.addMarker(current_position)
-        main_window.markers[current_position] = main_window.parameters.copy()
+        main_window.markers[current_position] = copy.deepcopy(main_window.parameters)
+        print("Adding marker: ", main_window.parameters.copy())
         print(f"Marker Added for Frame: {current_position}")
 
 def remove_video_slider_marker(main_window: 'MainWindow'):
@@ -1202,7 +1211,6 @@ def move_slider_to_nearest_marker(main_window: 'MainWindow', direction: str):
     """
     current_position = int(main_window.videoSeekSlider.value())
     markers = sorted(main_window.markers.keys())
-    
     if direction == "next":
         filtered_markers = [marker for marker in markers if marker > current_position]
         new_position = filtered_markers[0] if filtered_markers else None
@@ -1212,6 +1220,7 @@ def move_slider_to_nearest_marker(main_window: 'MainWindow', direction: str):
 
     if new_position is not None:
         main_window.videoSeekSlider.setValue(new_position)
+        main_window.video_processor.process_current_frame()
 
 # Wrappers for specific directions
 def move_slider_to_next_nearest_marker(main_window: 'MainWindow'):

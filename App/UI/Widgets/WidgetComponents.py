@@ -6,8 +6,9 @@ import cv2
 import numpy as np
 
 from PySide6.QtWidgets import QPushButton
-
 from functools import partial
+import uuid
+
 from typing import TYPE_CHECKING, Dict, List
 if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
@@ -118,10 +119,11 @@ class TargetMediaCardButton(CardButton):
 class TargetFaceCardButton(CardButton):
     def __init__(self, media_path, cropped_face, embedding_store: Dict[str, np.ndarray], *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if self.main_window.target_faces:
-            self.face_id = max([target_face.face_id for target_face in self.main_window.target_faces]) + 1
-        else:
-            self.face_id = 0
+        # if self.main_window.target_faces:
+        #     self.face_id = max([target_face.face_id for target_face in self.main_window.target_faces]) + 1
+        # else:
+        #     self.face_id = 0
+        self.face_id = uuid.uuid1().int
         self.media_path = media_path
         self.cropped_face = cropped_face
 
