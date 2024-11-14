@@ -118,13 +118,18 @@ def OnChangeSlider(main_window: 'MainWindow', new_position=0):
             widget_actions.update_graphics_view(main_window, pixmap, new_position)
             # restore slider position 
             video_processor.media_capture.set(cv2.CAP_PROP_POS_FRAMES, new_position)
-            update_parameters_and_widget_values_from_markers(main_window, new_position)
+            update_parameters_from_marker(main_window, new_position)
+            update_widget_values_from_markers(main_window, new_position)
+
     # Do not automatically restart the video, let the user press Play to resume
     print("OnChangeSlider: Video stopped after slider movement.")
 
-def update_parameters_and_widget_values_from_markers(main_window: 'MainWindow', new_position):
+def update_parameters_from_marker(main_window: 'MainWindow', new_position):
     if main_window.markers.get(new_position):
         main_window.parameters = copy.deepcopy(main_window.markers[new_position])
+
+def update_widget_values_from_markers(main_window: 'MainWindow', new_position):
+    if main_window.markers.get(new_position):
         if main_window.selected_target_face_id is not None:
             widget_actions.set_widgets_values_using_face_id_parameters(main_window, main_window.selected_target_face_id)
 
@@ -436,7 +441,9 @@ def find_target_faces(main_window: 'MainWindow'):
                             embedding_store[control['RecognitionModelSelection']] = face[1]
 
                     add_media_thumbnail_to_target_faces_list(main_window, face_img, embedding_store, pixmap)
-
+        # Select the first target face if no target face is already selected
+        if main_window.target_faces and not main_window.selected_target_face_id:
+            main_window.target_faces[0].click()
     update_gpu_memory_progressbar(main_window)
 
 def clear_target_faces(main_window: 'MainWindow', refresh_frame=True):
@@ -1124,6 +1131,9 @@ def set_up_video_seek_slider(main_window: 'MainWindow'):
             self.update()
 
     def paintEvent(self: QtWidgets.QSlider, event):
+        # Dont need a seek slider if the current selected file is an image
+        if main_window.video_processor.file_type=='image':
+            return super(QtWidgets.QSlider, self).paintEvent(event)
         # Set up the painter and style option
         painter = QtWidgets.QStylePainter(self)
         opt = QtWidgets.QStyleOptionSlider()
@@ -1194,9 +1204,7 @@ def remove_video_slider_marker(main_window: 'MainWindow'):
     current_position = int(main_window.videoSeekSlider.value())
     print("Markers", main_window.markers)
     print("current_position", current_position)
-    if not main_window.target_faces:
-        create_and_show_messagebox(main_window, 'No Target Face Found', 'You need to have atleast one target face to create a marker', main_window.videoSeekSlider)
-    elif main_window.markers.get(current_position):
+    if main_window.markers.get(current_position):
         main_window.videoSeekSlider.removeMarker(current_position)
         main_window.markers.pop(current_position)
         print(f"Marker Removed from position: {current_position}")
@@ -1228,3 +1236,16 @@ def move_slider_to_next_nearest_marker(main_window: 'MainWindow'):
 
 def move_slider_to_previous_nearest_marker(main_window: 'MainWindow'):
     move_slider_to_nearest_marker(main_window, "previous")
+
+def remove_face_parameters_from_markers(main_window: 'MainWindow', face_id):
+    for frame_number, parameters in main_window.markers.items():
+        parameters.pop(face_id)
+        # If the parameters is empty, then there is no longer any marker to be set for any target face
+        if not parameters:
+            delete_all_markers(main_window)
+            break
+
+def delete_all_markers(main_window: 'MainWindow'):
+    main_window.videoSeekSlider.markers = set()
+    main_window.videoSeekSlider.update()
+    main_window.markers = {}

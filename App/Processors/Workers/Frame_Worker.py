@@ -35,6 +35,9 @@ class FrameWorker(threading.Thread):
 
     def run(self):
         try:
+            # Update parameters from markers (if exists) without concurrent access from other threads
+            with self.main_window.models_processor.model_lock:
+                widget_actions.update_parameters_from_marker(self.main_window, self.frame_number)
             self.parameters = self.main_window.parameters.copy()
 
             # Process the frame with model inference

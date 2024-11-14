@@ -35,7 +35,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.merged_embeddings: List[EmbeddingCardButton] = []
         self.cur_selected_target_face_button: TargetFaceCardButton = False
         self.selected_video_buttons: List[TargetMediaCardButton] = [] #Contains list of buttons linked to videos/images
-        self.selected_target_face_id = 0
+        self.selected_target_face_id = False
         '''
             self.parameters dict have the following structure:
             {
@@ -52,7 +52,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.default_parameters: Dict[str, bool|int|float|str] = {}
         self.copied_parameters: Dict[str, bool|int|float|str] = {}
 
-        self.markers = {} #Video Markers
+        self.markers: Dict[int, Dict[int, Dict[str, bool|int|float|str]]] = {} #Video Markers (Contains parameters for each face)
         self.parameters_list = {}
         self.control = {}
         self.parameter_widgets: ParametersWidgetTypes = {}

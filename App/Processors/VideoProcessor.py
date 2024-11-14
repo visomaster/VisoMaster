@@ -92,7 +92,9 @@ class VideoProcessor(QObject):
             if self.recording:
                 pil_image = Image.fromarray(frame[..., ::-1])
                 pil_image.save(self.recording_sp.stdin, 'BMP')
-
+            # Update the widget values using parameters if it is not recording (The updation of actual parameters is already done inside the FrameWorker, this step is to make the changes appear in the widgets)
+            if not self.recording:
+                widget_actions.update_widget_values_from_markers(self.main_window, self.next_frame_to_display)
             widget_actions.update_graphics_view(self.main_window, pixmap, self.next_frame_to_display)
             self.threads.pop(self.next_frame_to_display)
             self.next_frame_to_display += 1

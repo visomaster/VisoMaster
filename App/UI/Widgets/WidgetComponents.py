@@ -50,6 +50,7 @@ class TargetMediaCardButton(CardButton):
         main_window.video_processor.current_frame_number = 0
         main_window.video_processor.media_path = self.media_path
         main_window.parameters = {}
+        main_window.selected_target_face_id = False
 
         # Release the previous media_capture if it exists
         if main_window.video_processor.media_capture:
@@ -250,6 +251,7 @@ class TargetFaceCardButton(CardButton):
         # Otherwise reset parameter widgets value to the default
         else:
             widget_actions.set_widgets_values_using_face_id_parameters(main_window, face_id=False)
+        widget_actions.remove_face_parameters_from_markers(main_window, self.face_id) #Remove parameters for the face from all markers
         widget_actions.refresh_frame(self.main_window)
         self.deleteLater()
 
