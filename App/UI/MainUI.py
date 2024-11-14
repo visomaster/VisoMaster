@@ -52,6 +52,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.default_parameters: Dict[str, bool|int|float|str] = {}
         self.copied_parameters: Dict[str, bool|int|float|str] = {}
 
+        self.markers = {} #Video Markers
         self.parameters_list = {}
         self.control = {}
         self.parameter_widgets: ParametersWidgetTypes = {}
@@ -94,7 +95,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.videoSeekSlider.sliderReleased.connect(partial(widget_actions.on_slider_released, self))
         self.videoSeekSlider.sliderMoved.connect(partial(print, 'Slider Moved ()'))
         widget_actions.set_up_video_seek_slider(self)
-        
+        self.addMarkerButton.clicked.connect(partial(widget_actions.add_video_slider_marker, self))
+        self.removeMarkerButton.clicked.connect(partial(widget_actions.remove_video_slider_marker, self))
+
         self.viewFullScreenButton.clicked.connect(partial(widget_actions.view_fullscreen, self))
         # Set up videoSeekLineEdit and add the event filter to handle changes
         widget_actions.set_up_video_seek_line_edit(self)

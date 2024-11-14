@@ -252,6 +252,40 @@
             </spacer>
            </item>
            <item>
+            <widget class="QPushButton" name="addMarkerButton">
+             <property name="toolTip">
+              <string>Add Marker</string>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+             <property name="icon">
+              <iconset resource="media.qrc">
+               <normaloff>:/media/Media/add_marker_hover.png</normaloff>:/media/Media/add_marker_hover.png</iconset>
+             </property>
+             <property name="flat">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="removeMarkerButton">
+             <property name="toolTip">
+              <string>Remove Marker</string>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+             <property name="icon">
+              <iconset resource="media.qrc">
+               <normaloff>:/media/Media/remove_marker_hover.png</normaloff>:/media/Media/remove_marker_hover.png</iconset>
+             </property>
+             <property name="flat">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
             <widget class="QPushButton" name="viewFullScreenButton">
              <property name="toolTip">
               <string>View Fullscreen (F11)</string>

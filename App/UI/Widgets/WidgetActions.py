@@ -1118,68 +1118,80 @@ def set_up_video_seek_slider(main_window: 'MainWindow'):
             self.update()
 
     def paintEvent(self: QtWidgets.QSlider, event):
-        # Set up the painter and options
+        # Set up the painter and style option
         painter = QtWidgets.QStylePainter(self)
         opt = QtWidgets.QStyleOptionSlider()
         self.initStyleOption(opt)
         style = self.style()
 
-        # Set the background to transparent
-        painter.setOpacity(1.0)  # Set opacity to 1 to ensure handle and markers are visible
-
-        slider_min = self.minimum()
-        slider_max = self.maximum()
-        slider_length = style.pixelMetric(QtWidgets.QStyle.PixelMetric.PM_SliderLength, opt, self)
-        span = style.pixelMetric(QtWidgets.QStyle.PixelMetric.PM_SliderSpaceAvailable, opt, self)
-
-        # Get the groove rectangle to position markers and handle
+        # Get groove and handle geometry
         groove_rect = style.subControlRect(
             QtWidgets.QStyle.ComplexControl.CC_Slider, opt, QtWidgets.QStyle.SubControl.SC_SliderGroove
         )
-        print(f"Groove Rect: {groove_rect}")
+        groove_y = (groove_rect.top() + groove_rect.bottom()) // 2  # Groove's vertical center
+        groove_start = groove_rect.left()
+        groove_end = groove_rect.right()
+        groove_width = groove_end - groove_start
 
-        # Drawing markers on the slider
+        # Calculate handle position based on the current slider value
+        normalized_value = (self.value() - self.minimum()) / (self.maximum() - self.minimum())
+        handle_center_x = groove_start + normalized_value * groove_width
+
+        # Make the handle thinner
+        handle_width = 5  # Fixed width for thin handle
+        handle_height = groove_rect.height()  # Slightly shorter than groove height
+        handle_left_x = handle_center_x - (handle_width // 2)
+        handle_top_y = groove_y - (handle_height // 2)
+
+        # Define the handle rectangle
+        handle_rect = qtc.QRect(
+            handle_left_x, handle_top_y, handle_width, handle_height
+        )
+
+        # Draw the groove
+        painter.setPen(QtGui.QPen(QtGui.QColor("gray"), 3))  # Groove color and thickness
+        painter.drawLine(groove_start, groove_y, groove_end, groove_y)
+
+        # Draw the thin handle
+        painter.setPen(QtGui.QPen(QtGui.QColor("white"), 1))  # Handle border color
+        painter.setBrush(QtGui.QBrush(QtGui.QColor("white")))  # Handle fill color
+        painter.drawRect(handle_rect)
+
+        # Draw markers (if any)
         if self.markers:
-            painter.save()
-
-            # Set the pen for the marker (thin vertical line)
-            marker_pen = QtGui.QPen(QtGui.QColor("#e8483c"), 2)  # Marker color and thickness (thin)
-            painter.setPen(marker_pen)
-
-            # Get the handle's width (the marker will have the same width as the handle)
-            handle_rect = style.subControlRect(QtWidgets.QStyle.ComplexControl.CC_Slider, opt, QtWidgets.QStyle.SubControl.SC_SliderHandle)
-            marker_width = handle_rect.width()  # Width of the marker same as the handle
-
-            # Position the markers to overlap the groove
+            painter.setPen(QtGui.QPen(QtGui.QColor("#e8483c"), 2))  # Marker color and thickness
             for value in sorted(self.markers):
-                x = style.sliderPositionFromValue(slider_min, slider_max, value, span)
-                print(f"Drawing marker at value {value}, x = {x}")
-                
-                # Align marker exactly with the handle's position
-                marker_center = x  # No offset here, marker is exactly at the handle's position
-                
-                # Draw the "handle-like" marker (thin vertical line) at the calculated position
-                painter.drawLine(marker_center, groove_rect.top(), marker_center, groove_rect.bottom())
-
-            painter.restore()
-
-        # Draw the handle manually (it was skipped by not calling super())
-        # Get the rectangle for the handle position
-        handle_rect = style.subControlRect(QtWidgets.QStyle.ComplexControl.CC_Slider, opt, QtWidgets.QStyle.SubControl.SC_SliderHandle)
-        
-        # Modify handle_rect to make it thinner (adjusting the width)
-        handle_rect.setWidth(handle_rect.width() // 3)  # Make the handle thinner by reducing width
-
-        # Set pen and brush for the handle
-        painter.setPen(QtGui.QPen(QtGui.QColor("white"), 1))  # Customize handle color
-        painter.setBrush(QtGui.QBrush(QtGui.QColor("white")))  # Customize handle fill color
-        painter.drawRect(handle_rect)  # Drawing the slider handle as a thin rectangle
-
-        # Draw the thin groove (line-like) under the handle
-        groove_y = (groove_rect.top() + groove_rect.bottom()) // 2  # Midpoint for the groove
-        painter.setPen(QtGui.QPen(QtGui.QColor("gray"), 3))  # Set groove color (light gray)
-        painter.drawLine(opt.rect.left(), groove_y, opt.rect.right(), groove_y)  # Draw the groove line
+                # Calculate marker position
+                marker_normalized_value = (value - self.minimum()) / (self.maximum() - self.minimum())
+                marker_x = groove_start + marker_normalized_value * groove_width
+                painter.drawLine(marker_x, groove_rect.top(), marker_x, groove_rect.bottom())
 
     main_window.videoSeekSlider.addMarker = addMarker.__get__(main_window.videoSeekSlider)
     main_window.videoSeekSlider.removeMarker = removeMarker.__get__(main_window.videoSeekSlider)
     main_window.videoSeekSlider.paintEvent = paintEvent.__get__(main_window.videoSeekSlider)
+
+def add_video_slider_marker(main_window: 'MainWindow'):
+    current_position = int(main_window.videoSeekSlider.value())
+    print("Markers", list(main_window.markers.keys()))
+    print("current_position", current_position)
+    if not main_window.target_faces:
+        create_and_show_messagebox(main_window, 'No Target Face Found', 'You need to have atleast one target face to create a marker', main_window.videoSeekSlider)
+    elif main_window.markers.get(current_position):
+        create_and_show_messagebox(main_window, 'Marker Already Exists!', 'A Marker already exists for this position!', main_window.videoSeekSlider)
+    else:
+        main_window.videoSeekSlider.addMarker(current_position)
+        main_window.markers[current_position] = main_window.parameters.copy()
+        print(f"Marker Added for Frame: {current_position}")
+
+def remove_video_slider_marker(main_window: 'MainWindow'):
+    current_position = int(main_window.videoSeekSlider.value())
+    print("Markers", main_window.markers)
+    print("current_position", current_position)
+    if not main_window.target_faces:
+        create_and_show_messagebox(main_window, 'No Target Face Found', 'You need to have atleast one target face to create a marker', main_window.videoSeekSlider)
+    elif main_window.markers.get(current_position):
+        main_window.videoSeekSlider.removeMarker(current_position)
+        main_window.markers.pop(current_position)
+        print(f"Marker Removed from position: {current_position}")
+    else:
+        create_and_show_messagebox(main_window, 'No Marker Found!', 'No Marker Found for this position!', main_window.videoSeekSlider)
