@@ -117,7 +117,6 @@ def OnChangeSlider(main_window: 'MainWindow', new_position=0):
             widget_actions.update_graphics_view(main_window, pixmap, new_position)
             # restore slider position 
             video_processor.media_capture.set(cv2.CAP_PROP_POS_FRAMES, new_position)
-
     # Do not automatically restart the video, let the user press Play to resume
     print("OnChangeSlider: Video stopped after slider movement.")
 
@@ -136,7 +135,6 @@ def on_slider_released(main_window: 'MainWindow'):
 
     new_position = main_window.videoSeekSlider.value()
     print(f"\nSlider released. New position: {new_position}\n")
-
     # Perform the update to the new frame
     video_processor = main_window.video_processor
     if video_processor.media_capture:
@@ -1195,3 +1193,29 @@ def remove_video_slider_marker(main_window: 'MainWindow'):
         print(f"Marker Removed from position: {current_position}")
     else:
         create_and_show_messagebox(main_window, 'No Marker Found!', 'No Marker Found for this position!', main_window.videoSeekSlider)
+
+def move_slider_to_nearest_marker(main_window: 'MainWindow', direction: str):
+    """
+    Move the slider to the nearest marker in the specified direction.
+
+    :param direction: 'next' to move to the next marker, 'previous' to move to the previous marker.
+    """
+    current_position = int(main_window.videoSeekSlider.value())
+    markers = sorted(main_window.markers.keys())
+    
+    if direction == "next":
+        filtered_markers = [marker for marker in markers if marker > current_position]
+        new_position = filtered_markers[0] if filtered_markers else None
+    elif direction == "previous":
+        filtered_markers = [marker for marker in markers if marker < current_position]
+        new_position = filtered_markers[-1] if filtered_markers else None
+
+    if new_position is not None:
+        main_window.videoSeekSlider.setValue(new_position)
+
+# Wrappers for specific directions
+def move_slider_to_next_nearest_marker(main_window: 'MainWindow'):
+    move_slider_to_nearest_marker(main_window, "next")
+
+def move_slider_to_previous_nearest_marker(main_window: 'MainWindow'):
+    move_slider_to_nearest_marker(main_window, "previous")

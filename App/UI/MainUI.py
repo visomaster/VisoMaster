@@ -97,6 +97,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         widget_actions.set_up_video_seek_slider(self)
         self.addMarkerButton.clicked.connect(partial(widget_actions.add_video_slider_marker, self))
         self.removeMarkerButton.clicked.connect(partial(widget_actions.remove_video_slider_marker, self))
+        self.nextMarkerButton.clicked.connect(partial(widget_actions.move_slider_to_next_nearest_marker, self))
+        self.previousMarkerButton.clicked.connect(partial(widget_actions.move_slider_to_previous_nearest_marker, self))
 
         self.viewFullScreenButton.clicked.connect(partial(widget_actions.view_fullscreen, self))
         # Set up videoSeekLineEdit and add the event filter to handle changes

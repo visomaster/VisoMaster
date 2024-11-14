@@ -286,6 +286,40 @@
             </widget>
            </item>
            <item>
+            <widget class="QPushButton" name="previousMarkerButton">
+             <property name="toolTip">
+              <string>Move to Previous Marker</string>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+             <property name="icon">
+              <iconset resource="media.qrc">
+               <normaloff>:/media/Media/previous_marker_hover.png</normaloff>:/media/Media/previous_marker_hover.png</iconset>
+             </property>
+             <property name="flat">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="nextMarkerButton">
+             <property name="toolTip">
+              <string>Move to Next Marker</string>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+             <property name="icon">
+              <iconset resource="media.qrc">
+               <normaloff>:/media/Media/next_marker_hover.png</normaloff>:/media/Media/next_marker_hover.png</iconset>
+             </property>
+             <property name="flat">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
             <widget class="QPushButton" name="viewFullScreenButton">
              <property name="toolTip">
               <string>View Fullscreen (F11)</string>
