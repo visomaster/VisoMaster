@@ -2,7 +2,8 @@
 from PySide6 import QtCore as qtc
 from PySide6.QtGui import QPixmap, QImage, Qt
 from App.Helpers import Misc_Helpers as misc_helpers
-from App.UI.Widgets import WidgetActions as widget_actions
+from App.UI.Widgets.Actions import CommonActions as common_widget_actions
+from App.UI.Widgets.Actions import FilterActions as filter_actions
 from App.UI.Widgets.SettingsLayoutData import SETTINGS_LAYOUT_DATA
 import os
 import cv2
@@ -41,7 +42,7 @@ class TargetMediaLoaderWorker(qtc.QThread):
                 break
             media_file_path = os.path.join(folder_name, media_file)
             file_type = misc_helpers.get_file_type(media_file_path)
-            pixmap = widget_actions.extract_frame_as_pixmap(media_file_path, file_type)
+            pixmap = common_widget_actions.extract_frame_as_pixmap(media_file_path, file_type)
             if pixmap:
                 # Emit the signal to update GUI
                 self.thumbnail_ready.emit(media_file_path, pixmap, file_type)
@@ -52,7 +53,7 @@ class TargetMediaLoaderWorker(qtc.QThread):
             if not self._running:  # Check if the thread is still running
                 break
             file_type = misc_helpers.get_file_type(media_file_path)
-            pixmap = widget_actions.extract_frame_as_pixmap(media_file_path, file_type)
+            pixmap = common_widget_actions.extract_frame_as_pixmap(media_file_path, file_type)
             if pixmap:
                 # Emit the signal to update GUI
                 self.thumbnail_ready.emit(media_file_path, pixmap, file_type)
@@ -110,7 +111,7 @@ class InputFacesLoaderWorker(qtc.QThread):
                 cropped_img = cropped_img[..., ::-1]  # Swap the channels from RGB to BGR
                 face_img = numpy.ascontiguousarray(cropped_img)
                 # crop = cv2.resize(face[2].cpu().numpy(), (82, 82))
-                pixmap = widget_actions.get_pixmap_from_frame(self.main_window, face_img)
+                pixmap = common_widget_actions.get_pixmap_from_frame(self.main_window, face_img)
 
                 embedding_store: Dict[str, numpy.ndarray] = {}
                 # Ottenere i valori di 'options'
@@ -140,7 +141,7 @@ class FilterWorker(qtc.QThread):
         self.search_text = search_text
         self.filter_list = filter_list
         self.filter_list_widget = self.get_list_widget()
-        self.filtered_results.connect(partial(widget_actions.updateFilteredList, main_window, self.filter_list_widget))
+        self.filtered_results.connect(partial(filter_actions.updateFilteredList, main_window, self.filter_list_widget))
 
     def get_list_widget(self,):
         list_widget = False

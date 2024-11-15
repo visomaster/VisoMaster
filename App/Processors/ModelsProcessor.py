@@ -4,7 +4,6 @@ from PySide6.QtWidgets import QProgressDialog
 import onnxruntime
 from functools import partial
 from threading import Thread
-from App.UI.Widgets import WidgetActions as widget_actions
 from App.UI.Widgets.WidgetComponents import ProgressDialog
 import time
 import threading

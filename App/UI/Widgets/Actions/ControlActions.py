@@ -1,7 +1,7 @@
-import App.UI.Widgets.WidgetActions as widget_actions
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
+import App.UI.Widgets.Actions.CommonActions as common_widget_actions
 import torch
 import qdarkstyle
 from PySide6 import QtWidgets 
@@ -16,12 +16,12 @@ def change_execution_provider(main_window: 'MainWindow', new_provider):
     main_window.video_processor.stop_processing()
     main_window.models_processor.switch_providers_priority(new_provider)
     main_window.models_processor.clear_gpu_memory()
-    widget_actions.update_gpu_memory_progressbar(main_window)
+    common_widget_actions.update_gpu_memory_progressbar(main_window)
 
 def change_threads_number(main_window: 'MainWindow', new_threads_number):
     main_window.video_processor.set_number_of_threads(new_threads_number)
     torch.cuda.empty_cache()
-    widget_actions.update_gpu_memory_progressbar(main_window)
+    common_widget_actions.update_gpu_memory_progressbar(main_window)
 
 
 def change_theme(main_window: 'MainWindow', new_theme):

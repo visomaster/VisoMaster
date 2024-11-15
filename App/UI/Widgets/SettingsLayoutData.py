@@ -1,4 +1,4 @@
-import App.UI.Widgets.ControlActions as control_actions
+import App.UI.Widgets.Actions.ControlActions as control_actions
 SETTINGS_LAYOUT_DATA = {
     'Appearance': {
         'ThemeSelection': {

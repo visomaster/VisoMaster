@@ -1,6 +1,9 @@
 from PySide6 import QtWidgets, QtGui, QtCore
 from PySide6.QtGui import QImage, QPixmap
-import App.UI.Widgets.WidgetActions as widget_actions
+import App.UI.Widgets.Actions.CommonActions as common_widget_actions
+import App.UI.Widgets.Actions.VideoControlActions as video_control_actions
+import App.UI.Widgets.Actions.GraphicsViewActions as graphics_view_actions
+import App.UI.Widgets.Actions.CardActions as card_actions
 import PySide6.QtCore as qtc
 import cv2
 import numpy as np
@@ -83,22 +86,22 @@ class TargetMediaCardButton(CardButton):
                 # restore initial video position after reading. == 0
                 media_capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
 
-            pixmap = widget_actions.get_pixmap_from_frame(main_window, frame)
-            widget_actions.update_graphics_view(main_window, pixmap, 0, reset_fit=True)
+            pixmap = common_widget_actions.get_pixmap_from_frame(main_window, frame)
+            graphics_view_actions.update_graphics_view(main_window, pixmap, 0, reset_fit=True)
 
         # Set up videoSeekLineEdit
-        widget_actions.set_up_video_seek_line_edit(main_window)
+        video_control_actions.set_up_video_seek_line_edit(main_window)
         # Clear current target faces
-        widget_actions.clear_target_faces(main_window, refresh_frame=False)
+        card_actions.clear_target_faces(main_window, refresh_frame=False)
         # Uncheck input faces
-        widget_actions.uncheck_all_input_faces(main_window)
+        card_actions.uncheck_all_input_faces(main_window)
         # Uncheck merged embeddings
-        widget_actions.uncheck_all_merged_embeddings(main_window)
+        card_actions.uncheck_all_merged_embeddings(main_window)
 
         main_window.cur_selected_target_face_button = False
 
         # Reset buttons and slider
-        widget_actions.resetMediaButtons(main_window)
+        video_control_actions.resetMediaButtons(main_window)
         main_window.video_processor.file_type = self.file_type
         main_window.videoSeekSlider.blockSignals(True)  # Block signals to prevent unnecessary updates
         main_window.videoSeekSlider.setMaximum(max_frames_number)
@@ -113,10 +116,10 @@ class TargetMediaCardButton(CardButton):
         main_window.graphicsViewFrame.update()
 
         # Set Parameter widget values to default
-        widget_actions.set_widgets_values_using_face_id_parameters(main_window=main_window, face_id=False)
+        common_widget_actions.set_widgets_values_using_face_id_parameters(main_window=main_window, face_id=False)
         
         main_window.loading_new_media = True
-        widget_actions.refresh_frame(main_window)
+        common_widget_actions.refresh_frame(main_window)
 class TargetFaceCardButton(CardButton):
     def __init__(self, media_path, cropped_face, embedding_store: Dict[str, np.ndarray], *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -153,7 +156,7 @@ class TargetFaceCardButton(CardButton):
 
         # Create parameter dict for the target
         if not self.main_window.parameters.get(self.face_id):
-            widget_actions.create_parameter_dict_for_face_id(self.main_window, self.face_id)
+            common_widget_actions.create_parameter_dict_for_face_id(self.main_window, self.face_id)
 
     def set_embedding(self, embedding_swap_model: str, embedding: np.ndarray):
         self.embedding_store[embedding_swap_model] = embedding
@@ -170,8 +173,8 @@ class TargetFaceCardButton(CardButton):
             if target_face_button!=self:
                 target_face_button.setChecked(False)
 
-        widget_actions.uncheck_all_input_faces(main_window)
-        widget_actions.uncheck_all_merged_embeddings(main_window)
+        card_actions.uncheck_all_input_faces(main_window)
+        card_actions.uncheck_all_merged_embeddings(main_window)
 
         for input_face_button in self.assigned_input_face_buttons.keys():
             input_face_button.setChecked(True)
@@ -180,9 +183,9 @@ class TargetFaceCardButton(CardButton):
         
         main_window.selected_target_face_id = self.face_id
         print('main_window.selected_target_face_id', main_window.selected_target_face_id)     
-        widget_actions.set_widgets_values_using_face_id_parameters(main_window=main_window, face_id=self.face_id)      
+        common_widget_actions.set_widgets_values_using_face_id_parameters(main_window=main_window, face_id=self.face_id)      
 
-        # widget_actions.refresh_frame(main_window)
+        # common_widget_actions.refresh_frame(main_window)
 
     def calculateAssignedInputEmbedding(self):
         control = self.main_window.control.copy()
@@ -250,9 +253,9 @@ class TargetFaceCardButton(CardButton):
             main_window.target_faces[0].click()
         # Otherwise reset parameter widgets value to the default
         else:
-            widget_actions.set_widgets_values_using_face_id_parameters(main_window, face_id=False)
-        widget_actions.remove_face_parameters_from_markers(main_window, self.face_id) #Remove parameters for the face from all markers
-        widget_actions.refresh_frame(self.main_window)
+            common_widget_actions.set_widgets_values_using_face_id_parameters(main_window, face_id=False)
+        video_control_actions.remove_face_parameters_from_markers(main_window, self.face_id) #Remove parameters for the face from all markers
+        common_widget_actions.refresh_frame(self.main_window)
         self.deleteLater()
 
     def copy_parameters(self):
@@ -261,11 +264,11 @@ class TargetFaceCardButton(CardButton):
 
     def paste_and_apply_parameters(self):
         if not self.main_window.copied_parameters:
-            widget_actions.create_and_show_messagebox(self.main_window, 'No parameters found in Clipboard', 'You need to copy parameters from any of the target face before pasting it!', parent_widget=self)
+            common_widget_actions.create_and_show_messagebox(self.main_window, 'No parameters found in Clipboard', 'You need to copy parameters from any of the target face before pasting it!', parent_widget=self)
         else:
             self.main_window.parameters[self.face_id] = self.main_window.copied_parameters.copy()
-            widget_actions.set_widgets_values_using_face_id_parameters(self.main_window, face_id=self.face_id)
-            widget_actions.refresh_frame(main_window=self.main_window)
+            common_widget_actions.set_widgets_values_using_face_id_parameters(self.main_window, face_id=self.face_id)
+            common_widget_actions.refresh_frame(main_window=self.main_window)
 
 class InputFaceCardButton(CardButton):
     def __init__(self, media_path, cropped_face, embedding_store: Dict[str, np.ndarray], *args, **kwargs):
@@ -321,7 +324,7 @@ class InputFaceCardButton(CardButton):
                     if input_face_button!=self:
                         input_face_button.setChecked(False)
 
-        widget_actions.refresh_frame(main_window)
+        common_widget_actions.refresh_frame(main_window)
 
     def create_context_menu(self):
         # create context menu
@@ -344,7 +347,7 @@ class InputFaceCardButton(CardButton):
 
         # Controlla se ci sono facce selezionate
         if len(selected_faces_embeddings_store) == 0:
-            widget_actions.create_and_show_messagebox(
+            common_widget_actions.create_and_show_messagebox(
                 self.main_window, 
                 "No Faces Selected!", 
                 "You need to select at least one face to create a merged embedding!", 
@@ -409,7 +412,7 @@ class EmbeddingCardButton(CardButton):
                     if embed_button!=self:
                         embed_button.setChecked(False)
 
-        widget_actions.refresh_frame(main_window)
+        common_widget_actions.refresh_frame(main_window)
 
     def create_context_menu(self):
         # create context menu
@@ -429,7 +432,7 @@ class EmbeddingCardButton(CardButton):
             if list_item.listWidget().itemWidget(list_item) == self:
                 main_window.inputEmbeddingsList.takeItem(i)   
                 main_window.merged_embeddings.pop(i)
-        widget_actions.refresh_frame(self.main_window)
+        common_widget_actions.refresh_frame(self.main_window)
         self.deleteLater()
 
 class CreateEmbeddingDialog(QtWidgets.QDialog):
@@ -471,7 +474,7 @@ class CreateEmbeddingDialog(QtWidgets.QDialog):
         self.merge_type = self.merge_type_selection.currentText()
 
         if self.embedding_name == '':
-            widget_actions.create_and_show_messagebox(self.main_window, 'Empty Embedding Name!', 'Embedding Name cannot be empty!', self)
+            common_widget_actions.create_and_show_messagebox(self.main_window, 'Empty Embedding Name!', 'Embedding Name cannot be empty!', self)
         else:
             # Estrai tutti gli embedding per ogni embedding_swap_model
             merged_embedding_store = {}
@@ -491,12 +494,36 @@ class CreateEmbeddingDialog(QtWidgets.QDialog):
                     final_embedding_store[swap_model] = np.median(embeddings, axis=0)
 
             # Crea e aggiungi il nuovo embedding_store con tutti i modelli di swap
-            widget_actions.create_and_add_embed_button_to_list(
+            self.create_and_add_embed_button_to_list(
                 main_window=self.main_window, 
                 embedding_name=self.embedding_name, 
                 embedding_store=final_embedding_store  # Passa l'intero embedding_store
             )
             self.accept()
+
+    def create_and_add_embed_button_to_list(self, main_window: 'MainWindow', embedding_name, embedding_store):
+        inputEmbeddingsList = main_window.inputEmbeddingsList
+        # Passa l'intero embedding_store
+        embed_button = EmbeddingCardButton(main_window=main_window, embedding_name=embedding_name, embedding_store=embedding_store)
+
+        button_size = QtCore.QSize(120, 30)  # Imposta una dimensione fissa per i pulsanti
+        embed_button.setFixedSize(button_size)
+        
+        list_item = QtWidgets.QListWidgetItem(inputEmbeddingsList)
+        list_item.setSizeHint(button_size)
+        embed_button.list_item = list_item
+        list_item.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        
+        inputEmbeddingsList.setItemWidget(list_item, embed_button)
+        
+        # Aggiungi padding attorno ai pulsanti
+        grid_size_with_padding = button_size + QtCore.QSize(4, 4)
+        inputEmbeddingsList.setGridSize(grid_size_with_padding)  # Add padding around the buttons
+        inputEmbeddingsList.setWrapping(True)  # Set grid size with padding
+        inputEmbeddingsList.setFlow(QtWidgets.QListView.LeftToRight)  # Set flow direction
+        inputEmbeddingsList.setResizeMode(QtWidgets.QListView.Adjust)  # Adjust layout automatically
+
+        main_window.merged_embeddings.append(embed_button)
 
 # Custom progress dialog
 class ProgressDialog(QtWidgets.QProgressDialog):
@@ -582,7 +609,7 @@ class SelectionBox(QtWidgets.QComboBox, ParametersWidget):
         super().__init__(*args, **kwargs)
         ParametersWidget.__init__(self, *args, **kwargs)
         self.selection_values = kwargs.get('selection_values', [])
-        self.currentTextChanged.connect(partial(widget_actions.show_hide_related_widgets, self.main_window, self, self.widget_name, ))
+        self.currentTextChanged.connect(partial(common_widget_actions.show_hide_related_widgets, self.main_window, self, self.widget_name, ))
 
     def reset_to_default_value(self):
         # Check if selection values are dynamically retrieved
@@ -622,7 +649,7 @@ class ToggleButton(QtWidgets.QPushButton, ParametersWidget):
         self.animation.setDuration(300)  # Animation duration in milliseconds
         self.animation.setEasingCurve(self.animation_curve)
         
-        self.toggled.connect(partial(widget_actions.show_hide_related_widgets, self.main_window, self, self.widget_name, None))
+        self.toggled.connect(partial(common_widget_actions.show_hide_related_widgets, self.main_window, self, self.widget_name, None))
         
     # Property for animation
     @QtCore.Property(int)
@@ -1020,16 +1047,16 @@ class ParameterText(QtWidgets.QLineEdit, ParametersWidget):
         """Reset the line edit to its default value."""
         self.setText(self.default_value)
         if self.data_type == 'parameter':
-            widget_actions.update_parameter(self.main_window, self.widget_name, self.text(), enable_refresh_frame=self.enable_refresh_frame)
+            common_widget_actions.update_parameter(self.main_window, self.widget_name, self.text(), enable_refresh_frame=self.enable_refresh_frame)
         else:
-            widget_actions.update_control(self.main_window, self.widget_name, self.text(), exec_function=self.exec_function, exec_function_args=self.exec_function_args)
+            common_widget_actions.update_control(self.main_window, self.widget_name, self.text(), exec_function=self.exec_function, exec_function_args=self.exec_function_args)
 
     def focusOutEvent(self, event):
         """Handle the focus out event (when the QLineEdit loses focus)."""
         if self.data_type == 'parameter':
-            widget_actions.update_parameter(self.main_window, self.widget_name, self.text(), enable_refresh_frame=self.enable_refresh_frame)
+            common_widget_actions.update_parameter(self.main_window, self.widget_name, self.text(), enable_refresh_frame=self.enable_refresh_frame)
         else:
-            widget_actions.update_control(self.main_window, self.widget_name, self.text(), exec_function=self.exec_function, exec_function_args=self.exec_function_args)
+            common_widget_actions.update_control(self.main_window, self.widget_name, self.text(), exec_function=self.exec_function, exec_function_args=self.exec_function_args)
 
         # Call the base class method to ensure normal behavior
         super().focusOutEvent(event)

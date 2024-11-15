@@ -1,4 +1,3 @@
-import App.UI.Widgets.WidgetActions as widget_actions
 import App.Helpers.Misc_Helpers as misc_helpers
 # Widgets in Face Swap tab are created from this Layout
 SWAPPER_LAYOUT_DATA = {

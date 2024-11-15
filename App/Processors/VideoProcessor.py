@@ -4,7 +4,11 @@ import queue
 from PySide6.QtCore import QObject, QTimer, Signal, Slot
 from PySide6.QtGui import QPixmap
 from App.Processors.Workers.Frame_Worker import FrameWorker
-from App.UI.Widgets import WidgetActions as widget_actions
+import App.UI.Widgets.Actions.GraphicsViewActions as graphics_view_actions
+import App.UI.Widgets.Actions.CommonActions as common_widget_actions
+
+import App.UI.Widgets.Actions.VideoControlActions as video_control_actions
+
 from typing import TYPE_CHECKING, Dict
 import time
 import subprocess
@@ -60,7 +64,7 @@ class VideoProcessor(QObject):
 
         # Timer to update the gpu memory usage progressbar 
         self.gpu_memory_update_timer = QTimer()
-        self.gpu_memory_update_timer.timeout.connect(partial(widget_actions.update_gpu_memory_progressbar, main_window))
+        self.gpu_memory_update_timer.timeout.connect(partial(common_widget_actions.update_gpu_memory_progressbar, main_window))
 
         self.single_frame_processed_signal.connect(self.display_current_frame)
 
@@ -71,15 +75,15 @@ class VideoProcessor(QObject):
     Slot(int, QPixmap, numpy.ndarray)
     def display_current_frame(self, frame_number, pixmap, frame):
         if self.main_window.loading_new_media:
-            widget_actions.update_graphics_view(self.main_window, pixmap, frame_number, reset_fit=True)
+            graphics_view_actions.update_graphics_view(self.main_window, pixmap, frame_number, reset_fit=True)
             self.main_window.loading_new_media = False
 
         else:
-            widget_actions.update_graphics_view(self.main_window, pixmap, frame_number,)
+            graphics_view_actions.update_graphics_view(self.main_window, pixmap, frame_number,)
         self.current_frame = frame
         torch.cuda.empty_cache()
         #Set GPU Memory Progressbar
-        widget_actions.update_gpu_memory_progressbar(self.main_window)
+        common_widget_actions.update_gpu_memory_progressbar(self.main_window)
     def display_next_frame(self):
         if not self.processing or (self.next_frame_to_display > self.max_frame_number):
             self.stop_processing()
@@ -94,8 +98,8 @@ class VideoProcessor(QObject):
                 pil_image.save(self.recording_sp.stdin, 'BMP')
             # Update the widget values using parameters if it is not recording (The updation of actual parameters is already done inside the FrameWorker, this step is to make the changes appear in the widgets)
             if not self.recording:
-                widget_actions.update_widget_values_from_markers(self.main_window, self.next_frame_to_display)
-            widget_actions.update_graphics_view(self.main_window, pixmap, self.next_frame_to_display)
+                video_control_actions.update_widget_values_from_markers(self.main_window, self.next_frame_to_display)
+            graphics_view_actions.update_graphics_view(self.main_window, pixmap, self.next_frame_to_display)
             self.threads.pop(self.next_frame_to_display)
             self.next_frame_to_display += 1
 
@@ -137,7 +141,7 @@ class VideoProcessor(QObject):
                 print("Error: Unable to open the video.")
                 self.processing = False
                 self.frame_read_timer.stop()
-                widget_actions.setPlayButtonIconToPlay(self.main_window)
+                video_control_actions.setPlayButtonIconToPlay(self.main_window)
 
     def process_next_frame(self):
         """Read the next frame and add it to the queue for processing."""
@@ -203,7 +207,7 @@ class VideoProcessor(QObject):
         """Stop video processing and signal completion."""
         if not self.processing:
             print("Processing not active. No action to perform.")
-            widget_actions.resetMediaButtons(self.main_window)
+            video_control_actions.resetMediaButtons(self.main_window)
 
             return False
         
@@ -263,7 +267,7 @@ class VideoProcessor(QObject):
             print("Clearing Cache")
             torch.cuda.empty_cache()
             gc.collect()
-            widget_actions.resetMediaButtons(self.main_window)
+            video_control_actions.resetMediaButtons(self.main_window)
             print("Successfully Stopped Processing")
             return True
         

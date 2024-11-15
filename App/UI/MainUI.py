@@ -4,7 +4,13 @@ import queue
 from App.UI.Core.MainWindow import Ui_MainWindow
 from PySide6 import QtWidgets, QtGui
 from PySide6 import QtCore
-import App.UI.Widgets.WidgetActions as widget_actions
+import App.UI.Widgets.Actions.LayoutActions as layout_actions
+
+import App.UI.Widgets.Actions.VideoControlActions as video_control_actions
+from App.UI.Widgets.Actions import FilterActions as filter_actions
+from App.UI.Widgets.Actions import EmbeddingActions as embedding_actions
+from App.UI.Widgets.Actions import ListViewActions as list_view_actions
+
 from functools import partial
 from App.Processors.VideoProcessor import VideoProcessor
 from App.Processors.ModelsProcessor import ModelsProcessor
@@ -63,7 +69,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # This flag is used to make sure new loaded media is properly fit into the graphics frame on the first load
         self.loading_new_media = False
 
-        self.gpu_memory_update_signal.connect(partial(widget_actions.set_gpu_memory_progressbar_value, self))
+        self.gpu_memory_update_signal.connect(partial(common_widget_actions.set_gpu_memory_progressbar_value, self))
 
     def initialize_widgets(self):
         # Initialize QListWidget for target media
@@ -83,64 +89,64 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         graphics_event_filter = GraphicsViewEventFilter(self, self.graphicsViewFrame,)
         self.graphicsViewFrame.installEventFilter(graphics_event_filter)
 
-        widget_actions.enable_zoom_and_pan(self.graphicsViewFrame)
+        video_control_actions.enable_zoom_and_pan(self.graphicsViewFrame)
 
-        self.buttonSelectTargetVideos.clicked.connect(partial(widget_actions.onClickSelectTargetVideos, self, 'folder'))
-        self.buttonSelectTargetVideoFiles.clicked.connect(partial(widget_actions.onClickSelectTargetVideos, self, 'files'))
-        self.buttonSelectInputFaces.clicked.connect(partial(widget_actions.onClickSelectInputImages, self, 'folder'))
-        self.buttonSelectInputFacesFiles.clicked.connect(partial(widget_actions.onClickSelectInputImages, self, 'files'))
+        self.buttonSelectTargetVideos.clicked.connect(partial(list_view_actions.onClickSelectTargetVideos, self, 'folder'))
+        self.buttonSelectTargetVideoFiles.clicked.connect(partial(list_view_actions.onClickSelectTargetVideos, self, 'files'))
+        self.buttonSelectInputFaces.clicked.connect(partial(list_view_actions.onClickSelectInputImages, self, 'folder'))
+        self.buttonSelectInputFacesFiles.clicked.connect(partial(list_view_actions.onClickSelectInputImages, self, 'files'))
 
         video_slider_event_filter = VideoSeekSliderEventFilter(self, self.videoSeekSlider)
         self.videoSeekSlider.installEventFilter(video_slider_event_filter)
-        self.videoSeekSlider.valueChanged.connect(partial(widget_actions.OnChangeSlider, self))
-        self.videoSeekSlider.sliderPressed.connect(partial(widget_actions.on_slider_pressed, self))
-        self.videoSeekSlider.sliderReleased.connect(partial(widget_actions.on_slider_released, self))
+        self.videoSeekSlider.valueChanged.connect(partial(video_control_actions.OnChangeSlider, self))
+        self.videoSeekSlider.sliderPressed.connect(partial(video_control_actions.on_slider_pressed, self))
+        self.videoSeekSlider.sliderReleased.connect(partial(video_control_actions.on_slider_released, self))
         self.videoSeekSlider.sliderMoved.connect(partial(print, 'Slider Moved ()'))
-        widget_actions.set_up_video_seek_slider(self)
-        self.addMarkerButton.clicked.connect(partial(widget_actions.add_video_slider_marker, self))
-        self.removeMarkerButton.clicked.connect(partial(widget_actions.remove_video_slider_marker, self))
-        self.nextMarkerButton.clicked.connect(partial(widget_actions.move_slider_to_next_nearest_marker, self))
-        self.previousMarkerButton.clicked.connect(partial(widget_actions.move_slider_to_previous_nearest_marker, self))
+        video_control_actions.set_up_video_seek_slider(self)
+        self.addMarkerButton.clicked.connect(partial(video_control_actions.add_video_slider_marker, self))
+        self.removeMarkerButton.clicked.connect(partial(video_control_actions.remove_video_slider_marker, self))
+        self.nextMarkerButton.clicked.connect(partial(video_control_actions.move_slider_to_next_nearest_marker, self))
+        self.previousMarkerButton.clicked.connect(partial(video_control_actions.move_slider_to_previous_nearest_marker, self))
 
-        self.viewFullScreenButton.clicked.connect(partial(widget_actions.view_fullscreen, self))
+        self.viewFullScreenButton.clicked.connect(partial(video_control_actions.view_fullscreen, self))
         # Set up videoSeekLineEdit and add the event filter to handle changes
-        widget_actions.set_up_video_seek_line_edit(self)
+        video_control_actions.set_up_video_seek_line_edit(self)
         video_seek_line_edit_event_filter = videoSeekSliderLineEditEventFilter(self, self.videoSeekLineEdit)
         self.videoSeekLineEdit.installEventFilter(video_seek_line_edit_event_filter)
 
         # Connect the Play/Stop button to the OnClickPlayButton method
-        self.buttonMediaPlay.toggled.connect(partial(widget_actions.OnClickPlayButton, self))
-        self.buttonMediaRecord.toggled.connect(partial(widget_actions.OnClickRecordButton, self))
+        self.buttonMediaPlay.toggled.connect(partial(video_control_actions.OnClickPlayButton, self))
+        self.buttonMediaRecord.toggled.connect(partial(video_control_actions.OnClickRecordButton, self))
         # self.buttonMediaStop.clicked.connect(partial(self.video_processor.stop_processing))
-        self.findTargetFacesButton.clicked.connect(partial(widget_actions.find_target_faces, self))
-        self.clearTargetFacesButton.clicked.connect(partial(widget_actions.clear_target_faces, self))
-        self.targetVideosSearchBox.textChanged.connect(partial(widget_actions.filterTargetVideos, self))
-        self.filterImagesCheckBox.clicked.connect(partial(widget_actions.filterTargetVideos, self))
-        self.filterVideosCheckBox.clicked.connect(partial(widget_actions.filterTargetVideos, self))
-        self.inputFacesSearchBox.textChanged.connect(partial(widget_actions.filterInputFaces, self))
-        self.inputEmbeddingsSearchBox.textChanged.connect(partial(widget_actions.filterMergedEmbeddings, self))
-        self.openEmbeddingButton.clicked.connect(partial(widget_actions.open_embeddings_from_file, self))
-        self.saveEmbeddingButton.clicked.connect(partial(widget_actions.save_embeddings_to_file, self))
-        self.saveEmbeddingAsButton.clicked.connect(partial(widget_actions.save_embeddings_to_file, self, True))
+        self.findTargetFacesButton.clicked.connect(partial(list_view_actions.find_target_faces, self))
+        self.clearTargetFacesButton.clicked.connect(partial(card_actions.clear_target_faces, self))
+        self.targetVideosSearchBox.textChanged.connect(partial(filter_actions.filterTargetVideos, self))
+        self.filterImagesCheckBox.clicked.connect(partial(filter_actions.filterTargetVideos, self))
+        self.filterVideosCheckBox.clicked.connect(partial(filter_actions.filterTargetVideos, self))
+        self.inputFacesSearchBox.textChanged.connect(partial(filter_actions.filterInputFaces, self))
+        self.inputEmbeddingsSearchBox.textChanged.connect(partial(filter_actions.filterMergedEmbeddings, self))
+        self.openEmbeddingButton.clicked.connect(partial(embedding_actions.open_embeddings_from_file, self))
+        self.saveEmbeddingButton.clicked.connect(partial(embedding_actions.save_embeddings_to_file, self))
+        self.saveEmbeddingAsButton.clicked.connect(partial(embedding_actions.save_embeddings_to_file, self, True))
 
-        self.swapfacesButton.clicked.connect(partial(widget_actions.process_swap_faces, self))
-        self.editFacesButton.clicked.connect(partial(widget_actions.process_edit_faces, self))
+        self.swapfacesButton.clicked.connect(partial(video_control_actions.process_swap_faces, self))
+        self.editFacesButton.clicked.connect(partial(video_control_actions.process_edit_faces, self))
 
-        self.saveImageButton.clicked.connect(partial(widget_actions.save_current_frame_to_file, self))
-        self.clearMemoryButton.clicked.connect(partial(widget_actions.clear_gpu_memory, self))
+        self.saveImageButton.clicked.connect(partial(video_control_actions.save_current_frame_to_file, self))
+        self.clearMemoryButton.clicked.connect(partial(common_widget_actions.clear_gpu_memory, self))
 
-        widget_actions.add_widgets_to_tab_layout(self, LAYOUT_DATA=SWAPPER_LAYOUT_DATA, layoutWidget=self.swapWidgetsLayout, data_type='parameter')
-        widget_actions.add_widgets_to_tab_layout(self, LAYOUT_DATA=SETTINGS_LAYOUT_DATA, layoutWidget=self.settingsWidgetsLayout, data_type='control')
-        widget_actions.add_widgets_to_tab_layout(self, LAYOUT_DATA=FACE_EDITOR_LAYOUT_DATA, layoutWidget=self.faceEditorWidgetsLayout, data_type='parameter')
+        layout_actions.add_widgets_to_tab_layout(self, LAYOUT_DATA=SWAPPER_LAYOUT_DATA, layoutWidget=self.swapWidgetsLayout, data_type='parameter')
+        layout_actions.add_widgets_to_tab_layout(self, LAYOUT_DATA=SETTINGS_LAYOUT_DATA, layoutWidget=self.settingsWidgetsLayout, data_type='control')
+        layout_actions.add_widgets_to_tab_layout(self, LAYOUT_DATA=FACE_EDITOR_LAYOUT_DATA, layoutWidget=self.faceEditorWidgetsLayout, data_type='parameter')
 
         # Initialize the button states
-        widget_actions.resetMediaButtons(self)
+        video_control_actions.resetMediaButtons(self)
 
         #Set GPU Memory Progressbar
         font = self.vramProgressBar.font()
         font.setBold(True)
         self.vramProgressBar.setFont(font)
-        widget_actions.update_gpu_memory_progressbar(self)
+        common_widget_actions.update_gpu_memory_progressbar(self)
         # widget_actions.add_groupbox_and_widgets_from_layout_map(self)
     def __init__(self):
         super(MainWindow, self).__init__()
@@ -152,19 +158,19 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         super().resizeEvent(event)
         # Call the method to fit the image to the view whenever the window resizes
         if self.scene.items():
-            widget_actions.fit_image_to_view(self, self.scene.items()[0])
+            graphics_view_actions.fit_image_to_view(self, self.scene.items()[0])
 
     def keyPressEvent(self, event):
         # Toggle full screen when F11 is pressed
         if event.key() == QtCore.Qt.Key_F11:
-            widget_actions.view_fullscreen(self)
+            video_control_actions.view_fullscreen(self)
 
     def closeEvent(self, event):
         print("MainWindow: closeEvent called.")
 
         self.video_processor.stop_processing()
-        widget_actions.clear_stop_loading_input_media(self)
-        widget_actions.clear_stop_loading_target_media(self)
+        list_view_actions.clear_stop_loading_input_media(self)
+        list_view_actions.clear_stop_loading_target_media(self)
 
         # Optionally handle the event if needed
         event.accept()

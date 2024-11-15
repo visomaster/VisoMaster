@@ -2,7 +2,6 @@ from PySide6.QtCore import QRunnable,QTimer, QThread, Signal
 from PySide6.QtGui import QImage, QPixmap, QPainter, QColor
 from PySide6.QtWidgets import QGraphicsPixmapItem
 import cv2
-import App.UI.Widgets.WidgetActions as widget_actions
 import torch
 from torchvision.transforms import v2
 from skimage import transform as trans
@@ -16,6 +15,9 @@ import numpy as np
 from App.Processors.Utils import FaceUtil as faceutil
 import threading
 from App.Processors.Utils.DFMModel import DFMModel
+import App.UI.Widgets.Actions.CommonActions as common_widget_actions
+import App.UI.Widgets.Actions.VideoControlActions as video_control_actions
+
 import traceback
 import time
 from typing import TYPE_CHECKING
@@ -37,7 +39,7 @@ class FrameWorker(threading.Thread):
         try:
             # Update parameters from markers (if exists) without concurrent access from other threads
             with self.main_window.models_processor.model_lock:
-                widget_actions.update_parameters_from_marker(self.main_window, self.frame_number)
+                video_control_actions.update_parameters_from_marker(self.main_window, self.frame_number)
             self.parameters = self.main_window.parameters.copy()
 
             # Process the frame with model inference
@@ -50,7 +52,7 @@ class FrameWorker(threading.Thread):
 
             # Display the frame if processing is still active
 
-            pixmap = widget_actions.get_pixmap_from_frame(self.main_window, self.frame)
+            pixmap = common_widget_actions.get_pixmap_from_frame(self.main_window, self.frame)
 
             if not self.is_single_frame:
                 self.video_processor.frame_processed_signal.emit(self.frame_number, pixmap, self.frame)
