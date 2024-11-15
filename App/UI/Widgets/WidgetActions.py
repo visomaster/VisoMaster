@@ -1195,7 +1195,6 @@ def set_up_video_seek_slider(main_window: 'MainWindow'):
 
 def add_video_slider_marker(main_window: 'MainWindow'):
     current_position = int(main_window.videoSeekSlider.value())
-    print("Markers", list(main_window.markers.keys()))
     print("current_position", current_position)
     if not main_window.target_faces:
         create_and_show_messagebox(main_window, 'No Target Face Found', 'You need to have atleast one target face to create a marker', main_window.videoSeekSlider)
@@ -1209,7 +1208,6 @@ def add_video_slider_marker(main_window: 'MainWindow'):
 
 def remove_video_slider_marker(main_window: 'MainWindow'):
     current_position = int(main_window.videoSeekSlider.value())
-    print("Markers", main_window.markers)
     print("current_position", current_position)
     if main_window.markers.get(current_position):
         main_window.videoSeekSlider.removeMarker(current_position)
