@@ -444,6 +444,7 @@ def find_target_faces(main_window: 'MainWindow'):
         # Select the first target face if no target face is already selected
         if main_window.target_faces and not main_window.selected_target_face_id:
             main_window.target_faces[0].click()
+
     update_gpu_memory_progressbar(main_window)
 
 def clear_target_faces(main_window: 'MainWindow', refresh_frame=True):
@@ -881,8 +882,14 @@ def create_parameter_dict_for_face_id(main_window: 'MainWindow', face_id=0):
 #     main_window.parameters[parameter_name] = parameter_value
 
 def update_parameter(main_window: 'MainWindow', parameter_name, parameter_value, enable_refresh_frame=True):
+    current_position = main_window.videoSeekSlider.value()
+    face_id = main_window.selected_target_face_id
+
+    # Update marker parameters too
+    if main_window.markers.get(current_position) and face_id:
+        main_window.markers[current_position][face_id][parameter_name] = parameter_value
+
     if main_window.target_faces:
-        face_id = main_window.selected_target_face_id
         main_window.parameters[face_id][parameter_name] = parameter_value
 
         if enable_refresh_frame:
