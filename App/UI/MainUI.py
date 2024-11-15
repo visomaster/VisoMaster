@@ -90,6 +90,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.buttonSelectInputFaces.clicked.connect(partial(widget_actions.onClickSelectInputImages, self, 'folder'))
         self.buttonSelectInputFacesFiles.clicked.connect(partial(widget_actions.onClickSelectInputImages, self, 'files'))
 
+        video_slider_event_filter = VideoSeekSliderEventFilter(self, self.videoSeekSlider)
+        self.videoSeekSlider.installEventFilter(video_slider_event_filter)
         self.videoSeekSlider.valueChanged.connect(partial(widget_actions.OnChangeSlider, self))
         self.videoSeekSlider.sliderPressed.connect(partial(widget_actions.on_slider_pressed, self))
         self.videoSeekSlider.sliderReleased.connect(partial(widget_actions.on_slider_released, self))

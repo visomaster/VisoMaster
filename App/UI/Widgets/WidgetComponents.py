@@ -542,6 +542,25 @@ class videoSeekSliderLineEditEventFilter(qtc.QObject):
 
                 return True
         return False
+    
+class VideoSeekSliderEventFilter(qtc.QObject):
+    def __init__(self, main_window: 'MainWindow', parent=None):
+        super().__init__(parent)
+        self.main_window = main_window
+
+    def eventFilter(self, slider, event):
+        if event.type() == qtc.QEvent.KeyPress:
+            if event.key() in {qtc.Qt.Key_Left, qtc.Qt.Key_Right}:
+                # Allow default slider movement
+                result = super().eventFilter(slider, event)
+                
+                # After the slider moves, call the custom processing function
+                qtc.QTimer.singleShot(0, self.main_window.video_processor.process_current_frame)
+                
+                return result  # Return the result of the default handling
+
+        # For other events, use the default behavior
+        return super().eventFilter(slider, event)
 
 
 class ParametersWidget:
