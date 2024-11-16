@@ -1,5 +1,6 @@
 import App.UI.Widgets.Actions.ControlActions as control_actions
-SETTINGS_LAYOUT_DATA = {
+from App.Helpers.Typing_Helpers import LayoutDictTypes
+SETTINGS_LAYOUT_DATA: LayoutDictTypes = {
     'Appearance': {
         'ThemeSelection': {
             'level': 1,

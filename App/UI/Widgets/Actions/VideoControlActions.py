@@ -22,7 +22,7 @@ def set_up_video_seek_slider(main_window: 'MainWindow'):
     main_window.videoSeekSlider.markers = set()  # Store unique tick positions
     main_window.videoSeekSlider.setTickPosition(QtWidgets.QSlider.TickPosition.TicksBelow)  # Default position for tick marks
 
-    def addMarker(self, value=None):
+    def addMarker(self: QtWidgets.QSlider, value=None):
         """Add a tick mark at a specific slider value."""
         if value is None or isinstance(value, bool):  # Default to current slider value
             value = self.value()
@@ -30,7 +30,7 @@ def set_up_video_seek_slider(main_window: 'MainWindow'):
             self.markers.add(value)
             self.update()
 
-    def removeMarker(self, value=None):
+    def removeMarker(self:QtWidgets.QSlider, value=None):
         """Remove a tick mark."""
         if value is None or isinstance(value, bool):  # Default to current slider value
             value = self.value()
@@ -38,7 +38,7 @@ def set_up_video_seek_slider(main_window: 'MainWindow'):
             self.markers.remove(value)
             self.update()
 
-    def paintEvent(self: QtWidgets.QSlider, event):
+    def paintEvent(self: QtWidgets.QSlider, event:QtGui.QPaintEvent):
         # Dont need a seek slider if the current selected file is an image
         if main_window.video_processor.file_type=='image':
             return super(QtWidgets.QSlider, self).paintEvent(event)
@@ -168,7 +168,7 @@ def enable_zoom_and_pan(view: QtWidgets.QGraphicsView):
     view._zoom = 0  # Track zoom level
     view._last_scale_factor = 1.0  # Track the last scale factor (1.0 = no scaling)
 
-    def zoom(self, step=False):
+    def zoom(self:QtWidgets.QGraphicsView, step=False):
         """Zoom in or out by a step."""
         if not step:
             factor = self._last_scale_factor
@@ -179,13 +179,13 @@ def enable_zoom_and_pan(view: QtWidgets.QGraphicsView):
         if factor > 0:
             self.scale(factor, factor)
 
-    def wheelEvent(self, event):
+    def wheelEvent(self:QtWidgets.QGraphicsView, event:QtGui.QWheelEvent):
         """Handle mouse wheel event for zooming."""
         delta = event.angleDelta().y()
         if delta != 0:
             zoom(self, delta // abs(delta))
     
-    def resetZoom(self):
+    def resetZoom(self:QtWidgets.QGraphicsView):
         print("Called resetZoom()")
         """Reset zoom level to fit the view."""
         self._zoom = 0
@@ -214,7 +214,7 @@ def enable_zoom_and_pan(view: QtWidgets.QGraphicsView):
     view.setResizeAnchor(QtWidgets.QGraphicsView.ViewportAnchor.AnchorUnderMouse)
 
 
-def OnClickPlayButton(main_window: 'MainWindow', checked):
+def OnClickPlayButton(main_window: 'MainWindow', checked: bool):
     video_processor = main_window.video_processor
     if checked:
         if video_processor.processing or video_processor.current_frame_number==video_processor.max_frame_number:
@@ -235,7 +235,7 @@ def OnClickPlayButton(main_window: 'MainWindow', checked):
         setRecordButtonIconToPlay(main_window)
 
 
-def OnClickRecordButton(main_window: 'MainWindow', checked):
+def OnClickRecordButton(main_window: 'MainWindow', checked: bool):
     video_processor = main_window.video_processor
     if checked:
         if video_processor.processing or video_processor.current_frame_number==video_processor.max_frame_number:
@@ -320,11 +320,11 @@ def OnChangeSlider(main_window: 'MainWindow', new_position=0):
     # Do not automatically restart the video, let the user press Play to resume
     print("OnChangeSlider: Video stopped after slider movement.")
 
-def update_parameters_from_marker(main_window: 'MainWindow', new_position):
+def update_parameters_from_marker(main_window: 'MainWindow', new_position: int):
     if main_window.markers.get(new_position):
         main_window.parameters = copy.deepcopy(main_window.markers[new_position])
 
-def update_widget_values_from_markers(main_window: 'MainWindow', new_position):
+def update_widget_values_from_markers(main_window: 'MainWindow', new_position: int):
     if main_window.markers.get(new_position):
         if main_window.selected_target_face_id is not None:
             common_widget_actions.set_widgets_values_using_face_id_parameters(main_window, main_window.selected_target_face_id)

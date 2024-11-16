@@ -4,8 +4,9 @@ if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
 import App.UI.Widgets.Actions.CommonActions as common_widget_actions
 from App.UI.Widgets.WidgetComponents import *
+from App.Helpers.Typing_Helpers import LayoutDictTypes
 
-def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layoutWidget: QtWidgets.QVBoxLayout, data_type='parameter'):
+def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: LayoutDictTypes, layoutWidget: QtWidgets.QVBoxLayout, data_type='parameter'):
     layout = QtWidgets.QVBoxLayout()
     scroll_area = QtWidgets.QScrollArea()
     scroll_area.setWidgetResizable(True)
@@ -139,7 +140,7 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: dict, layo
                 widget.debounce_timer.timeout.connect(partial(onchange_slider, widget, widget_name, widget_data))
 
                 # When line edit value changes
-                def onchange_line_edit(slider_widget: ParameterDecimalSlider, slider_widget_name, widget_data, new_value=False):
+                def onchange_line_edit(slider_widget: ParameterDecimalSlider, slider_widget_name: str, widget_data: dict, new_value=False):
                     """Handle changes in the line edit and update the slider accordingly."""
                     if not new_value:
                         new_value = 0.0

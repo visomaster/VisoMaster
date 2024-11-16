@@ -1,4 +1,6 @@
-FACE_EDITOR_LAYOUT_DATA = {
+from App.Helpers.Typing_Helpers import LayoutDictTypes
+
+FACE_EDITOR_LAYOUT_DATA: LayoutDictTypes = {
     '': {
         'FaceEditorCropScaleDecimalSlider': {
             'level': 1,
