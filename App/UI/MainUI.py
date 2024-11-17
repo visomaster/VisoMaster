@@ -40,7 +40,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.input_faces: List[InputFaceCardButton] = [] #Contains button objects of source faces (images)
         self.merged_embeddings: List[EmbeddingCardButton] = []
         self.cur_selected_target_face_button: TargetFaceCardButton = False
-        self.selected_video_buttons: List[TargetMediaCardButton] = [] #Contains list of buttons linked to videos/images
+        self.selected_video_button: TargetMediaCardButton = False
         self.selected_target_face_id = False
         '''
             self.parameters dict have the following structure:
@@ -123,6 +123,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.targetVideosSearchBox.textChanged.connect(partial(filter_actions.filterTargetVideos, self))
         self.filterImagesCheckBox.clicked.connect(partial(filter_actions.filterTargetVideos, self))
         self.filterVideosCheckBox.clicked.connect(partial(filter_actions.filterTargetVideos, self))
+        self.filterWebcamsCheckBox.clicked.connect(partial(filter_actions.filterTargetVideos, self))
+        self.filterWebcamsCheckBox.clicked.connect(partial(list_view_actions.onClickLoadWebcams, self))
+
         self.inputFacesSearchBox.textChanged.connect(partial(filter_actions.filterInputFaces, self))
         self.inputEmbeddingsSearchBox.textChanged.connect(partial(filter_actions.filterMergedEmbeddings, self))
         self.openEmbeddingButton.clicked.connect(partial(embedding_actions.open_embeddings_from_file, self))

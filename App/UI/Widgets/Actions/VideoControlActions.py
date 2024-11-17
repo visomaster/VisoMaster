@@ -237,6 +237,13 @@ def OnClickPlayButton(main_window: 'MainWindow', checked: bool):
 
 def OnClickRecordButton(main_window: 'MainWindow', checked: bool):
     video_processor = main_window.video_processor
+    # Dont record webcam capture
+    if video_processor.file_type == 'webcam':
+        main_window.buttonMediaRecord.blockSignals(True)
+        main_window.buttonMediaRecord.setChecked(not checked)
+        main_window.buttonMediaRecord.blockSignals(False)
+        return
+    
     if checked:
         if video_processor.processing or video_processor.current_frame_number==video_processor.max_frame_number:
             print("OnClickRecordButton: Video already playing. Stopping the current video before starting a new one.")

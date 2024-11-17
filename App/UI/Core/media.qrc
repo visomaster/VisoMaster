@@ -1,6 +1,7 @@
 <RCC>
   <qresource prefix="media">
     <file>Media/image.png</file>
+    <file>Media/webcam.png</file>
     <file>Media/video.png</file>
     <file>Media/fullscreen.png</file>
     <file>Media/open_file.png</file>

@@ -1,5 +1,7 @@
 import App.UI.Widgets.Actions.ControlActions as control_actions
+import cv2
 from App.Helpers.Typing_Helpers import LayoutDictTypes
+import App.UI.Widgets.Actions.ListViewActions as list_view_actions
 SETTINGS_LAYOUT_DATA: LayoutDictTypes = {
     'Appearance': {
         'ThemeSelection': {
@@ -169,7 +171,7 @@ SETTINGS_LAYOUT_DATA: LayoutDictTypes = {
             'level': 1,
             'label': 'Enable Webcam',
             'default': False,
-            'help': 'Enable the use of the webcam as the input source for face swapping.'
+            'help': 'Enable the use of the webcam as the input source for face swapping.',
         },
         'WebcamMaxNoSelection': {
             'level': 2,
@@ -233,4 +235,13 @@ SETTINGS_LAYOUT_DATA: LayoutDictTypes = {
             'help': 'Select the method to merge facial embeddings. "Mean" averages the embeddings, while "Median" selects the middle value, providing more robustness to outliers.'
         }
     }
+}
+
+CAMERA_BACKENDS = {
+    'Default': cv2.CAP_ANY,
+    'DirectShow': cv2.CAP_DSHOW,
+    'MSMF': cv2.CAP_MSMF,
+    'V4L': cv2.CAP_V4L,
+    'V4L2': cv2.CAP_V4L2,
+    'GSTREAMER': cv2.CAP_GSTREAMER,
 }

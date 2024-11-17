@@ -23,10 +23,13 @@ class CardButton(QPushButton):
         self.list_item  = None
 
 class TargetMediaCardButton(CardButton):
-    def __init__(self, media_path: str, file_type: str, *args, **kwargs):
+    def __init__(self, media_path: str, file_type: str, is_webcam=False, webcam_index=-1, webcam_backend=-1, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.file_type = file_type
         self.media_path = media_path
+        self.is_webcam = is_webcam
+        self.webcam_index = webcam_index
+        self.webcam_backend = webcam_backend
         self.setCheckable(True)
         self.setToolTip(media_path)
         self.clicked.connect(self.loadMediaOnClick)
@@ -42,9 +45,9 @@ class TargetMediaCardButton(CardButton):
 
         main_window = self.main_window
         # Deselect the currently selected video
-        if main_window.selected_video_buttons:
-            main_window.selected_video_buttons[0].toggle()  # Deselect the previous video
-            main_window.selected_video_buttons.pop(0)
+        if main_window.selected_video_button:
+            main_window.selected_video_button.toggle()  # Deselect the previous video
+            main_window.selected_video_button = False
         
         # Stop the current video processing
         main_window.video_processor.stop_processing()
@@ -59,7 +62,7 @@ class TargetMediaCardButton(CardButton):
         if main_window.video_processor.media_capture:
             main_window.video_processor.media_capture.release()
 
-        frame = False
+        frame = None
         max_frames_number = 0  # Initialize max_frames_number for either video or image
         
         if self.file_type == 'video':
@@ -78,6 +81,14 @@ class TargetMediaCardButton(CardButton):
         elif self.file_type == 'image':
             frame = cv2.imread(self.media_path)
             max_frames_number = 0  # For an image, there is only one "frame"
+            main_window.video_processor.max_frame_number = max_frames_number
+
+        elif self.file_type == 'webcam':
+            media_capture = cv2.VideoCapture(self.webcam_index, self.webcam_backend)
+            max_frames_number = 999999
+            ret, frame = media_capture.read()
+            main_window.video_processor.media_capture = media_capture
+            main_window.video_processor.fps = media_capture.get(cv2.CAP_PROP_FPS)
             main_window.video_processor.max_frame_number = max_frames_number
 
         if frame is not None:
@@ -110,7 +121,7 @@ class TargetMediaCardButton(CardButton):
         main_window.videoSeekSlider.blockSignals(False)  # Unblock signals
 
         # Append the selected video button to the list
-        main_window.selected_video_buttons.append(self)
+        main_window.selected_video_button = self
 
         # Update the graphics frame after the reset
         main_window.graphicsViewFrame.update()
@@ -120,6 +131,16 @@ class TargetMediaCardButton(CardButton):
         
         main_window.loading_new_media = True
         common_widget_actions.refresh_frame(main_window)
+
+    def remove_target_media_from_list(self):
+        main_window = self.main_window
+        for i in range(main_window.targetVideosList.count()-1, -1, -1):
+            list_item = main_window.targetVideosList.item(i)
+            if list_item:
+                if list_item.listWidget().itemWidget(list_item) == self:
+                    main_window.targetVideosList.takeItem(i)   
+                    main_window.target_videos.pop(i)
+                    # Pop parameters using the target's face_id
 class TargetFaceCardButton(CardButton):
     def __init__(self, media_path, cropped_face, embedding_store: Dict[str, np.ndarray], *args, **kwargs):
         super().__init__(*args, **kwargs)

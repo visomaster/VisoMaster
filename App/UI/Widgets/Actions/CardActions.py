@@ -16,7 +16,6 @@ def clear_target_faces(main_window: 'MainWindow', refresh_frame=True):
     if refresh_frame:
         common_widget_actions.refresh_frame(main_window=main_window)
 
-
     
 def clear_input_faces(main_window: 'MainWindow'):
     main_window.inputFacesList.clear()

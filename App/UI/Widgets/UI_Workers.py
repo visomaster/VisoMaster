@@ -4,25 +4,29 @@ from PySide6.QtGui import QPixmap, QImage, Qt
 from App.Helpers import Misc_Helpers as misc_helpers
 from App.UI.Widgets.Actions import CommonActions as common_widget_actions
 from App.UI.Widgets.Actions import FilterActions as filter_actions
-from App.UI.Widgets.SettingsLayoutData import SETTINGS_LAYOUT_DATA
+from App.UI.Widgets.SettingsLayoutData import SETTINGS_LAYOUT_DATA, CAMERA_BACKENDS
 import os
 import cv2
 import torch
 import numpy
 from functools import partial
 from typing import TYPE_CHECKING, Dict
+import traceback
 if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
 
 class TargetMediaLoaderWorker(qtc.QThread):
     # Define signals to emit when loading is done or if there are updates
-    thumbnail_ready = qtc.Signal(str, QPixmap, str)  # Signal with media path and QPixmap and file_type
+    thumbnail_ready = qtc.Signal(str, QPixmap, str,)  # Signal with media path and QPixmap and file_type
+    webcam_thumbnail_ready = qtc.Signal(str, QPixmap, str, int, int)
     finished = qtc.Signal()  # Signal to indicate completion
 
-    def __init__(self, folder_name=False, files_list=[],  parent=None):
+    def __init__(self, main_window: 'MainWindow', folder_name=False, files_list=[],  webcam_mode=False, parent=None,):
         super().__init__(parent)
+        self.main_window = main_window
         self.folder_name = folder_name
         self.files_list = files_list
+        self.webcam_mode = webcam_mode
         self._running = True  # Flag to control the running state
 
     def run(self):
@@ -30,6 +34,8 @@ class TargetMediaLoaderWorker(qtc.QThread):
             self.load_videos_and_images_from_folder(self.folder_name)
         if self.files_list:
             self.load_videos_and_images_from_files_list(self.files_list)
+        if self.webcam_mode:
+            self.load_webcams()
         self.finished.emit()
 
     def load_videos_and_images_from_folder(self, folder_name):
@@ -45,7 +51,7 @@ class TargetMediaLoaderWorker(qtc.QThread):
             pixmap = common_widget_actions.extract_frame_as_pixmap(media_file_path, file_type)
             if pixmap:
                 # Emit the signal to update GUI
-                self.thumbnail_ready.emit(media_file_path, pixmap, file_type)
+                self.thumbnail_ready.emit(media_file_path, pixmap, file_type,)
 
     def load_videos_and_images_from_files_list(self, files_list):
         media_files = files_list
@@ -53,10 +59,21 @@ class TargetMediaLoaderWorker(qtc.QThread):
             if not self._running:  # Check if the thread is still running
                 break
             file_type = misc_helpers.get_file_type(media_file_path)
-            pixmap = common_widget_actions.extract_frame_as_pixmap(media_file_path, file_type)
+            pixmap = common_widget_actions.extract_frame_as_pixmap(media_file_path, file_type='webcam')
             if pixmap:
                 # Emit the signal to update GUI
-                self.thumbnail_ready.emit(media_file_path, pixmap, file_type)
+                self.thumbnail_ready.emit(media_file_path, pixmap, file_type,)
+
+    def load_webcams(self,):
+        camera_backend = CAMERA_BACKENDS[self.main_window.control['WebcamBackendSelection']]
+        for i in range(int(self.main_window.control['WebcamMaxNoSelection'])):
+            try:
+                pixmap = common_widget_actions.extract_frame_as_pixmap(media_file_path=f'Webcam {i}', file_type='webcam', webcam_index=i, webcam_backend=camera_backend)
+                if pixmap:
+                    # Emit the signal to update GUI
+                    self.webcam_thumbnail_ready.emit(f'Webcam {i}', pixmap, 'webcam', i, camera_backend)
+            except Exception as e:
+                traceback.print_exc()
 
     def stop(self):
         """Stop the thread by setting the running flag to False."""
@@ -169,12 +186,14 @@ class FilterWorker(qtc.QThread):
             include_file_types.append('image')
         if main_window.filterVideosCheckBox.isChecked():
             include_file_types.append('video')
+        if main_window.filterWebcamsCheckBox.isChecked():
+            include_file_types.append('webcam')
 
         visible_indices = []
         for i in range(main_window.targetVideosList.count()):
             item = main_window.target_videos[i]
             if ((not search_text or search_text in item.media_path.lower()) and 
-                (not include_file_types or item.file_type in include_file_types)):
+                (item.file_type in include_file_types)):
                 visible_indices.append(i)
 
         self.filtered_results.emit(visible_indices)

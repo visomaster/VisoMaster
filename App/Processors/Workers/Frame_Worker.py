@@ -54,8 +54,14 @@ class FrameWorker(threading.Thread):
 
             pixmap = common_widget_actions.get_pixmap_from_frame(self.main_window, self.frame)
 
-            if not self.is_single_frame:
+            # Output processed Webcam frame
+            if self.video_processor.file_type=='webcam' and not self.is_single_frame:
+                self.video_processor.webcam_frame_processed_signal.emit(pixmap, self.frame)
+
+            #Output Video frame (while playing)
+            elif not self.is_single_frame:
                 self.video_processor.frame_processed_signal.emit(self.frame_number, pixmap, self.frame)
+            # Output Image/Video frame (Single frame)
             else:
                 print('Emitted single_frame_processed_signal')
                 self.video_processor.single_frame_processed_signal.emit(self.frame_number, pixmap, self.frame)

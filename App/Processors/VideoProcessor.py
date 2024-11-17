@@ -24,6 +24,7 @@ if TYPE_CHECKING:
 
 class VideoProcessor(QObject):
     frame_processed_signal = Signal(int, QPixmap, numpy.ndarray)
+    webcam_frame_processed_signal = Signal(QPixmap, numpy.ndarray)
     single_frame_processed_signal = Signal(int, QPixmap, numpy.ndarray)
     def __init__(self, main_window: 'MainWindow', num_threads=5):
         super().__init__()
@@ -62,6 +63,10 @@ class VideoProcessor(QObject):
         self.frame_display_timer.timeout.connect(self.display_next_frame)
         self.frames_to_display = {}
 
+
+        self.webcam_frame_processed_signal.connect(self.store_webcam_frame_to_display)
+        self.webcam_frames_to_display = queue.Queue()
+
         # Timer to update the gpu memory usage progressbar 
         self.gpu_memory_update_timer = QTimer()
         self.gpu_memory_update_timer.timeout.connect(partial(common_widget_actions.update_gpu_memory_progressbar, main_window))
@@ -70,7 +75,14 @@ class VideoProcessor(QObject):
 
     Slot(int, QPixmap, numpy.ndarray)
     def store_frame_to_display(self, frame_number, pixmap, frame):
+        print("Called store_frame_to_display()")
         self.frames_to_display[frame_number] = (pixmap, frame)
+
+    # Use a queue to store the webcam frames, since the order of frames is not that important (Unless there are too many threads)
+    Slot(QPixmap, numpy.ndarray)
+    def store_webcam_frame_to_display(self, pixmap, frame):
+        print("Called store_webcam_frame_to_display()")
+        self.webcam_frames_to_display.put((pixmap, frame))
 
     Slot(int, QPixmap, numpy.ndarray)
     def display_current_frame(self, frame_number, pixmap, frame):
@@ -103,6 +115,19 @@ class VideoProcessor(QObject):
             self.threads.pop(self.next_frame_to_display)
             self.next_frame_to_display += 1
 
+    def display_next_webcam_frame(self):
+        print("Called display_next_webcam_frame()")
+        if not self.processing:
+            self.stop_processing()
+        if self.webcam_frames_to_display.empty():
+            print("No Webcam frame found to display")
+            return
+        else:
+            pixmap, frame = self.webcam_frames_to_display.get()
+            self.current_frame = frame
+            graphics_view_actions.update_graphics_view(self.main_window, pixmap, 0)
+
+
     def set_number_of_threads(self, value):
         self.stop_processing()
         self.main_window.models_processor.set_number_of_threads(value)
@@ -115,8 +140,14 @@ class VideoProcessor(QObject):
         if self.processing:
             print("Processing already in progress. Ignoring start request.")
             return
+            
+        # Re-initialize the timers
+        self.frame_display_timer = QTimer()
+        self.frame_read_timer = QTimer()
 
         if self.file_type == 'video':
+            self.frame_display_timer.timeout.connect(self.display_next_frame)
+            self.frame_read_timer.timeout.connect(self.process_next_frame)
 
             if self.media_capture and self.media_capture.isOpened():
                 print("Starting video processing.")
@@ -142,6 +173,21 @@ class VideoProcessor(QObject):
                 self.processing = False
                 self.frame_read_timer.stop()
                 video_control_actions.setPlayButtonIconToPlay(self.main_window)
+        # 
+        elif self.file_type == 'webcam':
+            print("Calling process_video() on Webcam stream")
+            self.processing = True
+            self.frames_to_display.clear()
+            self.threads.clear()
+            fps = self.media_capture.get(cv2.CAP_PROP_FPS)
+            interval = 1000 / fps if fps > 0 else 30
+            self.frame_read_timer.timeout.connect(self.process_next_webcam_frame)
+            self.frame_read_timer.start(interval)
+            self.frame_display_timer.timeout.connect(self.display_next_webcam_frame)
+            self.frame_display_timer.start()
+            self.gpu_memory_update_timer.start(5000) #Update GPU memory progressbar every 5 Seconds
+
+
 
     def process_next_frame(self):
         """Read the next frame and add it to the queue for processing."""
@@ -190,8 +236,8 @@ class VideoProcessor(QObject):
             else:
                 print("Cannot read frame!")
 
-        """Process a single image frame directly without queuing."""
-        if self.file_type == 'image':
+        # """Process a single image frame directly without queuing."""
+        elif self.file_type == 'image':
             frame = cv2.imread(self.media_path)
             if frame is not None:
 
@@ -201,7 +247,32 @@ class VideoProcessor(QObject):
                 self.start_frame_worker(self.current_frame_number, frame, is_single_frame=True)
             else:
                 print("Error: Unable to read image file.")
+
+        # Handle webcam capture
+        elif self.file_type == 'webcam':
+            ret, frame = self.media_capture.read()
+            if ret:
+                frame = frame[..., ::-1]  # Convert BGR to RGB
+                print(f"Enqueuing frame {self.current_frame_number}")
+                self.frame_queue.put(self.current_frame_number)
+                self.start_frame_worker(self.current_frame_number, frame, is_single_frame=True)
+            else:
+                print("Unable to read Webcam frame!")
         self.join_and_clear_threads()
+
+    def process_next_webcam_frame(self):
+        print("Called process_next_webcam_frame()")
+
+        if self.frame_queue.qsize() >= self.num_threads:
+            print(f"Queue is full ({self.frame_queue.qsize()} frames). Throttling frame reading.")
+            return
+        if self.file_type == 'webcam' and self.media_capture:
+            ret, frame = self.media_capture.read()
+            if ret:
+                frame = frame[..., ::-1]  # Convert BGR to RGB
+                print(f"Enqueuing frame {self.current_frame_number}")
+                self.frame_queue.put(self.current_frame_number)
+                self.start_frame_worker(self.current_frame_number, frame)
 
     def stop_processing(self):
         """Stop video processing and signal completion."""
@@ -214,7 +285,7 @@ class VideoProcessor(QObject):
         print("Stopping video processing.")
         self.processing = False
         
-        if self.file_type=='video':
+        if self.file_type=='video' or self.file_type=='webcam':
 
             print("Stopping Timers")
             self.frame_read_timer.stop()
@@ -225,6 +296,7 @@ class VideoProcessor(QObject):
             print("Clearing Threads and Queues")
             self.threads.clear()
             self.frames_to_display.clear()
+            self.webcam_frames_to_display.queue.clear()
 
             with self.frame_queue.mutex:
                 self.frame_queue.queue.clear()
@@ -232,7 +304,7 @@ class VideoProcessor(QObject):
             self.current_frame_number = self.main_window.videoSeekSlider.value()
             self.media_capture.set(cv2.CAP_PROP_POS_FRAMES, self.current_frame_number)
 
-            if self.recording:
+            if self.recording and self.file_type=='video':
                 self.recording_sp.stdin.close()
                 self.recording_sp.wait()
 

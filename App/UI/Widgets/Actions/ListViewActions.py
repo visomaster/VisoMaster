@@ -21,6 +21,7 @@ def find_target_faces(main_window: 'MainWindow'):
     control = main_window.control.copy()
     video_processor = main_window.video_processor
     if video_processor.media_path:
+        frame = None
         print(video_processor.media_capture)
         if video_processor.file_type=='image':
             frame = cv2.imread(video_processor.media_path)
@@ -29,53 +30,55 @@ def find_target_faces(main_window: 'MainWindow'):
             media_capture.set(cv2.CAP_PROP_POS_FRAMES, video_processor.current_frame_number)
             ret,frame = media_capture.read()
             media_capture.release()
-        
+        elif video_processor.file_type=='webcam' and video_processor.media_capture:
+            ret, frame = video_processor.media_capture.read()
+        if frame is not None:
         # Frame must be in RGB format
-        frame = frame[..., ::-1]  # Swap the channels from BGR to RGB
+            frame = frame[..., ::-1]  # Swap the channels from BGR to RGB
 
-        # print(frame)
-        img = torch.from_numpy(frame.astype('uint8')).to(main_window.models_processor.device)
-        img = img.permute(2,0,1)
-        if control['ManualRotationEnableToggle']:
-            img = v2.functional.rotate(img, angle=control['ManualRotationAngleSlider'], interpolation=v2.InterpolationMode.BILINEAR, expand=True)
+            # print(frame)
+            img = torch.from_numpy(frame.astype('uint8')).to(main_window.models_processor.device)
+            img = img.permute(2,0,1)
+            if control['ManualRotationEnableToggle']:
+                img = v2.functional.rotate(img, angle=control['ManualRotationAngleSlider'], interpolation=v2.InterpolationMode.BILINEAR, expand=True)
 
-        bboxes, kpss_5, _ = main_window.models_processor.run_detect(img, control['DetectorModelSelection'], max_num=control['MaxFacesToDetectSlider'], score=control['DetectorScoreSlider']/100.0, input_size=(512, 512), use_landmark_detection=control['LandmarkDetectToggle'], landmark_detect_mode=control['LandmarkDetectModelSelection'], landmark_score=control["LandmarkDetectScoreSlider"]/100.0, from_points=control["DetectFromPointsToggle"], rotation_angles=[0] if not control["AutoRotationToggle"] else [0, 90, 180, 270])
+            bboxes, kpss_5, _ = main_window.models_processor.run_detect(img, control['DetectorModelSelection'], max_num=control['MaxFacesToDetectSlider'], score=control['DetectorScoreSlider']/100.0, input_size=(512, 512), use_landmark_detection=control['LandmarkDetectToggle'], landmark_detect_mode=control['LandmarkDetectModelSelection'], landmark_score=control["LandmarkDetectScoreSlider"]/100.0, from_points=control["DetectFromPointsToggle"], rotation_angles=[0] if not control["AutoRotationToggle"] else [0, 90, 180, 270])
 
-        ret = []
-        for face_kps in kpss_5:
-            face_emb, cropped_img = main_window.models_processor.run_recognize_direct(img, face_kps, control['SimilarityTypeSelection'], control['RecognitionModelSelection'])
-            ret.append([face_kps, face_emb, cropped_img, img])
+            ret = []
+            for face_kps in kpss_5:
+                face_emb, cropped_img = main_window.models_processor.run_recognize_direct(img, face_kps, control['SimilarityTypeSelection'], control['RecognitionModelSelection'])
+                ret.append([face_kps, face_emb, cropped_img, img])
 
-        if ret:
-            # Loop through all faces in video frame
-            for face in ret:
-                found = False
-                # Check if this face has already been found
-                for target_face in main_window.target_faces:
-                    parameters = main_window.parameters[target_face.face_id]
-                    threshhold = parameters['SimilarityThresholdSlider']
-                    if main_window.models_processor.findCosineDistance(target_face.get_embedding(control['RecognitionModelSelection']), face[1]) >= threshhold:
-                        found = True
-                        break
-                if not found:
-                    face_img = face[2].cpu().numpy()
-                    face_img = face_img[..., ::-1]  # Swap the channels from RGB to BGR
-                    face_img = numpy.ascontiguousarray(face_img)
-                    # crop = cv2.resize(face[2].cpu().numpy(), (82, 82))
-                    pixmap = common_widget_actions.get_pixmap_from_frame(main_window, face_img)
+            if ret:
+                # Loop through all faces in video frame
+                for face in ret:
+                    found = False
+                    # Check if this face has already been found
+                    for target_face in main_window.target_faces:
+                        parameters = main_window.parameters[target_face.face_id]
+                        threshhold = parameters['SimilarityThresholdSlider']
+                        if main_window.models_processor.findCosineDistance(target_face.get_embedding(control['RecognitionModelSelection']), face[1]) >= threshhold:
+                            found = True
+                            break
+                    if not found:
+                        face_img = face[2].cpu().numpy()
+                        face_img = face_img[..., ::-1]  # Swap the channels from RGB to BGR
+                        face_img = numpy.ascontiguousarray(face_img)
+                        # crop = cv2.resize(face[2].cpu().numpy(), (82, 82))
+                        pixmap = common_widget_actions.get_pixmap_from_frame(main_window, face_img)
 
-                    embedding_store: Dict[str, numpy.ndarray] = {}
-                    # Ottenere i valori di 'options'
-                    options = SETTINGS_LAYOUT_DATA['Face Recognition']['RecognitionModelSelection']['options']
-                    for option in options:
-                        if option != control['RecognitionModelSelection']:
-                            target_emb, _ = main_window.models_processor.run_recognize_direct(face[3], face[0], control['SimilarityTypeSelection'], option)
-                            embedding_store[option] = target_emb
-                        else:
-                            embedding_store[control['RecognitionModelSelection']] = face[1]
+                        embedding_store: Dict[str, numpy.ndarray] = {}
+                        # Ottenere i valori di 'options'
+                        options = SETTINGS_LAYOUT_DATA['Face Recognition']['RecognitionModelSelection']['options']
+                        for option in options:
+                            if option != control['RecognitionModelSelection']:
+                                target_emb, _ = main_window.models_processor.run_recognize_direct(face[3], face[0], control['SimilarityTypeSelection'], option)
+                                embedding_store[option] = target_emb
+                            else:
+                                embedding_store[control['RecognitionModelSelection']] = face[1]
 
-                    add_media_thumbnail_to_target_faces_list(main_window, face_img, embedding_store, pixmap)
-        # Select the first target face if no target face is already selected
+                        add_media_thumbnail_to_target_faces_list(main_window, face_img, embedding_store, pixmap)
+            # Select the first target face if no target face is already selected
         if main_window.target_faces and not main_window.selected_target_face_id:
             main_window.target_faces[0].click()
 
@@ -85,6 +88,11 @@ def find_target_faces(main_window: 'MainWindow'):
 @QtCore.Slot(str, QtGui.QPixmap)
 def add_media_thumbnail_to_target_videos_list(main_window: 'MainWindow', media_path, pixmap, file_type):
     add_media_thumbnail_button(main_window, TargetMediaCardButton, main_window.targetVideosList, main_window.target_videos, pixmap, media_path=media_path, file_type=file_type)
+
+# Functions to add Buttons with thumbnail for selecting videos/images and faces
+@QtCore.Slot(str, QtGui.QPixmap, str, int, int)
+def add_webcam_thumbnail_to_target_videos_list(main_window: 'MainWindow', media_path, pixmap, file_type, webcam_index, webcam_backend):
+    add_media_thumbnail_button(main_window, TargetMediaCardButton, main_window.targetVideosList, main_window.target_videos, pixmap, media_path=media_path, file_type=file_type, webcams=True, webcam_index=webcam_index, webcam_backend=webcam_backend)
 
 @QtCore.Slot()
 def add_media_thumbnail_to_target_faces_list(main_window: 'MainWindow', cropped_face, embedding_store, pixmap):
@@ -98,6 +106,8 @@ def add_media_thumbnail_to_source_faces_list(main_window: 'MainWindow', media_pa
 def add_media_thumbnail_button(main_window: 'MainWindow', buttonClass: CardButton, listWidget:QtWidgets.QListWidget, buttons_list:list, pixmap, **kwargs):
     if buttonClass==TargetMediaCardButton:
         constructor_args = (kwargs.get('media_path'), kwargs.get('file_type'))
+        if kwargs.get('webcams'):
+            constructor_args+=(kwargs.get('webcams'), kwargs.get('webcam_index'), kwargs.get('webcam_backend'))
     elif buttonClass in (TargetFaceCardButton, InputFaceCardButton):
         constructor_args = (kwargs.get('media_path',''), kwargs.get('cropped_face'), kwargs.get('embedding_store'))
     button_size = QtCore.QSize(70, 70)  # Set a fixed size for the buttons
@@ -149,12 +159,25 @@ def onClickSelectTargetVideos(main_window: 'MainWindow', source_type='folder', f
     clear_stop_loading_target_media(main_window)
     card_actions.clear_target_faces(main_window)
     
-    main_window.selected_video_buttons = []
+    main_window.selected_video_button = False
     main_window.target_videos = []
 
-    main_window.video_loader_worker = ui_workers.TargetMediaLoaderWorker(folder_name=folder_name, files_list=files_list)
+    main_window.video_loader_worker = ui_workers.TargetMediaLoaderWorker(main_window=main_window, folder_name=folder_name, files_list=files_list)
     main_window.video_loader_worker.thumbnail_ready.connect(partial(add_media_thumbnail_to_target_videos_list, main_window))
     main_window.video_loader_worker.start()
+
+@QtCore.Slot()
+def onClickLoadWebcams(main_window: 'MainWindow',):
+    if main_window.filterWebcamsCheckBox.isChecked():
+        main_window.video_loader_worker = ui_workers.TargetMediaLoaderWorker(main_window=main_window, webcam_mode=True)
+        main_window.video_loader_worker.webcam_thumbnail_ready.connect(partial(add_webcam_thumbnail_to_target_videos_list, main_window))
+        main_window.video_loader_worker.start()
+    else:
+        for target_video in main_window.target_videos:
+            if target_video.file_type == 'webcam':
+                target_video.remove_target_media_from_list()
+                if target_video == main_window.selected_video_button:
+                    main_window.selected_video_button = False
 
 def clear_stop_loading_input_media(main_window: 'MainWindow'):
     if main_window.input_faces_loader_worker:

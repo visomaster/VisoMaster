@@ -200,7 +200,7 @@ def clear_gpu_memory(main_window: 'MainWindow'):
     main_window.videoSeekSlider.markers = set()
     main_window.videoSeekSlider.update()
 
-def extract_frame_as_pixmap(media_file_path, file_type):
+def extract_frame_as_pixmap(media_file_path, file_type, webcam_index=False, webcam_backend=False):
     frame = False
     if file_type=='image':
         frame = cv2.imread(media_file_path)
@@ -208,6 +208,13 @@ def extract_frame_as_pixmap(media_file_path, file_type):
         cap = cv2.VideoCapture(media_file_path)
         ret, frame = cap.read()
         cap.release()
+    elif file_type=='webcam':
+        camera = cv2.VideoCapture(webcam_index, webcam_backend)
+        if not camera.isOpened():
+            return
+        ret, frame = camera.read()
+        if not ret:
+            return
 
     if isinstance(frame, numpy.ndarray):
         # Convert the frame to QPixmap
