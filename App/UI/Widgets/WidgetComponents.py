@@ -84,7 +84,11 @@ class TargetMediaCardButton(CardButton):
             main_window.video_processor.max_frame_number = max_frames_number
 
         elif self.file_type == 'webcam':
+            res_width, res_height = self.main_window.control['WebcamMaxResSelection'].split('x')
+
             media_capture = cv2.VideoCapture(self.webcam_index, self.webcam_backend)
+            media_capture.set(cv2.CAP_PROP_FRAME_WIDTH, int(res_width))
+            media_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, int(res_height))
             max_frames_number = 999999
             ret, frame = media_capture.read()
             main_window.video_processor.media_capture = media_capture

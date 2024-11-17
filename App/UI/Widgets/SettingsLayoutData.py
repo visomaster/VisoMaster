@@ -185,7 +185,7 @@ SETTINGS_LAYOUT_DATA: LayoutDictTypes = {
         'WebcamBackendSelection': {
             'level': 2,
             'label': 'Webcam Backend',
-            'options': ['Default', 'Directshow', 'MSMF', 'V4L', 'V4L2', 'GSTREAMER'],
+            'options': ['Default', 'DirectShow', 'MSMF', 'V4L', 'V4L2', 'GSTREAMER'],
             'default': 'Default',
             'parentToggle': 'WebcamEnableToggle',
             'requiredToggleValue': True,
