@@ -266,9 +266,14 @@ class ModelsProcessor(QObject):
             gc.collect()
 
     def delete_models_dfm(self):
+        keys_to_remove = []
         for model_name, model_instance in self.dfm_models.items():
             del model_instance
+            keys_to_remove.append(model_name)
+        
+        for model_name in keys_to_remove:
             self.dfm_models.pop(model_name)
+        
         self.clip_session = []
         gc.collect()
 
