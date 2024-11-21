@@ -138,6 +138,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.saveImageButton.clicked.connect(partial(video_control_actions.save_current_frame_to_file, self))
         self.clearMemoryButton.clicked.connect(partial(common_widget_actions.clear_gpu_memory, self))
 
+        self.parametersPanelCheckBox.toggled.connect(partial(layout_actions.show_hide_parameters_panel, self))
+        self.facesPanelCheckBox.toggled.connect(partial(layout_actions.show_hide_faces_panel, self))
+        self.mediaPanelCheckBox.toggled.connect(partial(layout_actions.show_hide_input_target_media_panel, self))
+
         layout_actions.add_widgets_to_tab_layout(self, LAYOUT_DATA=SWAPPER_LAYOUT_DATA, layoutWidget=self.swapWidgetsLayout, data_type='parameter')
         layout_actions.add_widgets_to_tab_layout(self, LAYOUT_DATA=SETTINGS_LAYOUT_DATA, layoutWidget=self.settingsWidgetsLayout, data_type='control')
         layout_actions.add_widgets_to_tab_layout(self, LAYOUT_DATA=FACE_EDITOR_LAYOUT_DATA, layoutWidget=self.faceEditorWidgetsLayout, data_type='parameter')
@@ -158,6 +162,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.initialize_widgets()
 
     def resizeEvent(self, event: QtGui.QResizeEvent):
+        print("Called resizeEvent()")
         super().resizeEvent(event)
         # Call the method to fit the image to the view whenever the window resizes
         if self.scene.items():

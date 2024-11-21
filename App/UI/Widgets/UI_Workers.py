@@ -59,7 +59,7 @@ class TargetMediaLoaderWorker(qtc.QThread):
             if not self._running:  # Check if the thread is still running
                 break
             file_type = misc_helpers.get_file_type(media_file_path)
-            pixmap = common_widget_actions.extract_frame_as_pixmap(media_file_path, file_type='webcam')
+            pixmap = common_widget_actions.extract_frame_as_pixmap(media_file_path, file_type=file_type)
             if pixmap:
                 # Emit the signal to update GUI
                 self.thumbnail_ready.emit(media_file_path, pixmap, file_type,)

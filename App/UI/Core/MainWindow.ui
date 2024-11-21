@@ -25,7 +25,7 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QHBoxLayout" name="horizontalLayout">
     <item>
-     <widget class="QWidget" name="widget" native="true">
+     <widget class="QWidget" name="mediaLayout" native="true">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
         <horstretch>2</horstretch>
@@ -33,6 +33,53 @@
        </sizepolicy>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout">
+       <item>
+        <layout class="QHBoxLayout" name="panelVisibilityCheckBoxLayout">
+         <item>
+          <widget class="QCheckBox" name="parametersPanelCheckBox">
+           <property name="text">
+            <string>Parameters Panel</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="mediaPanelCheckBox">
+           <property name="text">
+            <string>Media Panel</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="facesPanelCheckBox">
+           <property name="text">
+            <string>Faces Panel</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_8">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </item>
        <item>
         <widget class="QGraphicsView" name="graphicsViewFrame"/>
        </item>
@@ -370,7 +417,7 @@
         </spacer>
        </item>
        <item>
-        <widget class="QGroupBox" name="gridGroupBox">
+        <widget class="QGroupBox" name="facesPanelGroupBox">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -399,6 +446,33 @@
           <bool>false</bool>
          </property>
          <layout class="QGridLayout" name="gridLayout_2">
+          <item row="0" column="0">
+           <layout class="QHBoxLayout" name="horizontalLayout_4">
+            <item>
+             <widget class="QPushButton" name="saveImageButton">
+              <property name="text">
+               <string>Save Image</string>
+              </property>
+              <property name="flat">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item row="1" column="2">
+           <widget class="QListWidget" name="inputEmbeddingsList">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="toolTip">
+             <string>Save Embedding</string>
+            </property>
+           </widget>
+          </item>
           <item row="0" column="2">
            <layout class="QHBoxLayout" name="horizontalLayout_3">
             <item>
@@ -461,19 +535,6 @@
             </item>
            </layout>
           </item>
-          <item row="1" column="2">
-           <widget class="QListWidget" name="inputEmbeddingsList">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="toolTip">
-             <string>Save Embedding</string>
-            </property>
-           </widget>
-          </item>
           <item row="1" column="1">
            <widget class="QListWidget" name="targetFacesList">
             <property name="autoFillBackground">
@@ -482,7 +543,7 @@
            </widget>
           </item>
           <item row="1" column="0">
-           <widget class="QWidget" name="widget_2" native="true">
+           <widget class="QWidget" name="facesButtonsWidget" native="true">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
               <horstretch>0</horstretch>
@@ -491,85 +552,74 @@
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_8">
              <item>
-              <widget class="QPushButton" name="findTargetFacesButton">
-               <property name="minimumSize">
-                <size>
-                 <width>100</width>
-                 <height>0</height>
-                </size>
-               </property>
-               <property name="text">
-                <string>Find Faces</string>
-               </property>
-               <property name="checkable">
-                <bool>false</bool>
-               </property>
-               <property name="flat">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="clearTargetFacesButton">
-               <property name="text">
-                <string>Clear Faces</string>
-               </property>
-               <property name="checkable">
-                <bool>false</bool>
-               </property>
-               <property name="flat">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="swapfacesButton">
-               <property name="text">
-                <string>Swap Faces</string>
-               </property>
-               <property name="checkable">
-                <bool>true</bool>
-               </property>
-               <property name="flat">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="editFacesButton">
-               <property name="text">
-                <string>Edit Faces</string>
-               </property>
-               <property name="checkable">
-                <bool>true</bool>
-               </property>
-               <property name="default">
-                <bool>false</bool>
-               </property>
-               <property name="flat">
-                <bool>true</bool>
-               </property>
+              <widget class="QWidget" name="verticalWidget" native="true">
+               <layout class="QVBoxLayout" name="controlButtonsLayout">
+                <item>
+                 <widget class="QPushButton" name="findTargetFacesButton">
+                  <property name="minimumSize">
+                   <size>
+                    <width>100</width>
+                    <height>0</height>
+                   </size>
+                  </property>
+                  <property name="text">
+                   <string>Find Faces</string>
+                  </property>
+                  <property name="checkable">
+                   <bool>false</bool>
+                  </property>
+                  <property name="flat">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="clearTargetFacesButton">
+                  <property name="text">
+                   <string>Clear Faces</string>
+                  </property>
+                  <property name="checkable">
+                   <bool>false</bool>
+                  </property>
+                  <property name="flat">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="swapfacesButton">
+                  <property name="text">
+                   <string>Swap Faces</string>
+                  </property>
+                  <property name="checkable">
+                   <bool>true</bool>
+                  </property>
+                  <property name="flat">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="editFacesButton">
+                  <property name="text">
+                   <string>Edit Faces</string>
+                  </property>
+                  <property name="checkable">
+                   <bool>true</bool>
+                  </property>
+                  <property name="default">
+                   <bool>false</bool>
+                  </property>
+                  <property name="flat">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
               </widget>
              </item>
             </layout>
            </widget>
-          </item>
-          <item row="0" column="1">
-           <layout class="QVBoxLayout" name="verticalLayout_5"/>
-          </item>
-          <item row="0" column="0">
-           <layout class="QHBoxLayout" name="horizontalLayout_4">
-            <item>
-             <widget class="QPushButton" name="saveImageButton">
-              <property name="text">
-               <string>Save Image</string>
-              </property>
-              <property name="flat">
-               <bool>true</bool>
-              </property>
-             </widget>
-            </item>
-           </layout>
           </item>
          </layout>
         </widget>

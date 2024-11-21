@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
 import App.UI.Widgets.Actions.CommonActions as common_widget_actions
+import App.UI.Widgets.Actions.GraphicsViewActions as graphics_view_actions
 from App.UI.Widgets.WidgetComponents import *
 from App.Helpers.Typing_Helpers import LayoutDictTypes
 
@@ -268,3 +269,28 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: LayoutDict
         for widget_name, widget_data in widgets.items():
             widget = main_window.parameter_widgets[widget_name]
             common_widget_actions.show_hide_related_widgets(main_window, widget, widget_name)
+
+import time
+def show_hide_faces_panel(main_window: 'MainWindow', checked):
+    if checked:
+        main_window.facesPanelGroupBox.show()
+    else:
+        main_window.facesPanelGroupBox.hide()
+    if main_window.scene.items():
+        QtCore.QTimer.singleShot(0, partial(graphics_view_actions.fit_image_to_view, main_window, main_window.scene.items()[0]))
+
+def show_hide_input_target_media_panel(main_window: 'MainWindow', checked):
+    if checked:
+        main_window.input_Target_DockWidget.show()
+    else:
+        main_window.input_Target_DockWidget.hide()
+    if main_window.scene.items():
+        QtCore.QTimer.singleShot(0, partial(graphics_view_actions.fit_image_to_view, main_window, main_window.scene.items()[0]))
+
+def show_hide_parameters_panel(main_window: 'MainWindow', checked):
+    if checked:
+        main_window.controlOptionsDockWidget.show()
+    else:
+        main_window.controlOptionsDockWidget.hide()
+    if main_window.scene.items():
+        QtCore.QTimer.singleShot(0, partial(graphics_view_actions.fit_image_to_view, main_window, main_window.scene.items()[0]))
