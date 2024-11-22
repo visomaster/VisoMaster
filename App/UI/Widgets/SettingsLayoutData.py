@@ -36,6 +36,25 @@ SETTINGS_LAYOUT_DATA: LayoutDictTypes = {
             'exec_function_args': [],
         },
     },
+    'Video Settings': {
+        'VideoPlaybackCustomFpsToggle': {
+            'level': 1,
+            'label': 'Set Custom Video Playback FPS',
+            'default': False,
+            'help': 'Manually set the FPS to be used when playing the video',
+            'exec_function': control_actions.set_video_playback_fps,
+            'exec_function_args': [],
+        },
+        'VideoPlaybackCustomFpsSlider': {
+            'level': 2,
+            'label': 'Video Playback FPS',
+            'min_value': '1',
+            'max_value': '120',
+            'default': '30',
+            'step': 1,
+            'help': 'Set the maximum FPS of the video when playing'
+        },
+    },
     'Detectors': {
         'DetectorModelSelection': {
             'level': 1,

@@ -161,11 +161,15 @@ class VideoProcessor(QObject):
 
                 self.play_start_time = float(self.media_capture.get(cv2.CAP_PROP_POS_FRAMES) / float(self.fps))
 
-                fps = self.media_capture.get(cv2.CAP_PROP_FPS)
+                if self.main_window.control['VideoPlaybackCustomFpsToggle']:
+                    fps = self.main_window.control['VideoPlaybackCustomFpsSlider']
+                else:
+                    fps = self.media_capture.get(cv2.CAP_PROP_FPS)
+                
                 interval = 1000 / fps if fps > 0 else 30
                 print(f"Starting frame_read_timer with an interval of {interval} ms.")
                 self.frame_read_timer.start()
-                self.frame_display_timer.start()
+                self.frame_display_timer.start(interval)
                 self.gpu_memory_update_timer.start(5000) #Update GPU memory progressbar every 5 Seconds
 
             else:
