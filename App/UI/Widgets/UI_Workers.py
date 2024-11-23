@@ -71,7 +71,7 @@ class TargetMediaLoaderWorker(qtc.QThread):
         self.main_window.placeholder_update_signal.emit(self.main_window.targetVideosList, False)
 
     def load_webcams(self,):
-        self.main_window.placeholder_update_signal.emit(self.main_window.targetVideosList, False)
+        self.main_window.placeholder_update_signal.emit(self.main_window.targetVideosList, True)
         camera_backend = CAMERA_BACKENDS[self.main_window.control['WebcamBackendSelection']]
         for i in range(int(self.main_window.control['WebcamMaxNoSelection'])):
             try:
@@ -81,7 +81,7 @@ class TargetMediaLoaderWorker(qtc.QThread):
                     self.webcam_thumbnail_ready.emit(f'Webcam {i}', pixmap, 'webcam', i, camera_backend)
             except Exception as e:
                 traceback.print_exc()
-        self.main_window.placeholder_update_signal.emit(self.main_window.targetVideosList, self.main_window.targetVideosList.count() == 0)
+        self.main_window.placeholder_update_signal.emit(self.main_window.targetVideosList, False)
 
     def stop(self):
         """Stop the thread by setting the running flag to False."""
@@ -115,6 +115,8 @@ class InputFacesLoaderWorker(qtc.QThread):
         for image_file_path in image_files:
             if not self._running:  # Check if the thread is still running
                 break
+            if not misc_helpers.is_image_file(image_file_path):
+                return
             if folder_name:
                 image_file_path = os.path.join(folder_name, image_file_path)
             frame = cv2.imread(image_file_path)

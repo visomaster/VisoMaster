@@ -92,11 +92,17 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         list_view_actions.set_up_list_widget_placeholder(self, self.targetVideosList)
         list_view_actions.set_up_list_widget_placeholder(self, self.inputFacesList)
 
-        # Set up drop action on ListWidgets
+        # Set up click to select and drop action on ListWidgets
         self.targetVideosList.setAcceptDrops(True)
-        listWidgetEventFilter = ListWidgetEventFilter(self, print, self.targetVideosList)
+        self.targetVideosList.viewport().setAcceptDrops(False)
+        self.inputFacesList.setAcceptDrops(True)
+        self.inputFacesList.viewport().setAcceptDrops(False)
+        listWidgetEventFilter = ListWidgetEventFilter(self, self)
         self.targetVideosList.installEventFilter(listWidgetEventFilter)
+        self.targetVideosList.viewport().installEventFilter(listWidgetEventFilter)
         self.inputFacesList.installEventFilter(listWidgetEventFilter)
+        self.inputFacesList.viewport().installEventFilter(listWidgetEventFilter)
+
 
         # Initialize graphics frame to view frames
         self.scene = QtWidgets.QGraphicsScene()

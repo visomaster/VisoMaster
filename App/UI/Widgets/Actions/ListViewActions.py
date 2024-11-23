@@ -173,11 +173,13 @@ def onClickLoadWebcams(main_window: 'MainWindow',):
         main_window.video_loader_worker.webcam_thumbnail_ready.connect(partial(add_webcam_thumbnail_to_target_videos_list, main_window))
         main_window.video_loader_worker.start()
     else:
+        main_window.placeholder_update_signal.emit(main_window.targetVideosList, True)
         for target_video in main_window.target_videos:
             if target_video.file_type == 'webcam':
                 target_video.remove_target_media_from_list()
                 if target_video == main_window.selected_video_button:
                     main_window.selected_video_button = False
+        main_window.placeholder_update_signal.emit(main_window.targetVideosList, False)
 
 def clear_stop_loading_input_media(main_window: 'MainWindow'):
     if main_window.input_faces_loader_worker:
@@ -220,7 +222,7 @@ def set_up_list_widget_placeholder(main_window: 'MainWindow', list_widget: QtWid
         "</body></html>"
     )
     # placeholder_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-    placeholder_label.setStyleSheet("color: gray; font-size: 17px; font-weight: bold;")
+    placeholder_label.setStyleSheet("color: gray; font-size: 15px; font-weight: bold;")
     
     # Center the label inside the QListWidget
     # placeholder_label.setGeometry(list_widget.rect())  # Match QListWidget's size

@@ -55,7 +55,7 @@ class VideoSeekSliderEventFilter(qtc.QObject):
         self.main_window = main_window
 
     def eventFilter(self, slider, event):
-        if event.type() == qtc.QEvent.KeyPress:
+        if event.type() == qtc.QEvent.Type.KeyPress:
             if event.key() in {qtc.Qt.Key_Left, qtc.Qt.Key_Right}:
                 # Allow default slider movement
                 result = super().eventFilter(slider, event)
@@ -69,14 +69,19 @@ class VideoSeekSliderEventFilter(qtc.QObject):
         return super().eventFilter(slider, event)
     
 class ListWidgetEventFilter(qtc.QObject):
-    def __init__(self, main_window: 'MainWindow', list_type: Callable, parent=None):
+    def __init__(self, main_window: 'MainWindow', parent=None):
         super().__init__(parent)
         self.main_window = main_window
 
-    def eventFilter(self, list_widget: QtWidgets.QListWidget, event: QtCore.QEvent|QtGui.QDropEvent):
+    def eventFilter(self, list_widget: QtWidgets.QListWidget, event: QtCore.QEvent|QtGui.QDropEvent|QtGui.QMouseEvent):
+        
+        if list_widget == self.main_window.targetVideosList or list_widget == self.main_window.targetVideosList.viewport():
 
-        if list_widget == self.main_window.targetVideosList:
-            if event.type() == QtCore.QEvent.Type.DragEnter:
+            if event.type() == qtc.QEvent.Type.MouseButtonPress:
+                if event.button() == qtc.Qt.MouseButton.LeftButton and not self.main_window.target_videos:
+                    self.main_window.actionOpen_Video_Files.trigger()
+
+            elif event.type() == QtCore.QEvent.Type.DragEnter:
                 # Accept drag events with URLs
                 if event.mimeData().hasUrls():
 
@@ -105,8 +110,13 @@ class ListWidgetEventFilter(qtc.QObject):
                     return True
 
 
-        elif list_widget == self.main_window.inputFacesList:
-            if event.type() == QtCore.QEvent.Type.DragEnter:
+        elif list_widget == self.main_window.inputFacesList or list_widget == self.main_window.inputFacesList.viewport():
+
+            if event.type() == qtc.QEvent.Type.MouseButtonPress:
+                if event.button() == qtc.Qt.MouseButton.LeftButton and not self.main_window.input_faces:
+                    self.main_window.actionLoad_Source_Image_Files.trigger()
+
+            elif event.type() == QtCore.QEvent.Type.DragEnter:
                 # Accept drag events with URLs
                 if event.mimeData().hasUrls():
 
