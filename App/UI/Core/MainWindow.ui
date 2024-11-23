@@ -901,6 +901,7 @@
     <property name="title">
      <string>Edit</string>
     </property>
+    <addaction name="actionTest"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
@@ -955,6 +956,11 @@
   <action name="actionView_Fullscreen_F11">
    <property name="text">
     <string>View Fullscreen (F11)</string>
+   </property>
+  </action>
+  <action name="actionTest">
+   <property name="text">
+    <string>Test</string>
    </property>
   </action>
  </widget>

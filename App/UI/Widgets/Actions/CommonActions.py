@@ -241,7 +241,16 @@ def set_widgets_values_using_face_id_parameters(main_window: 'MainWindow', face_
         parameter_widgets[parameter_name].enable_refresh_frame = True
 
 @qtc.Slot(QtWidgets.QListWidget, bool)
-def update_placeholder_visibility(main_window: 'MainWindow', list_widget:QtWidgets.QListWidget, is_visible=None):
+def update_placeholder_visibility(main_window: 'MainWindow', list_widget:QtWidgets.QListWidget, default_hide):
     """Update the visibility of the placeholder text."""
+    """
+        The default_hide parameter is used to Hide the placeholder text by default. 
+        If the default_hide is False, then the visibility of the placeholder text is set using the size of the list_widget 
+    """
+    if default_hide:
+        is_visible = False
+    else:
+        is_visible = list_widget.count()==0
     list_widget.placeholder_label.setVisible(is_visible)
-    print("SetVisible",list_widget.count() == 0)
+    print("SetVisible", is_visible)
+    print("targetVideosList.count()", list_widget.count())

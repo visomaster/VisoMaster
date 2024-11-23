@@ -40,7 +40,7 @@ class TargetMediaLoaderWorker(qtc.QThread):
 
     def load_videos_and_images_from_folder(self, folder_name):
         # Initially hide the placeholder text
-        self.main_window.placeholder_update_signal.emit(self.main_window.targetVideosList, False)
+        self.main_window.placeholder_update_signal.emit(self.main_window.targetVideosList, True)
         video_files = misc_helpers.get_video_files(folder_name)
         image_files = misc_helpers.get_image_files(folder_name)
 
@@ -55,10 +55,10 @@ class TargetMediaLoaderWorker(qtc.QThread):
                 # Emit the signal to update GUI
                 self.thumbnail_ready.emit(media_file_path, pixmap, file_type,)
         # Show/Hide the placeholder text based on the number of items in ListWidget
-        self.main_window.placeholder_update_signal.emit(self.main_window.targetVideosList, self.main_window.targetVideosList.count() == 0)
+        self.main_window.placeholder_update_signal.emit(self.main_window.targetVideosList, False)
 
     def load_videos_and_images_from_files_list(self, files_list):
-        self.main_window.placeholder_update_signal.emit(self.main_window.targetVideosList, False)
+        self.main_window.placeholder_update_signal.emit(self.main_window.targetVideosList, True)
         media_files = files_list
         for media_file_path in media_files:
             if not self._running:  # Check if the thread is still running
@@ -68,7 +68,7 @@ class TargetMediaLoaderWorker(qtc.QThread):
             if pixmap:
                 # Emit the signal to update GUI
                 self.thumbnail_ready.emit(media_file_path, pixmap, file_type,)
-        self.main_window.placeholder_update_signal.emit(self.main_window.targetVideosList, self.main_window.targetVideosList.count() == 0)
+        self.main_window.placeholder_update_signal.emit(self.main_window.targetVideosList, False)
 
     def load_webcams(self,):
         self.main_window.placeholder_update_signal.emit(self.main_window.targetVideosList, False)
@@ -101,9 +101,9 @@ class InputFacesLoaderWorker(qtc.QThread):
 
     def run(self):
         if self.folder_name or self.files_list:
-            self.main_window.placeholder_update_signal.emit(self.main_window.inputFacesList, False)
+            self.main_window.placeholder_update_signal.emit(self.main_window.inputFacesList, True)
             self.load_faces(self.folder_name, self.files_list)
-            self.main_window.placeholder_update_signal.emit(self.main_window.inputFacesList, self.main_window.inputFacesList.count() == 0)
+            self.main_window.placeholder_update_signal.emit(self.main_window.inputFacesList, False)
 
     def load_faces(self, folder_name=False, files_list=[]):
         control = self.main_window.control.copy()
