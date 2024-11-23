@@ -208,3 +208,30 @@ def onClickSelectInputImages(main_window: 'MainWindow', source_type='folder', fo
     main_window.input_faces_loader_worker = ui_workers.InputFacesLoaderWorker(main_window=main_window, folder_name=folder_name, files_list=files_list)
     main_window.input_faces_loader_worker.thumbnail_ready.connect(partial(add_media_thumbnail_to_source_faces_list, main_window))
     main_window.input_faces_loader_worker.start()
+
+def set_up_list_widget_placeholder(main_window: 'MainWindow', list_widget: QtWidgets.QListWidget):
+    # Placeholder label
+    placeholder_label = QtWidgets.QLabel(list_widget)
+    placeholder_label.setText(
+        "<html><body style='text-align:center;'>"
+        "<p>Drop Files</p>"
+        "<p><b>or</b></p>"
+        "<p>Click here to Select files</p>"
+        "</body></html>"
+    )
+    # placeholder_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+    placeholder_label.setStyleSheet("color: gray; font-size: 17px; font-weight: bold;")
+    
+    # Center the label inside the QListWidget
+    # placeholder_label.setGeometry(list_widget.rect())  # Match QListWidget's size
+    placeholder_label.setAttribute(QtCore.Qt.WidgetAttribute.WA_TransparentForMouseEvents)  # Allow interactions to pass through
+    placeholder_label.setVisible(not list_widget.count())  # Show if the list is empty
+
+    # Use a QVBoxLayout to center the placeholder label
+    layout = QtWidgets.QVBoxLayout(list_widget)
+    layout.addWidget(placeholder_label)
+    layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)  # Center the label vertically and horizontally
+    layout.setContentsMargins(0, 0, 0, 0)  # Remove margins to ensure full coverage
+
+    # Keep a reference for toggling visibility later
+    list_widget.placeholder_label = placeholder_label

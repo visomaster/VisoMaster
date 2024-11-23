@@ -239,3 +239,9 @@ def set_widgets_values_using_face_id_parameters(main_window: 'MainWindow', face_
         parameter_widgets[parameter_name].enable_refresh_frame = False
         parameter_widgets[parameter_name].set_value(parameter_value)
         parameter_widgets[parameter_name].enable_refresh_frame = True
+
+@qtc.Slot(QtWidgets.QListWidget, bool)
+def update_placeholder_visibility(main_window: 'MainWindow', list_widget:QtWidgets.QListWidget, is_visible=None):
+    """Update the visibility of the placeholder text."""
+    list_widget.placeholder_label.setVisible(is_visible)
+    print("SetVisible",list_widget.count() == 0)

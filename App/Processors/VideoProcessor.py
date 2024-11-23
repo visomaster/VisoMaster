@@ -168,8 +168,12 @@ class VideoProcessor(QObject):
                 
                 interval = 1000 / fps if fps > 0 else 30
                 print(f"Starting frame_read_timer with an interval of {interval} ms.")
-                self.frame_read_timer.start()
-                self.frame_display_timer.start(interval)
+                if self.recording:
+                    self.frame_read_timer.start()
+                    self.frame_display_timer.start()
+                else:
+                    self.frame_read_timer.start()
+                    self.frame_display_timer.start(interval)
                 self.gpu_memory_update_timer.start(5000) #Update GPU memory progressbar every 5 Seconds
 
             else:

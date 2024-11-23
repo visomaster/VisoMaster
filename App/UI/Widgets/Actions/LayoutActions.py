@@ -4,6 +4,10 @@ if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
 import App.UI.Widgets.Actions.CommonActions as common_widget_actions
 import App.UI.Widgets.Actions.GraphicsViewActions as graphics_view_actions
+import App.UI.Widgets.Actions.ListViewActions as list_view_actions
+import App.UI.Widgets.Actions.EmbeddingActions as embedding_actions
+import App.UI.Widgets.Actions.VideoControlActions as video_control_actions
+
 from App.UI.Widgets.WidgetComponents import *
 from App.Helpers.Typing_Helpers import LayoutDictTypes
 
@@ -294,3 +298,14 @@ def show_hide_parameters_panel(main_window: 'MainWindow', checked):
         main_window.controlOptionsDockWidget.hide()
     if main_window.scene.items():
         QtCore.QTimer.singleShot(0, partial(graphics_view_actions.fit_image_to_view, main_window, main_window.scene.items()[0]))
+
+
+def set_up_menu_actions(main_window: 'MainWindow'):
+    main_window.actionOpen_Videos_Folder.triggered.connect(partial(list_view_actions.onClickSelectTargetVideos, main_window, 'folder'))
+    main_window.actionOpen_Video_Files.triggered.connect(partial(list_view_actions.onClickSelectTargetVideos, main_window, 'files'))
+    main_window.actionLoad_Source_Image_Files.triggered.connect(partial(list_view_actions.onClickSelectInputImages, main_window, 'files'))
+    main_window.actionLoad_Source_Images_Folder.triggered.connect(partial(list_view_actions.onClickSelectInputImages, main_window, 'folder'))
+    main_window.actionLoad_Embeddings.triggered.connect(partial(embedding_actions.open_embeddings_from_file, main_window))
+    main_window.actionSave_Embeddings.triggered.connect(partial(embedding_actions.save_embeddings_to_file, main_window))
+    main_window.actionSave_Embeddings_As.triggered.connect(partial(embedding_actions.save_embeddings_to_file, main_window))
+    main_window.actionView_Fullscreen_F11.triggered.connect(partial(video_control_actions.view_fullscreen, main_window))

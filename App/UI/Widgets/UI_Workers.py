@@ -39,6 +39,8 @@ class TargetMediaLoaderWorker(qtc.QThread):
         self.finished.emit()
 
     def load_videos_and_images_from_folder(self, folder_name):
+        # Initially hide the placeholder text
+        self.main_window.placeholder_update_signal.emit(self.main_window.targetVideosList, False)
         video_files = misc_helpers.get_video_files(folder_name)
         image_files = misc_helpers.get_image_files(folder_name)
 
@@ -52,8 +54,11 @@ class TargetMediaLoaderWorker(qtc.QThread):
             if pixmap:
                 # Emit the signal to update GUI
                 self.thumbnail_ready.emit(media_file_path, pixmap, file_type,)
+        # Show/Hide the placeholder text based on the number of items in ListWidget
+        self.main_window.placeholder_update_signal.emit(self.main_window.targetVideosList, self.main_window.targetVideosList.count() == 0)
 
     def load_videos_and_images_from_files_list(self, files_list):
+        self.main_window.placeholder_update_signal.emit(self.main_window.targetVideosList, False)
         media_files = files_list
         for media_file_path in media_files:
             if not self._running:  # Check if the thread is still running
@@ -63,8 +68,10 @@ class TargetMediaLoaderWorker(qtc.QThread):
             if pixmap:
                 # Emit the signal to update GUI
                 self.thumbnail_ready.emit(media_file_path, pixmap, file_type,)
+        self.main_window.placeholder_update_signal.emit(self.main_window.targetVideosList, self.main_window.targetVideosList.count() == 0)
 
     def load_webcams(self,):
+        self.main_window.placeholder_update_signal.emit(self.main_window.targetVideosList, False)
         camera_backend = CAMERA_BACKENDS[self.main_window.control['WebcamBackendSelection']]
         for i in range(int(self.main_window.control['WebcamMaxNoSelection'])):
             try:
@@ -74,6 +81,7 @@ class TargetMediaLoaderWorker(qtc.QThread):
                     self.webcam_thumbnail_ready.emit(f'Webcam {i}', pixmap, 'webcam', i, camera_backend)
             except Exception as e:
                 traceback.print_exc()
+        self.main_window.placeholder_update_signal.emit(self.main_window.targetVideosList, self.main_window.targetVideosList.count() == 0)
 
     def stop(self):
         """Stop the thread by setting the running flag to False."""
@@ -93,7 +101,9 @@ class InputFacesLoaderWorker(qtc.QThread):
 
     def run(self):
         if self.folder_name or self.files_list:
+            self.main_window.placeholder_update_signal.emit(self.main_window.inputFacesList, False)
             self.load_faces(self.folder_name, self.files_list)
+            self.main_window.placeholder_update_signal.emit(self.main_window.inputFacesList, self.main_window.inputFacesList.count() == 0)
 
     def load_faces(self, folder_name=False, files_list=[]):
         control = self.main_window.control.copy()

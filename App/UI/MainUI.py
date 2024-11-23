@@ -26,6 +26,7 @@ from App.Helpers.Misc_Helpers import DFM_MODELS_DATA
 ParametersWidgetTypes = Dict[str, ToggleButton|SelectionBox|ParameterDecimalSlider|ParameterSlider|ParameterText]
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
+    placeholder_update_signal = qtc.Signal(QtWidgets.QListWidget, bool)
     gpu_memory_update_signal = qtc.Signal(int, int)
     def initialize_variables(self):
         self.video_loader_worker: TargetMediaLoaderWorker|bool = False
@@ -70,6 +71,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.loading_new_media = False
 
         self.gpu_memory_update_signal.connect(partial(common_widget_actions.set_gpu_memory_progressbar_value, self))
+        self.placeholder_update_signal.connect(partial(common_widget_actions.update_placeholder_visibility, self))
 
     def initialize_widgets(self):
         # Initialize QListWidget for target media
@@ -82,6 +84,14 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.inputFacesList.setWrapping(True)
         self.inputFacesList.setResizeMode(QtWidgets.QListWidget.Adjust)
 
+        # Set up Menu Actions
+        layout_actions.set_up_menu_actions(self)
+
+        # Set up placeholder texts in ListWidgets (Target Videos and Input Faces)
+        list_view_actions.set_up_list_widget_placeholder(self, self.targetVideosList)
+        list_view_actions.set_up_list_widget_placeholder(self, self.inputFacesList)
+
+
         # Initialize graphics frame to view frames
         self.scene = QtWidgets.QGraphicsScene()
         self.graphicsViewFrame.setScene(self.scene)
@@ -90,11 +100,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.graphicsViewFrame.installEventFilter(graphics_event_filter)
 
         video_control_actions.enable_zoom_and_pan(self.graphicsViewFrame)
-
-        self.buttonSelectTargetVideos.clicked.connect(partial(list_view_actions.onClickSelectTargetVideos, self, 'folder'))
-        self.buttonSelectTargetVideoFiles.clicked.connect(partial(list_view_actions.onClickSelectTargetVideos, self, 'files'))
-        self.buttonSelectInputFaces.clicked.connect(partial(list_view_actions.onClickSelectInputImages, self, 'folder'))
-        self.buttonSelectInputFacesFiles.clicked.connect(partial(list_view_actions.onClickSelectInputImages, self, 'files'))
 
         video_slider_event_filter = VideoSeekSliderEventFilter(self, self.videoSeekSlider)
         self.videoSeekSlider.installEventFilter(video_slider_event_filter)
