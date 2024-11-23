@@ -12,7 +12,7 @@ from PySide6.QtWidgets import QPushButton
 from functools import partial
 import uuid
 
-from typing import TYPE_CHECKING, Dict, List
+from typing import TYPE_CHECKING, Dict, List, Callable
 if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
 
@@ -553,66 +553,6 @@ class CreateEmbeddingDialog(QtWidgets.QDialog):
 # Custom progress dialog
 class ProgressDialog(QtWidgets.QProgressDialog):
     pass
-
-
-class GraphicsViewEventFilter(qtc.QObject):
-    def __init__(self, main_window: 'MainWindow', parent=None):
-        super().__init__(parent)
-        self.main_window = main_window
-
-    def eventFilter(self, graphics_object: QtWidgets.QGraphicsView, event):
-        if event.type() == qtc.QEvent.Type.MouseButtonPress:
-            if event.button() == qtc.Qt.MouseButton.LeftButton:
-                self.main_window.buttonMediaPlay.click()
-                # You can emit a signal or call another function here
-                return True  # Mark the event as handled
-        return False  # Pass the event to the original handler
-    
-class videoSeekSliderLineEditEventFilter(qtc.QObject):
-    def __init__(self, main_window: 'MainWindow', parent=None):
-        super().__init__(parent)
-        self.main_window = main_window
-    
-    def eventFilter(self, line_edit: QtWidgets.QLineEdit, event):
-        if event.type() == qtc.QEvent.KeyPress:
-            # Check if the pressed key is Enter/Return
-            if event.key() in (qtc.Qt.Key_Enter, qtc.Qt.Key_Return):            
-                new_value = line_edit.text()
-                # Reset the line edit value to the slider value if the user input an empty text
-                if new_value=='':
-                    new_value = str(self.main_window.videoSeekSlider.value())
-                else:
-                    new_value = int(new_value)
-                    max_frame_number = self.main_window.video_processor.max_frame_number
-                    # If the value entered by user if greater than the max no of frames in the video, set the new value to the max_frame_number
-                    if new_value > max_frame_number:
-                        new_value = max_frame_number
-                # Update values of line edit and slider
-                line_edit.setText(str(new_value))
-                self.main_window.videoSeekSlider.setValue(new_value)
-                self.main_window.video_processor.process_current_frame()  # Process the current frame
-
-                return True
-        return False
-    
-class VideoSeekSliderEventFilter(qtc.QObject):
-    def __init__(self, main_window: 'MainWindow', parent=None):
-        super().__init__(parent)
-        self.main_window = main_window
-
-    def eventFilter(self, slider, event):
-        if event.type() == qtc.QEvent.KeyPress:
-            if event.key() in {qtc.Qt.Key_Left, qtc.Qt.Key_Right}:
-                # Allow default slider movement
-                result = super().eventFilter(slider, event)
-                
-                # After the slider moves, call the custom processing function
-                qtc.QTimer.singleShot(0, self.main_window.video_processor.process_current_frame)
-                
-                return result  # Return the result of the default handling
-
-        # For other events, use the default behavior
-        return super().eventFilter(slider, event)
 
 
 class ParametersWidget:

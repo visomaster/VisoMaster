@@ -15,6 +15,7 @@ from functools import partial
 from App.Processors.VideoProcessor import VideoProcessor
 from App.Processors.ModelsProcessor import ModelsProcessor
 from App.UI.Widgets.WidgetComponents import *
+from App.UI.Widgets.EventFilters import GraphicsViewEventFilter, VideoSeekSliderEventFilter, videoSeekSliderLineEditEventFilter, ListWidgetEventFilter
 from App.UI.Widgets.UI_Workers import *
 from App.UI.Widgets.SwapperLayoutData import SWAPPER_LAYOUT_DATA
 from App.UI.Widgets.SettingsLayoutData import SETTINGS_LAYOUT_DATA
@@ -91,6 +92,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         list_view_actions.set_up_list_widget_placeholder(self, self.targetVideosList)
         list_view_actions.set_up_list_widget_placeholder(self, self.inputFacesList)
 
+        # Set up drop action on ListWidgets
+        self.targetVideosList.setAcceptDrops(True)
+        listWidgetEventFilter = ListWidgetEventFilter(self, print, self.targetVideosList)
+        self.targetVideosList.installEventFilter(listWidgetEventFilter)
+        self.inputFacesList.installEventFilter(listWidgetEventFilter)
 
         # Initialize graphics frame to view frames
         self.scene = QtWidgets.QGraphicsScene()
