@@ -13,7 +13,7 @@ import App.UI.Widgets.Actions.CardActions as card_actions
 
 from App.UI.Widgets.WidgetComponents import TargetFaceCardButton, InputFaceCardButton, EmbeddingCardButton, TargetMediaCardButton, CardButton
 
-import App.Helpers.Misc_Helpers as misc_helpers
+import App.Helpers.Miscellaneous as misc_helpers
 import App.UI.Widgets.UI_Workers as ui_workers
 import time
 from functools import partial

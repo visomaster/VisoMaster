@@ -21,7 +21,7 @@ from App.UI.Widgets.SwapperLayoutData import SWAPPER_LAYOUT_DATA
 from App.UI.Widgets.SettingsLayoutData import SETTINGS_LAYOUT_DATA
 from App.UI.Widgets.FaceEditorLayoutData import FACE_EDITOR_LAYOUT_DATA
 from typing import Dict, List
-from App.Helpers.Misc_Helpers import DFM_MODELS_DATA
+from App.Helpers.Miscellaneous import DFM_MODELS_DATA
 
 
 ParametersWidgetTypes = Dict[str, ToggleButton|SelectionBox|ParameterDecimalSlider|ParameterSlider|ParameterText]

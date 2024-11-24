@@ -9,7 +9,7 @@ import App.UI.Widgets.Actions.EmbeddingActions as embedding_actions
 import App.UI.Widgets.Actions.VideoControlActions as video_control_actions
 
 from App.UI.Widgets.WidgetComponents import *
-from App.Helpers.Typing_Helpers import LayoutDictTypes
+from App.Helpers.Typing import LayoutDictTypes
 
 def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: LayoutDictTypes, layoutWidget: QtWidgets.QVBoxLayout, data_type='parameter'):
     layout = QtWidgets.QVBoxLayout()

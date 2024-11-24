@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Dict, Callable
 import App.UI.Widgets.Actions.ListViewActions as list_view_actions
 import App.UI.Widgets.UI_Workers as ui_workers
 from functools import partial
-import App.Helpers.Misc_Helpers as misc_helpers
+import App.Helpers.Miscellaneous as misc_helpers
 
 if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow

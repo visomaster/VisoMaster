@@ -1,7 +1,7 @@
 
 from PySide6 import QtCore as qtc
 from PySide6.QtGui import QPixmap, QImage, Qt
-from App.Helpers import Misc_Helpers as misc_helpers
+from App.Helpers import Miscellaneous as misc_helpers
 from App.UI.Widgets.Actions import CommonActions as common_widget_actions
 from App.UI.Widgets.Actions import FilterActions as filter_actions
 from App.UI.Widgets.SettingsLayoutData import SETTINGS_LAYOUT_DATA, CAMERA_BACKENDS

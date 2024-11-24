@@ -1,5 +1,5 @@
-import App.Helpers.Misc_Helpers as misc_helpers
-from App.Helpers.Typing_Helpers import LayoutDictTypes
+import App.Helpers.Miscellaneous as misc_helpers
+from App.Helpers.Typing import LayoutDictTypes
 
 # Widgets in Face Swap tab are created from this Layout
 SWAPPER_LAYOUT_DATA: LayoutDictTypes = {
