@@ -241,3 +241,5 @@ def set_up_list_widget_placeholder(main_window: 'MainWindow', list_widget: QtWid
 
     # Keep a reference for toggling visibility later
     list_widget.placeholder_label = placeholder_label
+    # Set default cursor as PointingHand
+    list_widget.setCursor(QtCore.Qt.CursorShape.PointingHandCursor)

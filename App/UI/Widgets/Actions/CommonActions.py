@@ -252,5 +252,10 @@ def update_placeholder_visibility(main_window: 'MainWindow', list_widget:QtWidge
     else:
         is_visible = list_widget.count()==0
     list_widget.placeholder_label.setVisible(is_visible)
+    # Set Cursor on the List Widget
+    if is_visible:
+        list_widget.setCursor(QtCore.Qt.CursorShape.PointingHandCursor)
+    else:
+        list_widget.setCursor(QtCore.Qt.CursorShape.ArrowCursor)
     print("SetVisible", is_visible)
     print("targetVideosList.count()", list_widget.count())
