@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1201</width>
+    <width>1207</width>
     <height>586</height>
    </rect>
   </property>
@@ -36,16 +36,6 @@
        <item>
         <layout class="QHBoxLayout" name="panelVisibilityCheckBoxLayout">
          <item>
-          <widget class="QCheckBox" name="parametersPanelCheckBox">
-           <property name="text">
-            <string>Parameters Panel</string>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
           <widget class="QCheckBox" name="mediaPanelCheckBox">
            <property name="text">
             <string>Media Panel</string>
@@ -59,6 +49,16 @@
           <widget class="QCheckBox" name="facesPanelCheckBox">
            <property name="text">
             <string>Faces Panel</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="parametersPanelCheckBox">
+           <property name="text">
+            <string>Parameters Panel</string>
            </property>
            <property name="checked">
             <bool>true</bool>
@@ -887,7 +887,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1201</width>
+     <width>1207</width>
      <height>33</height>
     </rect>
    </property>
