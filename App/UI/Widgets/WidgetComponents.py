@@ -7,6 +7,7 @@ import App.UI.Widgets.Actions.CardActions as card_actions
 import PySide6.QtCore as qtc
 import cv2
 import numpy as np
+import os
 
 from PySide6.QtWidgets import QPushButton
 from functools import partial
@@ -32,6 +33,14 @@ class TargetMediaCardButton(CardButton):
         self.webcam_backend = webcam_backend
         self.setCheckable(True)
         self.setToolTip(media_path)
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(2)  # Space between icon and label
+        filename = os.path.basename(media_path)
+        text_label = QtWidgets.QLabel(filename, self)
+        text_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignBottom)
+        text_label.setStyleSheet("font-size: 8px; font-weight:bold;")  # Style for the label
+        layout.addWidget(text_label)
         self.clicked.connect(self.loadMediaOnClick)
         # Imposta lo stylesheet solo per questo pulsante
         self.setStyleSheet("""

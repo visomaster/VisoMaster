@@ -305,7 +305,7 @@ class Ui_MainWindow(object):
         sizePolicy6.setVerticalStretch(0)
         sizePolicy6.setHeightForWidth(self.input_Target_DockWidget.sizePolicy().hasHeightForWidth())
         self.input_Target_DockWidget.setSizePolicy(sizePolicy6)
-        self.input_Target_DockWidget.setMinimumSize(QSize(300, 347))
+        self.input_Target_DockWidget.setMinimumSize(QSize(340, 347))
         self.input_Target_DockWidget.setFeatures(QDockWidget.DockWidgetFeature.DockWidgetFloatable|QDockWidget.DockWidgetFeature.DockWidgetMovable)
         self.dockWidgetContents = QWidget()
         self.dockWidgetContents.setObjectName(u"dockWidgetContents")

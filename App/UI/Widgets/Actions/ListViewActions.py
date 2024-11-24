@@ -110,7 +110,11 @@ def add_media_thumbnail_button(main_window: 'MainWindow', buttonClass: CardButto
             constructor_args+=(kwargs.get('webcams'), kwargs.get('webcam_index'), kwargs.get('webcam_backend'))
     elif buttonClass in (TargetFaceCardButton, InputFaceCardButton):
         constructor_args = (kwargs.get('media_path',''), kwargs.get('cropped_face'), kwargs.get('embedding_store'))
-    button_size = QtCore.QSize(70, 70)  # Set a fixed size for the buttons
+    if buttonClass==TargetMediaCardButton:
+        button_size = QtCore.QSize(90, 90)  # Set a fixed size for the buttons
+    else:
+        button_size = QtCore.QSize(70, 70)  # Set a fixed size for the buttons
+
     button: CardButton = buttonClass(*constructor_args, main_window=main_window)
     button.setIcon(QtGui.QIcon(pixmap))
     button.setIconSize(button_size - QtCore.QSize(3, 3))  # Slightly smaller than the button size to add some margin
