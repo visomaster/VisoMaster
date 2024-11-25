@@ -281,26 +281,15 @@ class FrameWorker(threading.Thread):
                     dim = 4
                     input_face_affined = original_face_512
 
-            elif swapper_model == 'ReSwapperEx128':
-                latent = torch.from_numpy(self.models_processor.calc_reswapper_latent(s_e)).float().to(self.models_processor.device)
+            elif swapper_model == 'FaceStyleInswapper256':
+                latent = torch.from_numpy(self.models_processor.calc_fsis_latent(s_e)).float().to(self.models_processor.device)
                 if parameters['FaceLikenessEnableToggle']:
                     factor = parameters['FaceLikenessFactorDecimalSlider']
-                    dst_latent = torch.from_numpy(self.models_processor.calc_reswapper_latent(t_e)).float().to(self.models_processor.device)
+                    dst_latent = torch.from_numpy(self.models_processor.calc_fsis_latent(t_e)).float().to(self.models_processor.device)
                     latent = latent - (factor * dst_latent)
 
-                dim = 1
-                if parameters['SwapperResSelection'] == '128':
-                    dim = 1
-                    input_face_affined = original_face_128
-                elif parameters['SwapperResSelection'] == '256':
-                    dim = 2
-                    input_face_affined = original_face_256
-                elif parameters['SwapperResSelection'] == '384':
-                    dim = 3
-                    input_face_affined = original_face_384
-                elif parameters['SwapperResSelection'] == '512':
-                    dim = 4
-                    input_face_affined = original_face_512
+                dim = 2
+                input_face_affined = original_face_256
 
             elif swapper_model == 'SimSwap512':
                 latent = torch.from_numpy(self.models_processor.calc_swapper_latent_simswap512(s_e)).float().to(self.models_processor.device)
@@ -372,22 +361,19 @@ class FrameWorker(threading.Thread):
                         output = torch.mul(output, 255)
                         output = torch.clamp(output, 0, 255)
 
-            elif swapper_model == 'ReSwapperEx128':
+            elif swapper_model == 'FaceStyleInswapper256':
                 with torch.no_grad():  # Disabilita il calcolo del gradiente se è solo per inferenza
                     for k in range(itex):
-                        for j in range(dim):
-                            for i in range(dim):
-                                input_face_disc = input_face_affined[j::dim,i::dim]
-                                input_face_disc = input_face_disc.permute(2, 0, 1)
-                                input_face_disc = torch.unsqueeze(input_face_disc, 0).contiguous()
+                        input_face_disc = input_face_affined.permute(2, 0, 1)
+                        input_face_disc = torch.unsqueeze(input_face_disc, 0).contiguous()
 
-                                swapper_output = torch.empty((1,3,128,128), dtype=torch.float32, device=self.models_processor.device).contiguous()
-                                self.models_processor.run_reswapper(input_face_disc, latent, swapper_output)
+                        swapper_output = torch.empty((1,3,256,256), dtype=torch.float32, device=self.models_processor.device).contiguous()
+                        self.models_processor.run_fsiswapper(input_face_disc, latent, swapper_output)
 
-                                swapper_output = torch.squeeze(swapper_output)
-                                swapper_output = swapper_output.permute(1, 2, 0)
+                        swapper_output = torch.squeeze(swapper_output)
+                        swapper_output = swapper_output.permute(1, 2, 0)
 
-                                output[j::dim, i::dim] = swapper_output.clone()
+                        output = swapper_output.clone()
                         prev_face = input_face_affined.clone()
                         input_face_affined = output.clone()
                         output = torch.mul(output, 255)

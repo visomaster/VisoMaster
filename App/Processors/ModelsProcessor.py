@@ -47,7 +47,7 @@ onnxruntime.log_verbosity_level = -1
 
 arcface_mapping_model_dict = {
     'Inswapper128': 'Inswapper128ArcFace',
-    'ReSwapperEx128': 'Inswapper128ArcFace',
+    'FaceStyleInswapper256': 'Inswapper128ArcFace',
     'DeepFaceLive (DFM)': 'Inswapper128ArcFace',
     'SimSwap512': 'SimSwapArcFace',
     'GhostFace-v1': 'GhostArcFace',
@@ -58,7 +58,7 @@ arcface_mapping_model_dict = {
 
 models_list = [
     {'Inswapper128': f'{models_dir}/inswapper_128.fp16.onnx',},
-    {'ReSwapperEx128': f'{models_dir}/ReSwapperEx_128.onnx',},
+    {'FaceStyleInswapper256': f'{models_dir}/FaceStyleInswapper_256.onnx',},
     {'SimSwap512': f'{models_dir}/simswap_512_unoff.onnx',},
     {'GhostFacev1': f'{models_dir}/ghost_unet_1_block.onnx',},
     {'GhostFacev2': f'{models_dir}/ghost_unet_2_block.onnx',},
@@ -2044,9 +2044,9 @@ class ModelsProcessor(QObject):
             self.syncvec.cpu()
         self.models['Inswapper128'].run_with_iobinding(io_binding)
 
-    def calc_reswapper_latent(self, source_embedding):
-        if not self.models['ReSwapperEx128']:
-            graph = onnx.load(self.models_path['ReSwapperEx128']).graph
+    def calc_fsis_latent(self, source_embedding):
+        if not self.models['FaceStyleInswapper256']:
+            graph = onnx.load(self.models_path['FaceStyleInswapper256']).graph
             self.emap = onnx.numpy_helper.to_array(graph.initializer[-1])
 
         n_e = source_embedding / l2norm(source_embedding)
@@ -2055,20 +2055,20 @@ class ModelsProcessor(QObject):
         latent /= np.linalg.norm(latent)
         return latent
 
-    def run_reswapper(self, image, embedding, output):
-        if not self.models['ReSwapperEx128']:
-            self.models['ReSwapperEx128'] = self.load_model('ReSwapperEx128')
+    def run_fsiswapper(self, image, embedding, output):
+        if not self.models['FaceStyleInswapper256']:
+            self.models['FaceStyleInswapper256'] = self.load_model('FaceStyleInswapper256')
 
-        io_binding = self.models['ReSwapperEx128'].io_binding()
-        io_binding.bind_input(name='target', device_type=self.device, device_id=0, element_type=np.float32, shape=(1,3,128,128), buffer_ptr=image.data_ptr())
+        io_binding = self.models['FaceStyleInswapper256'].io_binding()
+        io_binding.bind_input(name='target', device_type=self.device, device_id=0, element_type=np.float32, shape=(1,3,256,256), buffer_ptr=image.data_ptr())
         io_binding.bind_input(name='source', device_type=self.device, device_id=0, element_type=np.float32, shape=(1,512), buffer_ptr=embedding.data_ptr())
-        io_binding.bind_output(name='output', device_type=self.device, device_id=0, element_type=np.float32, shape=(1,3,128,128), buffer_ptr=output.data_ptr())
+        io_binding.bind_output(name='output', device_type=self.device, device_id=0, element_type=np.float32, shape=(1,3,256,256), buffer_ptr=output.data_ptr())
 
         if self.device == "cuda":
             torch.cuda.synchronize()
         elif self.device != "cpu":
             self.syncvec.cpu()
-        self.models['ReSwapperEx128'].run_with_iobinding(io_binding)
+        self.models['FaceStyleInswapper256'].run_with_iobinding(io_binding)
 
     def calc_swapper_latent_simswap512(self, source_embedding):
         latent = source_embedding.reshape(1, -1)
