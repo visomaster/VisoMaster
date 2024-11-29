@@ -58,7 +58,7 @@ arcface_mapping_model_dict = {
 
 models_list = [
     {'Inswapper128': f'{models_dir}/inswapper_128.fp16.onnx',},
-    {'FaceStyleInswapper256': f'{models_dir}/FaceStyleInswapper_256.onnx',},
+    {'FaceStyleInswapper256': f'{models_dir}/FaceStyleInswapper_256.fp16.onnx',},
     {'SimSwap512': f'{models_dir}/simswap_512_unoff.onnx',},
     {'GhostFacev1': f'{models_dir}/ghost_unet_1_block.onnx',},
     {'GhostFacev2': f'{models_dir}/ghost_unet_2_block.onnx',},
