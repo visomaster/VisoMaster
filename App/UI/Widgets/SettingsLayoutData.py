@@ -253,6 +253,20 @@ SETTINGS_LAYOUT_DATA: LayoutDictTypes = {
             'default': 'Mean',
             'help': 'Select the method to merge facial embeddings. "Mean" averages the embeddings, while "Median" selects the middle value, providing more robustness to outliers.'
         }
+    },
+    'Media Selection':{
+        'TargetMediaFolderRecursiveToggle':{
+            'level': 1,
+            'label': 'Target Media Include Subfolders',
+            'default': False,
+            'help': 'Include all files from Subfolders when choosing Target Media Folder'
+        },
+        'InputFacesFolderRecursiveToggle':{
+            'level': 1,
+            'label': 'Input Faces Include Subfolders',
+            'default': False,
+            'help': 'Include all files from Subfolders when choosing Input Faces Folder'
+        }
     }
 }
 

@@ -41,8 +41,8 @@ class TargetMediaLoaderWorker(qtc.QThread):
     def load_videos_and_images_from_folder(self, folder_name):
         # Initially hide the placeholder text
         self.main_window.placeholder_update_signal.emit(self.main_window.targetVideosList, True)
-        video_files = misc_helpers.get_video_files(folder_name)
-        image_files = misc_helpers.get_image_files(folder_name)
+        video_files = misc_helpers.get_video_files(folder_name, self.main_window.control['TargetMediaFolderRecursiveToggle'])
+        image_files = misc_helpers.get_image_files(folder_name, self.main_window.control['TargetMediaFolderRecursiveToggle'])
 
         media_files = video_files + image_files
         for media_file in media_files:
@@ -108,7 +108,7 @@ class InputFacesLoaderWorker(qtc.QThread):
     def load_faces(self, folder_name=False, files_list=[]):
         control = self.main_window.control.copy()
         if folder_name:
-            image_files = misc_helpers.get_image_files(self.folder_name)
+            image_files = misc_helpers.get_image_files(self.folder_name, self.main_window.control['InputFacesFolderRecursiveToggle'])
         elif files_list:
             image_files = files_list
 
