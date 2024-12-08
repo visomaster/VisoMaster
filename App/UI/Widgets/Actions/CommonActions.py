@@ -3,9 +3,11 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
 from App.UI.Widgets.WidgetComponents import *
+from App.UI.Widgets.SettingsLayoutData import SETTINGS_LAYOUT_DATA
 from pyqttoast import Toast, ToastPreset, ToastPosition
 import threading
 import numpy
+import json
 
 def create_and_show_messagebox(main_window: 'MainWindow', window_title: str, message: str, parent_widget: QtWidgets.QWidget):
     messagebox = QtWidgets.QMessageBox(parent_widget)
@@ -240,6 +242,45 @@ def set_widgets_values_using_face_id_parameters(main_window: 'MainWindow', face_
         parameter_widgets[parameter_name].set_value(parameter_value)
         parameter_widgets[parameter_name].enable_refresh_frame = True
 
+def set_control_widgets_values(main_window: 'MainWindow'):
+    """
+    Set the values of control widgets based on the `control` data in the `main_window`.
+
+    Temporarily disables frame refreshing while setting values to avoid unnecessary processing.
+    """
+    # Get control values and parameter widgets from the main window
+    control = main_window.control.copy()
+    parameter_widgets = main_window.parameter_widgets
+
+    # Prepare a dictionary of settings options from layout data
+    settings_options = {
+        setting_name: setting_data
+        for setting_group in SETTINGS_LAYOUT_DATA.values()
+        for setting_name, setting_data in setting_group.items()
+    }
+
+    # Iterate through control items and update widgets
+    for control_name, control_value in control.items():
+        widget = parameter_widgets[control_name]
+
+        # Temporarily disable frame refresh
+        widget.enable_refresh_frame = False
+
+        # Set the widget value
+        widget.set_value(control_value)
+
+        # Execute any associated function, if defined
+        exec_function_data = settings_options[control_name].get('exec_function')
+        if exec_function_data:
+            exec_function = partial(
+                exec_function_data, main_window
+            )
+            exec_args = settings_options[control_name].get('exec_fuction_args', [])
+            exec_function(control_value, *exec_args)
+
+        # Re-enable frame refresh
+        widget.enable_refresh_frame = True
+        
 @qtc.Slot(QtWidgets.QListWidget, bool)
 def update_placeholder_visibility(main_window: 'MainWindow', list_widget:QtWidgets.QListWidget, default_hide):
     """Update the visibility of the placeholder text."""
@@ -259,3 +300,28 @@ def update_placeholder_visibility(main_window: 'MainWindow', list_widget:QtWidge
         list_widget.setCursor(QtCore.Qt.CursorShape.ArrowCursor)
     print("SetVisible", is_visible)
     print("targetVideosList.count()", list_widget.count())
+
+def save_current_parameters_and_control(main_window: 'MainWindow', face_id):
+    data_filename, _ = QtWidgets.QFileDialog.getSaveFileName(main_window, filter='JSON (*.json)')
+    data = {
+        'parameters': main_window.parameters[face_id].copy(),
+        'control': main_window.control.copy(),
+    }
+
+    if data_filename:
+        with open(data_filename, 'w') as data_file:
+            data_as_json = json.dumps(data, indent=4)  # Salva con indentazione per leggibilità
+            data_file.write(data_as_json)
+
+def load_parameters_and_settings(main_window: 'MainWindow', face_id, load_settings=False):
+    data_filename, _ = QtWidgets.QFileDialog.getOpenFileName(main_window, filter='JSON (*.json)')
+    if data_filename:
+        with open(data_filename, 'r') as data_file:
+            data = json.load(data_file)
+            main_window.parameters[face_id] = data['parameters'].copy()
+            if main_window.selected_target_face_id == face_id:
+                set_widgets_values_using_face_id_parameters(main_window, face_id)
+            if load_settings:
+                main_window.control = data['control']
+                set_control_widgets_values(main_window)
+            refresh_frame(main_window)

@@ -1,7 +1,6 @@
 import App.UI.Widgets.Actions.ControlActions as control_actions
 import cv2
 from App.Helpers.Typing import LayoutDictTypes
-import App.UI.Widgets.Actions.ListViewActions as list_view_actions
 SETTINGS_LAYOUT_DATA: LayoutDictTypes = {
     'Appearance': {
         'ThemeSelection': {

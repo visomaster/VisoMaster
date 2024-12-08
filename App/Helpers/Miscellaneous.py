@@ -22,16 +22,16 @@ def truncate_text(text):
     return text
 
 def get_video_files(folder_name, include_subfolders=False):
-    return [f for f in absoluteFilePaths(folder_name, include_subfolders) if f.endswith(video_extensions)]
+    return [f for f in absoluteFilePaths(folder_name, include_subfolders) if f.lower().endswith(video_extensions)]
 
 def get_image_files(folder_name, include_subfolders=False):
-    return [f for f in absoluteFilePaths(folder_name, include_subfolders) if f.endswith(image_extensions)]
+    return [f for f in absoluteFilePaths(folder_name, include_subfolders) if f.lower().endswith(image_extensions)]
 
 def is_image_file(file_name: str):
-    return file_name.endswith(image_extensions)
+    return file_name.lower().endswith(image_extensions)
 
 def is_video_file(file_name: str):
-    return file_name.endswith(video_extensions)
+    return file_name.lower().endswith(video_extensions)
 
 def get_file_type(file_name):
     if is_image_file(file_name):
