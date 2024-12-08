@@ -50,6 +50,8 @@ SETTINGS_LAYOUT_DATA: LayoutDictTypes = {
             'min_value': '1',
             'max_value': '120',
             'default': '30',
+            'parentToggle': 'VideoPlaybackCustomFpsToggle',
+            'requiredToggleValue': True,
             'step': 1,
             'help': 'Set the maximum FPS of the video when playing'
         },

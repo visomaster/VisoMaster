@@ -1,4 +1,5 @@
 import os
+import cv2
 image_extensions = ('.jpg', '.jpeg', '.jpe', '.png', '.webp', '.tif', '.tiff', '.jp2', '.exr', '.hdr', '.ras', '.pnm', '.ppm', '.pgm', '.pbm', '.pfm')
 video_extensions = ('.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv', '.webm', '.m4v', '.3gp')
 
@@ -54,3 +55,17 @@ def get_dfm_models_default_value():
     if dfm_values:
         return dfm_values[0]
     return ''
+
+def get_scaled_resolution(media_capture: cv2.VideoCapture):
+    max_height = 1080
+    max_width = 1920
+
+    media_width = media_capture.get(cv2.CAP_PROP_FRAME_WIDTH)
+    media_height = media_capture.get(cv2.CAP_PROP_FRAME_HEIGHT)
+
+    if media_width > max_width or media_height > max_height:
+        width_scale = max_width/media_width
+        height_scale = max_height/media_height
+        scale = min(width_scale, height_scale)
+        media_width,media_height = media_width* scale, media_height*scale
+    return int(media_width), int(media_height)
