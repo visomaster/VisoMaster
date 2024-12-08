@@ -144,6 +144,7 @@ class TargetMediaCardButton(CardButton):
         
         main_window.loading_new_media = True
         common_widget_actions.refresh_frame(main_window)
+        main_window.findTargetFacesButton.click()
 
     def remove_target_media_from_list(self):
         main_window = self.main_window
