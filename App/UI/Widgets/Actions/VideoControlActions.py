@@ -157,10 +157,14 @@ def delete_all_markers(main_window: 'MainWindow'):
     main_window.markers = {}
 
 def view_fullscreen(main_window: 'MainWindow'):
+
     if main_window.is_full_screen:
         main_window.showNormal()  # Exit full-screen mode
+        main_window.menuBar().show()
     else:
         main_window.showFullScreen()  # Enter full-screen mode
+        main_window.menuBar().hide()
+
     main_window.is_full_screen = not main_window.is_full_screen
 
 def enable_zoom_and_pan(view: QtWidgets.QGraphicsView):
