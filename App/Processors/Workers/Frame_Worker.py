@@ -144,7 +144,7 @@ class FrameWorker(threading.Thread):
         if ret:
             # Loop through target faces to see if they match our found face embeddings
             for i, fface in enumerate(ret):
-                    for target_face in self.main_window.target_faces:
+                    for face_id, target_face in self.main_window.target_faces.items():
                         parameters = self.parameters[target_face.face_id] #Use the parameters of the target face
 
                         if self.main_window.swapfacesButton.isChecked() or self.main_window.editFacesButton.isChecked():
@@ -180,7 +180,7 @@ class FrameWorker(threading.Thread):
                     p = 2
 
                 for i, face in enumerate(ret):
-                    for target_face in self.main_window.target_faces:
+                    for face_id, target_face in self.main_window.target_faces.items():
                         parameters = self.parameters[target_face.face_id] #Use the parameters of the target face
                         sim = self.models_processor.findCosineDistance(fface[2], target_face.get_embedding(control['RecognitionModelSelection']))
                         if sim>=parameters['SimilarityThresholdSlider']:

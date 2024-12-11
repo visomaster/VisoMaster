@@ -203,9 +203,10 @@ class FilterWorker(qtc.QThread):
 
         visible_indices = []
         for i in range(main_window.targetVideosList.count()):
-            item = main_window.target_videos[i]
-            if ((not search_text or search_text in item.media_path.lower()) and 
-                (item.file_type in include_file_types)):
+            item = main_window.targetVideosList.item(i)
+            item_widget = main_window.targetVideosList.itemWidget(item)
+            if ((not search_text or search_text in item_widget.media_path.lower()) and 
+                (item_widget.file_type in include_file_types)):
                 visible_indices.append(i)
 
         self.filtered_results.emit(visible_indices)
@@ -215,8 +216,9 @@ class FilterWorker(qtc.QThread):
         visible_indices = []
 
         for i in range(main_window.inputFacesList.count()):
-            item = main_window.input_faces[i]
-            if not search_text or search_text in item.media_path.lower():
+            item = main_window.inputFacesList.item(i)
+            item_widget = main_window.inputFacesList.itemWidget(item)
+            if not search_text or search_text in item_widget.media_path.lower():
                 visible_indices.append(i)
 
         self.filtered_results.emit(visible_indices)
@@ -226,8 +228,9 @@ class FilterWorker(qtc.QThread):
         visible_indices = []
 
         for i in range(main_window.inputEmbeddingsList.count()):
-            item = main_window.merged_embeddings[i]
-            if not search_text or search_text in item.embedding_name.lower():
+            item = main_window.inputEmbeddingsList.item(i)
+            item_widget = main_window.inputEmbeddingsList.itemWidget(item)
+            if not search_text or search_text in item_widget.embedding_name.lower():
                 visible_indices.append(i)
 
         self.filtered_results.emit(visible_indices)

@@ -37,10 +37,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.merged_embeddings_filter_worker = FilterWorker(main_window=self, search_text='', filter_list='merged_embeddings')
         self.video_processor = VideoProcessor(self)
         self.models_processor = ModelsProcessor(self)
-        self.target_videos: List[TargetMediaCardButton] = [] #Contains button objects of target videos (Set as list instead of single video to support batch processing in future)
-        self.target_faces: List[TargetFaceCardButton] = [] #Contains button objects of target faces
-        self.input_faces: List[InputFaceCardButton] = [] #Contains button objects of source faces (images)
-        self.merged_embeddings: List[EmbeddingCardButton] = []
+        self.target_videos: Dict[int, TargetMediaCardButton] = {} #Contains button objects of target videos (Set as list instead of single video to support batch processing in future)
+        self.target_faces: Dict[int, TargetFaceCardButton] = {} #Contains button objects of target faces
+        self.input_faces: Dict[int, InputFaceCardButton] = {} #Contains button objects of source faces (images)
+        self.merged_embeddings: Dict[int, EmbeddingCardButton] = {}
         self.cur_selected_target_face_button: TargetFaceCardButton = False
         self.selected_video_button: TargetMediaCardButton = False
         self.selected_target_face_id = False

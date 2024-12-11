@@ -26,6 +26,7 @@ class CardButton(QPushButton):
 class TargetMediaCardButton(CardButton):
     def __init__(self, media_path: str, file_type: str, is_webcam=False, webcam_index=-1, webcam_backend=-1, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.media_id = uuid.uuid1().int
         self.file_type = file_type
         self.media_path = media_path
         self.is_webcam = is_webcam
@@ -159,7 +160,7 @@ class TargetMediaCardButton(CardButton):
             if list_item:
                 if list_item.listWidget().itemWidget(list_item) == self:
                     main_window.targetVideosList.takeItem(i)   
-                    main_window.target_videos.pop(i)
+                    main_window.target_videos.pop(self.media_id)
                     # Pop parameters using the target's face_id
 
     def create_context_menu(self):
@@ -235,7 +236,7 @@ class TargetFaceCardButton(CardButton):
         main_window = self.main_window
         main_window.cur_selected_target_face_button = self
         self.setChecked(True)
-        for target_face_button in main_window.target_faces:
+        for face_id, target_face_button in main_window.target_faces.items():
             # Uncheck all other target faces
             if target_face_button!=self:
                 target_face_button.setChecked(False)
@@ -321,12 +322,12 @@ class TargetFaceCardButton(CardButton):
             if list_item:
                 if list_item.listWidget().itemWidget(list_item) == self:
                     main_window.targetFacesList.takeItem(i)   
-                    main_window.target_faces.pop(i)
+                    main_window.target_faces.pop(self.face_id)
                     # Pop parameters using the target's face_id
                     main_window.parameters.pop(self.face_id)
         # Click and Select the first target face if target_faces are not empty
         if main_window.target_faces:
-            main_window.target_faces[0].click()
+            list(main_window.target_faces.values())[0].click()
         # Otherwise reset parameter widgets value to the default
         else:
             common_widget_actions.set_widgets_values_using_face_id_parameters(main_window, face_id=False)
@@ -349,6 +350,7 @@ class TargetFaceCardButton(CardButton):
 class InputFaceCardButton(CardButton):
     def __init__(self, media_path, cropped_face, embedding_store: Dict[str, np.ndarray], *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.face_id = uuid.uuid1().int
         self.cropped_face = cropped_face
         self.embedding_store = embedding_store  # Key: embedding_swap_model, Value: embedding
         self.media_path = media_path
@@ -396,7 +398,7 @@ class InputFaceCardButton(CardButton):
         else:
             if not QtWidgets.QApplication.keyboardModifiers() == qtc.Qt.ControlModifier:
                 # If there is no target face selected, uncheck all other input faces
-                for input_face_button in main_window.input_faces:
+                for face_id, input_face_button in main_window.input_faces.items():
                     if input_face_button!=self:
                         input_face_button.setChecked(False)
 
@@ -417,7 +419,7 @@ class InputFaceCardButton(CardButton):
         # Raccogli l'intero embedding_store dalle facce selezionate
         selected_faces_embeddings_store = [
             input_face.embedding_store 
-            for input_face in self.main_window.input_faces 
+            for face_id, input_face in self.main_window.input_faces.items() 
             if input_face.isChecked()
         ]
 
@@ -437,6 +439,7 @@ class InputFaceCardButton(CardButton):
 class EmbeddingCardButton(CardButton):
     def __init__(self, embedding_name: str, embedding_store: Dict[str, np.ndarray], *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.embedding_id = uuid.uuid1().int
         self.embedding_store = embedding_store  # Key: embedding_swap_model, Value: embedding
         self.embedding_name = embedding_name
         self.setCheckable(True)
@@ -484,7 +487,7 @@ class EmbeddingCardButton(CardButton):
         else:
             if not QtWidgets.QApplication.keyboardModifiers() == qtc.Qt.ControlModifier:
                 # If there is no target face selected, uncheck all other input faces
-                for embed_button in main_window.merged_embeddings:
+                for embedding_id, embed_button in main_window.merged_embeddings.items():
                     if embed_button!=self:
                         embed_button.setChecked(False)
 
@@ -507,7 +510,7 @@ class EmbeddingCardButton(CardButton):
             list_item = main_window.inputEmbeddingsList.item(i)
             if list_item.listWidget().itemWidget(list_item) == self:
                 main_window.inputEmbeddingsList.takeItem(i)   
-                main_window.merged_embeddings.pop(i)
+                main_window.merged_embeddings.pop(self.embedding_id)
         common_widget_actions.refresh_frame(self.main_window)
         self.deleteLater()
 
@@ -599,7 +602,7 @@ class CreateEmbeddingDialog(QtWidgets.QDialog):
         inputEmbeddingsList.setFlow(QtWidgets.QListView.LeftToRight)  # Set flow direction
         inputEmbeddingsList.setResizeMode(QtWidgets.QListView.Adjust)  # Adjust layout automatically
 
-        main_window.merged_embeddings.append(embed_button)
+        main_window.merged_embeddings[embed_button.embedding_id] = embed_button
 
 # Custom progress dialog
 class ProgressDialog(QtWidgets.QProgressDialog):

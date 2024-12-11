@@ -54,7 +54,7 @@ def find_target_faces(main_window: 'MainWindow'):
                 for face in ret:
                     found = False
                     # Check if this face has already been found
-                    for target_face in main_window.target_faces:
+                    for face_id, target_face in main_window.target_faces.items():
                         parameters = main_window.parameters[target_face.face_id]
                         threshhold = parameters['SimilarityThresholdSlider']
                         if main_window.models_processor.findCosineDistance(target_face.get_embedding(control['RecognitionModelSelection']), face[1]) >= threshhold:
@@ -80,7 +80,7 @@ def find_target_faces(main_window: 'MainWindow'):
                         add_media_thumbnail_to_target_faces_list(main_window, face_img, embedding_store, pixmap)
             # Select the first target face if no target face is already selected
         if main_window.target_faces and not main_window.selected_target_face_id:
-            main_window.target_faces[0].click()
+            list(main_window.target_faces.values())[0].click()
 
     common_widget_actions.update_gpu_memory_progressbar(main_window)
 
@@ -120,7 +120,12 @@ def add_media_thumbnail_button(main_window: 'MainWindow', buttonClass: CardButto
     button.setIconSize(button_size - QtCore.QSize(3, 3))  # Slightly smaller than the button size to add some margin
     button.setFixedSize(button_size)
     button.setCheckable(True)
-    buttons_list.append(button)
+    if buttonClass in [TargetFaceCardButton, InputFaceCardButton]:
+        buttons_list[button.face_id] = button
+    elif buttonClass == TargetMediaCardButton:
+        buttons_list[button.media_id] = button
+    elif buttonClass == EmbeddingCardButton:
+        buttons_list[button.embedding_id] = button
     # Create a QListWidgetItem and set the button as its widget
     list_item = QtWidgets.QListWidgetItem(listWidget)
     list_item.setSizeHint(button_size)
@@ -164,7 +169,7 @@ def onClickSelectTargetVideos(main_window: 'MainWindow', source_type='folder', f
     card_actions.clear_target_faces(main_window)
     
     main_window.selected_video_button = False
-    main_window.target_videos = []
+    main_window.target_videos = {}
 
     main_window.video_loader_worker = ui_workers.TargetMediaLoaderWorker(main_window=main_window, folder_name=folder_name, files_list=files_list)
     main_window.video_loader_worker.thumbnail_ready.connect(partial(add_media_thumbnail_to_target_videos_list, main_window))
@@ -178,7 +183,7 @@ def onClickLoadWebcams(main_window: 'MainWindow',):
         main_window.video_loader_worker.start()
     else:
         main_window.placeholder_update_signal.emit(main_window.targetVideosList, True)
-        for target_video in main_window.target_videos:
+        for media_id, target_video in main_window.target_videos.copy().items(): #Use a copy of the dict to prevent Dictionary changed during iteration exceptions
             if target_video.file_type == 'webcam':
                 target_video.remove_target_media_from_list()
                 if target_video == main_window.selected_video_button:

@@ -32,7 +32,7 @@ def create_and_add_embed_button_to_list(main_window: 'MainWindow', embedding_nam
     inputEmbeddingsList.setFlow(QtWidgets.QListView.LeftToRight)  # Set flow direction
     inputEmbeddingsList.setResizeMode(QtWidgets.QListView.Adjust)  # Adjust layout automatically
 
-    main_window.merged_embeddings.append(embed_button)
+    main_window.merged_embeddings[embed_button.embedding_id] = embed_button
 
 def open_embeddings_from_file(main_window: 'MainWindow'):
     embedding_filename, _ = QtWidgets.QFileDialog.getOpenFileName(main_window, filter='JSON (*.json)')
@@ -42,7 +42,7 @@ def open_embeddings_from_file(main_window: 'MainWindow'):
             clear_merged_embeddings(main_window)
 
             # Reset per ogni target face
-            for target_face in main_window.target_faces:
+            for face_id, target_face in main_window.target_faces.items():
                 target_face.assigned_embed_buttons = {}
                 target_face.assigned_input_embedding = {}
 
@@ -78,7 +78,7 @@ def save_embeddings_to_file(main_window: 'MainWindow', save_as=False):
             'name': embed_button.embedding_name,
             'embedding_store': {k: v.tolist() for k, v in embed_button.embedding_store.items()}  # Converti gli embedding in liste
         }
-        for embed_button in main_window.merged_embeddings
+        for embedding_id, embed_button in main_window.merged_embeddings.items()
     ]
 
     # Salva su file
@@ -96,11 +96,11 @@ def save_embeddings_to_file(main_window: 'MainWindow', save_as=False):
 
 def clear_merged_embeddings(main_window: 'MainWindow'):
     main_window.inputEmbeddingsList.clear()
-    for embed_button in main_window.merged_embeddings:
+    for embedding_id, embed_button in main_window.merged_embeddings.items():
         embed_button.deleteLater()
-    main_window.merged_embeddings = []
+    main_window.merged_embeddings = {}
 
-    for target_face in main_window.target_faces:
+    for face_id, target_face in main_window.target_faces.items():
         target_face.assigned_embed_buttons = {}
         target_face.calculateAssignedInputEmbedding()
     common_widget_actions.refresh_frame(main_window=main_window)
