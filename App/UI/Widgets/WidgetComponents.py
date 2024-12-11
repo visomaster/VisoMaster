@@ -50,6 +50,12 @@ class TargetMediaCardButton(CardButton):
         }
         """)
 
+        # Set the context menu policy to trigger the custom context menu on right-click
+        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        # Connect the custom context menu request signal to the custom slot
+        self.customContextMenuRequested.connect(self.on_context_menu)
+        self.create_context_menu()
+
     def loadMediaOnClick(self):
 
         main_window = self.main_window
@@ -155,6 +161,32 @@ class TargetMediaCardButton(CardButton):
                     main_window.targetVideosList.takeItem(i)   
                     main_window.target_videos.pop(i)
                     # Pop parameters using the target's face_id
+
+    def create_context_menu(self):
+        # create context menu
+        self.popMenu = QtWidgets.QMenu(self)
+        load_video_workspace_action = QtGui.QAction('Load Saved Workspace', self)
+        load_video_workspace_action.triggered.connect(self.load_saved_workspace)
+        save_current_workspace_action = QtGui.QAction('Save Current Workspace', self)
+        save_current_workspace_action.triggered.connect(self.save_current_workspace)
+        self.popMenu.addAction(load_video_workspace_action)
+        self.popMenu.addAction(save_current_workspace_action)
+
+    def load_saved_workspace(self):
+        pass
+    def save_current_workspace(self):
+        pass
+        # main_window = self.main_window
+        # embeddings_data = {}
+        # embeddings_file = main_window.loaded_embedding_filename
+        # if not embeddings_file:
+        #     if main_window.merged_embeddings:
+        #         for embedding_data in main_window.merged_embeddings
+
+    def on_context_menu(self, point):
+        # show context menu
+        self.popMenu.exec_(self.mapToGlobal(point))
+
 class TargetFaceCardButton(CardButton):
     def __init__(self, media_path, cropped_face, embedding_store: Dict[str, np.ndarray], *args, **kwargs):
         super().__init__(*args, **kwargs)
