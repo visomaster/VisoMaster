@@ -135,7 +135,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.buttonMediaPlay.toggled.connect(partial(video_control_actions.OnClickPlayButton, self))
         self.buttonMediaRecord.toggled.connect(partial(video_control_actions.OnClickRecordButton, self))
         # self.buttonMediaStop.clicked.connect(partial(self.video_processor.stop_processing))
-        self.findTargetFacesButton.clicked.connect(partial(list_view_actions.find_target_faces, self))
+        self.findTargetFacesButton.clicked.connect(partial(card_actions.find_target_faces, self))
         self.clearTargetFacesButton.clicked.connect(partial(card_actions.clear_target_faces, self))
         self.targetVideosSearchBox.textChanged.connect(partial(filter_actions.filterTargetVideos, self))
         self.filterImagesCheckBox.clicked.connect(partial(filter_actions.filterTargetVideos, self))
