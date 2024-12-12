@@ -9,6 +9,7 @@ import os
 import cv2
 import torch
 import numpy
+import uuid
 from functools import partial
 from typing import TYPE_CHECKING, Dict
 import traceback
@@ -90,13 +91,14 @@ class TargetMediaLoaderWorker(qtc.QThread):
 
 class InputFacesLoaderWorker(qtc.QThread):
     # Define signals to emit when loading is done or if there are updates
-    thumbnail_ready = qtc.Signal(str, numpy.ndarray, object, QPixmap)
+    thumbnail_ready = qtc.Signal(str, numpy.ndarray, object, QPixmap, str)
     finished = qtc.Signal()  # Signal to indicate completion
-    def __init__(self, main_window: 'MainWindow', media_path=False, folder_name=False, files_list=[],  parent=None):
+    def __init__(self, main_window: 'MainWindow', media_path=False, folder_name=False, files_list=[], face_ids=[],  parent=None):
         super().__init__(parent)
         self.main_window = main_window
         self.folder_name = folder_name
         self.files_list = files_list
+        self.face_ids = face_ids
         self._running = True  # Flag to control the running state
 
     def run(self):
@@ -112,6 +114,7 @@ class InputFacesLoaderWorker(qtc.QThread):
         elif files_list:
             image_files = files_list
 
+        i=0
         for image_file_path in image_files:
             if not self._running:  # Check if the thread is still running
                 break
@@ -151,10 +154,14 @@ class InputFacesLoaderWorker(qtc.QThread):
                         embedding_store[option] = target_emb
                     else:
                         embedding_store[control['RecognitionModelSelection']] = face_emb
-
-                self.thumbnail_ready.emit(image_file_path, face_img, embedding_store, pixmap)
-
+                if not self.face_ids:
+                    face_id = str(uuid.uuid1().int)
+                else:
+                    face_id = self.face_ids[i]
+                self.thumbnail_ready.emit(image_file_path, face_img, embedding_store, pixmap, face_id)
+                i+=1
         torch.cuda.empty_cache()
+        self.finished.emit()
 
     def stop(self):
         """Stop the thread by setting the running flag to False."""

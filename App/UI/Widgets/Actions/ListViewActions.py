@@ -11,11 +11,12 @@ from App.UI.Widgets.SettingsLayoutData import SETTINGS_LAYOUT_DATA
 import App.UI.Widgets.Actions.CommonActions as common_widget_actions
 import App.UI.Widgets.Actions.CardActions as card_actions
 
-from App.UI.Widgets.WidgetComponents import TargetFaceCardButton, InputFaceCardButton, EmbeddingCardButton, TargetMediaCardButton, CardButton
+import App.UI.Widgets.WidgetComponents as widget_components
 
 import App.Helpers.Miscellaneous as misc_helpers
 import App.UI.Widgets.UI_Workers as ui_workers
 import time
+import uuid
 from functools import partial
 def find_target_faces(main_window: 'MainWindow'):
     control = main_window.control.copy()
@@ -77,7 +78,9 @@ def find_target_faces(main_window: 'MainWindow'):
                             else:
                                 embedding_store[control['RecognitionModelSelection']] = face[1]
 
-                        add_media_thumbnail_to_target_faces_list(main_window, face_img, embedding_store, pixmap)
+                        face_id = str(uuid.uuid1().int)
+
+                        add_media_thumbnail_to_target_faces_list(main_window, face_img, embedding_store, pixmap, face_id)
             # Select the first target face if no target face is already selected
         if main_window.target_faces and not main_window.selected_target_face_id:
             list(main_window.target_faces.values())[0].click()
@@ -87,44 +90,44 @@ def find_target_faces(main_window: 'MainWindow'):
 # Functions to add Buttons with thumbnail for selecting videos/images and faces
 @QtCore.Slot(str, QtGui.QPixmap)
 def add_media_thumbnail_to_target_videos_list(main_window: 'MainWindow', media_path, pixmap, file_type):
-    add_media_thumbnail_button(main_window, TargetMediaCardButton, main_window.targetVideosList, main_window.target_videos, pixmap, media_path=media_path, file_type=file_type)
+    add_media_thumbnail_button(main_window, widget_components.TargetMediaCardButton, main_window.targetVideosList, main_window.target_videos, pixmap, media_path=media_path, file_type=file_type)
 
 # Functions to add Buttons with thumbnail for selecting videos/images and faces
 @QtCore.Slot(str, QtGui.QPixmap, str, int, int)
 def add_webcam_thumbnail_to_target_videos_list(main_window: 'MainWindow', media_path, pixmap, file_type, webcam_index, webcam_backend):
-    add_media_thumbnail_button(main_window, TargetMediaCardButton, main_window.targetVideosList, main_window.target_videos, pixmap, media_path=media_path, file_type=file_type, webcams=True, webcam_index=webcam_index, webcam_backend=webcam_backend)
+    add_media_thumbnail_button(main_window, widget_components.TargetMediaCardButton, main_window.targetVideosList, main_window.target_videos, pixmap, media_path=media_path, file_type=file_type, webcams=True, webcam_index=webcam_index, webcam_backend=webcam_backend)
 
 @QtCore.Slot()
-def add_media_thumbnail_to_target_faces_list(main_window: 'MainWindow', cropped_face, embedding_store, pixmap):
-    add_media_thumbnail_button(main_window, TargetFaceCardButton, main_window.targetFacesList, main_window.target_faces, pixmap, cropped_face=cropped_face, embedding_store=embedding_store )
+def add_media_thumbnail_to_target_faces_list(main_window: 'MainWindow', cropped_face, embedding_store, pixmap, face_id):
+    add_media_thumbnail_button(main_window, widget_components.TargetFaceCardButton, main_window.targetFacesList, main_window.target_faces, pixmap, cropped_face=cropped_face, embedding_store=embedding_store, face_id=face_id )
 
 @QtCore.Slot()
-def add_media_thumbnail_to_source_faces_list(main_window: 'MainWindow', media_path, cropped_face, embedding_store, pixmap):
-    add_media_thumbnail_button(main_window, InputFaceCardButton, main_window.inputFacesList, main_window.input_faces, pixmap, media_path=media_path, cropped_face=cropped_face, embedding_store=embedding_store )
+def add_media_thumbnail_to_source_faces_list(main_window: 'MainWindow', media_path, cropped_face, embedding_store, pixmap, face_id):
+    add_media_thumbnail_button(main_window, widget_components.InputFaceCardButton, main_window.inputFacesList, main_window.input_faces, pixmap, media_path=media_path, cropped_face=cropped_face, embedding_store=embedding_store, face_id=face_id )
 
 
-def add_media_thumbnail_button(main_window: 'MainWindow', buttonClass: CardButton, listWidget:QtWidgets.QListWidget, buttons_list:list, pixmap, **kwargs):
-    if buttonClass==TargetMediaCardButton:
+def add_media_thumbnail_button(main_window: 'MainWindow', buttonClass: 'widget_components.CardButton', listWidget:QtWidgets.QListWidget, buttons_list:list, pixmap, **kwargs):
+    if buttonClass==widget_components.TargetMediaCardButton:
         constructor_args = (kwargs.get('media_path'), kwargs.get('file_type'))
         if kwargs.get('webcams'):
             constructor_args+=(kwargs.get('webcams'), kwargs.get('webcam_index'), kwargs.get('webcam_backend'))
-    elif buttonClass in (TargetFaceCardButton, InputFaceCardButton):
-        constructor_args = (kwargs.get('media_path',''), kwargs.get('cropped_face'), kwargs.get('embedding_store'))
-    if buttonClass==TargetMediaCardButton:
+    elif buttonClass in (widget_components.TargetFaceCardButton, widget_components.InputFaceCardButton):
+        constructor_args = (kwargs.get('media_path',''), kwargs.get('cropped_face'), kwargs.get('embedding_store'), kwargs.get('face_id'))
+    if buttonClass==widget_components.TargetMediaCardButton:
         button_size = QtCore.QSize(90, 90)  # Set a fixed size for the buttons
     else:
         button_size = QtCore.QSize(70, 70)  # Set a fixed size for the buttons
 
-    button: CardButton = buttonClass(*constructor_args, main_window=main_window)
+    button: widget_components.CardButton = buttonClass(*constructor_args, main_window=main_window)
     button.setIcon(QtGui.QIcon(pixmap))
     button.setIconSize(button_size - QtCore.QSize(3, 3))  # Slightly smaller than the button size to add some margin
     button.setFixedSize(button_size)
     button.setCheckable(True)
-    if buttonClass in [TargetFaceCardButton, InputFaceCardButton]:
+    if buttonClass in [widget_components.TargetFaceCardButton, widget_components.InputFaceCardButton]:
         buttons_list[button.face_id] = button
-    elif buttonClass == TargetMediaCardButton:
+    elif buttonClass == widget_components.TargetMediaCardButton:
         buttons_list[button.media_id] = button
-    elif buttonClass == EmbeddingCardButton:
+    elif buttonClass == widget_components.EmbeddingCardButton:
         buttons_list[button.embedding_id] = button
     # Create a QListWidgetItem and set the button as its widget
     list_item = QtWidgets.QListWidgetItem(listWidget)

@@ -164,9 +164,9 @@ def show_hide_related_widgets(main_window: 'MainWindow', parent_widget, parent_w
 
             parent_widget.start_animation()
             
-def get_pixmap_from_frame(main_window: 'MainWindow', frame,):
-    height, width = frame.shape[:2]
-    if len(frame.shape) == 2:
+def get_pixmap_from_frame(main_window: 'MainWindow', frame: np.ndarray):
+    height, width, channel = frame.shape
+    if channel == 2:
         # Frame in grayscale
         bytes_per_line = width
         q_img = QtGui.QImage(frame.data, width, height, bytes_per_line, QtGui.QImage.Format.Format_Grayscale8)
@@ -325,3 +325,4 @@ def load_parameters_and_settings(main_window: 'MainWindow', face_id, load_settin
                 main_window.control = data['control']
                 set_control_widgets_values(main_window)
             refresh_frame(main_window)
+

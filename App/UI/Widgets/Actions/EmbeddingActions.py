@@ -1,19 +1,19 @@
 import App.UI.Widgets.Actions.CommonActions as common_widget_actions
 
-from App.UI.Widgets.WidgetComponents import EmbeddingCardButton
+import App.UI.Widgets.WidgetComponents as widget_components
 from PySide6 import QtWidgets, QtCore
 import json
 import numpy
+import uuid
 from typing import TYPE_CHECKING
-
 
 if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
 
-def create_and_add_embed_button_to_list(main_window: 'MainWindow', embedding_name, embedding_store):
+def create_and_add_embed_button_to_list(main_window: 'MainWindow', embedding_name, embedding_store, embedding_id):
     inputEmbeddingsList = main_window.inputEmbeddingsList
     # Passa l'intero embedding_store
-    embed_button = EmbeddingCardButton(main_window=main_window, embedding_name=embedding_name, embedding_store=embedding_store)
+    embed_button = widget_components.EmbeddingCardButton(main_window=main_window, embedding_name=embedding_name, embedding_store=embedding_store, embedding_id=embedding_id)
 
     button_size = QtCore.QSize(120, 30)  # Imposta una dimensione fissa per i pulsanti
     embed_button.setFixedSize(button_size)
@@ -57,7 +57,8 @@ def open_embeddings_from_file(main_window: 'MainWindow'):
                 create_and_add_embed_button_to_list(
                     main_window, 
                     embed_data['name'], 
-                    embedding_store  # Passa l'intero embedding_store
+                    embedding_store,  # Passa l'intero embedding_store
+                    embedding_id=str(uuid.uuid1().int)
                 )
 
     main_window.loaded_embedding_filename = embedding_filename or main_window.loaded_embedding_filename

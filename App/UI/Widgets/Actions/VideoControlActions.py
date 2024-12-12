@@ -102,20 +102,30 @@ def add_video_slider_marker(main_window: 'MainWindow'):
     elif main_window.markers.get(current_position):
         common_widget_actions.create_and_show_messagebox(main_window, 'Marker Already Exists!', 'A Marker already exists for this position!', main_window.videoSeekSlider)
     else:
-        main_window.videoSeekSlider.addMarker(current_position)
-        main_window.markers[current_position] = copy.deepcopy(main_window.parameters)
-        print("Adding marker: ", main_window.parameters.copy())
-        print(f"Marker Added for Frame: {current_position}")
+        add_marker(main_window, copy.deepcopy(main_window.parameters), current_position)
 
 def remove_video_slider_marker(main_window: 'MainWindow'):
     current_position = int(main_window.videoSeekSlider.value())
     print("current_position", current_position)
     if main_window.markers.get(current_position):
-        main_window.videoSeekSlider.removeMarker(current_position)
-        main_window.markers.pop(current_position)
-        print(f"Marker Removed from position: {current_position}")
+        remove_marker(main_window, current_position)
     else:
         common_widget_actions.create_and_show_messagebox(main_window, 'No Marker Found!', 'No Marker Found for this position!', main_window.videoSeekSlider)
+
+def add_marker(main_window: 'MainWindow', parameters, position,):
+    main_window.videoSeekSlider.addMarker(position)
+    main_window.markers[position] = parameters
+    print(f"Marker Added for Frame: {position}")
+
+def remove_marker(main_window: 'MainWindow', position):
+    if main_window.markers.get(position):
+        main_window.videoSeekSlider.removeMarker(position)
+        main_window.markers.pop(position)
+        print(f"Marker Removed from position: {position}")
+
+def remove_all_markers(main_window: 'MainWindow'):
+    for marker_position in list(main_window.markers.keys()):
+        remove_marker(main_window, marker_position)
 
 def move_slider_to_nearest_marker(main_window: 'MainWindow', direction: str):
     """

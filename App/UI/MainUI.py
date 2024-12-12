@@ -60,7 +60,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.default_parameters: Dict[str, bool|int|float|str] = {}
         self.copied_parameters: Dict[str, bool|int|float|str] = {}
 
-        self.markers: Dict[int, Dict[int, Dict[str, bool|int|float|str]]] = {} #Video Markers (Contains parameters for each face)
+        self.markers: Dict[int, Dict[str, Dict[str, bool|int|float|str]]] = {} #Video Markers (Contains parameters for each face)
         self.parameters_list = {}
         self.control = {}
         self.parameter_widgets: ParametersWidgetTypes = {}

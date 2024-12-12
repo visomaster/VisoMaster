@@ -4,10 +4,15 @@ import App.UI.Widgets.Actions.CommonActions as common_widget_actions
 import App.UI.Widgets.Actions.VideoControlActions as video_control_actions
 import App.UI.Widgets.Actions.GraphicsViewActions as graphics_view_actions
 import App.UI.Widgets.Actions.CardActions as card_actions
+import App.UI.Widgets.Actions.ListViewActions as list_view_actions
+import App.UI.Widgets.Actions.EmbeddingActions as embedding_actions
+import App.UI.Widgets.UI_Workers as ui_workers
 import PySide6.QtCore as qtc
 import cv2
 import numpy as np
 import os
+import json
+from App.UI.Widgets.SettingsLayoutData import SETTINGS_LAYOUT_DATA
 
 from PySide6.QtWidgets import QPushButton
 from functools import partial
@@ -26,7 +31,7 @@ class CardButton(QPushButton):
 class TargetMediaCardButton(CardButton):
     def __init__(self, media_path: str, file_type: str, is_webcam=False, webcam_index=-1, webcam_backend=-1, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.media_id = uuid.uuid1().int
+        self.media_id = str(uuid.uuid1().int)
         self.file_type = file_type
         self.media_path = media_path
         self.is_webcam = is_webcam
@@ -128,6 +133,8 @@ class TargetMediaCardButton(CardButton):
         card_actions.uncheck_all_input_faces(main_window)
         # Uncheck merged embeddings
         card_actions.uncheck_all_merged_embeddings(main_window)
+        # Remove all markers
+        video_control_actions.remove_all_markers(main_window)
 
         main_window.cur_selected_target_face_button = False
 
@@ -151,7 +158,7 @@ class TargetMediaCardButton(CardButton):
         
         main_window.loading_new_media = True
         common_widget_actions.refresh_frame(main_window)
-        main_window.findTargetFacesButton.click()
+        # list_view_actions.find_target_faces(main_window)
 
     def remove_target_media_from_list(self):
         main_window = self.main_window
@@ -174,34 +181,117 @@ class TargetMediaCardButton(CardButton):
         self.popMenu.addAction(save_current_workspace_action)
 
     def load_saved_workspace(self):
-        pass
-    def save_current_workspace(self):
-        pass
-        # main_window = self.main_window
-        # embeddings_data = {}
-        # embeddings_file = main_window.loaded_embedding_filename
-        # if not embeddings_file:
-        #     if main_window.merged_embeddings:
-        #         for embedding_data in main_window.merged_embeddings
+        data_filename, _ = QtWidgets.QFileDialog.getOpenFileName(self.main_window, filter='JSON (*.json)')
+        if data_filename:
+            with open(data_filename, 'r') as data_file:
+                data = json.load(data_file)
+                list_view_actions.clear_stop_loading_input_media(self.main_window)
+                card_actions.clear_input_faces(self.main_window)
+                card_actions.clear_target_faces(self.main_window)
+                embedding_actions.clear_merged_embeddings(self.main_window)
 
+                # Add input faces (imgs)
+                input_media_paths, input_face_ids = [], []
+                for face_id, input_face_data in data['input_faces_data'].items():
+                    input_media_paths.append(input_face_data['media_path'])
+                    input_face_ids.append(face_id)
+                self.main_window.input_faces_loader_worker = ui_workers.InputFacesLoaderWorker(main_window=self.main_window, folder_name=False, files_list=input_media_paths, face_ids=input_face_ids)
+                self.main_window.input_faces_loader_worker.thumbnail_ready.connect(partial(list_view_actions.add_media_thumbnail_to_source_faces_list, self.main_window))
+                self.main_window.input_faces_loader_worker.finished.connect(partial(common_widget_actions.refresh_frame, self.main_window))
+                self.main_window.input_faces_loader_worker.run()
+
+                # Add embeddings
+                embeddings_data = data['embeddings_data']
+                for embedding_id, embedding_data in embeddings_data.items():
+                    embedding_store = {embed_model: np.array(embedding) for embed_model, embedding in embedding_data['embedding_store'].items()}
+                    embedding_name = embedding_data['embedding_name']
+                    embedding_actions.create_and_add_embed_button_to_list(self.main_window, embedding_name, embedding_store, embedding_id=embedding_id)
+
+                # Add target_faces
+                for face_id, target_face_data in data['target_faces_data'].items():
+                    cropped_face = np.array(target_face_data['cropped_face']).astype('uint8')
+                    pixmap = common_widget_actions.get_pixmap_from_frame(self.main_window, cropped_face)
+                    embedding_store: Dict[str, np.ndarray] = {embed_model: np.array(embedding) for embed_model, embedding in target_face_data['embedding_store'].items()}
+                    list_view_actions.add_media_thumbnail_to_target_faces_list(self.main_window, cropped_face, embedding_store, pixmap, face_id)
+                    self.main_window.parameters[face_id] = target_face_data['parameters']
+
+                    # Set assigned embeddinng buttons
+                    embed_buttons = self.main_window.merged_embeddings
+                    assigned_embed_buttons: list = target_face_data['assigned_embed_buttons']
+                    for assigned_embedding_id in assigned_embed_buttons:
+                        self.main_window.target_faces[face_id].assigned_embed_buttons[embed_buttons[assigned_embedding_id]] = embed_buttons[assigned_embedding_id].embedding_store
+
+                    # Set assigned input face buttons
+                    input_face_buttons = self.main_window.input_faces
+                    assigned_input_face_buttons: list = target_face_data['assigned_input_face_buttons']
+                    for assigned_input_face_id in assigned_input_face_buttons:
+                        self.main_window.target_faces[face_id].assigned_input_face_buttons[input_face_buttons[assigned_input_face_id]] = self.main_window.input_faces[assigned_input_face_id].embedding_store
+                    
+                    # Set assigned input embedding (Input face + merged embeddings)
+                    assigned_input_embedding = {embed_model: np.array(embedding) for embed_model, embedding in target_face_data['assigned_input_embedding'].items()}
+                    self.main_window.target_faces[face_id].assigned_input_embedding = assigned_input_embedding
+                    # self.main_window.control = target_face_data['control']
+
+                # Add markers
+                video_control_actions.remove_all_markers(self.main_window)
+                for marker_position, marker_parameters in data['markers'].items():
+                    video_control_actions.add_marker(self.main_window, marker_parameters, int(marker_position))
+                # self.main_window.videoSeekSlider.setValue(0)
+                # video_control_actions.update_widget_values_from_markers(self.main_window, 0)
+            
+    def save_current_workspace(self):
+        main_window = self.main_window
+        target_faces_data = {}
+        embeddings_data = {}
+        input_faces_data = {}
+        for face_id, input_face in main_window.input_faces.items():
+            input_faces_data[face_id] = {'media_path': input_face.media_path}
+        for face_id, target_face in main_window.target_faces.items():
+            target_faces_data[face_id] = {
+                'cropped_face': target_face.cropped_face.tolist(), 
+                'embedding_store': {embed_model: embedding.tolist() for embed_model, embedding in target_face.embedding_store.items()},
+                'parameters': main_window.parameters[face_id].copy(), #Store the current parameters. This will be overriden when loading the workspace, if there are markers for the video.
+                'control': main_window.control.copy(), #Store the current control settings. This will be overriden when loading the workspace, if there are markers for the video.
+                'assigned_input_face_buttons': [input_face.face_id for input_face in target_face.assigned_input_face_buttons.keys()],
+                'assigned_embed_buttons': [embed_button.embedding_id for embed_button in target_face.assigned_embed_buttons.keys()],
+                'assigned_input_embedding': {embed_model: embedding.tolist() for embed_model, embedding in target_face.assigned_input_embedding.items()}
+                }
+        for embedding_id, embed_button in main_window.merged_embeddings.items():
+            embeddings_data[embedding_id] = {
+                'embedding_store': {embed_model: embedding.tolist() for embed_model,embedding in embed_button.embedding_store.items()}, 
+                'embedding_name': embed_button.embedding_name}
+        
+        save_data = {
+            'target_faces_data': target_faces_data,
+            'input_faces_data': input_faces_data,
+            'embeddings_data': embeddings_data,
+            'input_faces_data': input_faces_data,
+            'markers': main_window.markers
+        }
+        data_filename, _ = QtWidgets.QFileDialog.getSaveFileName(main_window, filter='JSON (*.json)')
+        if data_filename:
+            with open(data_filename, 'w') as data_file:
+                data_as_json = json.dumps(save_data, indent=4)  # Salva con indentazione per leggibilità
+                data_file.write(data_as_json)
+            
     def on_context_menu(self, point):
         # show context menu
         self.popMenu.exec_(self.mapToGlobal(point))
 
 class TargetFaceCardButton(CardButton):
-    def __init__(self, media_path, cropped_face, embedding_store: Dict[str, np.ndarray], *args, **kwargs):
+    def __init__(self, media_path, cropped_face, embedding_store: Dict[str, np.ndarray], face_id:str, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # if self.main_window.target_faces:
         #     self.face_id = max([target_face.face_id for target_face in self.main_window.target_faces]) + 1
         # else:
         #     self.face_id = 0
-        self.face_id = uuid.uuid1().int
+        self.face_id = face_id
         self.media_path = media_path
         self.cropped_face = cropped_face
 
         self.embedding_store = embedding_store  # Key: embedding_swap_model, Value: embedding
 
-        self.assigned_input_face_buttons: Dict[InputFaceCardButton, Dict[str, np.ndarray]] = {}  # Key: embedding_swap_model, Value: InputFaceCardButton.embedding_store
+        self.assigned_input_face_buttons: Dict[InputFaceCardButton, Dict[str, np.ndarray]] = {}  # Inside Dict: {Key: embedding_swap_model, Value: InputFaceCardButton.embedding_store}
         self.assigned_embed_buttons: Dict[EmbeddingCardButton, Dict[str, np.ndarray]] = {}  # Key: embedding_swap_model, Value: EmbeddingCardButton.embedding_store
         self.assigned_input_embedding = {}  # Key: embedding_swap_model, Value: np.ndarray
         
@@ -348,9 +438,9 @@ class TargetFaceCardButton(CardButton):
             common_widget_actions.refresh_frame(main_window=self.main_window)
 
 class InputFaceCardButton(CardButton):
-    def __init__(self, media_path, cropped_face, embedding_store: Dict[str, np.ndarray], *args, **kwargs):
+    def __init__(self, media_path, cropped_face, embedding_store: Dict[str, np.ndarray], face_id: str, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.face_id = uuid.uuid1().int
+        self.face_id = face_id
         self.cropped_face = cropped_face
         self.embedding_store = embedding_store  # Key: embedding_swap_model, Value: embedding
         self.media_path = media_path
@@ -437,9 +527,9 @@ class InputFaceCardButton(CardButton):
             embed_create_dialog.exec_()
 
 class EmbeddingCardButton(CardButton):
-    def __init__(self, embedding_name: str, embedding_store: Dict[str, np.ndarray], *args, **kwargs):
+    def __init__(self, embedding_name: str, embedding_store: Dict[str, np.ndarray], embedding_id: str, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.embedding_id = uuid.uuid1().int
+        self.embedding_id = embedding_id
         self.embedding_store = embedding_store  # Key: embedding_swap_model, Value: embedding
         self.embedding_name = embedding_name
         self.setCheckable(True)
@@ -576,14 +666,15 @@ class CreateEmbeddingDialog(QtWidgets.QDialog):
             self.create_and_add_embed_button_to_list(
                 main_window=self.main_window, 
                 embedding_name=self.embedding_name, 
-                embedding_store=final_embedding_store  # Passa l'intero embedding_store
+                embedding_store=final_embedding_store,  # Passa l'intero embedding_store
+                embedding_id=str(uuid.uuid1().int)
             )
             self.accept()
 
-    def create_and_add_embed_button_to_list(self, main_window: 'MainWindow', embedding_name, embedding_store):
+    def create_and_add_embed_button_to_list(self, main_window: 'MainWindow', embedding_name, embedding_store, embedding_id):
         inputEmbeddingsList = main_window.inputEmbeddingsList
         # Passa l'intero embedding_store
-        embed_button = EmbeddingCardButton(main_window=main_window, embedding_name=embedding_name, embedding_store=embedding_store)
+        embed_button = EmbeddingCardButton(main_window=main_window, embedding_name=embedding_name, embedding_store=embedding_store, embedding_id=embedding_id)
 
         button_size = QtCore.QSize(120, 30)  # Imposta una dimensione fissa per i pulsanti
         embed_button.setFixedSize(button_size)
