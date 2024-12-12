@@ -8,7 +8,7 @@ import App.UI.Widgets.Actions.LayoutActions as layout_actions
 
 import App.UI.Widgets.Actions.VideoControlActions as video_control_actions
 from App.UI.Widgets.Actions import FilterActions as filter_actions
-from App.UI.Widgets.Actions import EmbeddingActions as embedding_actions
+from App.UI.Widgets.Actions import SaveLoadActions as save_load_actions
 from App.UI.Widgets.Actions import ListViewActions as list_view_actions
 
 from functools import partial
@@ -145,9 +145,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.inputFacesSearchBox.textChanged.connect(partial(filter_actions.filterInputFaces, self))
         self.inputEmbeddingsSearchBox.textChanged.connect(partial(filter_actions.filterMergedEmbeddings, self))
-        self.openEmbeddingButton.clicked.connect(partial(embedding_actions.open_embeddings_from_file, self))
-        self.saveEmbeddingButton.clicked.connect(partial(embedding_actions.save_embeddings_to_file, self))
-        self.saveEmbeddingAsButton.clicked.connect(partial(embedding_actions.save_embeddings_to_file, self, True))
+        self.openEmbeddingButton.clicked.connect(partial(save_load_actions.open_embeddings_from_file, self))
+        self.saveEmbeddingButton.clicked.connect(partial(save_load_actions.save_embeddings_to_file, self))
+        self.saveEmbeddingAsButton.clicked.connect(partial(save_load_actions.save_embeddings_to_file, self, True))
 
         self.swapfacesButton.clicked.connect(partial(video_control_actions.process_swap_faces, self))
         self.editFacesButton.clicked.connect(partial(video_control_actions.process_edit_faces, self))

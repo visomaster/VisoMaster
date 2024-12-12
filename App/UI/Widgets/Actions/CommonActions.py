@@ -301,28 +301,3 @@ def update_placeholder_visibility(main_window: 'MainWindow', list_widget:QtWidge
     print("SetVisible", is_visible)
     print("targetVideosList.count()", list_widget.count())
 
-def save_current_parameters_and_control(main_window: 'MainWindow', face_id):
-    data_filename, _ = QtWidgets.QFileDialog.getSaveFileName(main_window, filter='JSON (*.json)')
-    data = {
-        'parameters': main_window.parameters[face_id].copy(),
-        'control': main_window.control.copy(),
-    }
-
-    if data_filename:
-        with open(data_filename, 'w') as data_file:
-            data_as_json = json.dumps(data, indent=4)  # Salva con indentazione per leggibilità
-            data_file.write(data_as_json)
-
-def load_parameters_and_settings(main_window: 'MainWindow', face_id, load_settings=False):
-    data_filename, _ = QtWidgets.QFileDialog.getOpenFileName(main_window, filter='JSON (*.json)')
-    if data_filename:
-        with open(data_filename, 'r') as data_file:
-            data = json.load(data_file)
-            main_window.parameters[face_id] = data['parameters'].copy()
-            if main_window.selected_target_face_id == face_id:
-                set_widgets_values_using_face_id_parameters(main_window, face_id)
-            if load_settings:
-                main_window.control = data['control']
-                set_control_widgets_values(main_window)
-            refresh_frame(main_window)
-

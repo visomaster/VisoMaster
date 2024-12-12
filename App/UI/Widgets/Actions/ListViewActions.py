@@ -144,6 +144,30 @@ def add_media_thumbnail_button(main_window: 'MainWindow', buttonClass: 'widget_c
     listWidget.setResizeMode(QtWidgets.QListView.Adjust)  # Adjust layout automatically
 
 
+def create_and_add_embed_button_to_list(main_window: 'MainWindow', embedding_name, embedding_store, embedding_id):
+    inputEmbeddingsList = main_window.inputEmbeddingsList
+    # Passa l'intero embedding_store
+    embed_button = widget_components.EmbeddingCardButton(main_window=main_window, embedding_name=embedding_name, embedding_store=embedding_store, embedding_id=embedding_id)
+
+    button_size = QtCore.QSize(120, 30)  # Imposta una dimensione fissa per i pulsanti
+    embed_button.setFixedSize(button_size)
+    
+    list_item = QtWidgets.QListWidgetItem(inputEmbeddingsList)
+    list_item.setSizeHint(button_size)
+    embed_button.list_item = list_item
+    list_item.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+    
+    inputEmbeddingsList.setItemWidget(list_item, embed_button)
+    
+    # Aggiungi padding attorno ai pulsanti
+    grid_size_with_padding = button_size + QtCore.QSize(4, 4)
+    inputEmbeddingsList.setGridSize(grid_size_with_padding)  # Add padding around the buttons
+    inputEmbeddingsList.setWrapping(True)  # Set grid size with padding
+    inputEmbeddingsList.setFlow(QtWidgets.QListView.LeftToRight)  # Set flow direction
+    inputEmbeddingsList.setResizeMode(QtWidgets.QListView.Adjust)  # Adjust layout automatically
+
+    main_window.merged_embeddings[embed_button.embedding_id] = embed_button
+    
 def clear_stop_loading_target_media(main_window: 'MainWindow'):
     if main_window.video_loader_worker:
         main_window.video_loader_worker.stop()

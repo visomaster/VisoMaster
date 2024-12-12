@@ -28,6 +28,17 @@ def clear_input_faces(main_window: 'MainWindow'):
         target_face.calculateAssignedInputEmbedding()
     common_widget_actions.refresh_frame(main_window=main_window)
 
+def clear_merged_embeddings(main_window: 'MainWindow'):
+    main_window.inputEmbeddingsList.clear()
+    for embedding_id, embed_button in main_window.merged_embeddings.items():
+        embed_button.deleteLater()
+    main_window.merged_embeddings = {}
+
+    for face_id, target_face in main_window.target_faces.items():
+        target_face.assigned_embed_buttons = {}
+        target_face.calculateAssignedInputEmbedding()
+    common_widget_actions.refresh_frame(main_window=main_window)
+
 def uncheck_all_input_faces(main_window: 'MainWindow'):
     # Uncheck All other input faces 
     for face_id, input_face_button in main_window.input_faces.items():
