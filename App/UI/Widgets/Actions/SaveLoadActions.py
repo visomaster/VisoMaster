@@ -29,7 +29,7 @@ def open_embeddings_from_file(main_window: 'MainWindow'):
 
             # Reset per ogni target face
             for face_id, target_face in main_window.target_faces.items():
-                target_face.assigned_embed_buttons = {}
+                target_face.assigned_merged_embeddings = {}
                 target_face.assigned_input_embedding = {}
 
             # Carica gli embedding dal file e crea il dizionario embedding_store
@@ -123,7 +123,8 @@ def load_saved_workspace(main_window: 'MainWindow', media_button: 'widget_compon
             main_window.input_faces_loader_worker = ui_workers.InputFacesLoaderWorker(main_window=main_window, folder_name=False, files_list=input_media_paths, face_ids=input_face_ids)
             main_window.input_faces_loader_worker.thumbnail_ready.connect(partial(list_view_actions.add_media_thumbnail_to_source_faces_list, main_window))
             main_window.input_faces_loader_worker.finished.connect(partial(common_widget_actions.refresh_frame, main_window))
-            main_window.input_faces_loader_worker.run()
+            #Use run() instead of start(), as we dont want it running in a different thread as it could create synchronisation issues in the steps below
+            main_window.input_faces_loader_worker.run() 
 
             # Add embeddings
             embeddings_data = data['embeddings_data']
@@ -142,15 +143,14 @@ def load_saved_workspace(main_window: 'MainWindow', media_button: 'widget_compon
 
                 # Set assigned embeddinng buttons
                 embed_buttons = main_window.merged_embeddings
-                assigned_embed_buttons: list = target_face_data['assigned_embed_buttons']
-                for assigned_embedding_id in assigned_embed_buttons:
-                    main_window.target_faces[face_id].assigned_embed_buttons[embed_buttons[assigned_embedding_id]] = embed_buttons[assigned_embedding_id].embedding_store
+                assigned_merged_embeddings: list = target_face_data['assigned_merged_embeddings']
+                for assigned_merged_embedding_id in assigned_merged_embeddings:
+                    main_window.target_faces[face_id].assigned_merged_embeddings[assigned_merged_embedding_id] = embed_buttons[assigned_merged_embedding_id].embedding_store
 
                 # Set assigned input face buttons
-                input_face_buttons = main_window.input_faces
-                assigned_input_face_buttons: list = target_face_data['assigned_input_face_buttons']
-                for assigned_input_face_id in assigned_input_face_buttons:
-                    main_window.target_faces[face_id].assigned_input_face_buttons[input_face_buttons[assigned_input_face_id]] = main_window.input_faces[assigned_input_face_id].embedding_store
+                assigned_input_faces: list = target_face_data['assigned_input_faces']
+                for assigned_input_face_id in assigned_input_faces:
+                    main_window.target_faces[face_id].assigned_input_faces[assigned_input_face_id] = main_window.input_faces[assigned_input_face_id].embedding_store
                 
                 # Set assigned input embedding (Input face + merged embeddings)
                 assigned_input_embedding = {embed_model: np.array(embedding) for embed_model, embedding in target_face_data['assigned_input_embedding'].items()}
@@ -177,8 +177,8 @@ def save_current_workspace(main_window: 'MainWindow', media_button: 'widget_comp
             'embedding_store': {embed_model: embedding.tolist() for embed_model, embedding in target_face.embedding_store.items()},
             'parameters': main_window.parameters[face_id].copy(), #Store the current parameters. This will be overriden when loading the workspace, if there are markers for the video.
             'control': main_window.control.copy(), #Store the current control settings. This will be overriden when loading the workspace, if there are markers for the video.
-            'assigned_input_face_buttons': [input_face.face_id for input_face in target_face.assigned_input_face_buttons.keys()],
-            'assigned_embed_buttons': [embed_button.embedding_id for embed_button in target_face.assigned_embed_buttons.keys()],
+            'assigned_input_faces': [input_face_id for input_face_id in target_face.assigned_input_faces.keys()],
+            'assigned_merged_embeddings': [embedding_id for embedding_id in target_face.assigned_merged_embeddings.keys()],
             'assigned_input_embedding': {embed_model: embedding.tolist() for embed_model, embedding in target_face.assigned_input_embedding.items()}
             }
     for embedding_id, embed_button in main_window.merged_embeddings.items():

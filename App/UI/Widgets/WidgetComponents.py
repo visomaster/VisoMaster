@@ -174,9 +174,9 @@ class TargetMediaCardButton(CardButton):
         # create context menu
         self.popMenu = QtWidgets.QMenu(self)
         load_video_workspace_action = QtGui.QAction('Load Saved Workspace', self)
-        load_video_workspace_action.triggered.connect(save_load_actions.load_saved_workspace)
+        load_video_workspace_action.triggered.connect(partial(save_load_actions.load_saved_workspace, self.main_window, self))
         save_current_workspace_action = QtGui.QAction('Save Current Workspace', self)
-        save_current_workspace_action.triggered.connect(save_load_actions.save_current_workspace)
+        save_current_workspace_action.triggered.connect(partial(save_load_actions.save_current_workspace, self.main_window, self))
         self.popMenu.addAction(load_video_workspace_action)
         self.popMenu.addAction(save_current_workspace_action)
             
@@ -197,8 +197,8 @@ class TargetFaceCardButton(CardButton):
 
         self.embedding_store = embedding_store  # Key: embedding_swap_model, Value: embedding
 
-        self.assigned_input_face_buttons: Dict[InputFaceCardButton, Dict[str, np.ndarray]] = {}  # Inside Dict: {Key: embedding_swap_model, Value: InputFaceCardButton.embedding_store}
-        self.assigned_embed_buttons: Dict[EmbeddingCardButton, Dict[str, np.ndarray]] = {}  # Key: embedding_swap_model, Value: EmbeddingCardButton.embedding_store
+        self.assigned_input_faces: Dict[str, Dict[str, np.ndarray]] = {}  # Inside Dict: {Key: embedding_swap_model, Value: InputFaceCardButton.embedding_store}
+        self.assigned_merged_embeddings: Dict[str, Dict[str, np.ndarray]] = {}  # Key: embedding_swap_model, Value: EmbeddingCardButton.embedding_store
         self.assigned_input_embedding = {}  # Key: embedding_swap_model, Value: np.ndarray
         
         self.setCheckable(True)
@@ -240,10 +240,10 @@ class TargetFaceCardButton(CardButton):
         card_actions.uncheck_all_input_faces(main_window)
         card_actions.uncheck_all_merged_embeddings(main_window)
 
-        for input_face_button in self.assigned_input_face_buttons.keys():
-            input_face_button.setChecked(True)
-        for embed_button in self.assigned_embed_buttons.keys():
-            embed_button.setChecked(True)
+        for input_face_id in self.assigned_input_faces.keys():
+            main_window.input_faces[input_face_id].setChecked(True)
+        for embedding_id in self.assigned_merged_embeddings.keys():
+            main_window.merged_embeddings[embedding_id].setChecked(True)
         
         main_window.selected_target_face_id = self.face_id
         print('main_window.selected_target_face_id', main_window.selected_target_face_id)     
@@ -257,14 +257,14 @@ class TargetFaceCardButton(CardButton):
         all_input_embeddings = []
         all_embedding_swap_models = set()
 
-        # Itera su `assigned_input_face_buttons` e raccogli gli embedding e i modelli
-        for face_button, embedding_store in self.assigned_input_face_buttons.items():
+        # Itera su `assigned_input_faces` e raccogli gli embedding e i modelli
+        for input_face_id, embedding_store in self.assigned_input_faces.items():
             if embedding_store:  # Verifica se l'embedding_store non è vuoto
                 all_embedding_swap_models.update(embedding_store.keys())
                 all_input_embeddings.append(embedding_store)  # Aggiungi l'intero store
         
-        # Itera su `assigned_embed_buttons` e raccogli gli embedding e i modelli
-        for embed_button, embedding_store in self.assigned_embed_buttons.items():
+        # Itera su `assigned_merged_embeddings` e raccogli gli embedding e i modelli
+        for embedding_id, embedding_store in self.assigned_merged_embeddings.items():
             if embedding_store:  # Verifica se l'embedding_store non è vuoto
                 all_embedding_swap_models.update(embedding_store.keys())
                 all_input_embeddings.append(embedding_store)  # Aggiungi l'intero store
@@ -381,15 +381,16 @@ class InputFaceCardButton(CardButton):
         if main_window.cur_selected_target_face_button:
             cur_selected_target_face_button = main_window.cur_selected_target_face_button
             if not QtWidgets.QApplication.keyboardModifiers() == qtc.Qt.ControlModifier:
-                for input_face_button in cur_selected_target_face_button.assigned_input_face_buttons.keys():
+                for input_face_id in cur_selected_target_face_button.assigned_input_faces.keys():
+                    input_face_button = main_window.input_faces[input_face_id]
                     if input_face_button!=self:
                         input_face_button.setChecked(False)
-                cur_selected_target_face_button.assigned_input_face_buttons = {}
+                cur_selected_target_face_button.assigned_input_faces = {}
 
-            cur_selected_target_face_button.assigned_input_face_buttons[self] = self.embedding_store
+            cur_selected_target_face_button.assigned_input_faces[self.face_id] = self.embedding_store
 
             if not self.isChecked():
-                cur_selected_target_face_button.assigned_input_face_buttons.pop(self)
+                cur_selected_target_face_button.assigned_input_faces.pop(self.face_id)
             cur_selected_target_face_button.calculateAssignedInputEmbedding()
         else:
             if not QtWidgets.QApplication.keyboardModifiers() == qtc.Qt.ControlModifier:
@@ -470,15 +471,16 @@ class EmbeddingCardButton(CardButton):
             
             cur_selected_target_face_button = main_window.cur_selected_target_face_button
             if not QtWidgets.QApplication.keyboardModifiers() == qtc.Qt.ControlModifier:
-                for embed_button in cur_selected_target_face_button.assigned_embed_buttons.keys():
+                for embedding_id in cur_selected_target_face_button.assigned_merged_embeddings.keys():
+                    embed_button = main_window.merged_embeddings[embedding_id]
                     if embed_button!=self:
                         embed_button.setChecked(False)
-                cur_selected_target_face_button.assigned_embed_buttons = {}
+                cur_selected_target_face_button.assigned_merged_embeddings = {}
 
-            cur_selected_target_face_button.assigned_embed_buttons[self] = self.embedding_store
+            cur_selected_target_face_button.assigned_merged_embeddings[self.embedding_id] = self.embedding_store
 
             if not self.isChecked():
-                cur_selected_target_face_button.assigned_embed_buttons.pop(self)
+                cur_selected_target_face_button.assigned_merged_embeddings.pop(self.embedding_id)
             cur_selected_target_face_button.calculateAssignedInputEmbedding()
         else:
             if not QtWidgets.QApplication.keyboardModifiers() == qtc.Qt.ControlModifier:
