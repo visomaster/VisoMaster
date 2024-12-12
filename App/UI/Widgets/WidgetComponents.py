@@ -331,6 +331,17 @@ class TargetFaceCardButton(CardButton):
         common_widget_actions.refresh_frame(self.main_window)
         self.deleteLater()
 
+    def remove_assigned_input_face(self, input_face_id):
+        if self.assigned_input_faces.get(input_face_id):
+            self.assigned_input_faces.pop(input_face_id)
+            self.calculateAssignedInputEmbedding()
+
+
+    def remove_assigned_merged_embedding(self, embedding_id):
+        if self.assigned_merged_embeddings.get(embedding_id):
+            self.assigned_merged_embeddings.pop(embedding_id)
+            self.calculateAssignedInputEmbedding()
+
     def copy_parameters(self):
 
         self.main_window.copied_parameters = self.main_window.parameters[self.face_id].copy()
@@ -504,11 +515,13 @@ class EmbeddingCardButton(CardButton):
 
     def remove_embedding_from_list(self):
         main_window = self.main_window
-        for i in range(main_window.inputEmbeddingsList.count()):
+        for i in range(main_window.inputEmbeddingsList.count()-1, -1, -1):
             list_item = main_window.inputEmbeddingsList.item(i)
             if list_item.listWidget().itemWidget(list_item) == self:
                 main_window.inputEmbeddingsList.takeItem(i)   
                 main_window.merged_embeddings.pop(self.embedding_id)
+                for target_face_id in main_window.target_faces:
+                    main_window.target_faces[target_face_id].remove_assigned_merged_embedding(self.embedding_id)
         common_widget_actions.refresh_frame(self.main_window)
         self.deleteLater()
 
