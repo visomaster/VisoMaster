@@ -663,37 +663,13 @@ class CreateEmbeddingDialog(QtWidgets.QDialog):
                     final_embedding_store[swap_model] = np.median(embeddings, axis=0)
 
             # Crea e aggiungi il nuovo embedding_store con tutti i modelli di swap
-            self.create_and_add_embed_button_to_list(
+            embedding_actions.create_and_add_embed_button_to_list(
                 main_window=self.main_window, 
                 embedding_name=self.embedding_name, 
                 embedding_store=final_embedding_store,  # Passa l'intero embedding_store
                 embedding_id=str(uuid.uuid1().int)
             )
             self.accept()
-
-    def create_and_add_embed_button_to_list(self, main_window: 'MainWindow', embedding_name, embedding_store, embedding_id):
-        inputEmbeddingsList = main_window.inputEmbeddingsList
-        # Passa l'intero embedding_store
-        embed_button = EmbeddingCardButton(main_window=main_window, embedding_name=embedding_name, embedding_store=embedding_store, embedding_id=embedding_id)
-
-        button_size = QtCore.QSize(120, 30)  # Imposta una dimensione fissa per i pulsanti
-        embed_button.setFixedSize(button_size)
-        
-        list_item = QtWidgets.QListWidgetItem(inputEmbeddingsList)
-        list_item.setSizeHint(button_size)
-        embed_button.list_item = list_item
-        list_item.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        
-        inputEmbeddingsList.setItemWidget(list_item, embed_button)
-        
-        # Aggiungi padding attorno ai pulsanti
-        grid_size_with_padding = button_size + QtCore.QSize(4, 4)
-        inputEmbeddingsList.setGridSize(grid_size_with_padding)  # Add padding around the buttons
-        inputEmbeddingsList.setWrapping(True)  # Set grid size with padding
-        inputEmbeddingsList.setFlow(QtWidgets.QListView.LeftToRight)  # Set flow direction
-        inputEmbeddingsList.setResizeMode(QtWidgets.QListView.Adjust)  # Adjust layout automatically
-
-        main_window.merged_embeddings[embed_button.embedding_id] = embed_button
 
 # Custom progress dialog
 class ProgressDialog(QtWidgets.QProgressDialog):
