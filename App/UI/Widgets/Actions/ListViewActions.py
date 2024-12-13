@@ -21,13 +21,13 @@ from functools import partial
 
 # Functions to add Buttons with thumbnail for selecting videos/images and faces
 @QtCore.Slot(str, QtGui.QPixmap)
-def add_media_thumbnail_to_target_videos_list(main_window: 'MainWindow', media_path, pixmap, file_type):
-    add_media_thumbnail_button(main_window, widget_components.TargetMediaCardButton, main_window.targetVideosList, main_window.target_videos, pixmap, media_path=media_path, file_type=file_type)
+def add_media_thumbnail_to_target_videos_list(main_window: 'MainWindow', media_path, pixmap, file_type, media_id):
+    add_media_thumbnail_button(main_window, widget_components.TargetMediaCardButton, main_window.targetVideosList, main_window.target_videos, pixmap, media_path=media_path, file_type=file_type, media_id=media_id)
 
 # Functions to add Buttons with thumbnail for selecting videos/images and faces
 @QtCore.Slot(str, QtGui.QPixmap, str, int, int)
-def add_webcam_thumbnail_to_target_videos_list(main_window: 'MainWindow', media_path, pixmap, file_type, webcam_index, webcam_backend):
-    add_media_thumbnail_button(main_window, widget_components.TargetMediaCardButton, main_window.targetVideosList, main_window.target_videos, pixmap, media_path=media_path, file_type=file_type, webcams=True, webcam_index=webcam_index, webcam_backend=webcam_backend)
+def add_webcam_thumbnail_to_target_videos_list(main_window: 'MainWindow', media_path, pixmap, file_type, media_id, webcam_index, webcam_backend):
+    add_media_thumbnail_button(main_window, widget_components.TargetMediaCardButton, main_window.targetVideosList, main_window.target_videos, pixmap, media_path=media_path, file_type=file_type, media_id=media_id, is_webcam=True, webcam_index=webcam_index, webcam_backend=webcam_backend)
 
 @QtCore.Slot()
 def add_media_thumbnail_to_target_faces_list(main_window: 'MainWindow', cropped_face, embedding_store, pixmap, face_id):
@@ -40,9 +40,9 @@ def add_media_thumbnail_to_source_faces_list(main_window: 'MainWindow', media_pa
 
 def add_media_thumbnail_button(main_window: 'MainWindow', buttonClass: 'widget_components.CardButton', listWidget:QtWidgets.QListWidget, buttons_list:list, pixmap, **kwargs):
     if buttonClass==widget_components.TargetMediaCardButton:
-        constructor_args = (kwargs.get('media_path'), kwargs.get('file_type'))
-        if kwargs.get('webcams'):
-            constructor_args+=(kwargs.get('webcams'), kwargs.get('webcam_index'), kwargs.get('webcam_backend'))
+        constructor_args = (kwargs.get('media_path'), kwargs.get('file_type'), kwargs.get('media_id'))
+        if kwargs.get('is_webcam'):
+            constructor_args+=(kwargs.get('is_webcam'), kwargs.get('webcam_index'), kwargs.get('webcam_backend'))
     elif buttonClass in (widget_components.TargetFaceCardButton, widget_components.InputFaceCardButton):
         constructor_args = (kwargs.get('media_path',''), kwargs.get('cropped_face'), kwargs.get('embedding_store'), kwargs.get('face_id'))
     if buttonClass==widget_components.TargetMediaCardButton:

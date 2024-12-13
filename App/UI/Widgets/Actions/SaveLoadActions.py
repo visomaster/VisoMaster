@@ -111,9 +111,28 @@ def load_saved_workspace(main_window: 'MainWindow', media_button: 'widget_compon
         with open(data_filename, 'r') as data_file:
             data = json.load(data_file)
             list_view_actions.clear_stop_loading_input_media(main_window)
+            list_view_actions.clear_stop_loading_target_media(main_window)
+            main_window.target_videos = {}
             card_actions.clear_input_faces(main_window)
             card_actions.clear_target_faces(main_window)
             card_actions.clear_merged_embeddings(main_window)
+
+            # Add target medias
+            target_medias_data = data['target_medias_data']
+            target_medias_files_list = []
+            target_media_ids = []
+            for media_data in target_medias_data:
+                target_medias_files_list.append(media_data['media_path'])
+                target_media_ids.append(media_data['media_id'])
+
+            main_window.video_loader_worker = ui_workers.TargetMediaLoaderWorker(main_window=main_window, folder_name=False, files_list=target_medias_files_list, media_ids=target_media_ids)
+            main_window.video_loader_worker.thumbnail_ready.connect(partial(list_view_actions.add_media_thumbnail_to_target_videos_list, main_window))
+            main_window.video_loader_worker.run()
+
+            # Select target media
+            selected_media_id = data['selected_media_id']
+            if selected_media_id is not False:
+                main_window.target_videos[selected_media_id].click()
 
             # Add input faces (imgs)
             input_media_paths, input_face_ids = [], []
@@ -165,7 +184,6 @@ def load_saved_workspace(main_window: 'MainWindow', media_button: 'widget_compon
             # video_control_actions.update_widget_values_from_markers(main_window, 0)
         
 def save_current_workspace(main_window: 'MainWindow', media_button: 'widget_components.TargetMediaCardButton'):
-    main_window = main_window
     target_faces_data = {}
     embeddings_data = {}
     input_faces_data = {}
@@ -186,7 +204,11 @@ def save_current_workspace(main_window: 'MainWindow', media_button: 'widget_comp
             'embedding_store': {embed_model: embedding.tolist() for embed_model,embedding in embed_button.embedding_store.items()}, 
             'embedding_name': embed_button.embedding_name}
     
+    target_medias_data = [{'media_id': media_id, 'media_path': target_media.media_path}  for media_id,target_media in main_window.target_videos.items() if not target_media.is_webcam]
+    selected_media_id = main_window.selected_video_button.media_id if main_window.selected_video_button else False
     save_data = {
+        'selected_media_id': selected_media_id,
+        'target_medias_data': target_medias_data,
         'target_faces_data': target_faces_data,
         'input_faces_data': input_faces_data,
         'embeddings_data': embeddings_data,

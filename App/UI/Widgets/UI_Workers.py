@@ -18,15 +18,16 @@ if TYPE_CHECKING:
 
 class TargetMediaLoaderWorker(qtc.QThread):
     # Define signals to emit when loading is done or if there are updates
-    thumbnail_ready = qtc.Signal(str, QPixmap, str,)  # Signal with media path and QPixmap and file_type
-    webcam_thumbnail_ready = qtc.Signal(str, QPixmap, str, int, int)
+    thumbnail_ready = qtc.Signal(str, QPixmap, str, str)  # Signal with media path and QPixmap and file_type, media_id
+    webcam_thumbnail_ready = qtc.Signal(str, QPixmap, str, str, int, int)
     finished = qtc.Signal()  # Signal to indicate completion
 
-    def __init__(self, main_window: 'MainWindow', folder_name=False, files_list=[],  webcam_mode=False, parent=None,):
+    def __init__(self, main_window: 'MainWindow', folder_name=False, files_list=[], media_ids=[], webcam_mode=False, parent=None,):
         super().__init__(parent)
         self.main_window = main_window
         self.folder_name = folder_name
         self.files_list = files_list
+        self.media_ids = media_ids
         self.webcam_mode = webcam_mode
         self._running = True  # Flag to control the running state
 
@@ -45,6 +46,7 @@ class TargetMediaLoaderWorker(qtc.QThread):
         video_files = misc_helpers.get_video_files(folder_name, self.main_window.control['TargetMediaFolderRecursiveToggle'])
         image_files = misc_helpers.get_image_files(folder_name, self.main_window.control['TargetMediaFolderRecursiveToggle'])
 
+        i=0
         media_files = video_files + image_files
         for media_file in media_files:
             if not self._running:  # Check if the thread is still running
@@ -52,23 +54,34 @@ class TargetMediaLoaderWorker(qtc.QThread):
             media_file_path = os.path.join(folder_name, media_file)
             file_type = misc_helpers.get_file_type(media_file_path)
             pixmap = common_widget_actions.extract_frame_as_pixmap(media_file_path, file_type)
+            if self.media_ids:
+                media_id = self.media_ids[i]
+            else:
+                media_id = str(uuid.uuid1().int)
             if pixmap:
                 # Emit the signal to update GUI
-                self.thumbnail_ready.emit(media_file_path, pixmap, file_type,)
+                self.thumbnail_ready.emit(media_file_path, pixmap, file_type, media_id)
+            i+=1
         # Show/Hide the placeholder text based on the number of items in ListWidget
         self.main_window.placeholder_update_signal.emit(self.main_window.targetVideosList, False)
 
     def load_videos_and_images_from_files_list(self, files_list):
         self.main_window.placeholder_update_signal.emit(self.main_window.targetVideosList, True)
         media_files = files_list
+        i=0
         for media_file_path in media_files:
             if not self._running:  # Check if the thread is still running
                 break
             file_type = misc_helpers.get_file_type(media_file_path)
             pixmap = common_widget_actions.extract_frame_as_pixmap(media_file_path, file_type=file_type)
+            if self.media_ids:
+                media_id = self.media_ids[i]
+            else:
+                media_id = str(uuid.uuid1().int)
             if pixmap:
                 # Emit the signal to update GUI
-                self.thumbnail_ready.emit(media_file_path, pixmap, file_type,)
+                self.thumbnail_ready.emit(media_file_path, pixmap, file_type,media_id)
+            i+=1
         self.main_window.placeholder_update_signal.emit(self.main_window.targetVideosList, False)
 
     def load_webcams(self,):
@@ -77,9 +90,11 @@ class TargetMediaLoaderWorker(qtc.QThread):
         for i in range(int(self.main_window.control['WebcamMaxNoSelection'])):
             try:
                 pixmap = common_widget_actions.extract_frame_as_pixmap(media_file_path=f'Webcam {i}', file_type='webcam', webcam_index=i, webcam_backend=camera_backend)
+                media_id = str(uuid.uuid1().int)
+
                 if pixmap:
                     # Emit the signal to update GUI
-                    self.webcam_thumbnail_ready.emit(f'Webcam {i}', pixmap, 'webcam', i, camera_backend)
+                    self.webcam_thumbnail_ready.emit(f'Webcam {i}', pixmap, 'webcam',media_id, i, camera_backend)
             except Exception as e:
                 traceback.print_exc()
         self.main_window.placeholder_update_signal.emit(self.main_window.targetVideosList, False)

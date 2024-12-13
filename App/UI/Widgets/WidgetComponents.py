@@ -29,9 +29,9 @@ class CardButton(QPushButton):
         self.list_item  = None
 
 class TargetMediaCardButton(CardButton):
-    def __init__(self, media_path: str, file_type: str, is_webcam=False, webcam_index=-1, webcam_backend=-1, *args, **kwargs):
+    def __init__(self, media_path: str, file_type: str, media_id:str, is_webcam=False, webcam_index=-1, webcam_backend=-1, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.media_id = str(uuid.uuid1().int)
+        self.media_id = media_id
         self.file_type = file_type
         self.media_path = media_path
         self.is_webcam = is_webcam
