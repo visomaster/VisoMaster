@@ -9,7 +9,7 @@ import App.UI.Widgets.Actions.CommonActions as common_widget_actions
 
 import App.UI.Widgets.Actions.VideoControlActions as video_control_actions
 
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Dict, Tuple
 import time
 import subprocess
 from PIL import Image
@@ -61,7 +61,7 @@ class VideoProcessor(QObject):
         self.frame_processed_signal.connect(self.store_frame_to_display)
         self.frame_display_timer = QTimer()
         self.frame_display_timer.timeout.connect(self.display_next_frame)
-        self.frames_to_display = {}
+        self.frames_to_display: Dict[int, Tuple[QPixmap, numpy.ndarray]] = {}
 
 
         self.webcam_frame_processed_signal.connect(self.store_webcam_frame_to_display)
@@ -106,8 +106,7 @@ class VideoProcessor(QObject):
             self.current_frame = frame
 
             if self.recording:
-                pil_image = Image.fromarray(frame[..., ::-1])
-                pil_image.save(self.recording_sp.stdin, 'BMP')
+                self.recording_sp.stdin.write(frame.tobytes())
             # Update the widget values using parameters if it is not recording (The updation of actual parameters is already done inside the FrameWorker, this step is to make the changes appear in the widgets)
             if not self.recording:
                 video_control_actions.update_widget_values_from_markers(self.main_window, self.next_frame_to_display)
@@ -205,7 +204,7 @@ class VideoProcessor(QObject):
             self.frame_read_timer.stop()
 
         if self.frame_queue.qsize() >= self.num_threads:
-            print(f"Queue is full ({self.frame_queue.qsize()} frames). Throttling frame reading.")
+            # print(f"Queue is full ({self.frame_queue.qsize()} frames). Throttling frame reading.")
             return
 
         if self.file_type == 'video' and self.media_capture:
@@ -272,7 +271,7 @@ class VideoProcessor(QObject):
         print("Called process_next_webcam_frame()")
 
         if self.frame_queue.qsize() >= self.num_threads:
-            print(f"Queue is full ({self.frame_queue.qsize()} frames). Throttling frame reading.")
+            # print(f"Queue is full ({self.frame_queue.qsize()} frames). Throttling frame reading.")
             return
         if self.file_type == 'webcam' and self.media_capture:
             ret, frame = self.media_capture.read()
@@ -359,25 +358,26 @@ class VideoProcessor(QObject):
         self.threads.clear()
     
     def create_ffmpeg_subprocess(self):
-        frame_width = int(self.media_capture.get(3))
-        frame_height = int(self.media_capture.get(4))
+        
+        frame_height, frame_width, c = self.current_frame.shape
 
         self.temp_file = r'temp_output.mp4'
         if Path(self.temp_file).is_file():
             os.remove(self.temp_file)
 
-        args =  ["ffmpeg",
-                '-hide_banner',
-                '-loglevel',    'error',
-                "-an",
-                "-r",           str(self.fps),
-                "-i",           "pipe:",
-                # '-g',           '25',
-                "-vf",          "format=yuvj420p",
-                "-c:v",         "libx264",
-                "-crf",         '18',
-                "-r",           str(self.fps),
-                "-s",           str(frame_width)+"x"+str(frame_height),
-                self.temp_file]
+        args = [
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel", "error",
+            "-f", "rawvideo",             # Specify raw video input
+            "-pix_fmt", "bgr24",          # Pixel format of input frames
+            "-s", f"{frame_width}x{frame_height}",  # Frame resolution
+            "-r", str(self.fps),          # Frame rate
+            "-i", "pipe:",                # Input from stdin
+            "-vf", "format=yuvj420p",     # Output video format
+            "-c:v", "libx264",            # H.264 codec
+            "-crf", "18",                 # Quality setting
+            self.temp_file                # Output file
+        ]
 
         self.recording_sp = subprocess.Popen(args, stdin=subprocess.PIPE)
