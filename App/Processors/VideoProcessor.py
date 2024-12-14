@@ -8,6 +8,7 @@ import App.UI.Widgets.Actions.GraphicsViewActions as graphics_view_actions
 import App.UI.Widgets.Actions.CommonActions as common_widget_actions
 
 import App.UI.Widgets.Actions.VideoControlActions as video_control_actions
+import App.UI.Widgets.Actions.LayoutActions as layout_actions
 
 from typing import TYPE_CHECKING, Dict, Tuple
 import time
@@ -157,6 +158,7 @@ class VideoProcessor(QObject):
 
                 if self.recording:
                     self.create_ffmpeg_subprocess()
+                    layout_actions.disable_all_parameters_and_control_widget(self.main_window)
 
                 self.play_start_time = float(self.media_capture.get(cv2.CAP_PROP_POS_FRAMES) / float(self.fps))
 
@@ -300,6 +302,7 @@ class VideoProcessor(QObject):
             self.gpu_memory_update_timer.stop()
             self.join_and_clear_threads()
 
+
             print("Clearing Threads and Queues")
             self.threads.clear()
             self.frames_to_display.clear()
@@ -334,6 +337,8 @@ class VideoProcessor(QObject):
                             final_file]
                     subprocess.run(args) #Add Audio
                     os.remove(self.temp_file)
+                    layout_actions.enable_all_parameters_and_control_widget(self.main_window)
+
 
                 self.end_time = time.time()
                 processing_time = self.end_time - self.start_time
@@ -358,7 +363,7 @@ class VideoProcessor(QObject):
         self.threads.clear()
     
     def create_ffmpeg_subprocess(self):
-        
+
         frame_height, frame_width, c = self.current_frame.shape
 
         self.temp_file = r'temp_output.mp4'

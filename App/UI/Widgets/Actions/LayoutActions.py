@@ -312,3 +312,19 @@ def set_up_menu_actions(main_window: 'MainWindow'):
     main_window.actionSave_Embeddings.triggered.connect(partial(save_load_actions.save_embeddings_to_file, main_window))
     main_window.actionSave_Embeddings_As.triggered.connect(partial(save_load_actions.save_embeddings_to_file, main_window))
     main_window.actionView_Fullscreen_F11.triggered.connect(partial(video_control_actions.view_fullscreen, main_window))
+
+def disable_all_parameters_and_control_widget(main_window: 'MainWindow'):
+    for widget_name, widget in main_window.parameter_widgets.items():
+        widget.setDisabled(True)
+        widget.reset_default_button.setDisabled(True)
+        widget.label_widget.setDisabled(True)
+        if widget.line_edit:
+            widget.line_edit.setDisabled(True)
+
+def enable_all_parameters_and_control_widget(main_window: 'MainWindow'):
+    for widget_name, widget in main_window.parameter_widgets.items():
+        widget.setDisabled(False)
+        widget.reset_default_button.setDisabled(False)
+        widget.label_widget.setDisabled(False)
+        if widget.line_edit:
+            widget.line_edit.setDisabled(False)
