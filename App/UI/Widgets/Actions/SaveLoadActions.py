@@ -12,6 +12,8 @@ from PySide6 import QtWidgets, QtCore
 import json
 import numpy
 import numpy as np
+import os
+from pathlib import Path
 import uuid
 from functools import partial
 from typing import TYPE_CHECKING, Dict
@@ -105,8 +107,12 @@ def load_parameters_and_settings(main_window: 'MainWindow', face_id, load_settin
             common_actions.refresh_frame(main_window)
 
 
-def load_saved_workspace(main_window: 'MainWindow', media_button: 'widget_components.TargetMediaCardButton'):
-    data_filename, _ = QtWidgets.QFileDialog.getOpenFileName(main_window, filter='JSON (*.json)')
+def load_saved_workspace(main_window: 'MainWindow', data_filename: str|bool = False):
+    if not data_filename:
+        data_filename, _ = QtWidgets.QFileDialog.getOpenFileName(main_window, filter='JSON (*.json)')
+    # Check if File exists (In cases when filename is passed as function argument instead of from the file picker)
+    if not Path(data_filename).is_file():
+        data_filename = False
     if data_filename:
         with open(data_filename, 'r') as data_file:
             data = json.load(data_file)
@@ -183,7 +189,7 @@ def load_saved_workspace(main_window: 'MainWindow', media_button: 'widget_compon
             # main_window.videoSeekSlider.setValue(0)
             # video_control_actions.update_widget_values_from_markers(main_window, 0)
         
-def save_current_workspace(main_window: 'MainWindow', media_button: 'widget_components.TargetMediaCardButton'):
+def save_current_workspace(main_window: 'MainWindow', data_filename:str|bool = False):
     target_faces_data = {}
     embeddings_data = {}
     input_faces_data = {}
@@ -215,7 +221,9 @@ def save_current_workspace(main_window: 'MainWindow', media_button: 'widget_comp
         'input_faces_data': input_faces_data,
         'markers': main_window.markers
     }
-    data_filename, _ = QtWidgets.QFileDialog.getSaveFileName(main_window, filter='JSON (*.json)')
+    if not data_filename:
+        data_filename, _ = QtWidgets.QFileDialog.getSaveFileName(main_window, filter='JSON (*.json)')
+
     if data_filename:
         with open(data_filename, 'w') as data_file:
             data_as_json = json.dumps(save_data, indent=4)  # Salva con indentazione per leggibilità

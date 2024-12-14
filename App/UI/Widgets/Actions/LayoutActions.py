@@ -301,6 +301,9 @@ def show_hide_parameters_panel(main_window: 'MainWindow', checked):
 
 
 def set_up_menu_actions(main_window: 'MainWindow'):
+    main_window.actionLoad_SavedWorkspace.triggered.connect(partial(save_load_actions.load_saved_workspace, main_window,))
+    main_window.actionSave_CurrentWorkspace.triggered.connect(partial(save_load_actions.save_current_workspace, main_window,))
+
     main_window.actionOpen_Videos_Folder.triggered.connect(partial(list_view_actions.onClickSelectTargetVideos, main_window, 'folder'))
     main_window.actionOpen_Video_Files.triggered.connect(partial(list_view_actions.onClickSelectTargetVideos, main_window, 'files'))
     main_window.actionLoad_Source_Image_Files.triggered.connect(partial(list_view_actions.onClickSelectInputImages, main_window, 'files'))

@@ -895,6 +895,9 @@
     <property name="title">
      <string>File</string>
     </property>
+    <addaction name="actionLoad_SavedWorkspace"/>
+    <addaction name="actionSave_CurrentWorkspace"/>
+    <addaction name="separator"/>
     <addaction name="actionOpen_Videos_Folder"/>
     <addaction name="actionOpen_Video_Files"/>
     <addaction name="separator"/>
@@ -909,7 +912,7 @@
     <property name="title">
      <string>Edit</string>
     </property>
-    <addaction name="actionTest"/>
+    <addaction name="actionTest_2"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
@@ -969,6 +972,31 @@
   <action name="actionTest">
    <property name="text">
     <string>Test</string>
+   </property>
+  </action>
+  <action name="actionLoad_Saved_Workspace">
+   <property name="text">
+    <string>Load Saved Workspace</string>
+   </property>
+  </action>
+  <action name="actionSave_Current_Workspace">
+   <property name="text">
+    <string>Save Current Workspace</string>
+   </property>
+  </action>
+  <action name="actionTest_2">
+   <property name="text">
+    <string>Test</string>
+   </property>
+  </action>
+  <action name="actionLoad_SavedWorkspace">
+   <property name="text">
+    <string>Load Saved Workspace</string>
+   </property>
+  </action>
+  <action name="actionSave_CurrentWorkspace">
+   <property name="text">
+    <string>Save Current Workspace</string>
    </property>
   </action>
  </widget>

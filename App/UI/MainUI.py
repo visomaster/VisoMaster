@@ -10,7 +10,7 @@ import App.UI.Widgets.Actions.VideoControlActions as video_control_actions
 from App.UI.Widgets.Actions import FilterActions as filter_actions
 from App.UI.Widgets.Actions import SaveLoadActions as save_load_actions
 from App.UI.Widgets.Actions import ListViewActions as list_view_actions
-
+from pathlib import Path
 from functools import partial
 from App.Processors.VideoProcessor import VideoProcessor
 from App.Processors.ModelsProcessor import ModelsProcessor
@@ -177,6 +177,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.setupUi(self)
         self.initialize_variables()
         self.initialize_widgets()
+        self.loadLastWorkspace()
 
     def resizeEvent(self, event: QtGui.QResizeEvent):
         print("Called resizeEvent()")
@@ -197,5 +198,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         list_view_actions.clear_stop_loading_input_media(self)
         list_view_actions.clear_stop_loading_target_media(self)
 
+        save_load_actions.save_current_workspace(self, 'last_workspace.json')
         # Optionally handle the event if needed
         event.accept()
+
+    def loadLastWorkspace(self):
+        # Show the load workspace dialog if the file exists
+        if Path('last_workspace.json').is_file():
+            load_dialog = LoadLastWorkspaceDialog(self)
+            load_dialog.exec_()
+
+    def saveLastWorkspace(self):
+        pass

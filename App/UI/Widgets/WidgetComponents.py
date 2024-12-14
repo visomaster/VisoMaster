@@ -57,10 +57,10 @@ class TargetMediaCardButton(CardButton):
         """)
 
         # Set the context menu policy to trigger the custom context menu on right-click
-        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        # self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         # Connect the custom context menu request signal to the custom slot
-        self.customContextMenuRequested.connect(self.on_context_menu)
-        self.create_context_menu()
+        # self.customContextMenuRequested.connect(self.on_context_menu)
+        # self.create_context_menu()
 
     def loadMediaOnClick(self):
 
@@ -171,15 +171,7 @@ class TargetMediaCardButton(CardButton):
                     # Pop parameters using the target's face_id
 
     def create_context_menu(self):
-        # create context menu
-        self.popMenu = QtWidgets.QMenu(self)
-        load_video_workspace_action = QtGui.QAction('Load Saved Workspace', self)
-        load_video_workspace_action.triggered.connect(partial(save_load_actions.load_saved_workspace, self.main_window, self))
-        save_current_workspace_action = QtGui.QAction('Save Current Workspace', self)
-        save_current_workspace_action.triggered.connect(partial(save_load_actions.save_current_workspace, self.main_window, self))
-        self.popMenu.addAction(load_video_workspace_action)
-        self.popMenu.addAction(save_current_workspace_action)
-            
+        pass
     def on_context_menu(self, point):
         # show context menu
         self.popMenu.exec_(self.mapToGlobal(point))
@@ -596,6 +588,29 @@ class CreateEmbeddingDialog(QtWidgets.QDialog):
 class ProgressDialog(QtWidgets.QProgressDialog):
     pass
 
+class LoadLastWorkspaceDialog(QtWidgets.QDialog):
+    def __init__(self, main_window: 'MainWindow',):
+        super().__init__()
+        self.main_window = main_window
+        self.setWindowTitle("Load Last Workspace")
+
+        # Create button box
+        QBtn = QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
+        self.buttonBox = QtWidgets.QDialogButtonBox(QBtn)
+        self.buttonBox.accepted.connect(self.load_workspace)
+        self.buttonBox.rejected.connect(self.reject)
+
+        # Create layout and add widgets
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(QtWidgets.QLabel("Do you want to load your last workspace?"))
+        layout.addWidget(self.buttonBox)
+
+        # Set dialog layout
+        self.setLayout(layout)
+
+    def load_workspace(self):
+        save_load_actions.load_saved_workspace(self.main_window, 'last_workspace.json')    
+        self.accept()
 
 class ParametersWidget:
     def __init__(self, *args, **kwargs):
