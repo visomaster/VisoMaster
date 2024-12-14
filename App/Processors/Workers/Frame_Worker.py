@@ -45,9 +45,10 @@ class FrameWorker(threading.Thread):
             # Process the frame with model inference
             print(f"Processing frame {self.frame_number}")
             if self.main_window.swapfacesButton.isChecked() or self.main_window.editFacesButton.isChecked() or self.main_window.control['FrameEnhancerEnableToggle']:
-                self.frame = self.process_swap()
-            # Img must be in BGR format
-            self.frame = self.frame[..., ::-1]  # Swap the channels from RGB to BGR
+                self.frame = self.process_frame()
+            else:
+                # Img must be in BGR format
+                self.frame = self.frame[..., ::-1]  # Swap the channels from RGB to BGR
             self.frame = np.ascontiguousarray(self.frame)
 
             # Display the frame if processing is still active
@@ -78,7 +79,7 @@ class FrameWorker(threading.Thread):
         except Exception as e:
             print(f"Error in FrameWorker: {e}")
     
-    def process_swap(self):
+    def process_frame(self):
         # Load frame into VRAM
         img = torch.from_numpy(self.frame.astype('uint8')).to(self.models_processor.device) #HxWxc
         img = img.permute(2,0,1)#cxHxW
@@ -202,7 +203,8 @@ class FrameWorker(threading.Thread):
                                             #print("Key-points value {} exceed the image size {}.".format(kpoint, (img_x, img_y)))
                                             continue
 
-        return img
+        # RGB to BGR
+        return img[..., ::-1]
 
     def swap_core(self, img, kps_5, kps=False, s_e=[], t_e=[], parameters={}, control={}, dfm_model=False): # img = RGB
         # parameters = self.parameters.copy()
