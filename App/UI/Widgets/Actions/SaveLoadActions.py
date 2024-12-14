@@ -188,6 +188,11 @@ def load_saved_workspace(main_window: 'MainWindow', data_filename: str|bool = Fa
                 video_control_actions.add_marker(main_window, marker_parameters, int(marker_position))
             # main_window.videoSeekSlider.setValue(0)
             # video_control_actions.update_widget_values_from_markers(main_window, 0)
+
+            # Load control (settings)
+            control = data['control']
+            main_window.control = control
+            common_widget_actions.set_control_widgets_values(main_window)
         
 def save_current_workspace(main_window: 'MainWindow', data_filename:str|bool = False):
     target_faces_data = {}
@@ -219,7 +224,8 @@ def save_current_workspace(main_window: 'MainWindow', data_filename:str|bool = F
         'input_faces_data': input_faces_data,
         'embeddings_data': embeddings_data,
         'input_faces_data': input_faces_data,
-        'markers': main_window.markers
+        'markers': main_window.markers,
+        'control': main_window.control
     }
     if not data_filename:
         data_filename, _ = QtWidgets.QFileDialog.getSaveFileName(main_window, filter='JSON (*.json)')
