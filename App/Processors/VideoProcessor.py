@@ -366,7 +366,7 @@ class VideoProcessor(QObject):
         self.threads.clear()
     
     def create_ffmpeg_subprocess(self):
-
+        # Use Dimensions of the last processed frame as it could be different from the original frame due to restorers and frame enhancers 
         frame_height, frame_width, c = self.current_frame.shape
 
         self.temp_file = r'temp_output.mp4'

@@ -66,9 +66,8 @@ def find_target_faces(main_window: 'MainWindow'):
         if video_processor.file_type=='image':
             frame = cv2.imread(video_processor.media_path)
         elif video_processor.file_type=='video' and media_capture:
-            media_capture.set(cv2.CAP_PROP_POS_FRAMES, video_processor.current_frame_number)
             ret,frame = misc_helpers.read_frame(media_capture)
-            media_capture.release()
+            media_capture.set(cv2.CAP_PROP_POS_FRAMES, video_processor.current_frame_number)
         elif video_processor.file_type=='webcam' and media_capture:
             ret, frame = misc_helpers.read_frame(media_capture)
         if frame is not None:
