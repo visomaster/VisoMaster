@@ -80,7 +80,7 @@ class FrameWorker(threading.Thread):
         except Exception as e:
             print(f"Error in FrameWorker: {e}")
     
-    @misc_helpers.benchmark
+    # @misc_helpers.benchmark
     def process_frame(self):
         # Load frame into VRAM
         img = torch.from_numpy(self.frame.astype('uint8')).to(self.models_processor.device) #HxWxc

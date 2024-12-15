@@ -317,7 +317,7 @@ def setRecordButtonIcon(main_window: 'MainWindow'):
         main_window.buttonMediaRecord.setIcon(QtGui.QIcon(":/media/Media/rec_off.png"))
         main_window.buttonMediaRecord.setToolTip("Start Recording")
 
-@misc_helpers.benchmark
+# @misc_helpers.benchmark
 @QtCore.Slot(int)
 def OnChangeSlider(main_window: 'MainWindow', new_position=0):
     print("Called OnChangeSlider()")
@@ -362,7 +362,7 @@ def on_slider_pressed(main_window: 'MainWindow'):
     position = main_window.videoSeekSlider.value()
     print(f"\nSlider Pressed. position: {position}\n")
 
-@misc_helpers.benchmark
+# @misc_helpers.benchmark
 def on_slider_released(main_window: 'MainWindow'):
     # print("Called on_slider_released()")
 

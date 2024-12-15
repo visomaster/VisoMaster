@@ -171,6 +171,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         font.setBold(True)
         self.vramProgressBar.setFont(font)
         common_widget_actions.update_gpu_memory_progressbar(self)
+        # Set face_swap_tab as the default focused tab
+        self.tabWidget.setCurrentIndex(0)
         # widget_actions.add_groupbox_and_widgets_from_layout_map(self)
     def __init__(self):
         super(MainWindow, self).__init__()

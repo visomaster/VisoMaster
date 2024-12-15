@@ -4,7 +4,7 @@ if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
 import App.Helpers.Miscellaneous as misc_helpers
 
-@misc_helpers.benchmark
+# @misc_helpers.benchmark
 def update_graphics_view(main_window: 'MainWindow', pixmap: QtGui.QPixmap, current_frame_number, reset_fit=False):
     print('(update_graphics_view) current_frame_number', current_frame_number)
     

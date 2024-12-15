@@ -287,7 +287,7 @@ class VideoProcessor(QObject):
                 self.frame_queue.put(self.current_frame_number)
                 self.start_frame_worker(self.current_frame_number, frame)
 
-    @misc_helpers.benchmark
+    # @misc_helpers.benchmark
     def stop_processing(self):
         """Stop video processing and signal completion."""
         if not self.processing:

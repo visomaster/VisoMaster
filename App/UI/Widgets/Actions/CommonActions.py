@@ -165,7 +165,7 @@ def show_hide_related_widgets(main_window: 'MainWindow', parent_widget, parent_w
 
             parent_widget.start_animation()
 
-@misc_helpers.benchmark    
+# @misc_helpers.benchmark    
 def get_pixmap_from_frame(main_window: 'MainWindow', frame: np.ndarray):
     height, width, channel = frame.shape
     if channel == 2:
