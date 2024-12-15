@@ -70,6 +70,8 @@ def find_target_faces(main_window: 'MainWindow'):
             media_capture.set(cv2.CAP_PROP_POS_FRAMES, video_processor.current_frame_number)
         elif video_processor.file_type=='webcam' and media_capture:
             ret, frame = misc_helpers.read_frame(media_capture)
+            media_capture.set(cv2.CAP_PROP_POS_FRAMES, video_processor.current_frame_number)
+
         if frame is not None:
         # Frame must be in RGB format
             frame = frame[..., ::-1]  # Swap the channels from BGR to RGB

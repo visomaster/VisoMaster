@@ -137,7 +137,7 @@ def load_saved_workspace(main_window: 'MainWindow', data_filename: str|bool = Fa
 
             # Select target media
             selected_media_id = data['selected_media_id']
-            if selected_media_id is not False:
+            if selected_media_id is not False and main_window.target_videos.get(selected_media_id):
                 main_window.target_videos[selected_media_id].click()
 
             # Add input faces (imgs)
