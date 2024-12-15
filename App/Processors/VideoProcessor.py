@@ -236,7 +236,7 @@ class VideoProcessor(QObject):
 
         self.next_frame_to_display = self.current_frame_number
         if self.file_type == 'video' and self.media_capture:
-            ret, frame = misc_helpers.read_frame(self.media_capture, preview_mode = not self.recording)
+            ret, frame = misc_helpers.read_frame(self.media_capture, preview_mode=False)
             if ret:
                 frame = frame[..., ::-1]  # Convert BGR to RGB
                 print(f"Enqueuing frame {self.current_frame_number}")
@@ -261,7 +261,7 @@ class VideoProcessor(QObject):
 
         # Handle webcam capture
         elif self.file_type == 'webcam':
-            ret, frame = misc_helpers.read_frame(self.media_capture, preview_mode = not self.recording)
+            ret, frame = misc_helpers.read_frame(self.media_capture, preview_mode = False)
             if ret:
                 frame = frame[..., ::-1]  # Convert BGR to RGB
                 print(f"Enqueuing frame {self.current_frame_number}")
@@ -278,7 +278,7 @@ class VideoProcessor(QObject):
             # print(f"Queue is full ({self.frame_queue.qsize()} frames). Throttling frame reading.")
             return
         if self.file_type == 'webcam' and self.media_capture:
-            ret, frame = misc_helpers.read_frame(self.media_capture, preview_mode = not self.recording)
+            ret, frame = misc_helpers.read_frame(self.media_capture, preview_mode = False)
             if ret:
                 frame = frame[..., ::-1]  # Convert BGR to RGB
                 print(f"Enqueuing frame {self.current_frame_number}")
