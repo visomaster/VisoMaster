@@ -274,31 +274,33 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: LayoutDict
             widget = main_window.parameter_widgets[widget_name]
             common_widget_actions.show_hide_related_widgets(main_window, widget, widget_name)
 
-import time
 def show_hide_faces_panel(main_window: 'MainWindow', checked):
     if checked:
         main_window.facesPanelGroupBox.show()
     else:
         main_window.facesPanelGroupBox.hide()
-    if main_window.scene.items():
-        QtCore.QTimer.singleShot(0, partial(graphics_view_actions.fit_image_to_view, main_window, main_window.scene.items()[0]))
+    _fit_image_to_view(main_window)
 
 def show_hide_input_target_media_panel(main_window: 'MainWindow', checked):
     if checked:
         main_window.input_Target_DockWidget.show()
     else:
         main_window.input_Target_DockWidget.hide()
-    if main_window.scene.items():
-        QtCore.QTimer.singleShot(0, partial(graphics_view_actions.fit_image_to_view, main_window, main_window.scene.items()[0]))
+    _fit_image_to_view(main_window)
 
 def show_hide_parameters_panel(main_window: 'MainWindow', checked):
     if checked:
         main_window.controlOptionsDockWidget.show()
     else:
         main_window.controlOptionsDockWidget.hide()
-    if main_window.scene.items():
-        QtCore.QTimer.singleShot(0, partial(graphics_view_actions.fit_image_to_view, main_window, main_window.scene.items()[0]))
+    _fit_image_to_view(main_window)
 
+def _fit_image_to_view(main_window: 'MainWindow'):
+    pixmap_items = main_window.scene.items()
+    if pixmap_items:
+        pixmap_item = pixmap_items[0]
+        scene_rect = pixmap_item.boundingRect()
+        QtCore.QTimer.singleShot(0, partial(graphics_view_actions.fit_image_to_view, main_window, pixmap_item, scene_rect))
 
 def set_up_menu_actions(main_window: 'MainWindow'):
     main_window.actionLoad_SavedWorkspace.triggered.connect(partial(save_load_actions.load_saved_workspace, main_window,))

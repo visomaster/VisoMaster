@@ -5,6 +5,7 @@ if TYPE_CHECKING:
 from App.UI.Widgets.WidgetComponents import *
 from App.UI.Widgets.SettingsLayoutData import SETTINGS_LAYOUT_DATA
 from pyqttoast import Toast, ToastPreset, ToastPosition
+import App.Helpers.Miscellaneous as misc_helpers
 import threading
 import numpy
 import json
@@ -163,7 +164,8 @@ def show_hide_related_widgets(main_window: 'MainWindow', parent_widget, parent_w
                                 current_widget.line_edit.show()
 
             parent_widget.start_animation()
-            
+
+@misc_helpers.benchmark    
 def get_pixmap_from_frame(main_window: 'MainWindow', frame: np.ndarray):
     height, width, channel = frame.shape
     if channel == 2:
@@ -208,13 +210,13 @@ def extract_frame_as_pixmap(media_file_path, file_type, webcam_index=False, webc
         frame = cv2.imread(media_file_path)
     elif file_type=='video':    
         cap = cv2.VideoCapture(media_file_path)
-        ret, frame = cap.read()
+        ret, frame = misc_helpers.read_frame(cap)
         cap.release()
     elif file_type=='webcam':
         camera = cv2.VideoCapture(webcam_index, webcam_backend)
         if not camera.isOpened():
             return
-        ret, frame = camera.read()
+        ret, frame = misc_helpers.read_frame(camera)
         if not ret:
             return
 

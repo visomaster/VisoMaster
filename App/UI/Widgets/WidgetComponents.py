@@ -7,6 +7,7 @@ import App.UI.Widgets.Actions.CardActions as card_actions
 import App.UI.Widgets.Actions.ListViewActions as list_view_actions
 import App.UI.Widgets.Actions.SaveLoadActions as save_load_actions
 import App.UI.Widgets.UI_Workers as ui_workers
+import App.Helpers.Miscellaneous as misc_helpers
 import PySide6.QtCore as qtc
 import cv2
 import numpy as np
@@ -94,7 +95,7 @@ class TargetMediaCardButton(CardButton):
 
             media_capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
             max_frames_number = int(media_capture.get(cv2.CAP_PROP_FRAME_COUNT)) - 1
-            ret, frame = media_capture.read()
+            ret, frame = misc_helpers.read_frame(media_capture)
             main_window.video_processor.media_capture = media_capture
             main_window.video_processor.fps = media_capture.get(cv2.CAP_PROP_FPS)
             main_window.video_processor.max_frame_number = max_frames_number
@@ -111,7 +112,7 @@ class TargetMediaCardButton(CardButton):
             media_capture.set(cv2.CAP_PROP_FRAME_WIDTH, int(res_width))
             media_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, int(res_height))
             max_frames_number = 999999
-            ret, frame = media_capture.read()
+            ret, frame = misc_helpers.read_frame(media_capture)
             main_window.video_processor.media_capture = media_capture
             main_window.video_processor.fps = media_capture.get(cv2.CAP_PROP_FPS)
             main_window.video_processor.max_frame_number = max_frames_number

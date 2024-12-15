@@ -9,6 +9,7 @@ import App.UI.Widgets.Actions.CommonActions as common_widget_actions
 
 import App.UI.Widgets.Actions.VideoControlActions as video_control_actions
 import App.UI.Widgets.Actions.LayoutActions as layout_actions
+import App.Helpers.Miscellaneous as misc_helpers
 
 from typing import TYPE_CHECKING, Dict, Tuple
 import time
@@ -168,6 +169,7 @@ class VideoProcessor(QObject):
                     fps = self.media_capture.get(cv2.CAP_PROP_FPS)
                 
                 interval = 1000 / fps if fps > 0 else 30
+                interval = int(interval * 0.8) #Process 20% faster to offset the frame loading & processing time so the video will be played close to the original fps
                 print(f"Starting frame_read_timer with an interval of {interval} ms.")
                 if self.recording:
                     self.frame_read_timer.start()
@@ -210,7 +212,7 @@ class VideoProcessor(QObject):
             return
 
         if self.file_type == 'video' and self.media_capture:
-            ret, frame = self.media_capture.read()
+            ret, frame = misc_helpers.read_frame(self.media_capture, preview_mode = not self.recording)
             if ret:
                 frame = frame[..., ::-1]  # Convert BGR to RGB
                 print(f"Enqueuing frame {self.current_frame_number}")
@@ -234,7 +236,7 @@ class VideoProcessor(QObject):
 
         self.next_frame_to_display = self.current_frame_number
         if self.file_type == 'video' and self.media_capture:
-            ret, frame = self.media_capture.read()
+            ret, frame = misc_helpers.read_frame(self.media_capture, preview_mode = not self.recording)
             if ret:
                 frame = frame[..., ::-1]  # Convert BGR to RGB
                 print(f"Enqueuing frame {self.current_frame_number}")
@@ -259,7 +261,7 @@ class VideoProcessor(QObject):
 
         # Handle webcam capture
         elif self.file_type == 'webcam':
-            ret, frame = self.media_capture.read()
+            ret, frame = misc_helpers.read_frame(self.media_capture, preview_mode = not self.recording)
             if ret:
                 frame = frame[..., ::-1]  # Convert BGR to RGB
                 print(f"Enqueuing frame {self.current_frame_number}")
@@ -276,13 +278,14 @@ class VideoProcessor(QObject):
             # print(f"Queue is full ({self.frame_queue.qsize()} frames). Throttling frame reading.")
             return
         if self.file_type == 'webcam' and self.media_capture:
-            ret, frame = self.media_capture.read()
+            ret, frame = misc_helpers.read_frame(self.media_capture, preview_mode = not self.recording)
             if ret:
                 frame = frame[..., ::-1]  # Convert BGR to RGB
                 print(f"Enqueuing frame {self.current_frame_number}")
                 self.frame_queue.put(self.current_frame_number)
                 self.start_frame_worker(self.current_frame_number, frame)
 
+    @misc_helpers.benchmark
     def stop_processing(self):
         """Stop video processing and signal completion."""
         if not self.processing:

@@ -184,7 +184,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         super().resizeEvent(event)
         # Call the method to fit the image to the view whenever the window resizes
         if self.scene.items():
-            graphics_view_actions.fit_image_to_view(self, self.scene.items()[0])
+            pixmap_item = self.scene.items()[0]
+            # Set the scene rectangle to the bounding rectangle of the pixmap
+            scene_rect = pixmap_item.boundingRect()
+            self.graphicsViewFrame.setSceneRect(scene_rect)
+            graphics_view_actions.fit_image_to_view(self, pixmap_item, scene_rect )
 
     def keyPressEvent(self, event):
         # Toggle full screen when F11 is pressed

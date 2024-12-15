@@ -1,5 +1,7 @@
 import os
 import cv2
+import time
+from functools import wraps
 image_extensions = ('.jpg', '.jpeg', '.jpe', '.png', '.webp', '.tif', '.tiff', '.jp2', '.exr', '.hdr', '.ras', '.pnm', '.ppm', '.pgm', '.pbm', '.pfm')
 video_extensions = ('.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv', '.webm', '.m4v', '.3gp')
 
@@ -69,3 +71,23 @@ def get_scaled_resolution(media_capture: cv2.VideoCapture):
         scale = min(width_scale, height_scale)
         media_width,media_height = media_width* scale, media_height*scale
     return int(media_width), int(media_height)
+
+
+def benchmark(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        start_time = time.perf_counter()  # Record the start time
+        result = func(*args, **kwargs)  # Call the original function
+        end_time = time.perf_counter()  # Record the end time
+        elapsed_time = end_time - start_time  # Calculate elapsed time
+        print(f"Function '{func.__name__}' executed in {elapsed_time:.6f} seconds.")
+        return result  # Return the result of the original function
+    return wrapper
+
+@benchmark
+def read_frame(capture_obj: cv2.VideoCapture, preview_mode=True):
+    ret, frame = capture_obj.read()
+    if ret and preview_mode:
+        width, height = get_scaled_resolution(capture_obj)
+        frame = cv2.resize(frame, dsize=(width, height), interpolation=cv2.INTER_CUBIC)
+    return ret, frame

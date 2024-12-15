@@ -3,6 +3,7 @@ if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
 
 import copy
+import App.Helpers.Miscellaneous as misc_helpers
 import App.UI.Widgets.Actions.CommonActions as common_widget_actions
 from App.UI.Widgets.Actions import GraphicsViewActions as graphics_view_actions
 import cv2
@@ -316,6 +317,7 @@ def setRecordButtonIcon(main_window: 'MainWindow'):
         main_window.buttonMediaRecord.setIcon(QtGui.QIcon(":/media/Media/rec_off.png"))
         main_window.buttonMediaRecord.setToolTip("Start Recording")
 
+@misc_helpers.benchmark
 @QtCore.Slot(int)
 def OnChangeSlider(main_window: 'MainWindow', new_position=0):
     print("Called OnChangeSlider()")
@@ -329,7 +331,7 @@ def OnChangeSlider(main_window: 'MainWindow', new_position=0):
     video_processor.next_frame_to_display = new_position
     if video_processor.media_capture:
         video_processor.media_capture.set(cv2.CAP_PROP_POS_FRAMES, new_position)
-        ret, frame = video_processor.media_capture.read()
+        ret, frame = misc_helpers.read_frame(video_processor.media_capture)
         if ret:
             pixmap = common_widget_actions.get_pixmap_from_frame(main_window, frame)
             graphics_view_actions.update_graphics_view(main_window, pixmap, new_position)
@@ -360,6 +362,7 @@ def on_slider_pressed(main_window: 'MainWindow'):
     position = main_window.videoSeekSlider.value()
     print(f"\nSlider Pressed. position: {position}\n")
 
+@misc_helpers.benchmark
 def on_slider_released(main_window: 'MainWindow'):
     # print("Called on_slider_released()")
 

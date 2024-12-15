@@ -17,6 +17,7 @@ import threading
 from App.Processors.Utils.DFMModel import DFMModel
 import App.UI.Widgets.Actions.CommonActions as common_widget_actions
 import App.UI.Widgets.Actions.VideoControlActions as video_control_actions
+import App.Helpers.Miscellaneous as misc_helpers
 
 import traceback
 import time
@@ -79,6 +80,7 @@ class FrameWorker(threading.Thread):
         except Exception as e:
             print(f"Error in FrameWorker: {e}")
     
+    @misc_helpers.benchmark
     def process_frame(self):
         # Load frame into VRAM
         img = torch.from_numpy(self.frame.astype('uint8')).to(self.models_processor.device) #HxWxc
@@ -100,21 +102,21 @@ class FrameWorker(threading.Thread):
 
             img = tscale(img)
 
-            det_scale = torch.div(new_height, img_y)
+            # det_scale = torch.div(new_height, img_y)
 
         elif img_x<512:
             new_height = int(512*img_y/img_x)
             tscale = v2.Resize((new_height, 512), antialias=True)
             img = tscale(img)
 
-            det_scale = torch.div(new_height, img_y)
+            # det_scale = torch.div(new_height, img_y)
 
         elif img_y<512:
             new_height = 512
             tscale = v2.Resize((new_height, int(512*img_x/img_y)), antialias=True)
             img = tscale(img)
 
-            det_scale = torch.div(new_height, img_y)
+            # det_scale = torch.div(new_height, img_y)
 
         control = self.main_window.control.copy()
         # Rotate the frame

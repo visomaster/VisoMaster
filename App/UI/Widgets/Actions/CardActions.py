@@ -4,6 +4,7 @@ if TYPE_CHECKING:
     from App.UI.MainUI import MainWindow
 import App.UI.Widgets.Actions.CommonActions as common_widget_actions
 import App.UI.Widgets.Actions.ListViewActions as list_view_actions
+import App.Helpers.Miscellaneous as misc_helpers
 import uuid
 import numpy
 import cv2
@@ -60,16 +61,16 @@ def find_target_faces(main_window: 'MainWindow'):
     video_processor = main_window.video_processor
     if video_processor.media_path:
         frame = None
-        print(video_processor.media_capture)
+        media_capture = video_processor.media_capture
+
         if video_processor.file_type=='image':
             frame = cv2.imread(video_processor.media_path)
-        elif video_processor.file_type=='video' and video_processor.media_capture:
-            media_capture = cv2.VideoCapture(video_processor.media_path)
+        elif video_processor.file_type=='video' and media_capture:
             media_capture.set(cv2.CAP_PROP_POS_FRAMES, video_processor.current_frame_number)
-            ret,frame = media_capture.read()
+            ret,frame = misc_helpers.read_frame(media_capture)
             media_capture.release()
-        elif video_processor.file_type=='webcam' and video_processor.media_capture:
-            ret, frame = video_processor.media_capture.read()
+        elif video_processor.file_type=='webcam' and media_capture:
+            ret, frame = misc_helpers.read_frame(media_capture)
         if frame is not None:
         # Frame must be in RGB format
             frame = frame[..., ::-1]  # Swap the channels from BGR to RGB
