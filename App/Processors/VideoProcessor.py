@@ -152,14 +152,16 @@ class VideoProcessor(QObject):
 
             if self.media_capture and self.media_capture.isOpened():
                 print("Starting video processing.")
-                self.start_time = time.time()
+                if self.recording:
+                    layout_actions.disable_all_parameters_and_control_widget(self.main_window)
+
+                self.start_time = time.perf_counter()
                 self.processing = True
                 self.frames_to_display.clear()
                 self.threads.clear()
 
                 if self.recording:
                     self.create_ffmpeg_subprocess()
-                    layout_actions.disable_all_parameters_and_control_widget(self.main_window)
 
                 self.play_start_time = float(self.media_capture.get(cv2.CAP_PROP_POS_FRAMES) / float(self.fps))
 
@@ -340,14 +342,15 @@ class VideoProcessor(QObject):
                             final_file]
                     subprocess.run(args) #Add Audio
                     os.remove(self.temp_file)
-                    layout_actions.enable_all_parameters_and_control_widget(self.main_window)
 
-
-                self.end_time = time.time()
+                self.end_time = time.perf_counter()
                 processing_time = self.end_time - self.start_time
                 print(f"\nProcessing completed in {processing_time} seconds")
                 avg_fps = ((self.play_end_time - self.play_start_time) * self.fps) / processing_time
                 print(f'Average FPS: {avg_fps}\n')
+
+                if self.recording:
+                    layout_actions.enable_all_parameters_and_control_widget(self.main_window)
 
             self.recording = False #Set recording as False to make sure the next process_video() call doesnt not record the video, unless the user press the record button
 
