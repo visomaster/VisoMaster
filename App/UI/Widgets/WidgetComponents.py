@@ -649,8 +649,8 @@ class LoadLastWorkspaceDialog(QtWidgets.QDialog):
         self.setLayout(layout)
 
     def load_workspace(self):
-        save_load_actions.load_saved_workspace(self.main_window, 'last_workspace.json')    
         self.accept()
+        save_load_actions.load_saved_workspace(self.main_window, 'last_workspace.json')    
 
 class ParametersWidget:
     def __init__(self, *args, **kwargs):

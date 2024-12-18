@@ -162,6 +162,24 @@ def remove_face_parameters_from_markers(main_window: 'MainWindow', face_id):
             delete_all_markers(main_window)
             break
 
+def advance_video_slider_by_n_frames(main_window: 'MainWindow', n=30):
+    video_processor = main_window.video_processor
+    if video_processor.media_capture:
+        current_position = int(main_window.videoSeekSlider.value())
+        new_position = current_position + n
+        if new_position > video_processor.max_frame_number:
+            new_position = video_processor.max_frame_number
+        main_window.videoSeekSlider.setValue(new_position)
+
+def rewind_video_slider_by_n_frames(main_window: 'MainWindow', n=30):
+    video_processor = main_window.video_processor
+    if video_processor.media_capture:
+        current_position = int(main_window.videoSeekSlider.value())
+        new_position = current_position - n
+        if new_position < 0:
+            new_position = 0
+        main_window.videoSeekSlider.setValue(new_position)
+
 def delete_all_markers(main_window: 'MainWindow'):
     main_window.videoSeekSlider.markers = set()
     main_window.videoSeekSlider.update()

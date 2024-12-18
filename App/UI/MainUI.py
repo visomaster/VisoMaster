@@ -124,6 +124,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.videoSeekSlider.sliderReleased.connect(partial(video_control_actions.on_slider_released, self))
         self.videoSeekSlider.sliderMoved.connect(partial(print, 'Slider Moved ()'))
         video_control_actions.set_up_video_seek_slider(self)
+        self.frameAdvanceButton.clicked.connect(partial(video_control_actions.advance_video_slider_by_n_frames, self))
+        self.frameRewindButton.clicked.connect(partial(video_control_actions.rewind_video_slider_by_n_frames, self))
+
         self.addMarkerButton.clicked.connect(partial(video_control_actions.add_video_slider_marker, self))
         self.removeMarkerButton.clicked.connect(partial(video_control_actions.remove_video_slider_marker, self))
         self.nextMarkerButton.clicked.connect(partial(video_control_actions.move_slider_to_next_nearest_marker, self))

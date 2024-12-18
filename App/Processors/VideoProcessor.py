@@ -177,8 +177,8 @@ class VideoProcessor(QObject):
                     self.frame_read_timer.start()
                     self.frame_display_timer.start()
                 else:
-                    self.frame_read_timer.start()
-                    self.frame_display_timer.start(interval)
+                    self.frame_read_timer.start(interval)
+                    self.frame_display_timer.start()
                 self.gpu_memory_update_timer.start(5000) #Update GPU memory progressbar every 5 Seconds
 
             else:
