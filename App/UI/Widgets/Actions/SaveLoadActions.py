@@ -4,7 +4,7 @@ import App.UI.Widgets.WidgetComponents as widget_components
 import App.UI.Widgets.Actions.CardActions as card_actions
 import App.UI.Widgets.Actions.ListViewActions as list_view_actions
 import App.UI.Widgets.Actions.VideoControlActions as video_control_actions
-
+import App.UI.Widgets.Actions.LayoutActions as layout_actions
 import App.UI.Widgets.Actions.CommonActions as common_actions
 import App.UI.Widgets.UI_Workers as ui_workers
 
@@ -193,6 +193,8 @@ def load_saved_workspace(main_window: 'MainWindow', data_filename: str|bool = Fa
             control = data['control']
             main_window.control = control
             common_widget_actions.set_control_widgets_values(main_window)
+            layout_actions._fit_image_to_view(main_window)
+
         
 def save_current_workspace(main_window: 'MainWindow', data_filename:str|bool = False):
     target_faces_data = {}
