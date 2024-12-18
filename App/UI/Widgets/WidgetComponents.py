@@ -585,6 +585,45 @@ class CreateEmbeddingDialog(QtWidgets.QDialog):
             )
             self.accept()
 
+
+
+class LoadingDialog(QtWidgets.QDialog):
+    def __init__(self, message="Loading Models, please wait...\nDon't panic if it looks stuck!"):
+        super().__init__()
+        self.setWindowTitle("Loading Models")
+        self.setModal(True)  # Block interaction with other windows
+        self.setFixedSize(225, 125)  # Increased size for better layout
+
+        # Create main layout
+        layout = QtWidgets.QVBoxLayout()
+        layout.setContentsMargins(4, 4, 4, 4)  # Add some padding
+        layout.setSpacing(8)  # Add spacing between elements
+
+        # Icon Label
+        self.icon_label = QtWidgets.QLabel()
+        self.icon_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.icon_label.setPixmap(
+            QtGui.QPixmap(":/media/Media/repeat.png").scaled(
+                30, 30, 
+                QtCore.Qt.AspectRatioMode.KeepAspectRatio, 
+                QtCore.Qt.TransformationMode.SmoothTransformation
+            )
+        )
+
+        # Message Label
+        self.label = QtWidgets.QLabel(message)
+        self.label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.label.setWordWrap(True)  # Allow text to wrap within the dialog
+        self.label.setStyleSheet("""
+            font-size: 12px;  /* Set font size */
+            font-weight: bold;  /* Make the text bold */
+        """)
+
+        # Add widgets to layout
+        layout.addWidget(self.icon_label)
+        layout.addWidget(self.label)
+        self.setLayout(layout)
+
 # Custom progress dialog
 class ProgressDialog(QtWidgets.QProgressDialog):
     pass

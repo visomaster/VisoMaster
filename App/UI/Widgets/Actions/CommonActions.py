@@ -192,6 +192,18 @@ def set_gpu_memory_progressbar_value(main_window: 'MainWindow', memory_used, mem
     main_window.vramProgressBar.setMaximum(memory_total)
     main_window.vramProgressBar.setValue(memory_used)
     main_window.vramProgressBar.setFormat(f'{round(memory_used/1024,2)} GB / {round(memory_total/1024,2)} GB (%p%)')
+    if (memory_used/memory_total)> 0.85:
+        main_window.vramProgressBar.setStyleSheet('''
+            QProgressBar::chunk {
+                background-color: #911414;  /* Set chunk color to green */
+            }
+        ''')
+    else:
+        main_window.vramProgressBar.setStyleSheet('''
+            QProgressBar::chunk {
+                background-color: #16759e;  /* Set chunk color to green */
+            }
+        ''')
     main_window.vramProgressBar.update()
 
 def clear_gpu_memory(main_window: 'MainWindow'):
@@ -303,3 +315,14 @@ def update_placeholder_visibility(main_window: 'MainWindow', list_widget:QtWidge
     print("SetVisible", is_visible)
     print("targetVideosList.count()", list_widget.count())
 
+
+@qtc.Slot()
+def show_model_loading_dialog(main_window: 'MainWindow'):
+    main_window.model_loading_dialog = LoadingDialog()
+    main_window.model_loading_dialog.show()
+    QtWidgets.QApplication.processEvents()
+
+@qtc.Slot()
+def hide_model_loading_dialog(main_window: 'MainWindow'):
+    main_window.model_loading_dialog.hide()
+    QtWidgets.QApplication.processEvents()

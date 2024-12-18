@@ -1,10 +1,12 @@
 from PySide6.QtCore import QRunnable, QThreadPool, Signal, QObject, QTimer, QCoreApplication, QThread
 import PySide6.QtCore as qtc
-from PySide6.QtWidgets import QProgressDialog
+
+from PySide6.QtWidgets import QProgressDialog, QApplication
 import onnxruntime
 from functools import partial
 from threading import Thread
 from App.UI.Widgets.WidgetComponents import ProgressDialog
+import App.UI.Widgets.Actions.CommonActions as common_widget_actions
 import time
 import threading
 lock = threading.Lock()
@@ -202,6 +204,8 @@ class ModelsProcessor(QObject):
 
     def load_model(self, model_name, session_options=None):
         with self.model_lock:
+            self.main_window.model_loading_signal.emit()
+            # QApplication.processEvents()
             if session_options is None:
                 model_instance = onnxruntime.InferenceSession(self.models_path[model_name], providers=self.providers)
             else:
@@ -212,12 +216,14 @@ class ModelsProcessor(QObject):
                 del model_instance
                 gc.collect()
                 return self.models[model_name]
+            self.main_window.model_loaded_signal.emit()
 
             return model_instance
-    
+
     def load_dfm_model(self, dfm_model):
         with self.model_lock:
             if not self.dfm_models.get(dfm_model):
+                self.main_window.model_loading_signal.emit()
                 max_models_to_keep = self.main_window.control['MaxDFMModelsSlider']
                 total_loaded_models = len(self.dfm_models)
                 if total_loaded_models==max_models_to_keep:
@@ -227,12 +233,15 @@ class ModelsProcessor(QObject):
                     self.dfm_models.pop(model_name)
                     gc.collect()
                 self.dfm_models[dfm_model] = DFMModel(self.main_window.dfm_models_data[dfm_model], self.providers, self.device)
+            self.main_window.model_loaded_signal.emit()
             return self.dfm_models[dfm_model]
 
 
     def load_model_trt(self, model_name, custom_plugin_path=None, precision='fp16', debug=False):
         # self.showModelLoadingProgressBar()
         #time.sleep(0.5)
+        self.main_window.model_loading_signal.emit()
+
         if not os.path.exists(self.models_trt_path[model_name]):
             onnx2trt(onnx_model_path=self.models_path[model_name],
                      trt_model_path=self.models_trt_path[model_name],
@@ -242,8 +251,7 @@ class ModelsProcessor(QObject):
                     )
         model_instance = TensorRTPredictor(model_path=self.models_trt_path[model_name], custom_plugin_path=custom_plugin_path, pool_size=self.nThreads, device=self.device, debug=debug)
 
-        # model_instance = 'FAsfd'
-        # self.hideModelLoadProgressBar()
+        self.main_window.model_loaded_signal.emit()
         return model_instance
 
     def delete_models(self):

@@ -229,7 +229,10 @@ class VideoProcessor(QObject):
         """Start a FrameWorker to process the given frame."""
         worker = FrameWorker(frame, self.main_window, frame_number, self.frame_queue, is_single_frame)
         self.threads[frame_number] = worker
-        worker.start()
+        if is_single_frame:
+            worker.run()
+        else:
+            worker.start()
 
     def process_current_frame(self):
 
@@ -364,7 +367,8 @@ class VideoProcessor(QObject):
     def join_and_clear_threads(self):
         print("Joining Threads")
         for ind, thread in self.threads.items():
-            thread.join()
+            if thread.is_alive():
+                thread.join()
         print('Clearing Threads')
         self.threads.clear()
     

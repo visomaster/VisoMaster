@@ -29,6 +29,8 @@ ParametersWidgetTypes = Dict[str, ToggleButton|SelectionBox|ParameterDecimalSlid
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     placeholder_update_signal = qtc.Signal(QtWidgets.QListWidget, bool)
     gpu_memory_update_signal = qtc.Signal(int, int)
+    model_loading_signal = qtc.Signal()
+    model_loaded_signal = qtc.Signal()
     def initialize_variables(self):
         self.video_loader_worker: TargetMediaLoaderWorker|bool = False
         self.input_faces_loader_worker: InputFacesLoaderWorker|bool = False
@@ -73,6 +75,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.gpu_memory_update_signal.connect(partial(common_widget_actions.set_gpu_memory_progressbar_value, self))
         self.placeholder_update_signal.connect(partial(common_widget_actions.update_placeholder_visibility, self))
+        self.model_loading_signal.connect(partial(common_widget_actions.show_model_loading_dialog, self))
+        self.model_loaded_signal.connect(partial(common_widget_actions.hide_model_loading_dialog, self))
 
     def initialize_widgets(self):
         # Initialize QListWidget for target media
