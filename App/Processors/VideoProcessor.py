@@ -252,7 +252,8 @@ class VideoProcessor(QObject):
                 
                 self.media_capture.set(cv2.CAP_PROP_POS_FRAMES, self.current_frame_number)
             else:
-                print("Cannot read frame!")
+                print("Cannot read frame!", self.current_frame_number)
+                self.main_window.display_messagebox_signal.emit('Error Reading Frame', f'Error Reading Frame {self.current_frame_number}.', self.main_window)
 
         # """Process a single image frame directly without queuing."""
         elif self.file_type == 'image':
