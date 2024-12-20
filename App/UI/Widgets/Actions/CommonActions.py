@@ -10,6 +10,7 @@ import threading
 import numpy
 import json
 
+@qtc.Slot(str, str, QtWidgets.QWidget)
 def create_and_show_messagebox(main_window: 'MainWindow', window_title: str, message: str, parent_widget: QtWidgets.QWidget):
     messagebox = QtWidgets.QMessageBox(parent_widget)
     messagebox.setWindowTitle(window_title)

@@ -208,6 +208,7 @@ class VideoProcessor(QObject):
         if self.current_frame_number > self.max_frame_number:
             print("Stopping frame_read_timer as all frames have been read!")
             self.frame_read_timer.stop()
+            return
 
         if self.frame_queue.qsize() >= self.num_threads:
             # print(f"Queue is full ({self.frame_queue.qsize()} frames). Throttling frame reading.")
@@ -222,8 +223,9 @@ class VideoProcessor(QObject):
                 self.start_frame_worker(self.current_frame_number, frame)
                 self.current_frame_number += 1
             else:
-                print("Cannot read frame!.")
-                # self.stop_processing()
+                print("Cannot read frame!", self.current_frame_number)
+                self.stop_processing()
+                self.main_window.display_messagebox_signal.emit('Error Reading Frame', f'Error Reading Frame {self.current_frame_number}.\n Stopped Processing...!', self.main_window)
 
     def start_frame_worker(self, frame_number, frame, is_single_frame=False):
         """Start a FrameWorker to process the given frame."""
