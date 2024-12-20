@@ -687,9 +687,9 @@ class FrameWorker(threading.Thread):
             if not parameters['ViewFaceCompareEnableToggle']:
                 img = torch.hstack([original_face_512, swap_mask])
             elif not parameters['ViewFaceMaskEnableToggle']:
-                img = torch.hstack([original_face_512, original_face_512_clone])
+                img = torch.hstack([original_face_512_clone, original_face_512, ])
             else:
-                img = torch.hstack([original_face_512, original_face_512_clone, swap_mask])
+                img = torch.hstack([original_face_512_clone, original_face_512, swap_mask])
 
             img = img.permute(2,0,1)
 
