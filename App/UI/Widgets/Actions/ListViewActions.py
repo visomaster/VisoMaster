@@ -186,7 +186,7 @@ def set_up_list_widget_placeholder(main_window: 'MainWindow', list_widget: QtWid
         "<html><body style='text-align:center;'>"
         "<p>Drop Files</p>"
         "<p><b>or</b></p>"
-        "<p>Click here to Select files</p>"
+        "<p>Click here to Select a Folder</p>"
         "</body></html>"
     )
     # placeholder_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)

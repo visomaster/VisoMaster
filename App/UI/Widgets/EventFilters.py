@@ -79,7 +79,7 @@ class ListWidgetEventFilter(qtc.QObject):
 
             if event.type() == qtc.QEvent.Type.MouseButtonPress:
                 if event.button() == qtc.Qt.MouseButton.LeftButton and not self.main_window.target_videos:
-                    self.main_window.actionOpen_Video_Files.trigger()
+                    self.main_window.actionOpen_Videos_Folder.trigger()
 
             elif event.type() == QtCore.QEvent.Type.DragEnter:
                 # Accept drag events with URLs
@@ -114,7 +114,7 @@ class ListWidgetEventFilter(qtc.QObject):
 
             if event.type() == qtc.QEvent.Type.MouseButtonPress:
                 if event.button() == qtc.Qt.MouseButton.LeftButton and not self.main_window.input_faces:
-                    self.main_window.actionLoad_Source_Image_Files.trigger()
+                    self.main_window.actionLoad_Source_Images_Folder.trigger()
 
             elif event.type() == QtCore.QEvent.Type.DragEnter:
                 # Accept drag events with URLs
