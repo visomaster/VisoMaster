@@ -26,7 +26,8 @@ def update_graphics_view(main_window: 'MainWindow', pixmap: QtGui.QPixmap, curre
     if previous_items:
         previous_graphics_item = previous_items[0]
         bounding_rect = previous_graphics_item.boundingRect()
-        if bounding_rect.width() != pixmap.width() or bounding_rect.height() != pixmap.height():
+        # If the old pixmap is smaller than the new pixmap (ie, due to the face compare or mask compare), scale is to the size of the old one
+        if bounding_rect.width() > pixmap.width() and bounding_rect.height() > pixmap.height():
             pixmap = pixmap.scaled(bounding_rect.width(), bounding_rect.height(), QtCore.Qt.AspectRatioMode.KeepAspectRatio)
 
     # Clear the scene and add the new pixmap

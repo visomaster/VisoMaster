@@ -57,7 +57,7 @@ def create_parameter_dict_for_face_id(main_window: 'MainWindow', face_id=0):
         main_window.parameters[face_id] = parameters.copy()
     print("Created parameter_dict_for_face_id", face_id)
 
-def update_parameter(main_window: 'MainWindow', parameter_name, parameter_value, enable_refresh_frame=True):
+def update_parameter(main_window: 'MainWindow', parameter_name, parameter_value, enable_refresh_frame=True, exec_function: Callable=None, exec_function_args=[]):
     current_position = main_window.videoSeekSlider.value()
     face_id = main_window.selected_target_face_id
 
@@ -66,10 +66,19 @@ def update_parameter(main_window: 'MainWindow', parameter_name, parameter_value,
         main_window.markers[current_position][face_id][parameter_name] = parameter_value
 
     if main_window.target_faces:
+        old_parameter_value = main_window.parameters[face_id][parameter_name]
+
         main_window.parameters[face_id][parameter_name] = parameter_value
 
         if enable_refresh_frame:
             refresh_frame(main_window)
+
+        if exec_function and face_id:
+            # Only execute the function if the value is different from current
+            if main_window.parameters[face_id][parameter_name] != old_parameter_value:
+                # By default an exec function definition should have atleast one parameter : MainWindow
+                exec_function_args = [main_window, parameter_value] + exec_function_args
+                exec_function(*exec_function_args)
 
 def refresh_frame(main_window: 'MainWindow'):
     video_processor = main_window.video_processor

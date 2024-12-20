@@ -1,4 +1,5 @@
 import App.Helpers.Miscellaneous as misc_helpers
+import App.UI.Widgets.Actions.LayoutActions as layout_actions
 from App.Helpers.Typing import LayoutDictTypes
 
 # Widgets in Face Swap tab are created from this Layout
@@ -1094,13 +1095,17 @@ SWAPPER_LAYOUT_DATA: LayoutDictTypes = {
             'level': 1,
             'label': 'View Face Mask',
             'default': False,
-            'help': 'Show Face Mask'
+            'help': 'Show Face Mask',
+            'exec_function': layout_actions._fit_image_to_view,
+            'exec_function_args': [],
         },
         'ViewFaceCompareEnableToggle':{
             'level': 1,
             'label': 'View Face Compare',
             'default': False,
-            'help': 'Show Face Compare'
+            'help': 'Show Face Compare',
+            'exec_function': layout_actions._fit_image_to_view,
+            'exec_function_args': [],
         },
     },
     

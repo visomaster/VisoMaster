@@ -53,7 +53,7 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: LayoutDict
                 def onchange(toggle_widget: ToggleButton, toggle_widget_name, widget_data: dict, *args):
                     toggle_state = toggle_widget.isChecked()
                     if data_type=='parameter':
-                        common_widget_actions.update_parameter(main_window, toggle_widget_name, toggle_state, enable_refresh_frame=toggle_widget.enable_refresh_frame)    
+                        common_widget_actions.update_parameter(main_window, toggle_widget_name, toggle_state, enable_refresh_frame=toggle_widget.enable_refresh_frame, exec_function=widget_data.get('exec_function'), exec_function_args=widget_data.get('exec_function_args', []))    
                     elif data_type=='control':
                         common_widget_actions.update_control(main_window, toggle_widget_name, toggle_state, exec_function=widget_data.get('exec_function'), exec_function_args=widget_data.get('exec_function_args', []))
                 widget.toggled.connect(partial(onchange, widget, widget_name, widget_data))
@@ -295,7 +295,7 @@ def show_hide_parameters_panel(main_window: 'MainWindow', checked):
         main_window.controlOptionsDockWidget.hide()
     _fit_image_to_view(main_window)
 
-def _fit_image_to_view(main_window: 'MainWindow'):
+def _fit_image_to_view(main_window: 'MainWindow', *args):
     pixmap_items = main_window.scene.items()
     if pixmap_items:
         pixmap_item = pixmap_items[0]
