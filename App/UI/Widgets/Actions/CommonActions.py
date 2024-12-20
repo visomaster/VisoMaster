@@ -82,7 +82,8 @@ def update_parameter(main_window: 'MainWindow', parameter_name, parameter_value,
 
 def refresh_frame(main_window: 'MainWindow'):
     video_processor = main_window.video_processor
-    video_processor.process_current_frame()
+    if not video_processor.processing:
+        video_processor.process_current_frame()
 
 # Function to Hide Elements conditionally from values in LayoutData (Currently supports using Selection box and Toggle button to hide other widgets)
 def show_hide_related_widgets(main_window: 'MainWindow', parent_widget, parent_widget_name: str, value1=False, value2=False):
