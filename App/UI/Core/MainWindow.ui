@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1238</width>
+    <width>1376</width>
     <height>586</height>
    </rect>
   </property>
@@ -852,7 +852,36 @@
         </attribute>
         <layout class="QVBoxLayout" name="verticalLayout_2">
          <item>
-          <layout class="QVBoxLayout" name="settingsWidgetsLayout"/>
+          <widget class="QLabel" name="label">
+           <property name="text">
+            <string>Output Directory</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QVBoxLayout" name="settingsWidgetsLayout">
+           <item>
+            <layout class="QHBoxLayout" name="outputFolderSelectionLayout">
+             <item>
+              <widget class="QLineEdit" name="outputFolderLineEdit">
+               <property name="readOnly">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="outputFolderButton">
+               <property name="text">
+                <string>Browse Folder</string>
+               </property>
+               <property name="flat">
+                <bool>false</bool>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
          </item>
         </layout>
        </widget>
@@ -887,7 +916,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1238</width>
+     <width>1376</width>
      <height>33</height>
     </rect>
    </property>

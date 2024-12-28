@@ -286,25 +286,27 @@ def set_control_widgets_values(main_window: 'MainWindow'):
 
     # Iterate through control items and update widgets
     for control_name, control_value in control.items():
-        widget = parameter_widgets[control_name]
+        widget = parameter_widgets.get(control_name)
 
-        # Temporarily disable frame refresh
-        widget.enable_refresh_frame = False
+        if widget:
 
-        # Set the widget value
-        widget.set_value(control_value)
+            # Temporarily disable frame refresh
+            widget.enable_refresh_frame = False
 
-        # Execute any associated function, if defined
-        exec_function_data = settings_options[control_name].get('exec_function')
-        if exec_function_data:
-            exec_function = partial(
-                exec_function_data, main_window
-            )
-            exec_args = settings_options[control_name].get('exec_fuction_args', [])
-            exec_function(control_value, *exec_args)
+            # Set the widget value
+            widget.set_value(control_value)
 
-        # Re-enable frame refresh
-        widget.enable_refresh_frame = True
+            # Execute any associated function, if defined
+            exec_function_data = settings_options[control_name].get('exec_function')
+            if exec_function_data:
+                exec_function = partial(
+                    exec_function_data, main_window
+                )
+                exec_args = settings_options[control_name].get('exec_fuction_args', [])
+                exec_function(control_value, *exec_args)
+
+            # Re-enable frame refresh
+            widget.enable_refresh_frame = True
         
 @qtc.Slot(QtWidgets.QListWidget, bool)
 def update_placeholder_visibility(main_window: 'MainWindow', list_widget:QtWidgets.QListWidget, default_hide):

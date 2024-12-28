@@ -282,6 +282,10 @@ def OnClickRecordButton(main_window: 'MainWindow', checked: bool):
             print("OnClickRecordButton: Video already playing. Stopping the current video before starting a new one.")
             video_processor.stop_processing()
             return
+        if not main_window.outputFolderLineEdit.text():
+            common_widget_actions.create_and_show_messagebox(main_window, 'No Output Folder Selected','Please select an Output folder to save the Videos before recording!', main_window)
+            main_window.buttonMediaRecord.setChecked(False)
+            return
         video_processor.recording = True
         main_window.buttonMediaPlay.setChecked(True)
         setRecordButtonIconToStop(main_window)

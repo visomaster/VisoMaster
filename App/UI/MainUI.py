@@ -108,7 +108,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.inputFacesList.installEventFilter(listWidgetEventFilter)
         self.inputFacesList.viewport().installEventFilter(listWidgetEventFilter)
 
-
         # Initialize graphics frame to view frames
         self.scene = QtWidgets.QGraphicsScene()
         self.graphicsViewFrame.setScene(self.scene)
@@ -170,6 +169,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         layout_actions.add_widgets_to_tab_layout(self, LAYOUT_DATA=SWAPPER_LAYOUT_DATA, layoutWidget=self.swapWidgetsLayout, data_type='parameter')
         layout_actions.add_widgets_to_tab_layout(self, LAYOUT_DATA=SETTINGS_LAYOUT_DATA, layoutWidget=self.settingsWidgetsLayout, data_type='control')
         layout_actions.add_widgets_to_tab_layout(self, LAYOUT_DATA=FACE_EDITOR_LAYOUT_DATA, layoutWidget=self.faceEditorWidgetsLayout, data_type='parameter')
+
+        # Set up output folder select button (It is inside the settings tab Widget)
+        self.outputFolderButton.clicked.connect(partial(list_view_actions.onClickSelectOutputFolder, self))
+        # Create a control value for OutputMediaFolder
+        common_widget_actions.create_control(self, 'OutputMediaFolder', '')
 
         # Initialize the button states
         video_control_actions.resetMediaButtons(self)

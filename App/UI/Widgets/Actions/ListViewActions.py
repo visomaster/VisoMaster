@@ -207,3 +207,9 @@ def set_up_list_widget_placeholder(main_window: 'MainWindow', list_widget: QtWid
     list_widget.placeholder_label = placeholder_label
     # Set default cursor as PointingHand
     list_widget.setCursor(QtCore.Qt.CursorShape.PointingHandCursor)
+
+def onClickSelectOutputFolder(main_window: 'MainWindow'):
+    folder_name = QtWidgets.QFileDialog.getExistingDirectory()
+    if folder_name:
+        main_window.outputFolderLineEdit.setText(folder_name)
+        common_widget_actions.create_control(main_window, 'OutputMediaFolder', folder_name)

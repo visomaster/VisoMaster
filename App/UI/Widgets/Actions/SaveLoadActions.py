@@ -193,6 +193,10 @@ def load_saved_workspace(main_window: 'MainWindow', data_filename: str|bool = Fa
             control = data['control']
             main_window.control = control
             common_widget_actions.set_control_widgets_values(main_window)
+            # Set output folder
+            common_widget_actions.create_control(main_window, 'OutputMediaFolder', control['OutputMediaFolder'])
+            main_window.outputFolderLineEdit.setText(control['OutputMediaFolder'])
+
             layout_actions._fit_image_to_view(main_window)
 
         

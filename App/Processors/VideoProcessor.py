@@ -333,9 +333,9 @@ class VideoProcessor(QObject):
 
             if self.file_type=='video':
                 if self.recording:
-                    final_file = 'temp_video_with_audio.mp4'
-                    if Path(final_file).is_file():
-                        os.remove(final_file)
+                    final_file_path = misc_helpers.get_output_file_path(self.media_path, self.main_window.control['OutputMediaFolder'])
+                    if Path(final_file_path).is_file():
+                        os.remove(final_file_path)
                     print("Adding audio...")
                     args = ["ffmpeg",
                             '-hide_banner',
@@ -345,7 +345,7 @@ class VideoProcessor(QObject):
                             "-c",  "copy", # may be c:v
                             "-map", "0:v:0", "-map", "1:a:0?",
                             "-shortest",
-                            final_file]
+                            final_file_path]
                     subprocess.run(args) #Add Audio
                     os.remove(self.temp_file)
 

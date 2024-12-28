@@ -3,6 +3,12 @@ import cv2
 import time
 import numpy as np
 from functools import wraps
+from datetime import datetime
+from pathlib import Path
+
+import threading
+lock = threading.Lock()
+
 image_extensions = ('.jpg', '.jpeg', '.jpe', '.png', '.webp', '.tif', '.tiff', '.jp2', '.exr', '.hdr', '.ras', '.pnm', '.ppm', '.pgm', '.pbm', '.pfm')
 video_extensions = ('.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv', '.webm', '.m4v', '.3gp')
 
@@ -85,9 +91,21 @@ def benchmark(func):
     return wrapper
 
 def read_frame(capture_obj: cv2.VideoCapture, preview_mode=False):
-    ret, frame = capture_obj.read()
+    with lock:
+        ret, frame = capture_obj.read()
     if ret and preview_mode:
         pass
         # width, height = get_scaled_resolution(capture_obj)
-        # frame = cv2.resize(frame, dsize=(width, height), interpolation=cv2.INTER_LANCZOS4)
+        # frame = cv2.resize(fr2ame, dsize=(width, height), interpolation=cv2.INTER_LANCZOS4)
     return ret, frame
+
+def get_output_file_path(original_media_path, output_folder, media_type='video'):
+    date_and_time = datetime.now().strftime(r'%Y_%m_%d_%H_%M_%S')
+    input_filename = os.path.basename(original_media_path)
+    # Create a temp Path object to split and merge the original filename to get the new output filename
+    temp_path = Path(input_filename)
+    # output_filename = "{0}_{2}{1}".format(temp_path.stem, temp_path.suffix, date_and_time)
+    if media_type=='video':
+        output_filename = f'{temp_path.stem}_{date_and_time}.mp4'
+    output_file_path = os.path.join(output_folder, output_filename)
+    return output_file_path
