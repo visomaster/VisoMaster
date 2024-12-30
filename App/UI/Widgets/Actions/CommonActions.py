@@ -66,7 +66,7 @@ def update_parameter(main_window: 'MainWindow', parameter_name, parameter_value,
     if main_window.markers.get(current_position) and face_id:
         main_window.markers[current_position][face_id][parameter_name] = parameter_value
 
-    if main_window.target_faces:
+    if main_window.target_faces and face_id:
         old_parameter_value = main_window.parameters[face_id][parameter_name]
 
         main_window.parameters[face_id][parameter_name] = parameter_value

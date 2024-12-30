@@ -79,6 +79,7 @@ class FrameWorker(threading.Thread):
 
         except Exception as e:
             print(f"Error in FrameWorker: {e}")
+            traceback.print_exc()
     
     # @misc_helpers.benchmark
     def process_frame(self):
@@ -265,10 +266,10 @@ class FrameWorker(threading.Thread):
         original_face_128 = t128(original_face_256)
         if (s_e is not None and len(s_e) > 0) or (swapper_model == 'DeepFaceLive (DFM)' and dfm_model):
             if swapper_model == 'Inswapper128':
-                latent = torch.from_numpy(self.models_processor.calc_swapper_latent(s_e)).float().to(self.models_processor.device)
+                latent = torch.from_numpy(self.models_processor.calc_inswapper_latent(s_e)).float().to(self.models_processor.device)
                 if parameters['FaceLikenessEnableToggle']:
                     factor = parameters['FaceLikenessFactorDecimalSlider']
-                    dst_latent = torch.from_numpy(self.models_processor.calc_swapper_latent(t_e)).float().to(self.models_processor.device)
+                    dst_latent = torch.from_numpy(self.models_processor.calc_inswapper_latent(t_e)).float().to(self.models_processor.device)
                     latent = latent - (factor * dst_latent)
 
                 dim = 1
@@ -354,7 +355,7 @@ class FrameWorker(threading.Thread):
                                 input_face_disc = torch.unsqueeze(input_face_disc, 0).contiguous()
 
                                 swapper_output = torch.empty((1,3,128,128), dtype=torch.float32, device=self.models_processor.device).contiguous()
-                                self.models_processor.run_swapper(input_face_disc, latent, swapper_output)
+                                self.models_processor.run_inswapper(input_face_disc, latent, swapper_output)
 
                                 swapper_output = torch.squeeze(swapper_output)
                                 swapper_output = swapper_output.permute(1, 2, 0)

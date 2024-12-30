@@ -3,7 +3,7 @@ import cv2
 import queue
 from PySide6.QtCore import QObject, QTimer, Signal, Slot
 from PySide6.QtGui import QPixmap
-from App.Processors.Workers.Frame_Worker import FrameWorker
+from App.Processors.Workers.FrameWorker import FrameWorker
 import App.UI.Widgets.Actions.GraphicsViewActions as graphics_view_actions
 import App.UI.Widgets.Actions.CommonActions as common_widget_actions
 
