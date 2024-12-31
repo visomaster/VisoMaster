@@ -1,3 +1,3 @@
-call App/UI/Core/convert_ui_to_py.bat
-python Main.py
+call app/ui/core/convert_ui_to_py.bat
+python main.py
 pause
