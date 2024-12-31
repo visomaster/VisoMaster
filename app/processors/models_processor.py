@@ -1,28 +1,22 @@
-from PySide6.QtCore import QRunnable, QThreadPool, Signal, QObject, QTimer, QCoreApplication, QThread
-import PySide6.QtCore as qtc
-
-from PySide6.QtWidgets import QProgressDialog, QApplication
-import onnxruntime
-from functools import partial
-from threading import Thread
-from app.ui.widgets.widget_components import ProgressDialog
-import app.ui.widgets.actions.common_actions as common_widget_actions
-import time
 import threading
-lock = threading.Lock()
-import torch
-from app.processors.utils import face_util as faceutil
-from skimage import transform as trans
-import torchvision
-from torchvision.transforms import v2
-from torchvision import transforms
-
-import numpy as np
-from numpy.linalg import norm as l2norm
-from packaging import version
+import os
 import subprocess as sp
-import pickle
-from itertools import product as product
+import gc
+from typing import Dict, TYPE_CHECKING
+
+from packaging import version
+import numpy as np
+import onnxruntime
+import torch
+from torchvision.transforms import v2
+from PySide6 import QtCore
+try:
+    import tensorrt as trt
+    TENSORRT_AVAILABLE = True
+except ModuleNotFoundError:
+    print("No TensorRT Found")
+    TENSORRT_AVAILABLE = False
+
 from app.processors.utils.engine_builder import onnx_to_trt as onnx2trt
 from app.processors.utils.tensorrt_predictor import TensorRTPredictor
 from app.processors.face_detectors import FaceDetectors
@@ -32,30 +26,19 @@ from app.processors.face_restorers import FaceRestorers
 from app.processors.face_swappers import FaceSwappers
 from app.processors.frame_enhancers import FrameEnhancers
 from app.processors.face_editors import FaceEditors
-import cv2
-import os
-import math
 from app.processors.utils.dfm_model import DFMModel
-from app.processors.models_data import models_dir, models_list, arcface_mapping_model_dict, models_trt_list
-from typing import Dict, TYPE_CHECKING
-import gc
+from app.processors.models_data import models_list, arcface_mapping_model_dict, models_trt_list
+
 if TYPE_CHECKING:
     from app.ui.main_ui import MainWindow
-try:
-    from torch.cuda import nvtx
-    import tensorrt as trt
-    TENSORRT_AVAILABLE = True
-except ModuleNotFoundError:
-    print("No TensorRT Found")
-    TENSORRT_AVAILABLE = False
-import onnx
 
 onnxruntime.set_default_logger_severity(4)
 onnxruntime.log_verbosity_level = -1
+lock = threading.Lock()
 
-class ModelsProcessor(QObject):
-    processing_complete = Signal()
-    model_loaded = Signal()  # Signal emitted with Onnx InferenceSession
+class ModelsProcessor(QtCore.QObject):
+    processing_complete = QtCore.Signal()
+    model_loaded = QtCore.Signal()  # Signal emitted with Onnx InferenceSession
 
     def __init__(self, main_window: 'MainWindow', device='cuda'):
         super().__init__()
@@ -278,7 +261,8 @@ class ModelsProcessor(QObject):
         self.delete_models_trt()
         torch.cuda.empty_cache()
 
-    def run_detect(self, img, detect_mode='Retinaface', max_num=1, score=0.5, input_size=(512, 512), use_landmark_detection=False, landmark_detect_mode='203', landmark_score=0.5, from_points=False, rotation_angles:list[int]=[0]):
+    def run_detect(self, img, detect_mode='Retinaface', max_num=1, score=0.5, input_size=(512, 512), use_landmark_detection=False, landmark_detect_mode='203', landmark_score=0.5, from_points=False, rotation_angles=None):
+        rotation_angles = rotation_angles or [0]
         return self.face_detectors.run_detect(img, detect_mode, max_num, score, input_size, use_landmark_detection, landmark_detect_mode, landmark_score, from_points, rotation_angles)
     
     def run_detect_landmark(self, img, bbox, det_kpss, detect_mode='203', score=0.5, from_points=False):
@@ -325,6 +309,15 @@ class ModelsProcessor(QObject):
 
     def run_enhance_frame_tile_process(self, img, enhancer_type, tile_size=256, scale=1):
         return self.frame_enhancers.run_enhance_frame_tile_process(img, enhancer_type, tile_size, scale)
+
+    def run_deoldify_artistic(self, image, output):
+        return self.frame_enhancers.run_deoldify_artistic(image, output)
+
+    def run_deoldify_stable(self, image, output):
+        return self.frame_enhancers.run_deoldify_artistic(image, output)
+    
+    def run_deoldify_video(self, image, output):
+        return self.frame_enhancers.run_deoldify_video(image, output)
 
     def run_occluder(self, image, output):
         self.face_masks.run_occluder(image, output)

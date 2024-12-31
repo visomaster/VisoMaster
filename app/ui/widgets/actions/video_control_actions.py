@@ -1,16 +1,19 @@
 from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from app.ui.main_ui import MainWindow
-
 import copy
-import app.helpers.miscellaneous as misc_helpers
-import app.ui.widgets.actions.common_actions as common_widget_actions
-from app.ui.widgets.actions import graphics_view_actions as graphics_view_actions
+import os
+from functools import partial
+
 import cv2
 import numpy
-import os
 from PIL import Image
 from PySide6 import QtGui,QtWidgets,QtCore
+
+if TYPE_CHECKING:
+    from app.ui.main_ui import MainWindow
+import app.helpers.miscellaneous as misc_helpers
+from app.ui.widgets.actions import common_actions as common_widget_actions
+from app.ui.widgets.actions import graphics_view_actions
+
 
 def set_up_video_seek_line_edit(main_window: 'MainWindow'):
     video_processor = main_window.video_processor
@@ -91,9 +94,13 @@ def set_up_video_seek_slider(main_window: 'MainWindow'):
                 marker_x = groove_start + marker_normalized_value * groove_width
                 painter.drawLine(marker_x, groove_rect.top(), marker_x, groove_rect.bottom())
 
-    main_window.videoSeekSlider.addMarker = addMarker.__get__(main_window.videoSeekSlider)
-    main_window.videoSeekSlider.removeMarker = removeMarker.__get__(main_window.videoSeekSlider)
-    main_window.videoSeekSlider.paintEvent = paintEvent.__get__(main_window.videoSeekSlider)
+    main_window.videoSeekSlider.addMarker = partial(addMarker, main_window.videoSeekSlider)
+    main_window.videoSeekSlider.removeMarker = partial(removeMarker, main_window.videoSeekSlider)
+    main_window.videoSeekSlider.paintEvent = partial(paintEvent, main_window.videoSeekSlider)
+
+    # main_window.videoSeekSlider.addMarker = addMarker.__get__(main_window.videoSeekSlider)
+    # main_window.videoSeekSlider.removeMarker = removeMarker.__get__(main_window.videoSeekSlider)
+    # main_window.videoSeekSlider.paintEvent = paintEvent.__get__(main_window.videoSeekSlider)
 
 def add_video_slider_marker(main_window: 'MainWindow'):
     current_position = int(main_window.videoSeekSlider.value())
@@ -134,6 +141,7 @@ def move_slider_to_nearest_marker(main_window: 'MainWindow', direction: str):
 
     :param direction: 'next' to move to the next marker, 'previous' to move to the previous marker.
     """
+    new_position = None
     current_position = int(main_window.videoSeekSlider.value())
     markers = sorted(main_window.markers.keys())
     if direction == "next":
@@ -155,7 +163,7 @@ def move_slider_to_previous_nearest_marker(main_window: 'MainWindow'):
     move_slider_to_nearest_marker(main_window, "previous")
 
 def remove_face_parameters_from_markers(main_window: 'MainWindow', face_id):
-    for frame_number, parameters in main_window.markers.items():
+    for _, parameters in main_window.markers.items():
         parameters.pop(face_id)
         # If the parameters is empty, then there is no longer any marker to be set for any target face
         if not parameters:
@@ -198,17 +206,17 @@ def view_fullscreen(main_window: 'MainWindow'):
 
 def enable_zoom_and_pan(view: QtWidgets.QGraphicsView):
     SCALE_FACTOR = 1.5
-    view._zoom = 0  # Track zoom level
-    view._last_scale_factor = 1.0  # Track the last scale factor (1.0 = no scaling)
+    view.zoom_value = 0  # Track zoom level
+    view.last_scale_factor = 1.0  # Track the last scale factor (1.0 = no scaling)
 
     def zoom(self:QtWidgets.QGraphicsView, step=False):
         """Zoom in or out by a step."""
         if not step:
-            factor = self._last_scale_factor
+            factor = self.last_scale_factor
         else:
-            self._zoom += step
+            self.zoom_value += step
             factor = SCALE_FACTOR ** step
-            self._last_scale_factor *= factor  # Update the last scale factor
+            self.last_scale_factor *= factor  # Update the last scale factor
         if factor > 0:
             self.scale(factor, factor)
 
@@ -220,8 +228,8 @@ def enable_zoom_and_pan(view: QtWidgets.QGraphicsView):
     
     def resetZoom(self:QtWidgets.QGraphicsView):
         print("Called resetZoom()")
-        """Reset zoom level to fit the view."""
-        self._zoom = 0
+        # Reset zoom level to fit the view.
+        self.zoom_value = 0
         if not self.scene():
             return
         items = self.scene().items()
@@ -238,9 +246,13 @@ def enable_zoom_and_pan(view: QtWidgets.QGraphicsView):
         self.scale(factor, factor)
 
     # Attach methods to the view
-    view.zoom = zoom.__get__(view)
-    view.resetZoom = resetZoom.__get__(view)
-    view.wheelEvent = wheelEvent.__get__(view)
+    view.zoom = partial(zoom, view)
+    view.resetZoom = partial(resetZoom, view)
+    view.wheelEvent = partial(wheelEvent, view)
+
+    # view.zoom = zoom.__get__(view)
+    # view.resetZoom = resetZoom.__get__(view)
+    # view.wheelEvent = wheelEvent.__get__(view)
 
     # Set anchors for better interaction
     view.setTransformationAnchor(QtWidgets.QGraphicsView.ViewportAnchor.AnchorUnderMouse)
@@ -297,18 +309,18 @@ def OnClickRecordButton(main_window: 'MainWindow', checked: bool):
         setRecordButtonIconToPlay(main_window)
 
 def setRecordButtonIconToPlay(main_window: 'MainWindow'):
-    main_window.buttonMediaRecord.setIcon(QtGui.QIcon(":/media/media/rec_off.png"))
+    main_window.buttonMediaRecord.setIcon(QtGui.QIcon(":/media/Media/rec_off.png"))
     main_window.buttonMediaRecord.setToolTip("Start Recording")
 def setRecordButtonIconToStop(main_window: 'MainWindow'):
-    main_window.buttonMediaRecord.setIcon(QtGui.QIcon(":/media/media/rec_on.png"))
+    main_window.buttonMediaRecord.setIcon(QtGui.QIcon(":/media/Media/rec_on.png"))
     main_window.buttonMediaRecord.setToolTip("Stop Recording")
 
 def setPlayButtonIconToPlay(main_window: 'MainWindow'):
-    main_window.buttonMediaPlay.setIcon(QtGui.QIcon(":/media/media/play_off.png"))
+    main_window.buttonMediaPlay.setIcon(QtGui.QIcon(":/media/Media/play_off.png"))
     main_window.buttonMediaPlay.setToolTip("Play")
 
 def setPlayButtonIconToStop(main_window: 'MainWindow'):
-    main_window.buttonMediaPlay.setIcon(QtGui.QIcon(":/media/media/play_on.png"))
+    main_window.buttonMediaPlay.setIcon(QtGui.QIcon(":/media/Media/play_on.png"))
     main_window.buttonMediaPlay.setToolTip("Stop")
 
 def resetMediaButtons(main_window: 'MainWindow'):
@@ -325,18 +337,18 @@ def resetMediaButtons(main_window: 'MainWindow'):
 
 def setPlayButtonIcon(main_window: 'MainWindow'):
     if main_window.buttonMediaPlay.isChecked(): 
-        main_window.buttonMediaPlay.setIcon(QtGui.QIcon(":/media/media/play_on.png"))
+        main_window.buttonMediaPlay.setIcon(QtGui.QIcon(":/media/Media/play_on.png"))
         main_window.buttonMediaPlay.setToolTip("Stop")
     else:
-        main_window.buttonMediaPlay.setIcon(QtGui.QIcon(":/media/media/play_off.png"))
+        main_window.buttonMediaPlay.setIcon(QtGui.QIcon(":/media/Media/play_off.png"))
         main_window.buttonMediaPlay.setToolTip("Play")
 
 def setRecordButtonIcon(main_window: 'MainWindow'):
     if main_window.buttonMediaRecord.isChecked(): 
-        main_window.buttonMediaRecord.setIcon(QtGui.QIcon(":/media/media/rec_on.png"))
+        main_window.buttonMediaRecord.setIcon(QtGui.QIcon(":/media/Media/rec_on.png"))
         main_window.buttonMediaRecord.setToolTip("Stop Recording")
     else:
-        main_window.buttonMediaRecord.setIcon(QtGui.QIcon(":/media/media/rec_off.png"))
+        main_window.buttonMediaRecord.setIcon(QtGui.QIcon(":/media/Media/rec_off.png"))
         main_window.buttonMediaRecord.setToolTip("Start Recording")
 
 # @misc_helpers.benchmark
@@ -407,7 +419,7 @@ def process_edit_faces(main_window: 'MainWindow'):
 def save_current_frame_to_file(main_window: 'MainWindow'):
     frame = main_window.video_processor.current_frame.copy()
     if isinstance(frame, numpy.ndarray):
-        save_filename, extension = os.path.splitext(main_window.video_processor.media_path)
+        save_filename, _ = os.path.splitext(main_window.video_processor.media_path)
         save_filename, _ = QtWidgets.QFileDialog.getSaveFileName(main_window, 'Save Frame as Image', f'{save_filename}.png', filter='PNG (*.png)',)
         if save_filename:
             pil_image = Image.fromarray(frame[..., ::-1])

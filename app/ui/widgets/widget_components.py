@@ -1,25 +1,22 @@
-from PySide6 import QtWidgets, QtGui, QtCore
-from PySide6.QtGui import QImage, QPixmap
-import app.ui.widgets.actions.common_actions as common_widget_actions
-import app.ui.widgets.actions.video_control_actions as video_control_actions
-import app.ui.widgets.actions.graphics_view_actions as graphics_view_actions
-import app.ui.widgets.actions.card_actions as card_actions
-import app.ui.widgets.actions.list_view_actions as list_view_actions
-import app.ui.widgets.actions.save_load_actions as save_load_actions
-import app.ui.widgets.ui_workers as ui_workers
-import app.helpers.miscellaneous as misc_helpers
-import PySide6.QtCore as qtc
-import cv2
-import numpy as np
+# pylint: disable=keyword-arg-before-vararg
 import os
-import json
-from app.ui.widgets.settings_layout_data import SETTINGS_LAYOUT_DATA
-
-from PySide6.QtWidgets import QPushButton
 from functools import partial
 import uuid
+from typing import TYPE_CHECKING, Dict
 
-from typing import TYPE_CHECKING, Dict, List, Callable
+from PySide6 import QtWidgets, QtGui, QtCore
+from PySide6.QtWidgets import QPushButton
+import cv2
+import numpy as np
+
+import app.ui.widgets.actions.common_actions as common_widget_actions
+from app.ui.widgets.actions import video_control_actions
+from app.ui.widgets.actions import graphics_view_actions
+from app.ui.widgets.actions import card_actions
+from app.ui.widgets.actions import list_view_actions
+from app.ui.widgets.actions import save_load_actions
+import app.helpers.miscellaneous as misc_helpers
+
 if TYPE_CHECKING:
     from app.ui.main_ui import MainWindow
 
@@ -95,7 +92,7 @@ class TargetMediaCardButton(CardButton):
 
             media_capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
             max_frames_number = int(media_capture.get(cv2.CAP_PROP_FRAME_COUNT)) - 1
-            ret, frame = misc_helpers.read_frame(media_capture)
+            _, frame = misc_helpers.read_frame(media_capture)
             main_window.video_processor.media_capture = media_capture
             main_window.video_processor.fps = media_capture.get(cv2.CAP_PROP_FPS)
             main_window.video_processor.max_frame_number = max_frames_number
@@ -112,7 +109,7 @@ class TargetMediaCardButton(CardButton):
             media_capture.set(cv2.CAP_PROP_FRAME_WIDTH, int(res_width))
             media_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, int(res_height))
             max_frames_number = 999999
-            ret, frame = misc_helpers.read_frame(media_capture)
+            _, frame = misc_helpers.read_frame(media_capture)
             main_window.video_processor.media_capture = media_capture
             main_window.video_processor.fps = media_capture.get(cv2.CAP_PROP_FPS)
             main_window.video_processor.max_frame_number = max_frames_number
@@ -225,7 +222,7 @@ class TargetFaceCardButton(CardButton):
         main_window = self.main_window
         main_window.cur_selected_target_face_button = self
         self.setChecked(True)
-        for face_id, target_face_button in main_window.target_faces.items():
+        for _, target_face_button in main_window.target_faces.items():
             # Uncheck all other target faces
             if target_face_button!=self:
                 target_face_button.setChecked(False)
@@ -251,13 +248,13 @@ class TargetFaceCardButton(CardButton):
         all_embedding_swap_models = set()
 
         # Itera su `assigned_input_faces` e raccogli gli embedding e i modelli
-        for input_face_id, embedding_store in self.assigned_input_faces.items():
+        for _, embedding_store in self.assigned_input_faces.items():
             if embedding_store:  # Verifica se l'embedding_store non è vuoto
                 all_embedding_swap_models.update(embedding_store.keys())
                 all_input_embeddings.append(embedding_store)  # Aggiungi l'intero store
         
         # Itera su `assigned_merged_embeddings` e raccogli gli embedding e i modelli
-        for embedding_id, embedding_store in self.assigned_merged_embeddings.items():
+        for _, embedding_store in self.assigned_merged_embeddings.items():
             if embedding_store:  # Verifica se l'embedding_store non è vuoto
                 all_embedding_swap_models.update(embedding_store.keys())
                 all_input_embeddings.append(embedding_store)  # Aggiungi l'intero store
@@ -384,7 +381,7 @@ class InputFaceCardButton(CardButton):
 
         if main_window.cur_selected_target_face_button:
             cur_selected_target_face_button = main_window.cur_selected_target_face_button
-            if not QtWidgets.QApplication.keyboardModifiers() == qtc.Qt.ControlModifier:
+            if not QtWidgets.QApplication.keyboardModifiers() == QtCore.Qt.ControlModifier:
                 for input_face_id in cur_selected_target_face_button.assigned_input_faces.keys():
                     input_face_button = main_window.input_faces[input_face_id]
                     if input_face_button!=self:
@@ -397,9 +394,9 @@ class InputFaceCardButton(CardButton):
                 cur_selected_target_face_button.assigned_input_faces.pop(self.face_id)
             cur_selected_target_face_button.calculateAssignedInputEmbedding()
         else:
-            if not QtWidgets.QApplication.keyboardModifiers() == qtc.Qt.ControlModifier:
+            if not QtWidgets.QApplication.keyboardModifiers() == QtCore.Qt.ControlModifier:
                 # If there is no target face selected, uncheck all other input faces
-                for face_id, input_face_button in main_window.input_faces.items():
+                for _, input_face_button in main_window.input_faces.items():
                     if input_face_button!=self:
                         input_face_button.setChecked(False)
 
@@ -474,7 +471,7 @@ class EmbeddingCardButton(CardButton):
         if main_window.cur_selected_target_face_button:
             
             cur_selected_target_face_button = main_window.cur_selected_target_face_button
-            if not QtWidgets.QApplication.keyboardModifiers() == qtc.Qt.ControlModifier:
+            if not QtWidgets.QApplication.keyboardModifiers() == QtCore.Qt.ControlModifier:
                 for embedding_id in cur_selected_target_face_button.assigned_merged_embeddings.keys():
                     embed_button = main_window.merged_embeddings[embedding_id]
                     if embed_button!=self:
@@ -487,7 +484,7 @@ class EmbeddingCardButton(CardButton):
                 cur_selected_target_face_button.assigned_merged_embeddings.pop(self.embedding_id)
             cur_selected_target_face_button.calculateAssignedInputEmbedding()
         else:
-            if not QtWidgets.QApplication.keyboardModifiers() == qtc.Qt.ControlModifier:
+            if not QtWidgets.QApplication.keyboardModifiers() == QtCore.Qt.ControlModifier:
                 # If there is no target face selected, uncheck all other input faces
                 for embedding_id, embed_button in main_window.merged_embeddings.items():
                     if embed_button!=self:
@@ -519,10 +516,10 @@ class EmbeddingCardButton(CardButton):
         self.deleteLater()
 
 class CreateEmbeddingDialog(QtWidgets.QDialog):
-    def __init__(self, main_window: 'MainWindow', embedding_stores: list = []):
+    def __init__(self, main_window: 'MainWindow', embedding_stores: list=None):
         super().__init__()
+        self.embedding_stores = embedding_stores or []
         self.main_window = main_window
-        self.embedding_stores = embedding_stores  # Lista di embedding_store (dizionari)
         self.embedding_name = ''
         self.merge_type = ''
         self.setWindowTitle("Create Embedding")
@@ -603,7 +600,7 @@ class LoadingDialog(QtWidgets.QDialog):
         self.icon_label = QtWidgets.QLabel()
         self.icon_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         self.icon_label.setPixmap(
-            QtGui.QPixmap(":/media/media/repeat.png").scaled(
+            QtGui.QPixmap(":/media/Media/repeat.png").scaled(
                 30, 30, 
                 QtCore.Qt.AspectRatioMode.KeepAspectRatio, 
                 QtCore.Qt.TransformationMode.SmoothTransformation
@@ -769,14 +766,14 @@ class ParameterSlider(QtWidgets.QSlider, ParametersWidget):
         self.default_value = int(default_value)
 
         # Debounce timer for handle_slider_moved
-        self.debounce_timer = qtc.QTimer()
+        self.debounce_timer = QtCore.QTimer()
         self.debounce_timer.setSingleShot(True)  # Assicura che il timer scatti una sola volta
         self.debounce_timer.timeout.connect(self.handle_slider_moved)  # Collega il timeout al metodo
 
         self.setMinimum(int(min_value))
         self.setMaximum(int(max_value))
         self.setValue(self.default_value)
-        self.setOrientation(qtc.Qt.Orientation.Horizontal)
+        self.setOrientation(QtCore.Qt.Orientation.Horizontal)
         self.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Minimum)
         # Set a fixed width for the slider
         self.setFixedWidth(fixed_width)
@@ -791,7 +788,7 @@ class ParameterSlider(QtWidgets.QSlider, ParametersWidget):
     def handle_slider_moved(self):
         """Handle the slider movement after debounce."""
         position = self.sliderPosition()  # Ottieni la posizione attuale dello slider
-        """Handle the slider movement (dragging) and set the correct value."""
+        # """Handle the slider movement (dragging) and set the correct value."""
         new_value = round(position / self.step_size) * self.step_size
 
         # Set the scaled value
@@ -802,9 +799,9 @@ class ParameterSlider(QtWidgets.QSlider, ParametersWidget):
     def reset_to_default_value(self):
         self.setValue(int(self.default_value))
 
-    def value(self):
-        """Return the slider value as a float, scaled by the decimals."""
-        return super().value()
+    # def value(self):
+    #     # """Return the slider value as a float, scaled by the decimals."""
+    #     return super().value()
 
     def setValue(self, value):
         """Set the slider value, scaling it from a float to the internal integer."""
@@ -891,7 +888,7 @@ class ParameterDecimalSlider(QtWidgets.QSlider, ParametersWidget):
         self.decimals = decimals
 
         # Debounce timer for handle_slider_moved
-        self.debounce_timer = qtc.QTimer()
+        self.debounce_timer = QtCore.QTimer()
         self.debounce_timer.setSingleShot(True)  # Assicura che il timer scatti una sola volta
         self.debounce_timer.timeout.connect(self.handle_slider_moved)  # Collega il timeout al metodo
 
@@ -1129,7 +1126,7 @@ class ParameterResetDefaultButton(QtWidgets.QPushButton):
     def __init__(self, related_widget: ParameterSlider | ParameterDecimalSlider | SelectionBox, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.related_widget = related_widget
-        button_icon = QtGui.QIcon(QtGui.QPixmap(':/media/media/reset_default.png'))
+        button_icon = QtGui.QIcon(QtGui.QPixmap(':/media/Media/reset_default.png'))
         self.setIcon(button_icon)
         self.setFixedWidth(30)  # Make the line edit narrower
         self.setCursor(QtCore.Qt.PointingHandCursor)

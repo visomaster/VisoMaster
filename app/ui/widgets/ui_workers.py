@@ -1,18 +1,20 @@
-
-from PySide6 import QtCore as qtc
-from PySide6.QtGui import QPixmap, QImage, Qt
-from app.helpers import miscellaneous as misc_helpers
-from app.ui.widgets.actions import common_actions as common_widget_actions
-from app.ui.widgets.actions import filter_actions as filter_actions
-from app.ui.widgets.settings_layout_data import SETTINGS_LAYOUT_DATA, CAMERA_BACKENDS
-import os
-import cv2
-import torch
-import numpy
 import uuid
 from functools import partial
 from typing import TYPE_CHECKING, Dict
 import traceback
+import os
+
+import cv2
+import torch
+import numpy
+from PySide6 import QtCore as qtc
+from PySide6.QtGui import QPixmap
+
+from app.helpers import miscellaneous as misc_helpers
+from app.ui.widgets.actions import common_actions as common_widget_actions
+from app.ui.widgets.actions import filter_actions
+from app.ui.widgets.settings_layout_data import SETTINGS_LAYOUT_DATA, CAMERA_BACKENDS
+
 if TYPE_CHECKING:
     from app.ui.main_ui import MainWindow
 
@@ -22,12 +24,12 @@ class TargetMediaLoaderWorker(qtc.QThread):
     webcam_thumbnail_ready = qtc.Signal(str, QPixmap, str, str, int, int)
     finished = qtc.Signal()  # Signal to indicate completion
 
-    def __init__(self, main_window: 'MainWindow', folder_name=False, files_list=[], media_ids=[], webcam_mode=False, parent=None,):
+    def __init__(self, main_window: 'MainWindow', folder_name=False, files_list=None, media_ids=None, webcam_mode=False, parent=None,):
         super().__init__(parent)
         self.main_window = main_window
         self.folder_name = folder_name
-        self.files_list = files_list
-        self.media_ids = media_ids
+        self.files_list = files_list or []
+        self.media_ids = media_ids or []
         self.webcam_mode = webcam_mode
         self._running = True  # Flag to control the running state
 
@@ -95,7 +97,7 @@ class TargetMediaLoaderWorker(qtc.QThread):
                 if pixmap:
                     # Emit the signal to update GUI
                     self.webcam_thumbnail_ready.emit(f'Webcam {i}', pixmap, 'webcam',media_id, i, camera_backend)
-            except Exception as e:
+            except Exception: # pylint: disable=broad-exception-caught
                 traceback.print_exc()
         self.main_window.placeholder_update_signal.emit(self.main_window.targetVideosList, False)
 
@@ -108,12 +110,12 @@ class InputFacesLoaderWorker(qtc.QThread):
     # Define signals to emit when loading is done or if there are updates
     thumbnail_ready = qtc.Signal(str, numpy.ndarray, object, QPixmap, str)
     finished = qtc.Signal()  # Signal to indicate completion
-    def __init__(self, main_window: 'MainWindow', media_path=False, folder_name=False, files_list=[], face_ids=[],  parent=None):
+    def __init__(self, main_window: 'MainWindow', media_path=False, folder_name=False, files_list=None, face_ids=None,  parent=None):
         super().__init__(parent)
         self.main_window = main_window
         self.folder_name = folder_name
-        self.files_list = files_list
-        self.face_ids = face_ids
+        self.files_list = files_list or []
+        self.face_ids = face_ids or []
         self._running = True  # Flag to control the running state
 
     def run(self):
@@ -122,8 +124,10 @@ class InputFacesLoaderWorker(qtc.QThread):
             self.load_faces(self.folder_name, self.files_list)
             self.main_window.placeholder_update_signal.emit(self.main_window.inputFacesList, False)
 
-    def load_faces(self, folder_name=False, files_list=[]):
+    def load_faces(self, folder_name=False, files_list=None):
         control = self.main_window.control.copy()
+        files_list = files_list or []
+        image_files = []
         if folder_name:
             image_files = misc_helpers.get_image_files(self.folder_name, self.main_window.control['InputFacesFolderRecursiveToggle'])
         elif files_list:
@@ -143,14 +147,14 @@ class InputFacesLoaderWorker(qtc.QThread):
 
             img = torch.from_numpy(frame.astype('uint8')).to(self.main_window.models_processor.device)
             img = img.permute(2,0,1)
-            bboxes, kpss_5, _ = self.main_window.models_processor.run_detect(img, control['DetectorModelSelection'], max_num=1, score=control['DetectorScoreSlider']/100.0, input_size=(512, 512), use_landmark_detection=control['LandmarkDetectToggle'], landmark_detect_mode=control['LandmarkDetectModelSelection'], landmark_score=control["LandmarkDetectScoreSlider"]/100.0, from_points=control["DetectFromPointsToggle"], rotation_angles=[0] if not control["AutoRotationToggle"] else [0, 90, 180, 270])
+            _, kpss_5, _ = self.main_window.models_processor.run_detect(img, control['DetectorModelSelection'], max_num=1, score=control['DetectorScoreSlider']/100.0, input_size=(512, 512), use_landmark_detection=control['LandmarkDetectToggle'], landmark_detect_mode=control['LandmarkDetectModelSelection'], landmark_score=control["LandmarkDetectScoreSlider"]/100.0, from_points=control["DetectFromPointsToggle"], rotation_angles=[0] if not control["AutoRotationToggle"] else [0, 90, 180, 270])
 
             # If atleast one face is found
-            found_face = []
+            # found_face = []
             face_kps = False
             try:
                 face_kps = kpss_5[0]
-            except:
+            except IndexError:
                 continue
             if face_kps.any():
                 face_emb, cropped_img = self.main_window.models_processor.run_recognize_direct(img, face_kps, control['SimilarityTypeSelection'], control['RecognitionModelSelection'])
@@ -186,8 +190,8 @@ class InputFacesLoaderWorker(qtc.QThread):
 class FilterWorker(qtc.QThread):
     filtered_results = qtc.Signal(list)
 
-    def __init__(self, main_window: 'MainWindow', search_text='', filter_list='target_videos', *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, main_window: 'MainWindow', search_text='', filter_list='target_videos'):
+        super().__init__()
         self.main_window = main_window
         self.search_text = search_text
         self.filter_list = filter_list

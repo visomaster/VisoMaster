@@ -1,26 +1,27 @@
 import threading
-import cv2
 import queue
-from PySide6.QtCore import QObject, QTimer, Signal, Slot
-from PySide6.QtGui import QPixmap
-from app.processors.workers.frame_worker import FrameWorker
-import app.ui.widgets.actions.graphics_view_actions as graphics_view_actions
-import app.ui.widgets.actions.common_actions as common_widget_actions
-
-import app.ui.widgets.actions.video_control_actions as video_control_actions
-import app.ui.widgets.actions.layout_actions as layout_actions
-import app.helpers.miscellaneous as misc_helpers
-
 from typing import TYPE_CHECKING, Dict, Tuple
 import time
 import subprocess
-from PIL import Image
-import numpy
 from pathlib import Path
 import os
-import torch
 import gc
 from functools import partial
+
+import cv2
+import numpy
+import torch
+
+from PySide6.QtCore import QObject, QTimer, Signal, Slot
+from PySide6.QtGui import QPixmap
+from app.processors.workers.frame_worker import FrameWorker
+from app.ui.widgets.actions import graphics_view_actions
+from app.ui.widgets.actions import common_actions as common_widget_actions
+
+from app.ui.widgets.actions import video_control_actions
+from app.ui.widgets.actions import layout_actions
+import app.helpers.miscellaneous as misc_helpers
+
 if TYPE_CHECKING:
     from app.ui.main_ui import MainWindow
 
@@ -46,7 +47,7 @@ class VideoProcessor(QObject):
         self.recording = False
 
         self.recording_sp: subprocess.Popen|None = None 
-
+        self.temp_file = '' 
         #Used to calculate the total processing time
         self.start_time = 0.0
         self.end_time = 0.0
@@ -346,7 +347,7 @@ class VideoProcessor(QObject):
                             "-map", "0:v:0", "-map", "1:a:0?",
                             "-shortest",
                             final_file_path]
-                    subprocess.run(args) #Add Audio
+                    subprocess.run(args, check=False) #Add Audio
                     os.remove(self.temp_file)
 
                 self.end_time = time.perf_counter()
@@ -369,7 +370,7 @@ class VideoProcessor(QObject):
         
     def join_and_clear_threads(self):
         print("Joining Threads")
-        for ind, thread in self.threads.items():
+        for _, thread in self.threads.items():
             if thread.is_alive():
                 thread.join()
         print('Clearing Threads')
@@ -377,7 +378,7 @@ class VideoProcessor(QObject):
     
     def create_ffmpeg_subprocess(self):
         # Use Dimensions of the last processed frame as it could be different from the original frame due to restorers and frame enhancers 
-        frame_height, frame_width, c = self.current_frame.shape
+        frame_height, frame_width, _ = self.current_frame.shape
 
         self.temp_file = r'temp_output.mp4'
         if Path(self.temp_file).is_file():

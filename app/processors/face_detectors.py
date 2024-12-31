@@ -1,17 +1,20 @@
 from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from app.processors.models_processor import ModelsProcessor
+
 import torch
 from torchvision.transforms import v2
-from app.processors.utils import face_util as faceutil
 import numpy as np
-import cv2
+
+if TYPE_CHECKING:
+    from app.processors.models_processor import ModelsProcessor
+
+from app.processors.utils import faceutil
 
 class FaceDetectors:
     def __init__(self, models_processor: 'ModelsProcessor'):
         self.models_processor = models_processor
 
-    def run_detect(self, img, detect_mode='Retinaface', max_num=1, score=0.5, input_size=(512, 512), use_landmark_detection=False, landmark_detect_mode='203', landmark_score=0.5, from_points=False, rotation_angles:list[int]=[0]):
+    def run_detect(self, img, detect_mode='Retinaface', max_num=1, score=0.5, input_size=(512, 512), use_landmark_detection=False, landmark_detect_mode='203', landmark_score=0.5, from_points=False, rotation_angles=None):
+        rotation_angles = rotation_angles or [0]
         bboxes = []
         kpss_5 = []
         kpss = []
@@ -42,7 +45,9 @@ class FaceDetectors:
 
         return bboxes, kpss_5, kpss
 
-    def detect_retinaface(self, img, max_num, score, input_size, use_landmark_detection, landmark_detect_mode, landmark_score, from_points, rotation_angles:list[int]=[0]):
+    def detect_retinaface(self, img, max_num, score, input_size, use_landmark_detection, landmark_detect_mode, landmark_score, from_points, rotation_angles=None):
+        rotation_angles = rotation_angles or [0]
+        img_landmark = None
         if use_landmark_detection:
             img_landmark = img.clone()
 
@@ -304,7 +309,9 @@ class FaceDetectors:
 
         return det, kpss_5, kpss
 
-    def detect_scrdf(self, img, max_num, score, input_size, use_landmark_detection, landmark_detect_mode, landmark_score, from_points, rotation_angles:list[int]=[0]):
+    def detect_scrdf(self, img, max_num, score, input_size, use_landmark_detection, landmark_detect_mode, landmark_score, from_points, rotation_angles=None):
+        rotation_angles = rotation_angles or [0]
+        img_landmark = None
         if use_landmark_detection:
             img_landmark = img.clone()
 
@@ -565,7 +572,9 @@ class FaceDetectors:
 
         return det, kpss_5, kpss
 
-    def detect_yoloface(self, img, max_num, score, use_landmark_detection, landmark_detect_mode, landmark_score, from_points, rotation_angles:list[int]=[0]):
+    def detect_yoloface(self, img, max_num, score, use_landmark_detection, landmark_detect_mode, landmark_score, from_points, rotation_angles=None):
+        rotation_angles = rotation_angles or [0]
+        img_landmark = None
         if use_landmark_detection:
             img_landmark = img.clone()
 
@@ -636,7 +645,7 @@ class FaceDetectors:
 
             outputs = np.squeeze(net_outs).T
 
-            bbox_raw, score_raw, kps_raw = np.split(outputs, [4, 5], axis=1)
+            bbox_raw, score_raw, kps_raw, *_ = np.split(outputs, [4, 5], axis=1)
 
             keep_indices = np.where(score_raw > score)[0]
 
@@ -801,7 +810,9 @@ class FaceDetectors:
 
         return det, kpss_5, kpss
 
-    def detect_yunet(self, img, max_num, score, use_landmark_detection, landmark_detect_mode, landmark_score, from_points, rotation_angles:list[int]=[0]):
+    def detect_yunet(self, img, max_num, score, use_landmark_detection, landmark_detect_mode, landmark_score, from_points, rotation_angles=None):
+        rotation_angles = rotation_angles or [0]
+        img_landmark = None
         if use_landmark_detection:
             img_landmark = img.clone()
 

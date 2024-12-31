@@ -1,63 +1,64 @@
-import cv2
-import threading
-import queue
-from app.ui.core.main_window import Ui_MainWindow
-from PySide6 import QtWidgets, QtGui
-from PySide6 import QtCore
-import app.ui.widgets.actions.layout_actions as layout_actions
-
-import app.ui.widgets.actions.video_control_actions as video_control_actions
-from app.ui.widgets.actions import filter_actions as filter_actions
-from app.ui.widgets.actions import save_load_actions as save_load_actions
-from app.ui.widgets.actions import list_view_actions as list_view_actions
+from typing import Dict
 from pathlib import Path
 from functools import partial
+
+from PySide6 import QtWidgets, QtGui
+from PySide6 import QtCore
+
+from app.ui.core.main_window import Ui_MainWindow
+import app.ui.widgets.actions.common_actions as common_widget_actions
+from app.ui.widgets.actions import card_actions
+from app.ui.widgets.actions import layout_actions
+from app.ui.widgets.actions import video_control_actions
+from app.ui.widgets.actions import filter_actions
+from app.ui.widgets.actions import save_load_actions
+from app.ui.widgets.actions import list_view_actions
+from app.ui.widgets.actions import graphics_view_actions
+
 from app.processors.video_processor import VideoProcessor
 from app.processors.models_processor import ModelsProcessor
-from app.ui.widgets.widget_components import *
+from app.ui.widgets import widget_components
 from app.ui.widgets.event_filters import GraphicsViewEventFilter, VideoSeekSliderEventFilter, videoSeekSliderLineEditEventFilter, ListWidgetEventFilter
-from app.ui.widgets.ui_workers import *
+from app.ui.widgets import ui_workers
 from app.ui.widgets.swapper_layout_data import SWAPPER_LAYOUT_DATA
 from app.ui.widgets.settings_layout_data import SETTINGS_LAYOUT_DATA
 from app.ui.widgets.face_editor_layout_data import FACE_EDITOR_LAYOUT_DATA
-from typing import Dict, List
 from app.helpers.miscellaneous import DFM_MODELS_DATA
 
-
-ParametersWidgetTypes = Dict[str, ToggleButton|SelectionBox|ParameterDecimalSlider|ParameterSlider|ParameterText]
+ParametersWidgetTypes = Dict[str, widget_components.ToggleButton|widget_components.SelectionBox|widget_components.ParameterDecimalSlider|widget_components.ParameterSlider|widget_components.ParameterText]
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
-    placeholder_update_signal = qtc.Signal(QtWidgets.QListWidget, bool)
-    gpu_memory_update_signal = qtc.Signal(int, int)
-    model_loading_signal = qtc.Signal()
-    model_loaded_signal = qtc.Signal()
-    display_messagebox_signal = qtc.Signal(str, str, QtWidgets.QWidget)
+    placeholder_update_signal = QtCore.Signal(QtWidgets.QListWidget, bool)
+    gpu_memory_update_signal = QtCore.Signal(int, int)
+    model_loading_signal = QtCore.Signal()
+    model_loaded_signal = QtCore.Signal()
+    display_messagebox_signal = QtCore.Signal(str, str, QtWidgets.QWidget)
     def initialize_variables(self):
-        self.video_loader_worker: TargetMediaLoaderWorker|bool = False
-        self.input_faces_loader_worker: InputFacesLoaderWorker|bool = False
-        self.target_videos_filter_worker = FilterWorker(main_window=self, search_text='', filter_list='target_videos')
-        self.input_faces_filter_worker = FilterWorker(main_window=self, search_text='', filter_list='input_faces')
-        self.merged_embeddings_filter_worker = FilterWorker(main_window=self, search_text='', filter_list='merged_embeddings')
+        self.video_loader_worker: ui_workers.TargetMediaLoaderWorker|bool = False
+        self.input_faces_loader_worker: ui_workers.InputFacesLoaderWorker|bool = False
+        self.target_videos_filter_worker = ui_workers.FilterWorker(main_window=self, search_text='', filter_list='target_videos')
+        self.input_faces_filter_worker = ui_workers.FilterWorker(main_window=self, search_text='', filter_list='input_faces')
+        self.merged_embeddings_filter_worker = ui_workers.FilterWorker(main_window=self, search_text='', filter_list='merged_embeddings')
         self.video_processor = VideoProcessor(self)
         self.models_processor = ModelsProcessor(self)
-        self.target_videos: Dict[int, TargetMediaCardButton] = {} #Contains button objects of target videos (Set as list instead of single video to support batch processing in future)
-        self.target_faces: Dict[int, TargetFaceCardButton] = {} #Contains button objects of target faces
-        self.input_faces: Dict[int, InputFaceCardButton] = {} #Contains button objects of source faces (images)
-        self.merged_embeddings: Dict[int, EmbeddingCardButton] = {}
-        self.cur_selected_target_face_button: TargetFaceCardButton = False
-        self.selected_video_button: TargetMediaCardButton = False
+        self.target_videos: Dict[int, widget_components.TargetMediaCardButton] = {} #Contains button objects of target videos (Set as list instead of single video to support batch processing in future)
+        self.target_faces: Dict[int, widget_components.TargetFaceCardButton] = {} #Contains button objects of target faces
+        self.input_faces: Dict[int, widget_components.InputFaceCardButton] = {} #Contains button objects of source faces (images)
+        self.merged_embeddings: Dict[int, widget_components.EmbeddingCardButton] = {}
+        self.cur_selected_target_face_button: widget_components.TargetFaceCardButton = False
+        self.selected_video_button: widget_components.TargetMediaCardButton = False
         self.selected_target_face_id = False
-        '''
-            self.parameters dict have the following structure:
-            {
-                face_id (int): 
-                {
-                    parameter_name: parameter_value,
-                    ------
-                }
-                -----
-            }
-        '''
+        # '''
+            # self.parameters dict have the following structure:
+            # {
+                # face_id (int): 
+                # {
+                    # parameter_name: parameter_value,
+                    # ------
+                # }
+                # -----
+            # }
+        # '''
         self.parameters: Dict[int, Dict[str, bool|int|float|str]] = {} 
 
         self.default_parameters: Dict[str, bool|int|float|str] = {}
@@ -90,7 +91,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.inputFacesList.setWrapping(True)
         self.inputFacesList.setResizeMode(QtWidgets.QListWidget.Adjust)
 
-        # Set up Menu actions
+        # Set up Menu Actions
         layout_actions.set_up_menu_actions(self)
 
         # Set up placeholder texts in ListWidgets (Target Videos and Input Faces)
@@ -223,7 +224,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def loadLastWorkspace(self):
         # Show the load workspace dialog if the file exists
         if Path('last_workspace.json').is_file():
-            load_dialog = LoadLastWorkspaceDialog(self)
+            load_dialog = widget_components.LoadLastWorkspaceDialog(self)
             load_dialog.exec_()
 
     def saveLastWorkspace(self):

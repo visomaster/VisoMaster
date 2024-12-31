@@ -1,16 +1,17 @@
 from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from app.ui.main_ui import MainWindow
-import app.ui.widgets.actions.common_actions as common_widget_actions
 import torch
 import qdarkstyle
 from PySide6 import QtWidgets 
 import qdarktheme
 
-'''
-    Define functions here that has to be executed when value of a control widget (In the settings tab) is changed.
-    The first two parameters should be the MainWindow object and the new value of the control 
-'''
+if TYPE_CHECKING:
+    from app.ui.main_ui import MainWindow
+from app.ui.widgets.actions import common_actions as common_widget_actions
+
+#'''
+#    Define functions here that has to be executed when value of a control widget (In the settings tab) is changed.
+#    The first two parameters should be the MainWindow object and the new value of the control 
+#'''
 
 def change_execution_provider(main_window: 'MainWindow', new_provider):
     main_window.video_processor.stop_processing()
@@ -26,13 +27,15 @@ def change_threads_number(main_window: 'MainWindow', new_threads_number):
 
 def change_theme(main_window: 'MainWindow', new_theme):
 
-    def get_style_data(filename, theme='dark', custom_colors={"primary": "#4facc9"}):
-        with open(f"app/ui/styles/{filename}", "r") as f:
+    def get_style_data(filename, theme='dark', custom_colors=None):
+        custom_colors = custom_colors or {"primary": "#4facc9"}
+        with open(f"app/UI/Styles/{filename}", "r") as f: # pylint: disable=unspecified-encoding
             _style = f.read()
             _style = qdarktheme.load_stylesheet(theme=theme, custom_colors=custom_colors)+'\n'+_style
         return _style
     app = QtWidgets.QApplication.instance()
 
+    _style = ''
     if new_theme == "Dark":
         _style = get_style_data('dark_styles.qss', 'dark',)
 

@@ -1,7 +1,8 @@
 import torch
 import onnxruntime
-import app.processors.utils.face_util as faceutil
 import numpy as np
+
+from app.processors.utils import faceutil
 
 onnxruntime.set_default_logger_severity(4)
 onnxruntime.log_verbosity_level = -1
@@ -18,18 +19,18 @@ class DFMModel:
         inputs = sess.get_inputs()
 
         if len(inputs) == 0 or 'in_face' not in inputs[0].name:
-            raise Exception(f'Invalid model {model_path}')
+            raise ValueError(f'Invalid model {model_path}')
 
         self._input_height, self._input_width = inputs[0].shape[1:3]
         self._model_type = 1
 
         if len(inputs) == 2:
             if 'morph_value' not in inputs[1].name:
-                raise Exception(f'Invalid model {model_path}')
+                raise ValueError(f'Invalid model {model_path}')
             self._model_type = 2
 
         elif len(inputs) > 2:
-            raise Exception(f'Invalid model {model_path}')
+            raise ValueError(f'Invalid model {model_path}')
 
         # Mapping function from ONNX Runtime data types to PyTorch dtypes (you may need to adjust based on your actual usage)
         self.onnx_to_torch_dtype = {
@@ -82,7 +83,7 @@ class DFMModel:
         # Transform from NCHW to NHWC and ensure all bytes are contiguous
         img = img.permute(0, 2, 3, 1).contiguous()
 
-        N, H, W, C = img.shape
+        _, H, W, _ = img.shape
 
         io_binding = self._sess.io_binding()
 
@@ -287,7 +288,7 @@ class DFMModel:
 
         return img.to(torch.uint8)
 
-    def get_image(self, img, format):
+    def get_image(self, img, tensor_format):
         """
         Returns a PyTorch tensor image with the desired format.
 
@@ -298,25 +299,25 @@ class DFMModel:
         Returns:
             torch.Tensor: The image tensor in the desired format.
         """
-        format = format.upper()
+        tensor_format = tensor_format.upper()
 
         # First slice missing dims
-        N_slice = 0 if 'N' not in format else slice(None)
-        H_slice = 0 if 'H' not in format else slice(None)
-        W_slice = 0 if 'W' not in format else slice(None)
-        C_slice = 0 if 'C' not in format else slice(None)
+        N_slice = 0 if 'N' not in tensor_format else slice(None)
+        H_slice = 0 if 'H' not in tensor_format else slice(None)
+        W_slice = 0 if 'W' not in tensor_format else slice(None)
+        C_slice = 0 if 'C' not in tensor_format else slice(None)
         img = img[N_slice, H_slice, W_slice, C_slice]
 
         f = ''
-        if 'N' in format: f += 'N'
-        if 'H' in format: f += 'H'
-        if 'W' in format: f += 'W'
-        if 'C' in format: f += 'C'
+        if 'N' in tensor_format: f += 'N'
+        if 'H' in tensor_format: f += 'H'
+        if 'W' in tensor_format: f += 'W'
+        if 'C' in tensor_format: f += 'C'
 
-        if f != format:
+        if f != tensor_format:
             # Transpose to target
             d = {s: i for i, s in enumerate(f)}
-            transpose_order = [d[s] for s in format]
+            transpose_order = [d[s] for s in tensor_format]
             img = img.permute(transpose_order)  # PyTorch uses permute for transpose-like operations
 
         return img.contiguous()  # Ensures that the tensor is contiguous in memory
@@ -332,7 +333,7 @@ class DFMModel:
         Returns:
             torch.Tensor: Image tensor with the target number of channels.
         """
-        N, H, W, C = img.shape
+        _, _, _, C = img.shape
 
         if TC <= 0:
             raise ValueError(f'channels must be positive value, not {TC}')
@@ -365,7 +366,7 @@ class DFMModel:
             raise ValueError(f"Interpolation '{interpolation}' not supported. Choose from {supported_interpolations}.")
 
         # Input image shape
-        N, H, W, C = img.shape
+        _, H, W, _ = img.shape
         TW, TH = size  # Target Width and Height
 
         if W != TW or H != TH:

@@ -1,13 +1,14 @@
+from typing import TYPE_CHECKING
+
 import torch
 import numpy as np
 from torchvision import transforms
 from torchvision.transforms import v2
 
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from app.processors.models_processor import ModelsProcessor
 from app.processors.external.clipseg import CLIPDensePredT
 from app.processors.models_data import models_dir
+if TYPE_CHECKING:
+    from app.processors.models_processor import ModelsProcessor
 
 class FaceMasks:
     def __init__(self, models_processor: 'ModelsProcessor'):
@@ -27,7 +28,7 @@ class FaceMasks:
         if amount >0:
             kernel = torch.ones((1,1,3,3), dtype=torch.float32, device=self.models_processor.device)
 
-            for i in range(int(amount)):
+            for _ in range(int(amount)):
                 outpred = torch.nn.functional.conv2d(outpred, kernel, padding=(1, 1))
                 outpred = torch.clamp(outpred, 0, 1)
 
@@ -38,7 +39,7 @@ class FaceMasks:
             outpred = torch.add(outpred, 1)
             kernel = torch.ones((1,1,3,3), dtype=torch.float32, device=self.models_processor.device)
 
-            for i in range(int(-amount)):
+            for _ in range(int(-amount)):
                 outpred = torch.nn.functional.conv2d(outpred, kernel, padding=(1, 1))
                 outpred = torch.clamp(outpred, 0, 1)
 
@@ -80,7 +81,7 @@ class FaceMasks:
         if amount > 0:
             kernel = torch.ones((1,1,3,3), dtype=torch.float32, device=self.models_processor.device)
 
-            for i in range(int(amount)):
+            for _ in range(int(amount)):
                 outpred = torch.nn.functional.conv2d(outpred, kernel, padding=(1, 1))
                 outpred = torch.clamp(outpred, 0, 1)
 
@@ -91,7 +92,7 @@ class FaceMasks:
             outpred = torch.add(outpred, 1)
             kernel = torch.ones((1,1,3,3), dtype=torch.float32, device=self.models_processor.device)
 
-            for i in range(int(-amount)):
+            for _ in range(int(-amount)):
                 outpred = torch.nn.functional.conv2d(outpred, kernel, padding=(1, 1))
                 outpred = torch.clamp(outpred, 0, 1)
 
@@ -149,10 +150,10 @@ class FaceMasks:
         kernel = torch.ones((1, 1, 3, 3), dtype=torch.float32, device=self.models_processor.device)  # Kernel 3x3
 
         face_parses = []
-        for attribute in face_attributes.keys():
-            if face_attributes[attribute] > 0:
+        for attribute, attribute_value in face_attributes.items():
+            if attribute_value > 0:
                 attribute_idxs = torch.tensor( [attribute], device=self.models_processor.device)
-                iters = int(face_attributes[attribute])
+                iters = int(attribute_value)
 
                 attribute_parse = torch.isin(outpred, attribute_idxs)
                 attribute_parse = torch.clamp(~attribute_parse, 0, 1).type(torch.float32)
@@ -160,7 +161,7 @@ class FaceMasks:
                 attribute_parse = torch.neg(attribute_parse)
                 attribute_parse = torch.add(attribute_parse, 1)
 
-                for i in range(iters):
+                for _ in range(iters):
                     attribute_parse = torch.nn.functional.conv2d(attribute_parse, kernel, padding=(1, 1))
                     attribute_parse = torch.clamp(attribute_parse, 0, 1)
 
@@ -185,7 +186,7 @@ class FaceMasks:
         bg_parse = 1 - torch.isin(outpred, bg_idxs).float().unsqueeze(0).unsqueeze(0)  # (1, 1, 512, 512)
 
         if FaceAmount > 0:
-            for i in range(int(FaceAmount)):
+            for _ in range(int(FaceAmount)):
                 bg_parse = torch.nn.functional.conv2d(bg_parse, kernel, padding=(1, 1))  # Padding (1, 1) for 3x3 kernel
                 bg_parse = torch.clamp(bg_parse, 0, 1)
 
@@ -198,7 +199,7 @@ class FaceMasks:
 
         elif FaceAmount < 0:
             bg_parse = 1 - bg_parse  # Invert mask back
-            for i in range(int(-FaceAmount)):
+            for _ in range(int(-FaceAmount)):
                 bg_parse = torch.nn.functional.conv2d(bg_parse, kernel, padding=(1, 1))  # Padding (1, 1) for 3x3 kernel
                 bg_parse = torch.clamp(bg_parse, 0, 1)
 

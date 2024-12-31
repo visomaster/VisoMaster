@@ -1,16 +1,19 @@
-from PySide6 import QtWidgets
-from typing import TYPE_CHECKING
+import threading
+from typing import TYPE_CHECKING, Callable
+from functools import partial
+
+import cv2
+import numpy as np
+from pyqttoast import Toast, ToastPreset, ToastPosition
+from PySide6 import QtWidgets,QtCore,QtGui
+
+from app.ui.widgets import widget_components
+from app.ui.widgets.settings_layout_data import SETTINGS_LAYOUT_DATA
+import app.helpers.miscellaneous as misc_helpers
 if TYPE_CHECKING:
     from app.ui.main_ui import MainWindow
-from app.ui.widgets.widget_components import *
-from app.ui.widgets.settings_layout_data import SETTINGS_LAYOUT_DATA
-from pyqttoast import Toast, ToastPreset, ToastPosition
-import app.helpers.miscellaneous as misc_helpers
-import threading
-import numpy
-import json
-
-@qtc.Slot(str, str, QtWidgets.QWidget)
+    
+@QtCore.Slot(str, str, QtWidgets.QWidget)
 def create_and_show_messagebox(main_window: 'MainWindow', window_title: str, message: str, parent_widget: QtWidgets.QWidget):
     messagebox = QtWidgets.QMessageBox(parent_widget)
     messagebox.setWindowTitle(window_title)
@@ -39,7 +42,8 @@ def create_and_show_toast_message(main_window: 'MainWindow', title: str, message
 def create_control(main_window: 'MainWindow', control_name, control_value):
     main_window.control[control_name] = control_value
 
-def update_control(main_window: 'MainWindow', control_name, control_value, exec_function=None, exec_function_args=[]):
+def update_control(main_window: 'MainWindow', control_name, control_value, exec_function=None, exec_function_args:list=None):
+    exec_function_args = exec_function_args or []
     if exec_function:
         # Only execute the function if the value is different from current
         if main_window.control[control_name] != control_value:
@@ -58,7 +62,8 @@ def create_parameter_dict_for_face_id(main_window: 'MainWindow', face_id=0):
         main_window.parameters[face_id] = parameters.copy()
     print("Created parameter_dict_for_face_id", face_id)
 
-def update_parameter(main_window: 'MainWindow', parameter_name, parameter_value, enable_refresh_frame=True, exec_function: Callable=None, exec_function_args=[]):
+def update_parameter(main_window: 'MainWindow', parameter_name, parameter_value, enable_refresh_frame=True, exec_function: Callable=None, exec_function_args:list=None):
+    exec_function_args = exec_function_args or []
     current_position = main_window.videoSeekSlider.value()
     face_id = main_window.selected_target_face_id
 
@@ -124,7 +129,7 @@ def show_hide_related_widgets(main_window: 'MainWindow', parent_widget, parent_w
                     if ',' in parentToggles:
                         result = [item.strip() for item in parentToggles.split(',')]
                         parentToggle_ischecked = False
-                        for index, required_widget_name in enumerate(result):
+                        for _, required_widget_name in enumerate(result):
                             parentToggle_ischecked = main_window.parameter_widgets[required_widget_name].isChecked()
                         # Check if the current_widget has the required toggle value of Parent Widget's (toggle) checked state to hide/show the current_widget
                         if group_layout_data[widget_name].get('requiredToggleValue') != parentToggle_ischecked:
@@ -142,7 +147,7 @@ def show_hide_related_widgets(main_window: 'MainWindow', parent_widget, parent_w
                     elif '|' in parentToggles:
                         result = [item.strip() for item in parentToggles.split('|')]
                         parentToggle_ischecked = True
-                        for index, required_widget_name in enumerate(result):
+                        for _, required_widget_name in enumerate(result):
                             ischecked = main_window.parameter_widgets[required_widget_name].isChecked()
                             if not ischecked:
                                 parentToggle_ischecked = False
@@ -198,7 +203,7 @@ def _update_gpu_memory_progressbar(main_window: 'MainWindow'):
     memory_used, memory_total = main_window.models_processor.get_gpu_memory()
     main_window.gpu_memory_update_signal.emit(memory_used, memory_total)
 
-@qtc.Slot(int, int)
+@QtCore.Slot(int, int)
 def set_gpu_memory_progressbar_value(main_window: 'MainWindow', memory_used, memory_total):
     main_window.vramProgressBar.setMaximum(memory_total)
     main_window.vramProgressBar.setValue(memory_used)
@@ -243,13 +248,13 @@ def extract_frame_as_pixmap(media_file_path, file_type, webcam_index=False, webc
         if not ret:
             return
 
-    if isinstance(frame, numpy.ndarray):
+    if isinstance(frame, np.ndarray):
         # Convert the frame to QPixmap
-        height, width, channel = frame.shape
+        height, width, _ = frame.shape
         bytes_per_line = 3 * width
         q_img = QtGui.QImage(frame.data, width, height, bytes_per_line, QtGui.QImage.Format.Format_RGB888).rgbSwapped()
         pixmap = QtGui.QPixmap.fromImage(q_img)
-        pixmap = pixmap.scaled(70, 70, qtc.Qt.AspectRatioMode.KeepAspectRatio)  # Adjust size as needed
+        pixmap = pixmap.scaled(70, 70, QtCore.Qt.AspectRatioMode.KeepAspectRatio)  # Adjust size as needed
         return pixmap
     return None
 
@@ -308,13 +313,13 @@ def set_control_widgets_values(main_window: 'MainWindow'):
             # Re-enable frame refresh
             widget.enable_refresh_frame = True
         
-@qtc.Slot(QtWidgets.QListWidget, bool)
+@QtCore.Slot(QtWidgets.QListWidget, bool)
 def update_placeholder_visibility(main_window: 'MainWindow', list_widget:QtWidgets.QListWidget, default_hide):
-    """Update the visibility of the placeholder text."""
-    """
-        The default_hide parameter is used to Hide the placeholder text by default. 
-        If the default_hide is False, then the visibility of the placeholder text is set using the size of the list_widget 
-    """
+    # """Update the visibility of the placeholder text."""
+    # """
+    #     The default_hide parameter is used to Hide the placeholder text by default. 
+    #     If the default_hide is False, then the visibility of the placeholder text is set using the size of the list_widget 
+    # """
     if default_hide:
         is_visible = False
     else:
@@ -329,13 +334,13 @@ def update_placeholder_visibility(main_window: 'MainWindow', list_widget:QtWidge
     print("targetVideosList.count()", list_widget.count())
 
 
-@qtc.Slot()
+@QtCore.Slot()
 def show_model_loading_dialog(main_window: 'MainWindow'):
-    main_window.model_loading_dialog = LoadingDialog()
+    main_window.model_loading_dialog = widget_components.LoadingDialog()
     main_window.model_loading_dialog.show()
     QtWidgets.QApplication.processEvents()
 
-@qtc.Slot()
+@QtCore.Slot()
 def hide_model_loading_dialog(main_window: 'MainWindow'):
     main_window.model_loading_dialog.hide()
     QtWidgets.QApplication.processEvents()

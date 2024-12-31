@@ -1,25 +1,27 @@
-import torch
-import numpy as np
-from torchvision.transforms import v2
-from skimage import transform as trans
-from app.processors.models_data import models_dir
-from app.processors.utils import face_util as faceutil
-from torchvision import transforms
 import pickle
 from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from app.processors.models_processor import ModelsProcessor
 
+import torch
+import numpy as np
 from torch.cuda import nvtx
 
+from torchvision import transforms
+from torchvision.transforms import v2
+
+from app.processors.models_data import models_dir
+from app.processors.utils import faceutil
+if TYPE_CHECKING:
+    from app.processors.models_processor import ModelsProcessor
     
 class FaceEditors:
     def __init__(self, models_processor: 'ModelsProcessor'):
         self.models_processor = models_processor
         self.lp_mask_crop = faceutil.create_faded_inner_mask(size=(512, 512), border_thickness=5, fade_thickness=15, blur_radius=5, device=self.models_processor.device)
         self.lp_mask_crop = torch.unsqueeze(self.lp_mask_crop, 0)
-        self.lp_lip_array = np.array(self.load_lip_array())
-
+        try:
+            self.lp_lip_array = np.array(self.load_lip_array())
+        except FileNotFoundError:
+            self.lp_lip_array = None
     def load_lip_array(self):
         with open(f'{models_dir}/liveportrait_onnx/lip_array.pkl', 'rb') as f:
             return pickle.load(f)
@@ -35,8 +37,8 @@ class FaceEditors:
                         self.models_processor.models_trt['LivePortraitMotionExtractor'] = self.models_processor.load_model_trt('LivePortraitMotionExtractor', custom_plugin_path=None, precision="fp32")
 
                 motion_extractor_model = self.models_processor.models_trt['LivePortraitMotionExtractor']
-                input_spec = motion_extractor_model.input_spec()
-                output_spec = motion_extractor_model.output_spec()
+                # input_spec = motion_extractor_model.input_spec()
+                # output_spec = motion_extractor_model.output_spec()
 
                 # prepare_source
                 I_s = torch.div(img.type(torch.float32), 255.)
@@ -433,7 +435,8 @@ class FaceEditors:
 
         return out
     
-    def face_parser_makeup_direct_rgb(self, img, parsing, part=(17,), color=[230, 50, 20], blend_factor=0.2):
+    def face_parser_makeup_direct_rgb(self, img, parsing, part=(17,), color=None, blend_factor=0.2):
+        color = color or [230, 50, 20]
         device = img.device  # Ensure we use the same device
 
         # Clamp blend factor to ensure it stays between 0 and 1
@@ -533,8 +536,8 @@ class FaceEditors:
 
         # Generate masks for each face attribute
         face_parses = []
-        for attribute in face_attributes.keys():
-            if face_attributes[attribute]:  # Se l'attributo è abilitato
+        for attribute, attribute_value in face_attributes.items():
+            if attribute_value:  # Se l'attributo è abilitato
                 attribute_idxs = torch.tensor([attribute], device=self.models_processor.device)
 
                 # Create the mask: white for the part, black for the rest
@@ -543,7 +546,7 @@ class FaceEditors:
                 attribute_parse = torch.reshape(attribute_parse, (1, 1, 512, 512))
 
                 # Dilate the mask (if necessary)
-                for i in range(1):  # One pass, modify if needed
+                for _ in range(1):  # One pass, modify if needed
                     attribute_parse = torch.nn.functional.conv2d(attribute_parse, kernel, padding=(1, 1))
                     attribute_parse = torch.clamp(attribute_parse, 0, 1)
 

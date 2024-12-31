@@ -1,7 +1,7 @@
 import torch
 from skimage import transform as trans
 from torchvision.transforms import v2
-from app.processors.utils import face_util as faceutil
+from app.processors.utils import faceutil
 import numpy as np
 from numpy.linalg import norm as l2norm
 import onnx
@@ -263,6 +263,7 @@ class FaceSwappers:
         self.models_processor.models['SimSwap512'].run_with_iobinding(io_binding)
 
     def run_swapper_ghostface(self, image, embedding, output, swapper_model='GhostFace-v2'):
+        ghostfaceswap_model, output_name = None, None
         if swapper_model == 'GhostFace-v1':
             if not self.models_processor.models['GhostFacev1']:
                 self.models_processor.models['GhostFacev1'] = self.models_processor.load_model('GhostFacev1')

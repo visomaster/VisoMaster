@@ -1,14 +1,16 @@
-import torch
+from itertools import product as product
+from typing import TYPE_CHECKING
 import pickle
+
+import torch
 import cv2
 import numpy as np
 from torchvision.transforms import v2
-from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from app.processors.models_processor import ModelsProcessor
 from app.processors.models_data import models_dir
-from itertools import product as product
-from app.processors.utils import face_util as faceutil
+from app.processors.utils import faceutil
 
 class FaceLandmarkDetectors:
     def __init__(self, models_processor: 'ModelsProcessor'):
@@ -254,12 +256,13 @@ class FaceLandmarkDetectors:
         pred = faceutil.trans_points3d(pred, IM)
 
         # at moment we don't use 3d points
-        '''
-        P = faceutil.estimate_affine_matrix_3d23d(self.models_processor.mean_lmk, pred)
-        s, R, t = faceutil.P2sRt(P)
-        rx, ry, rz = faceutil.matrix2angle(R)
-        pose = np.array( [rx, ry, rz], dtype=np.float32 ) #pitch, yaw, roll
-        '''
+        
+        #'''
+        #P = faceutil.estimate_affine_matrix_3d23d(self.models_processor.mean_lmk, pred)
+        #s, R, t = faceutil.P2sRt(P)
+        #rx, ry, rz = faceutil.matrix2angle(R)
+        #pose = np.array( [rx, ry, rz], dtype=np.float32 ) #pitch, yaw, roll
+        #'''
 
         # convert from 3d68 to 2d68 keypoints
         landmark2d68 = np.array(pred[:, [0, 1]])
@@ -404,6 +407,7 @@ class FaceLandmarkDetectors:
 
         out_pts = out_pts.reshape((-1, 2)) * 224.0
 
+        IM=None
         if len(det_kpss) == 0 or det_kpss.shape[0] == 5:
             IM = faceutil.invertAffineTransform(M)
 
@@ -443,23 +447,24 @@ class FaceLandmarkDetectors:
         elif self.models_processor.device != "cpu":
             self.models_processor.syncvec.cpu()
         self.models_processor.models['FaceLandmark478'].run_with_iobinding(io_binding)
-        landmarks, faceflag, blendshapes = io_binding.copy_outputs_to_cpu()
+        landmarks, faceflag, blendshapes = io_binding.copy_outputs_to_cpu() # pylint: disable=unused-variable
         landmarks = landmarks.reshape( (1,478,3))
 
         landmark = []
         landmark_5 = []
-        landmark_score = []
+        landmark_score = [] # pylint: disable=unused-variable
         if len(landmarks) > 0:
             for one_face_landmarks in landmarks:
                 landmark = one_face_landmarks
                 IM = faceutil.invertAffineTransform(M)
                 landmark = faceutil.trans_points3d(landmark, IM)
-                '''
-                P = faceutil.estimate_affine_matrix_3d23d(self.models_processor.mean_lmk, landmark)
-                s, R, t = faceutil.P2sRt(P)
-                rx, ry, rz = faceutil.matrix2angle(R)
-                pose = np.array( [rx, ry, rz], dtype=np.float32 ) #pitch, yaw, roll
-                '''
+
+                #'''
+                #P = faceutil.estimate_affine_matrix_3d23d(self.models_processor.mean_lmk, landmark)
+                #s, R, t = faceutil.P2sRt(P)
+                #rx, ry, rz = faceutil.matrix2angle(R)
+                #pose = np.array( [rx, ry, rz], dtype=np.float32 ) #pitch, yaw, roll
+                #'''
                 landmark = landmark[:, [0, 1]].reshape(-1,2)
 
                 #get scores
@@ -479,7 +484,7 @@ class FaceLandmarkDetectors:
                 elif self.models_processor.device != "cpu":
                     self.models_processor.syncvec.cpu()
                 self.models_processor.models['FaceBlendShapes'].run_with_iobinding(io_binding_bs)
-                landmark_score = io_binding_bs.copy_outputs_to_cpu()[0]
+                landmark_score = io_binding_bs.copy_outputs_to_cpu()[0] # pylint: disable=unused-variable
 
                 # convert from 478 to 5 keypoints
                 landmark_5 = faceutil.convert_face_landmark_478_to_5(landmark)

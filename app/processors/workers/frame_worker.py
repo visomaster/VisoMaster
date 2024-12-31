@@ -1,29 +1,25 @@
-from PySide6.QtCore import QRunnable,QTimer, QThread, Signal
-from PySide6.QtGui import QImage, QPixmap, QPainter, QColor
-from PySide6.QtWidgets import QGraphicsPixmapItem
-import cv2
-import torch
-from torchvision.transforms import v2
-from skimage import transform as trans
+import traceback
+from typing import TYPE_CHECKING
+import threading
 from math import floor, ceil
 
+import torch
+from skimage import transform as trans
+
+from torchvision.transforms import v2
 import torchvision
 from torchvision import transforms
-torchvision.disable_beta_transforms_warning()
 
 import numpy as np
-from app.processors.utils import face_util as faceutil
-import threading
-from app.processors.utils.dfm_model import DFMModel
-import app.ui.widgets.actions.common_actions as common_widget_actions
-import app.ui.widgets.actions.video_control_actions as video_control_actions
-import app.helpers.miscellaneous as misc_helpers
 
-import traceback
-import time
-from typing import TYPE_CHECKING
+from app.processors.utils import faceutil
+import app.ui.widgets.actions.common_actions as common_widget_actions
+from app.ui.widgets.actions import video_control_actions
+
 if TYPE_CHECKING:
     from app.ui.main_ui import MainWindow
+
+torchvision.disable_beta_transforms_warning()
 
 class FrameWorker(threading.Thread):
     def __init__(self, frame, main_window: 'MainWindow', frame_number, frame_queue, is_single_frame=False):
@@ -77,7 +73,7 @@ class FrameWorker(threading.Thread):
             if self.video_processor.frame_queue.empty() and not self.video_processor.processing and self.video_processor.next_frame_to_display >= self.video_processor.max_frame_number:
                 self.video_processor.stop_processing()
 
-        except Exception as e:
+        except Exception as e: # pylint: disable=broad-exception-caught
             print(f"Error in FrameWorker: {e}")
             traceback.print_exc()
     
@@ -91,7 +87,7 @@ class FrameWorker(threading.Thread):
         img_x = img.size()[2]
         img_y = img.size()[1]
 
-        det_scale = 1.0
+        # det_scale = 1.0
         if img_x<512 and img_y<512:
             # if x is smaller, set x to 512
             if img_x <= img_y:
@@ -136,7 +132,7 @@ class FrameWorker(threading.Thread):
             # force to use from_points in landmark detector when edit face is enabled.
             from_points = True
 
-        bboxes, kpss_5, kpss = self.models_processor.run_detect(img, control['DetectorModelSelection'], max_num=control['MaxFacesToDetectSlider'], score=control['DetectorScoreSlider']/100.0, input_size=(512, 512), use_landmark_detection=use_landmark_detection, landmark_detect_mode=landmark_detect_mode, landmark_score=control["LandmarkDetectScoreSlider"]/100.0, from_points=from_points, rotation_angles=[0] if not control["AutoRotationToggle"] else [0, 90, 180, 270])
+        _, kpss_5, kpss = self.models_processor.run_detect(img, control['DetectorModelSelection'], max_num=control['MaxFacesToDetectSlider'], score=control['DetectorScoreSlider']/100.0, input_size=(512, 512), use_landmark_detection=use_landmark_detection, landmark_detect_mode=landmark_detect_mode, landmark_score=control["LandmarkDetectScoreSlider"]/100.0, from_points=from_points, rotation_angles=[0] if not control["AutoRotationToggle"] else [0, 90, 180, 270])
         
         ret = []
         if len(kpss_5)>0:
@@ -148,7 +144,7 @@ class FrameWorker(threading.Thread):
         if ret:
             # Loop through target faces to see if they match our found face embeddings
             for i, fface in enumerate(ret):
-                    for face_id, target_face in self.main_window.target_faces.items():
+                    for _, target_face in self.main_window.target_faces.items():
                         parameters = self.parameters[target_face.face_id] #Use the parameters of the target face
 
                         if self.main_window.swapfacesButton.isChecked() or self.main_window.editFacesButton.isChecked():
@@ -176,47 +172,45 @@ class FrameWorker(threading.Thread):
         img = img.permute(1,2,0)
         img = img.cpu().numpy()
 
-        if control["ShowLandmarksEnableToggle"]:
-            if ret:
-                if img_y <= 720:
-                    p = 1
-                else:
-                    p = 2
+        if control["ShowLandmarksEnableToggle"] and ret:
+            if img_y <= 720:
+                p = 1
+            else:
+                p = 2
 
-                for i, face in enumerate(ret):
-                    for face_id, target_face in self.main_window.target_faces.items():
-                        parameters = self.parameters[target_face.face_id] #Use the parameters of the target face
-                        sim = self.models_processor.findCosineDistance(fface[2], target_face.get_embedding(control['RecognitionModelSelection']))
-                        if sim>=parameters['SimilarityThresholdSlider']:
-                            if parameters['LandmarksPositionAdjEnableToggle']:
-                                kcolor = tuple((255, 0, 0))
-                                keypoints = face[0]
-                            else:
-                                kcolor = tuple((0, 255, 255))
-                                keypoints = face[1]
+            for i, fface in enumerate(ret):
+                for _, target_face in self.main_window.target_faces.items():
+                    parameters = self.parameters[target_face.face_id] #Use the parameters of the target face
+                    sim = self.models_processor.findCosineDistance(fface[2], target_face.get_embedding(control['RecognitionModelSelection']))
+                    if sim>=parameters['SimilarityThresholdSlider']:
+                        if parameters['LandmarksPositionAdjEnableToggle']:
+                            kcolor = tuple((255, 0, 0))
+                            keypoints = fface[0]
+                        else:
+                            kcolor = tuple((0, 255, 255))
+                            keypoints = fface[1]
 
-                            for kpoint in keypoints:
-                                for i in range(-1, p):
-                                    for j in range(-1, p):
-                                        try:
-                                            img[int(kpoint[1])+i][int(kpoint[0])+j][0] = kcolor[0]
-                                            img[int(kpoint[1])+i][int(kpoint[0])+j][1] = kcolor[1]
-                                            img[int(kpoint[1])+i][int(kpoint[0])+j][2] = kcolor[2]
-                                        except:
-                                            #print("Key-points value {} exceed the image size {}.".format(kpoint, (img_x, img_y)))
-                                            continue
+                        for kpoint in keypoints:
+                            for i in range(-1, p):
+                                for j in range(-1, p):
+                                    try:
+                                        img[int(kpoint[1])+i][int(kpoint[0])+j][0] = kcolor[0]
+                                        img[int(kpoint[1])+i][int(kpoint[0])+j][1] = kcolor[1]
+                                        img[int(kpoint[1])+i][int(kpoint[0])+j][2] = kcolor[2]
+                                    except ValueError:
+                                        #print("Key-points value {} exceed the image size {}.".format(kpoint, (img_x, img_y)))
+                                        continue
 
         # RGB to BGR
         return img[..., ::-1]
 
-    def swap_core(self, img, kps_5, kps=False, s_e=[], t_e=[], parameters={}, control={}, dfm_model=False): # img = RGB
+    def swap_core(self, img, kps_5, kps=False, s_e=None, t_e=None, parameters=None, control=None, dfm_model=False): # img = RGB
+        s_e = s_e if isinstance(s_e, np.ndarray) else []
+        t_e = t_e if isinstance(t_e, np.ndarray) else []
+        parameters = parameters or {}
+        control = control or {}
         # parameters = self.parameters.copy()
         swapper_model = parameters['SwapModelSelection']
-
-        if swapper_model != 'GhostFace-v1' and swapper_model != 'GhostFace-v2' and swapper_model != 'GhostFace-v3' and swapper_model != 'CSCS':
-            dst = faceutil.get_arcface_template(image_size=512, mode='arcface128')
-        else:
-            dst = faceutil.get_arcface_template(image_size=512, mode='arcfacemap')
 
         # Change the ref points
         if parameters['FaceAdjEnableToggle']:
@@ -244,11 +238,14 @@ class FrameWorker(threading.Thread):
 
         tform = trans.SimilarityTransform()
         if swapper_model != 'GhostFace-v1' and swapper_model != 'GhostFace-v2' and swapper_model != 'GhostFace-v3' and swapper_model != 'CSCS':
+            dst = faceutil.get_arcface_template(image_size=512, mode='arcface128')
             dst = np.squeeze(dst)
             tform.estimate(kps_5, dst)
         elif swapper_model == "CSCS":
+            dst = faceutil.get_arcface_template(image_size=512, mode='arcfacemap')
             tform.estimate(kps_5, self.models_processor.FFHQ_kps)
         else:
+            dst = faceutil.get_arcface_template(image_size=512, mode='arcfacemap')
             M, _ = faceutil.estimate_norm_arcface_template(kps_5, src=dst)
             tform.params[0:2] = M
 
@@ -264,6 +261,7 @@ class FrameWorker(threading.Thread):
         original_face_384 = t384(original_face_512)
         original_face_256 = t256(original_face_512)
         original_face_128 = t128(original_face_256)
+        dim=1
         if (s_e is not None and len(s_e) > 0) or (swapper_model == 'DeepFaceLive (DFM)' and dfm_model):
             if swapper_model == 'Inswapper128':
                 latent = torch.from_numpy(self.models_processor.calc_inswapper_latent(s_e)).float().to(self.models_processor.device)
@@ -347,7 +345,7 @@ class FrameWorker(threading.Thread):
 
             if swapper_model == 'Inswapper128':
                 with torch.no_grad():  # Disabilita il calcolo del gradiente se è solo per inferenza
-                    for k in range(itex):
+                    for _ in range(itex):
                         for j in range(dim):
                             for i in range(dim):
                                 input_face_disc = input_face_affined[j::dim,i::dim]
@@ -438,7 +436,7 @@ class FrameWorker(threading.Thread):
                     output = torch.clamp(output, 0, 255)
             
             elif swapper_model == 'DeepFaceLive (DFM)' and dfm_model:
-                out_celeb, out_celeb_mask, out_face_mask = dfm_model.convert(original_face_512, parameters['DFMAmpMorphSlider']/100, rct=parameters['DFMRCTColorToggle'])
+                out_celeb, _, _ = dfm_model.convert(original_face_512, parameters['DFMAmpMorphSlider']/100, rct=parameters['DFMRCTColorToggle'])
                 prev_face = input_face_affined.clone()
                 input_face_affined = out_celeb.clone()
                 output = out_celeb.clone()
@@ -737,7 +735,7 @@ class FrameWorker(threading.Thread):
             case 'DeOldify-Artistic' | 'DeOldify-Stable' | 'DeOldify-Video':
                 render_factor = 384 # 12 * 32 | highest quality = 20 * 32 == 640
 
-                channels, h, w = img.shape
+                _, h, w = img.shape
                 t_resize_i = v2.Resize((render_factor, render_factor), interpolation=v2.InterpolationMode.BILINEAR, antialias=False)
                 image = t_resize_i(img)
 
@@ -775,12 +773,12 @@ class FrameWorker(threading.Thread):
                 render_factor = 384 # 12 * 32 | highest quality = 20 * 32 == 640
 
                 # Converti RGB a LAB
-                '''
-                orig_l = img.permute(1, 2, 0).cpu().numpy()
-                orig_l = cv2.cvtColor(orig_l, cv2.COLOR_RGB2Lab)
-                orig_l = torch.from_numpy(orig_l).to(self.models_processor.device)
-                orig_l = orig_l.permute(2, 0, 1)
-                '''
+                #'''
+                #orig_l = img.permute(1, 2, 0).cpu().numpy()
+                #orig_l = cv2.cvtColor(orig_l, cv2.COLOR_RGB2Lab)
+                #orig_l = torch.from_numpy(orig_l).to(self.models_processor.device)
+                #orig_l = orig_l.permute(2, 0, 1)
+                #'''
                 orig_l = faceutil.rgb_to_lab(img, True)
 
                 orig_l = orig_l[0:1, :, :]  # (1, h, w)
@@ -790,24 +788,24 @@ class FrameWorker(threading.Thread):
                 image = t_resize_i(img)
 
                 # Converti RGB in LAB
-                '''
-                img_l = image.permute(1, 2, 0).cpu().numpy()
-                img_l = cv2.cvtColor(img_l, cv2.COLOR_RGB2Lab)
-                img_l = torch.from_numpy(img_l).to(self.models_processor.device)
-                img_l = img_l.permute(2, 0, 1)
-                '''
+                #'''
+                #img_l = image.permute(1, 2, 0).cpu().numpy()
+                #img_l = cv2.cvtColor(img_l, cv2.COLOR_RGB2Lab)
+                #img_l = torch.from_numpy(img_l).to(self.models_processor.device)
+                #img_l = img_l.permute(2, 0, 1)
+                #'''
                 img_l = faceutil.rgb_to_lab(image, True)
 
                 img_l = img_l[0:1, :, :]  # (1, render_factor, render_factor)
                 img_gray_lab = torch.cat((img_l, torch.zeros_like(img_l), torch.zeros_like(img_l)), dim=0)  # (3, render_factor, render_factor)
 
                 # Converti LAB in RGB
-                '''
-                img_gray_lab = img_gray_lab.permute(1, 2, 0).cpu().numpy()
-                img_gray_rgb = cv2.cvtColor(img_gray_lab, cv2.COLOR_LAB2RGB)
-                img_gray_rgb = torch.from_numpy(img_gray_rgb).to(self.models_processor.device)
-                img_gray_rgb = img_gray_rgb.permute(2, 0, 1)
-                '''
+                #'''
+                #img_gray_lab = img_gray_lab.permute(1, 2, 0).cpu().numpy()
+                #img_gray_rgb = cv2.cvtColor(img_gray_lab, cv2.COLOR_LAB2RGB)
+                #img_gray_rgb = torch.from_numpy(img_gray_rgb).to(self.models_processor.device)
+                #img_gray_rgb = img_gray_rgb.permute(2, 0, 1)
+                #'''
                 img_gray_rgb = faceutil.lab_to_rgb(img_gray_lab)
 
                 tensor_gray_rgb = torch.unsqueeze(img_gray_rgb.type(torch.float32), 0).contiguous()
@@ -831,12 +829,12 @@ class FrameWorker(threading.Thread):
                 output_lab = torch.cat((orig_l, output_lab_resize), dim=0)  # (3, original_H, original_W)
 
                 # Convert LAB to RGB
-                '''
-                output_rgb = output_lab.permute(1, 2, 0).cpu().numpy()
-                output_rgb = cv2.cvtColor(output_rgb, cv2.COLOR_Lab2RGB)
-                output_rgb = torch.from_numpy(output_rgb).to(self.models_processor.device)
-                output_rgb = output_rgb.permute(2, 0, 1)
-                '''
+                #'''
+                #output_rgb = output_lab.permute(1, 2, 0).cpu().numpy()
+                #output_rgb = cv2.cvtColor(output_rgb, cv2.COLOR_Lab2RGB)
+                #output_rgb = torch.from_numpy(output_rgb).to(self.models_processor.device)
+                #output_rgb = output_rgb.permute(2, 0, 1)
+                #'''
                 output_rgb = faceutil.lab_to_rgb(output_lab, True)  # (3, original_H, original_W)
 
                 # Miscela le immagini
@@ -876,7 +874,7 @@ class FrameWorker(threading.Thread):
         R_d_i = faceutil.get_rotation_matrix(x_d_i_info['pitch'], x_d_i_info['yaw'], x_d_i_info['roll'])
         ##
         
-        R_d_0, x_d_0_info = None, None
+        # R_d_0, x_d_0_info = None, None
         driving_multiplier=parameters['FaceExpressionFriendlyFactorDecimalSlider'] # 1.0 # be used only when driving_option is "expression-friendly"
         animation_region = parameters['FaceExpressionAnimationRegionSelection'] # 'all' # lips, eyes, pose, exp
 

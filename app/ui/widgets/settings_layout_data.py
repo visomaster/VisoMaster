@@ -1,4 +1,4 @@
-import app.ui.widgets.actions.control_actions as control_actions
+from app.ui.widgets.actions import control_actions
 import cv2
 from app.helpers.typing import LayoutDictTypes
 SETTINGS_LAYOUT_DATA: LayoutDictTypes = {

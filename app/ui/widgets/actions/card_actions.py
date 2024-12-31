@@ -1,20 +1,23 @@
-from PySide6 import QtCore, QtWidgets
+
 from typing import TYPE_CHECKING, Dict
-if TYPE_CHECKING:
-    from app.ui.main_ui import MainWindow
-import app.ui.widgets.actions.common_actions as common_widget_actions
-import app.ui.widgets.actions.list_view_actions as list_view_actions
-import app.helpers.miscellaneous as misc_helpers
 import uuid
+
 import numpy
 import cv2
 import torch
 from torchvision.transforms import v2
+
+import app.ui.widgets.actions.common_actions as common_widget_actions
+from app.ui.widgets.actions import list_view_actions
+import app.helpers.miscellaneous as misc_helpers
 from app.ui.widgets.settings_layout_data import SETTINGS_LAYOUT_DATA
+
+if TYPE_CHECKING:
+    from app.ui.main_ui import MainWindow
 
 def clear_target_faces(main_window: 'MainWindow', refresh_frame=True):
     main_window.targetFacesList.clear()
-    for face_id, target_face in main_window.target_faces.items():
+    for _, target_face in main_window.target_faces.items():
         target_face.deleteLater()
     main_window.target_faces = {}
     main_window.parameters = {}
@@ -27,33 +30,33 @@ def clear_target_faces(main_window: 'MainWindow', refresh_frame=True):
     
 def clear_input_faces(main_window: 'MainWindow'):
     main_window.inputFacesList.clear()
-    for face_id, input_face in main_window.input_faces.items():
+    for _, input_face in main_window.input_faces.items():
         input_face.deleteLater()
     main_window.input_faces = {}
 
-    for face_id, target_face in main_window.target_faces.items():
+    for _, target_face in main_window.target_faces.items():
         target_face.assigned_input_faces = {}
         target_face.calculateAssignedInputEmbedding()
     common_widget_actions.refresh_frame(main_window=main_window)
 
 def clear_merged_embeddings(main_window: 'MainWindow'):
     main_window.inputEmbeddingsList.clear()
-    for embedding_id, embed_button in main_window.merged_embeddings.items():
+    for _, embed_button in main_window.merged_embeddings.items():
         embed_button.deleteLater()
     main_window.merged_embeddings = {}
 
-    for face_id, target_face in main_window.target_faces.items():
+    for _, target_face in main_window.target_faces.items():
         target_face.assigned_merged_embeddings = {}
         target_face.calculateAssignedInputEmbedding()
     common_widget_actions.refresh_frame(main_window=main_window)
 
 def uncheck_all_input_faces(main_window: 'MainWindow'):
     # Uncheck All other input faces 
-    for face_id, input_face_button in main_window.input_faces.items():
+    for _, input_face_button in main_window.input_faces.items():
         input_face_button.setChecked(False)
 
 def uncheck_all_merged_embeddings(main_window: 'MainWindow'):
-    for embedding_id, embed_button in  main_window.merged_embeddings.items():
+    for _, embed_button in  main_window.merged_embeddings.items():
         embed_button.setChecked(False)
 
 def find_target_faces(main_window: 'MainWindow'):
@@ -82,7 +85,7 @@ def find_target_faces(main_window: 'MainWindow'):
             if control['ManualRotationEnableToggle']:
                 img = v2.functional.rotate(img, angle=control['ManualRotationAngleSlider'], interpolation=v2.InterpolationMode.BILINEAR, expand=True)
 
-            bboxes, kpss_5, _ = main_window.models_processor.run_detect(img, control['DetectorModelSelection'], max_num=control['MaxFacesToDetectSlider'], score=control['DetectorScoreSlider']/100.0, input_size=(512, 512), use_landmark_detection=control['LandmarkDetectToggle'], landmark_detect_mode=control['LandmarkDetectModelSelection'], landmark_score=control["LandmarkDetectScoreSlider"]/100.0, from_points=control["DetectFromPointsToggle"], rotation_angles=[0] if not control["AutoRotationToggle"] else [0, 90, 180, 270])
+            _, kpss_5, _ = main_window.models_processor.run_detect(img, control['DetectorModelSelection'], max_num=control['MaxFacesToDetectSlider'], score=control['DetectorScoreSlider']/100.0, input_size=(512, 512), use_landmark_detection=control['LandmarkDetectToggle'], landmark_detect_mode=control['LandmarkDetectModelSelection'], landmark_score=control["LandmarkDetectScoreSlider"]/100.0, from_points=control["DetectFromPointsToggle"], rotation_angles=[0] if not control["AutoRotationToggle"] else [0, 90, 180, 270])
 
             ret = []
             for face_kps in kpss_5:

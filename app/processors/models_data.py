@@ -1,7 +1,6 @@
 models_dir = './app/onnxmodels'
 
 try:
-    from torch.cuda import nvtx
     import tensorrt as trt
     models_trt_list = [
         {'model_name': 'LivePortraitMotionExtractor', 'local_path': f'{models_dir}/liveportrait_onnx/motion_extractor.' + trt.__version__ + '.trt'},

@@ -1,23 +1,16 @@
-import cv2
+import time
+from functools import partial
+from typing import TYPE_CHECKING
+
 from PySide6 import QtWidgets, QtGui, QtCore
-from typing import TYPE_CHECKING, Dict
+
+from app.ui.widgets.actions import common_actions as common_widget_actions
+from app.ui.widgets.actions import card_actions
+from app.ui.widgets import widget_components
+import app.helpers.miscellaneous as misc_helpers
+from app.ui.widgets import ui_workers
 if TYPE_CHECKING:
     from app.ui.main_ui import MainWindow
-
-import torch
-import numpy
-from torchvision.transforms import v2
-from app.ui.widgets.settings_layout_data import SETTINGS_LAYOUT_DATA
-import app.ui.widgets.actions.common_actions as common_widget_actions
-import app.ui.widgets.actions.card_actions as card_actions
-
-import app.ui.widgets.widget_components as widget_components
-
-import app.helpers.miscellaneous as misc_helpers
-import app.ui.widgets.ui_workers as ui_workers
-import time
-import uuid
-from functools import partial
 
 # Functions to add Buttons with thumbnail for selecting videos/images and faces
 @QtCore.Slot(str, QtGui.QPixmap)
@@ -109,7 +102,8 @@ def clear_stop_loading_target_media(main_window: 'MainWindow'):
         main_window.targetVideosList.clear()
 
 @QtCore.Slot()
-def onClickSelectTargetVideos(main_window: 'MainWindow', source_type='folder', folder_name=False, files_list=[]):
+def onClickSelectTargetVideos(main_window: 'MainWindow', source_type='folder', folder_name=False, files_list=None):
+    files_list = files_list or []
     if source_type=='folder':
         folder_name = QtWidgets.QFileDialog.getExistingDirectory()
         if not folder_name:
@@ -142,7 +136,7 @@ def onClickLoadWebcams(main_window: 'MainWindow',):
         main_window.video_loader_worker.start()
     else:
         main_window.placeholder_update_signal.emit(main_window.targetVideosList, True)
-        for media_id, target_video in main_window.target_videos.copy().items(): #Use a copy of the dict to prevent Dictionary changed during iteration exceptions
+        for _, target_video in main_window.target_videos.copy().items(): #Use a copy of the dict to prevent Dictionary changed during iteration exceptions
             if target_video.file_type == 'webcam':
                 target_video.remove_target_media_from_list()
                 if target_video == main_window.selected_video_button:
@@ -158,7 +152,8 @@ def clear_stop_loading_input_media(main_window: 'MainWindow'):
         main_window.inputFacesList.clear()
 
 @QtCore.Slot()
-def onClickSelectInputImages(main_window: 'MainWindow', source_type='folder', folder_name=False, files_list=[]):
+def onClickSelectInputImages(main_window: 'MainWindow', source_type='folder', folder_name=False, files_list=None):
+    files_list = files_list or []
     if source_type=='folder':
         folder_name = QtWidgets.QFileDialog.getExistingDirectory()
         main_window.labelInputFacesPath.setText(misc_helpers.truncate_text(folder_name))

@@ -1,9 +1,10 @@
+# pylint: disable=no-member
+
 import os
 import sys
 import logging
 import platform
 import ctypes
-import numpy as np
 from pathlib import Path
 
 try:
@@ -17,7 +18,7 @@ log = logging.getLogger("EngineBuilder")
 
 if 'trt' in globals():
     # Creazione di un'istanza globale di logger di TensorRT
-    TRT_LOGGER = trt.Logger(trt.Logger.INFO)
+    TRT_LOGGER = trt.Logger(trt.Logger.INFO) # pylint: disable=no-member
 else:
     TRT_LOGGER = {}
 
@@ -33,7 +34,6 @@ class EngineBuilder:
         :param verbose: If enabled, a higher verbosity level will be set on the TensorRT logger.
         :param custom_plugin_path: Path to the custom plugin library (DLL or SO).
         """
-        global TRT_LOGGER
         if verbose:
             TRT_LOGGER.min_severity = trt.Logger.Severity.VERBOSE
 
@@ -77,7 +77,7 @@ class EngineBuilder:
         onnx_path = os.path.realpath(onnx_path)
         with open(onnx_path, "rb") as f:
             if not self.parser.parse(f.read()):
-                log.error("Failed to load ONNX file: {}".format(onnx_path))
+                log.error("Failed to load ONNX file: %s", onnx_path)
                 for error in range(self.parser.num_errors):
                     log.error(self.parser.get_error(error))
                 sys.exit(1)
@@ -86,11 +86,11 @@ class EngineBuilder:
         outputs = [self.network.get_output(i) for i in range(self.network.num_outputs)]
 
         log.info("Network Description")
-        for input in inputs:
-            self.batch_size = input.shape[0]
-            log.info("Input '{}' with shape {} and dtype {}".format(input.name, input.shape, input.dtype))
-        for output in outputs:
-            log.info("Output '{}' with shape {} and dtype {}".format(output.name, output.shape, output.dtype))
+        for net_input in inputs:
+            self.batch_size = net_input.shape[0]
+            log.info("Input '%s' with shape %s and dtype %s", net_input.name, net_input.shape, net_input.dtype)
+        for net_output in outputs:
+            log.info("Output %s' with shape %s and dtype %s", net_output.name, net_output.shape, net_output.dtype)
 
     def create_engine(self, engine_path, precision):
         """
@@ -101,7 +101,7 @@ class EngineBuilder:
         engine_path = os.path.realpath(engine_path)
         engine_dir = os.path.dirname(engine_path)
         os.makedirs(engine_dir, exist_ok=True)
-        log.info("Building {} Engine in {}".format(precision, engine_path))
+        log.info("Building %s Engine in %s", precision, engine_path)
 
         # Forza TensorRT a rispettare i vincoli di precisione
         self.config.set_flag(trt.BuilderFlag.PREFER_PRECISION_CONSTRAINTS)
@@ -121,7 +121,7 @@ class EngineBuilder:
 
         # Scrittura del motore serializzato su disco
         with open(engine_path, "wb") as f:
-            log.info("Serializing engine to file: {:}".format(engine_path))
+            log.info("Serializing engine to file: %s", engine_path)
             f.write(serialized_engine)
 
 def change_extension(file_path, new_extension, version=None):

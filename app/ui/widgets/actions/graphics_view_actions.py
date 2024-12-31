@@ -2,7 +2,6 @@ from PySide6 import QtWidgets, QtGui, QtCore
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from app.ui.main_ui import MainWindow
-import app.helpers.miscellaneous as misc_helpers
 
 # @misc_helpers.benchmark
 def update_graphics_view(main_window: 'MainWindow', pixmap: QtGui.QPixmap, current_frame_number, reset_fit=False):
@@ -44,12 +43,12 @@ def update_graphics_view(main_window: 'MainWindow', pixmap: QtGui.QPixmap, curre
     if reset_fit:
         fit_image_to_view(main_window, pixmap_item, scene_rect)
     else:
-        zoom_and_fit_image_to_view(main_window, current_transform)
+        zoom_andfit_image_to_view_onchange(main_window, current_transform)
 
 
-def zoom_and_fit_image_to_view(main_window: 'MainWindow', new_transform):
+def zoom_andfit_image_to_view_onchange(main_window: 'MainWindow', new_transform):
     """Restore the previous transform (zoom and pan state) and update the view."""
-    print("Called zoom_and_fit_image_to_view()")
+    print("Called zoom_andfit_image_to_view_onchange()")
     main_window.graphicsViewFrame.setTransform(new_transform, combine=False)
 
 

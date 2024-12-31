@@ -1,36 +1,31 @@
-import app.ui.widgets.actions.common_actions as common_widget_actions
-
-import app.ui.widgets.widget_components as widget_components
-import app.ui.widgets.actions.card_actions as card_actions
-import app.ui.widgets.actions.list_view_actions as list_view_actions
-import app.ui.widgets.actions.video_control_actions as video_control_actions
-import app.ui.widgets.actions.layout_actions as layout_actions
-import app.ui.widgets.actions.common_actions as common_actions
-import app.ui.widgets.ui_workers as ui_workers
-
-from PySide6 import QtWidgets, QtCore
 import json
-import numpy
-import numpy as np
-import os
 from pathlib import Path
 import uuid
 from functools import partial
 from typing import TYPE_CHECKING, Dict
 
+from PySide6 import QtWidgets
+import numpy as np
+
+from app.ui.widgets.actions import common_actions as common_widget_actions
+from app.ui.widgets.actions import card_actions
+from app.ui.widgets.actions import list_view_actions
+from app.ui.widgets.actions import video_control_actions
+from app.ui.widgets.actions import layout_actions
+from app.ui.widgets import ui_workers
+
 if TYPE_CHECKING:
     from app.ui.main_ui import MainWindow
-
 
 def open_embeddings_from_file(main_window: 'MainWindow'):
     embedding_filename, _ = QtWidgets.QFileDialog.getOpenFileName(main_window, filter='JSON (*.json)')
     if embedding_filename:
-        with open(embedding_filename, 'r') as embed_file:
+        with open(embedding_filename, 'r') as embed_file: #pylint: disable=unspecified-encoding
             embeddings_list = json.load(embed_file)
             card_actions.clear_merged_embeddings(main_window)
 
             # Reset per ogni target face
-            for face_id, target_face in main_window.target_faces.items():
+            for _, target_face in main_window.target_faces.items():
                 target_face.assigned_merged_embeddings = {}
                 target_face.assigned_input_embedding = {}
 
@@ -39,7 +34,7 @@ def open_embeddings_from_file(main_window: 'MainWindow'):
                 embedding_store = embed_data.get('embedding_store', {})
                 # Converte ogni embedding in numpy array
                 for recogn_model, embed in embedding_store.items():
-                    embedding_store[recogn_model] = numpy.array(embed)
+                    embedding_store[recogn_model] = np.array(embed)
 
                 # Passa l'intero embedding_store alla funzione
                 list_view_actions.create_and_add_embed_button_to_list(
@@ -72,7 +67,7 @@ def save_embeddings_to_file(main_window: 'MainWindow', save_as=False):
 
     # Salva su file
     if embedding_filename:
-        with open(embedding_filename, 'w') as embed_file:
+        with open(embedding_filename, 'w') as embed_file: #pylint: disable=unspecified-encoding
             embeddings_as_json = json.dumps(embeddings_list, indent=4)  # Salva con indentazione per leggibilità
             embed_file.write(embeddings_as_json)
 
@@ -89,22 +84,22 @@ def save_current_parameters_and_control(main_window: 'MainWindow', face_id):
     }
 
     if data_filename:
-        with open(data_filename, 'w') as data_file:
+        with open(data_filename, 'w') as data_file: #pylint: disable=unspecified-encoding
             data_as_json = json.dumps(data, indent=4)  # Salva con indentazione per leggibilità
             data_file.write(data_as_json)
 
 def load_parameters_and_settings(main_window: 'MainWindow', face_id, load_settings=False):
     data_filename, _ = QtWidgets.QFileDialog.getOpenFileName(main_window, filter='JSON (*.json)')
     if data_filename:
-        with open(data_filename, 'r') as data_file:
+        with open(data_filename, 'r') as data_file: #pylint: disable=unspecified-encoding
             data = json.load(data_file)
             main_window.parameters[face_id] = data['parameters'].copy()
             if main_window.selected_target_face_id == face_id:
-                common_actions.set_widgets_values_using_face_id_parameters(main_window, face_id)
+                common_widget_actions.set_widgets_values_using_face_id_parameters(main_window, face_id)
             if load_settings:
                 main_window.control = data['control']
-                common_actions.set_control_widgets_values(main_window)
-            common_actions.refresh_frame(main_window)
+                common_widget_actions.set_control_widgets_values(main_window)
+            common_widget_actions.refresh_frame(main_window)
 
 
 def load_saved_workspace(main_window: 'MainWindow', data_filename: str|bool = False):
@@ -114,7 +109,7 @@ def load_saved_workspace(main_window: 'MainWindow', data_filename: str|bool = Fa
     if not Path(data_filename).is_file():
         data_filename = False
     if data_filename:
-        with open(data_filename, 'r') as data_file:
+        with open(data_filename, 'r') as data_file: #pylint: disable=unspecified-encoding
             data = json.load(data_file)
             list_view_actions.clear_stop_loading_input_media(main_window)
             list_view_actions.clear_stop_loading_target_media(main_window)
@@ -197,7 +192,7 @@ def load_saved_workspace(main_window: 'MainWindow', data_filename: str|bool = Fa
             common_widget_actions.create_control(main_window, 'OutputMediaFolder', control['OutputMediaFolder'])
             main_window.outputFolderLineEdit.setText(control['OutputMediaFolder'])
 
-            layout_actions._fit_image_to_view(main_window)
+            layout_actions.fit_image_to_view_onchange(main_window)
 
         
 def save_current_workspace(main_window: 'MainWindow', data_filename:str|bool = False):
@@ -227,7 +222,6 @@ def save_current_workspace(main_window: 'MainWindow', data_filename:str|bool = F
         'selected_media_id': selected_media_id,
         'target_medias_data': target_medias_data,
         'target_faces_data': target_faces_data,
-        'input_faces_data': input_faces_data,
         'embeddings_data': embeddings_data,
         'input_faces_data': input_faces_data,
         'markers': main_window.markers,
@@ -237,6 +231,6 @@ def save_current_workspace(main_window: 'MainWindow', data_filename:str|bool = F
         data_filename, _ = QtWidgets.QFileDialog.getSaveFileName(main_window, filter='JSON (*.json)')
 
     if data_filename:
-        with open(data_filename, 'w') as data_file:
+        with open(data_filename, 'w') as data_file: #pylint: disable=unspecified-encoding
             data_as_json = json.dumps(save_data, indent=4)  # Salva con indentazione per leggibilità
             data_file.write(data_as_json)

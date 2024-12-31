@@ -1,9 +1,10 @@
+import math
+from typing import TYPE_CHECKING
+
 import torch
 import numpy as np
-import math
 from torchvision.transforms import v2
-from functools import partial
-from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from app.processors.models_processor import ModelsProcessor
 

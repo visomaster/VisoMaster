@@ -1,8 +1,8 @@
-import app.helpers.miscellaneous as misc_helpers
-import app.ui.widgets.actions.layout_actions as layout_actions
+from app.helpers import miscellaneous as misc_helpers
+from app.ui.widgets.actions import layout_actions
 from app.helpers.typing import LayoutDictTypes
 
-# widgets in Face Swap tab are created from this Layout
+# Widgets in Face Swap tab are created from this Layout
 SWAPPER_LAYOUT_DATA: LayoutDictTypes = {
     'Swapper': {
         'SwapModelSelection': {
@@ -1096,7 +1096,7 @@ SWAPPER_LAYOUT_DATA: LayoutDictTypes = {
             'label': 'View Face Mask',
             'default': False,
             'help': 'Show Face Mask',
-            'exec_function': layout_actions._fit_image_to_view,
+            'exec_function': layout_actions.fit_image_to_view_onchange,
             'exec_function_args': [],
         },
         'ViewFaceCompareEnableToggle':{
@@ -1104,7 +1104,7 @@ SWAPPER_LAYOUT_DATA: LayoutDictTypes = {
             'label': 'View Face Compare',
             'default': False,
             'help': 'Show Face Compare',
-            'exec_function': layout_actions._fit_image_to_view,
+            'exec_function': layout_actions.fit_image_to_view_onchange,
             'exec_function_args': [],
         },
     },

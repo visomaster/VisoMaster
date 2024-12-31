@@ -6,7 +6,7 @@ pyside6-rcc C:\Users\argen\Documents\Rope-PySide\app\ui\core\media.qrc -o C:\Use
 setlocal enabledelayedexpansion
 
 :: Define file paths and strings
-set "filePath=C:\Users\argen\Documents\Rope-PySide\app\ui\core\MainWindow.py"
+set "filePath=C:\Users\argen\Documents\Rope-PySide\app\ui\core\main_window.py"
 set "searchString=import media_rc"
 set "replaceString=from app.ui.core import media_rc"
 

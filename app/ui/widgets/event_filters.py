@@ -1,36 +1,36 @@
-import PySide6.QtCore as qtc
-from PySide6 import QtWidgets, QtGui, QtCore
-from typing import TYPE_CHECKING, Dict, Callable
-import app.ui.widgets.actions.list_view_actions as list_view_actions
-import app.ui.widgets.ui_workers as ui_workers
+from typing import TYPE_CHECKING
 from functools import partial
+
+from PySide6 import QtWidgets, QtGui, QtCore
+from app.ui.widgets.actions import list_view_actions
+from app.ui.widgets import ui_workers
 import app.helpers.miscellaneous as misc_helpers
 
 if TYPE_CHECKING:
     from app.ui.main_ui import MainWindow
 
-class GraphicsViewEventFilter(qtc.QObject):
+class GraphicsViewEventFilter(QtCore.QObject):
     def __init__(self, main_window: 'MainWindow', parent=None):
         super().__init__(parent)
         self.main_window = main_window
 
     def eventFilter(self, graphics_object: QtWidgets.QGraphicsView, event):
-        if event.type() == qtc.QEvent.Type.MouseButtonPress:
-            if event.button() == qtc.Qt.MouseButton.LeftButton:
+        if event.type() == QtCore.QEvent.Type.MouseButtonPress:
+            if event.button() == QtCore.Qt.MouseButton.LeftButton:
                 self.main_window.buttonMediaPlay.click()
                 # You can emit a signal or call another function here
                 return True  # Mark the event as handled
         return False  # Pass the event to the original handler
     
-class videoSeekSliderLineEditEventFilter(qtc.QObject):
+class videoSeekSliderLineEditEventFilter(QtCore.QObject):
     def __init__(self, main_window: 'MainWindow', parent=None):
         super().__init__(parent)
         self.main_window = main_window
     
     def eventFilter(self, line_edit: QtWidgets.QLineEdit, event):
-        if event.type() == qtc.QEvent.KeyPress:
+        if event.type() == QtCore.QEvent.KeyPress:
             # Check if the pressed key is Enter/Return
-            if event.key() in (qtc.Qt.Key_Enter, qtc.Qt.Key_Return):            
+            if event.key() in (QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return):            
                 new_value = line_edit.text()
                 # Reset the line edit value to the slider value if the user input an empty text
                 if new_value=='':
@@ -49,26 +49,26 @@ class videoSeekSliderLineEditEventFilter(qtc.QObject):
                 return True
         return False
     
-class VideoSeekSliderEventFilter(qtc.QObject):
+class VideoSeekSliderEventFilter(QtCore.QObject):
     def __init__(self, main_window: 'MainWindow', parent=None):
         super().__init__(parent)
         self.main_window = main_window
 
     def eventFilter(self, slider, event):
-        if event.type() == qtc.QEvent.Type.KeyPress:
-            if event.key() in {qtc.Qt.Key_Left, qtc.Qt.Key_Right}:
+        if event.type() == QtCore.QEvent.Type.KeyPress:
+            if event.key() in {QtCore.Qt.Key_Left, QtCore.Qt.Key_Right}:
                 # Allow default slider movement
                 result = super().eventFilter(slider, event)
                 
                 # After the slider moves, call the custom processing function
-                qtc.QTimer.singleShot(0, self.main_window.video_processor.process_current_frame)
+                QtCore.QTimer.singleShot(0, self.main_window.video_processor.process_current_frame)
                 
                 return result  # Return the result of the default handling
 
         # For other events, use the default behavior
         return super().eventFilter(slider, event)
     
-class ListWidgetEventFilter(qtc.QObject):
+class ListWidgetEventFilter(QtCore.QObject):
     def __init__(self, main_window: 'MainWindow', parent=None):
         super().__init__(parent)
         self.main_window = main_window
@@ -77,8 +77,8 @@ class ListWidgetEventFilter(qtc.QObject):
         
         if list_widget == self.main_window.targetVideosList or list_widget == self.main_window.targetVideosList.viewport():
 
-            if event.type() == qtc.QEvent.Type.MouseButtonPress:
-                if event.button() == qtc.Qt.MouseButton.LeftButton and not self.main_window.target_videos:
+            if event.type() == QtCore.QEvent.Type.MouseButtonPress:
+                if event.button() == QtCore.Qt.MouseButton.LeftButton and not self.main_window.target_videos:
                     self.main_window.actionOpen_Videos_Folder.trigger()
 
             elif event.type() == QtCore.QEvent.Type.DragEnter:
@@ -112,8 +112,8 @@ class ListWidgetEventFilter(qtc.QObject):
 
         elif list_widget == self.main_window.inputFacesList or list_widget == self.main_window.inputFacesList.viewport():
 
-            if event.type() == qtc.QEvent.Type.MouseButtonPress:
-                if event.button() == qtc.Qt.MouseButton.LeftButton and not self.main_window.input_faces:
+            if event.type() == QtCore.QEvent.Type.MouseButtonPress:
+                if event.button() == QtCore.Qt.MouseButton.LeftButton and not self.main_window.input_faces:
                     self.main_window.actionLoad_Source_Images_Folder.trigger()
 
             elif event.type() == QtCore.QEvent.Type.DragEnter:
