@@ -36,7 +36,7 @@ def clear_input_faces(main_window: 'MainWindow'):
 
     for _, target_face in main_window.target_faces.items():
         target_face.assigned_input_faces = {}
-        target_face.calculateAssignedInputEmbedding()
+        target_face.calculate_assigned_input_embedding()
     common_widget_actions.refresh_frame(main_window=main_window)
 
 def clear_merged_embeddings(main_window: 'MainWindow'):
@@ -47,7 +47,7 @@ def clear_merged_embeddings(main_window: 'MainWindow'):
 
     for _, target_face in main_window.target_faces.items():
         target_face.assigned_merged_embeddings = {}
-        target_face.calculateAssignedInputEmbedding()
+        target_face.calculate_assigned_input_embedding()
     common_widget_actions.refresh_frame(main_window=main_window)
 
 def uncheck_all_input_faces(main_window: 'MainWindow'):

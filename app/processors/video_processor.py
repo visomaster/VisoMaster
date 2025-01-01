@@ -186,7 +186,7 @@ class VideoProcessor(QObject):
                 print("Error: Unable to open the video.")
                 self.processing = False
                 self.frame_read_timer.stop()
-                video_control_actions.setPlayButtonIconToPlay(self.main_window)
+                video_control_actions.set_play_button_icon_to_play(self.main_window)
         # 
         elif self.file_type == 'webcam':
             print("Calling process_video() on Webcam stream")
@@ -299,7 +299,7 @@ class VideoProcessor(QObject):
         """Stop video processing and signal completion."""
         if not self.processing:
             print("Processing not active. No action to perform.")
-            video_control_actions.resetMediaButtons(self.main_window)
+            video_control_actions.reset_media_buttons(self.main_window)
 
             return False
         
@@ -364,7 +364,7 @@ class VideoProcessor(QObject):
             print("Clearing Cache")
             torch.cuda.empty_cache()
             gc.collect()
-            video_control_actions.resetMediaButtons(self.main_window)
+            video_control_actions.reset_media_buttons(self.main_window)
             print("Successfully Stopped Processing")
             return True
         

@@ -26,7 +26,7 @@ def set_up_video_seek_slider(main_window: 'MainWindow'):
     main_window.videoSeekSlider.markers = set()  # Store unique tick positions
     main_window.videoSeekSlider.setTickPosition(QtWidgets.QSlider.TickPosition.TicksBelow)  # Default position for tick marks
 
-    def addMarker(self: QtWidgets.QSlider, value=None):
+    def add_marker_and_paint(self: QtWidgets.QSlider, value=None):
         """Add a tick mark at a specific slider value."""
         if value is None or isinstance(value, bool):  # Default to current slider value
             value = self.value()
@@ -34,7 +34,7 @@ def set_up_video_seek_slider(main_window: 'MainWindow'):
             self.markers.add(value)
             self.update()
 
-    def removeMarker(self:QtWidgets.QSlider, value=None):
+    def remove_marker_and_paint(self:QtWidgets.QSlider, value=None):
         """Remove a tick mark."""
         if value is None or isinstance(value, bool):  # Default to current slider value
             value = self.value()
@@ -94,12 +94,12 @@ def set_up_video_seek_slider(main_window: 'MainWindow'):
                 marker_x = groove_start + marker_normalized_value * groove_width
                 painter.drawLine(marker_x, groove_rect.top(), marker_x, groove_rect.bottom())
 
-    main_window.videoSeekSlider.addMarker = partial(addMarker, main_window.videoSeekSlider)
-    main_window.videoSeekSlider.removeMarker = partial(removeMarker, main_window.videoSeekSlider)
+    main_window.videoSeekSlider.add_marker_and_paint = partial(add_marker_and_paint, main_window.videoSeekSlider)
+    main_window.videoSeekSlider.remove_marker_and_paint = partial(remove_marker_and_paint, main_window.videoSeekSlider)
     main_window.videoSeekSlider.paintEvent = partial(paintEvent, main_window.videoSeekSlider)
 
-    # main_window.videoSeekSlider.addMarker = addMarker.__get__(main_window.videoSeekSlider)
-    # main_window.videoSeekSlider.removeMarker = removeMarker.__get__(main_window.videoSeekSlider)
+    # main_window.videoSeekSlider.add_marker = add_marker.__get__(main_window.videoSeekSlider)
+    # main_window.videoSeekSlider.remove_marker = remove_marker.__get__(main_window.videoSeekSlider)
     # main_window.videoSeekSlider.paintEvent = paintEvent.__get__(main_window.videoSeekSlider)
 
 def add_video_slider_marker(main_window: 'MainWindow'):
@@ -121,13 +121,13 @@ def remove_video_slider_marker(main_window: 'MainWindow'):
         common_widget_actions.create_and_show_messagebox(main_window, 'No Marker Found!', 'No Marker Found for this position!', main_window.videoSeekSlider)
 
 def add_marker(main_window: 'MainWindow', parameters, position,):
-    main_window.videoSeekSlider.addMarker(position)
+    main_window.videoSeekSlider.add_marker_and_paint(position)
     main_window.markers[position] = parameters
     print(f"Marker Added for Frame: {position}")
 
 def remove_marker(main_window: 'MainWindow', position):
     if main_window.markers.get(position):
-        main_window.videoSeekSlider.removeMarker(position)
+        main_window.videoSeekSlider.remove_marker_and_paint(position)
         main_window.markers.pop(position)
         print(f"Marker Removed from position: {position}")
 
@@ -226,8 +226,8 @@ def enable_zoom_and_pan(view: QtWidgets.QGraphicsView):
         if delta != 0:
             zoom(self, delta // abs(delta))
     
-    def resetZoom(self:QtWidgets.QGraphicsView):
-        print("Called resetZoom()")
+    def reset_zoom(self:QtWidgets.QGraphicsView):
+        print("Called reset_zoom()")
         # Reset zoom level to fit the view.
         self.zoom_value = 0
         if not self.scene():
@@ -247,11 +247,11 @@ def enable_zoom_and_pan(view: QtWidgets.QGraphicsView):
 
     # Attach methods to the view
     view.zoom = partial(zoom, view)
-    view.resetZoom = partial(resetZoom, view)
+    view.reset_zoom = partial(reset_zoom, view)
     view.wheelEvent = partial(wheelEvent, view)
 
     # view.zoom = zoom.__get__(view)
-    # view.resetZoom = resetZoom.__get__(view)
+    # view.reset_zoom = reset_zoom.__get__(view)
     # view.wheelEvent = wheelEvent.__get__(view)
 
     # Set anchors for better interaction
@@ -259,28 +259,28 @@ def enable_zoom_and_pan(view: QtWidgets.QGraphicsView):
     view.setResizeAnchor(QtWidgets.QGraphicsView.ViewportAnchor.AnchorUnderMouse)
 
 
-def OnClickPlayButton(main_window: 'MainWindow', checked: bool):
+def play_video(main_window: 'MainWindow', checked: bool):
     video_processor = main_window.video_processor
     if checked:
         if video_processor.processing or video_processor.current_frame_number==video_processor.max_frame_number:
-            print("OnClickPlayButton: Video already playing. Stopping the current video before starting a new one.")
+            print("play_video: Video already playing. Stopping the current video before starting a new one.")
             video_processor.stop_processing()
             return
-        print("OnClickPlayButton: Starting video processing.")
-        setPlayButtonIconToStop(main_window)
+        print("play_video: Starting video processing.")
+        set_play_button_icon_to_stop(main_window)
         video_processor.process_video()
     else:
         video_processor = main_window.video_processor
-        print("OnClickPlayButton: Stopping video processing.")
-        setPlayButtonIconToPlay(main_window)
+        print("play_video: Stopping video processing.")
+        set_play_button_icon_to_play(main_window)
         video_processor.stop_processing()
         main_window.buttonMediaRecord.blockSignals(True)
         main_window.buttonMediaRecord.setChecked(False)
         main_window.buttonMediaRecord.blockSignals(False)
-        setRecordButtonIconToPlay(main_window)
+        set_record_button_icon_to_play(main_window)
 
 
-def OnClickRecordButton(main_window: 'MainWindow', checked: bool):
+def record_video(main_window: 'MainWindow', checked: bool):
     video_processor = main_window.video_processor
     # Dont record webcam capture
     if video_processor.file_type == 'webcam':
@@ -291,7 +291,7 @@ def OnClickRecordButton(main_window: 'MainWindow', checked: bool):
     
     if checked:
         if video_processor.processing or video_processor.current_frame_number==video_processor.max_frame_number:
-            print("OnClickRecordButton: Video already playing. Stopping the current video before starting a new one.")
+            print("record_video: Video already playing. Stopping the current video before starting a new one.")
             video_processor.stop_processing()
             return
         if not main_window.outputFolderLineEdit.text():
@@ -300,30 +300,30 @@ def OnClickRecordButton(main_window: 'MainWindow', checked: bool):
             return
         video_processor.recording = True
         main_window.buttonMediaPlay.setChecked(True)
-        setRecordButtonIconToStop(main_window)
+        set_record_button_icon_to_stop(main_window)
 
     else:
         main_window.buttonMediaPlay.setChecked(False)
         video_processor.stop_processing()
-        setPlayButtonIconToPlay(main_window)
-        setRecordButtonIconToPlay(main_window)
+        set_play_button_icon_to_play(main_window)
+        set_record_button_icon_to_play(main_window)
 
-def setRecordButtonIconToPlay(main_window: 'MainWindow'):
+def set_record_button_icon_to_play(main_window: 'MainWindow'):
     main_window.buttonMediaRecord.setIcon(QtGui.QIcon(":/media/Media/rec_off.png"))
     main_window.buttonMediaRecord.setToolTip("Start Recording")
-def setRecordButtonIconToStop(main_window: 'MainWindow'):
+def set_record_button_icon_to_stop(main_window: 'MainWindow'):
     main_window.buttonMediaRecord.setIcon(QtGui.QIcon(":/media/Media/rec_on.png"))
     main_window.buttonMediaRecord.setToolTip("Stop Recording")
 
-def setPlayButtonIconToPlay(main_window: 'MainWindow'):
+def set_play_button_icon_to_play(main_window: 'MainWindow'):
     main_window.buttonMediaPlay.setIcon(QtGui.QIcon(":/media/Media/play_off.png"))
     main_window.buttonMediaPlay.setToolTip("Play")
 
-def setPlayButtonIconToStop(main_window: 'MainWindow'):
+def set_play_button_icon_to_stop(main_window: 'MainWindow'):
     main_window.buttonMediaPlay.setIcon(QtGui.QIcon(":/media/Media/play_on.png"))
     main_window.buttonMediaPlay.setToolTip("Stop")
 
-def resetMediaButtons(main_window: 'MainWindow'):
+def reset_media_buttons(main_window: 'MainWindow'):
     # Rest the state and icons of the buttons without triggering Onchange methods
     main_window.buttonMediaPlay.blockSignals(True)
     main_window.buttonMediaPlay.setChecked(False)
@@ -331,11 +331,11 @@ def resetMediaButtons(main_window: 'MainWindow'):
     main_window.buttonMediaRecord.blockSignals(True)
     main_window.buttonMediaRecord.setChecked(False)
     main_window.buttonMediaRecord.blockSignals(False)
-    setPlayButtonIcon(main_window)
-    setRecordButtonIcon(main_window)
+    set_play_button_icon(main_window)
+    set_record_button_icon(main_window)
 
 
-def setPlayButtonIcon(main_window: 'MainWindow'):
+def set_play_button_icon(main_window: 'MainWindow'):
     if main_window.buttonMediaPlay.isChecked(): 
         main_window.buttonMediaPlay.setIcon(QtGui.QIcon(":/media/Media/play_on.png"))
         main_window.buttonMediaPlay.setToolTip("Stop")
@@ -343,7 +343,7 @@ def setPlayButtonIcon(main_window: 'MainWindow'):
         main_window.buttonMediaPlay.setIcon(QtGui.QIcon(":/media/Media/play_off.png"))
         main_window.buttonMediaPlay.setToolTip("Play")
 
-def setRecordButtonIcon(main_window: 'MainWindow'):
+def set_record_button_icon(main_window: 'MainWindow'):
     if main_window.buttonMediaRecord.isChecked(): 
         main_window.buttonMediaRecord.setIcon(QtGui.QIcon(":/media/Media/rec_on.png"))
         main_window.buttonMediaRecord.setToolTip("Stop Recording")
@@ -353,13 +353,13 @@ def setRecordButtonIcon(main_window: 'MainWindow'):
 
 # @misc_helpers.benchmark
 @QtCore.Slot(int)
-def OnChangeSlider(main_window: 'MainWindow', new_position=0):
-    print("Called OnChangeSlider()")
+def on_change_video_seek_slider(main_window: 'MainWindow', new_position=0):
+    print("Called on_change_video_seek_slider()")
     video_processor = main_window.video_processor
 
     was_processing = video_processor.stop_processing()
     if was_processing:
-        print("OnChangeSlider: Processing in progress. Stopping current processing.")
+        print("on_change_video_seek_slider: Processing in progress. Stopping current processing.")
 
     video_processor.current_frame_number = new_position
     video_processor.next_frame_to_display = new_position
@@ -375,7 +375,7 @@ def OnChangeSlider(main_window: 'MainWindow', new_position=0):
             update_widget_values_from_markers(main_window, new_position)
 
     # Do not automatically restart the video, let the user press Play to resume
-    print("OnChangeSlider: Video stopped after slider movement.")
+    print("on_change_video_seek_slider: Video stopped after slider movement.")
 
 def update_parameters_from_marker(main_window: 'MainWindow', new_position: int):
     if main_window.markers.get(new_position):

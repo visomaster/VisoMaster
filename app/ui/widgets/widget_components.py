@@ -45,7 +45,7 @@ class TargetMediaCardButton(CardButton):
         text_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignBottom)
         text_label.setStyleSheet("font-size: 8px; font-weight:bold;")  # Style for the label
         layout.addWidget(text_label)
-        self.clicked.connect(self.loadMediaOnClick)
+        self.clicked.connect(self.load_media)
         # Imposta lo stylesheet solo per questo pulsante
         self.setStyleSheet("""
         CardButton:checked {
@@ -60,7 +60,7 @@ class TargetMediaCardButton(CardButton):
         # self.customContextMenuRequested.connect(self.on_context_menu)
         # self.create_context_menu()
 
-    def loadMediaOnClick(self):
+    def load_media(self):
 
         main_window = self.main_window
         # Deselect the currently selected video
@@ -137,7 +137,7 @@ class TargetMediaCardButton(CardButton):
         main_window.cur_selected_target_face_button = False
 
         # Reset buttons and slider
-        video_control_actions.resetMediaButtons(main_window)
+        video_control_actions.reset_media_buttons(main_window)
         main_window.video_processor.file_type = self.file_type
         main_window.videoSeekSlider.blockSignals(True)  # Block signals to prevent unnecessary updates
         main_window.videoSeekSlider.setMaximum(max_frames_number)
@@ -192,7 +192,7 @@ class TargetFaceCardButton(CardButton):
         self.assigned_input_embedding = {}  # Key: embedding_swap_model, Value: np.ndarray
         
         self.setCheckable(True)
-        self.clicked.connect(self.loadTargetFace)
+        self.clicked.connect(self.load_target_face)
 
         # Imposta lo stylesheet solo per questo pulsante
         self.setStyleSheet("""
@@ -218,7 +218,7 @@ class TargetFaceCardButton(CardButton):
     def get_embedding(self, embedding_swap_model: str) -> np.ndarray:
         return self.embedding_store.get(embedding_swap_model, np.array([]))
 
-    def loadTargetFace(self):
+    def load_target_face(self):
         main_window = self.main_window
         main_window.cur_selected_target_face_button = self
         self.setChecked(True)
@@ -241,7 +241,7 @@ class TargetFaceCardButton(CardButton):
 
         # common_widget_actions.refresh_frame(main_window)
 
-    def calculateAssignedInputEmbedding(self):
+    def calculate_assigned_input_embedding(self):
         control = self.main_window.control.copy()
 
         all_input_embeddings = []
@@ -324,13 +324,13 @@ class TargetFaceCardButton(CardButton):
     def remove_assigned_input_face(self, input_face_id):
         if self.assigned_input_faces.get(input_face_id):
             self.assigned_input_faces.pop(input_face_id)
-            self.calculateAssignedInputEmbedding()
+            self.calculate_assigned_input_embedding()
 
 
     def remove_assigned_merged_embedding(self, embedding_id):
         if self.assigned_merged_embeddings.get(embedding_id):
             self.assigned_merged_embeddings.pop(embedding_id)
-            self.calculateAssignedInputEmbedding()
+            self.calculate_assigned_input_embedding()
 
     def copy_parameters(self):
 
@@ -354,7 +354,7 @@ class InputFaceCardButton(CardButton):
 
         self.setCheckable(True)
         self.setToolTip(media_path)
-        self.clicked.connect(self.loadInputFace)
+        self.clicked.connect(self.load_input_face)
 
         # Imposta lo stylesheet solo per questo pulsante
         self.setStyleSheet("""
@@ -376,7 +376,7 @@ class InputFaceCardButton(CardButton):
     def get_embedding(self, embedding_swap_model: str) -> np.ndarray:
         return self.embedding_store.get(embedding_swap_model, np.array([]))
 
-    def loadInputFace(self):
+    def load_input_face(self):
         main_window = self.main_window
 
         if main_window.cur_selected_target_face_button:
@@ -392,7 +392,7 @@ class InputFaceCardButton(CardButton):
 
             if not self.isChecked():
                 cur_selected_target_face_button.assigned_input_faces.pop(self.face_id)
-            cur_selected_target_face_button.calculateAssignedInputEmbedding()
+            cur_selected_target_face_button.calculate_assigned_input_embedding()
         else:
             if not QtWidgets.QApplication.keyboardModifiers() == QtCore.Qt.ControlModifier:
                 # If there is no target face selected, uncheck all other input faces
@@ -417,7 +417,7 @@ class InputFaceCardButton(CardButton):
         # Raccogli l'intero embedding_store dalle facce selezionate
         selected_faces_embeddings_store = [
             input_face.embedding_store 
-            for face_id, input_face in self.main_window.input_faces.items() 
+            for _, input_face in self.main_window.input_faces.items() 
             if input_face.isChecked()
         ]
 
@@ -443,7 +443,7 @@ class EmbeddingCardButton(CardButton):
         self.setCheckable(True)
         self.setText(embedding_name)
         self.setToolTip(embedding_name)
-        self.clicked.connect(self.loadEmbedding)
+        self.clicked.connect(self.load_embedding)
 
         # Imposta lo stylesheet solo per questo pulsante
         self.setStyleSheet("""
@@ -466,7 +466,7 @@ class EmbeddingCardButton(CardButton):
         """Restituisce l'embedding associato a un embedding_swap_model, se esiste."""
         return self.embedding_store.get(embedding_swap_model, None)
 
-    def loadEmbedding(self):
+    def load_embedding(self):
         main_window = self.main_window
         if main_window.cur_selected_target_face_button:
             
@@ -482,7 +482,7 @@ class EmbeddingCardButton(CardButton):
 
             if not self.isChecked():
                 cur_selected_target_face_button.assigned_merged_embeddings.pop(self.embedding_id)
-            cur_selected_target_face_button.calculateAssignedInputEmbedding()
+            cur_selected_target_face_button.calculate_assigned_input_embedding()
         else:
             if not QtWidgets.QApplication.keyboardModifiers() == QtCore.Qt.ControlModifier:
                 # If there is no target face selected, uncheck all other input faces

@@ -102,7 +102,7 @@ def clear_stop_loading_target_media(main_window: 'MainWindow'):
         main_window.targetVideosList.clear()
 
 @QtCore.Slot()
-def onClickSelectTargetVideos(main_window: 'MainWindow', source_type='folder', folder_name=False, files_list=None):
+def select_target_medias(main_window: 'MainWindow', source_type='folder', folder_name=False, files_list=None):
     files_list = files_list or []
     if source_type=='folder':
         folder_name = QtWidgets.QFileDialog.getExistingDirectory()
@@ -129,7 +129,7 @@ def onClickSelectTargetVideos(main_window: 'MainWindow', source_type='folder', f
     main_window.video_loader_worker.start()
 
 @QtCore.Slot()
-def onClickLoadWebcams(main_window: 'MainWindow',):
+def load_target_webcams(main_window: 'MainWindow',):
     if main_window.filterWebcamsCheckBox.isChecked():
         main_window.video_loader_worker = ui_workers.TargetMediaLoaderWorker(main_window=main_window, webcam_mode=True)
         main_window.video_loader_worker.webcam_thumbnail_ready.connect(partial(add_webcam_thumbnail_to_target_videos_list, main_window))
@@ -152,7 +152,7 @@ def clear_stop_loading_input_media(main_window: 'MainWindow'):
         main_window.inputFacesList.clear()
 
 @QtCore.Slot()
-def onClickSelectInputImages(main_window: 'MainWindow', source_type='folder', folder_name=False, files_list=None):
+def select_input_face_images(main_window: 'MainWindow', source_type='folder', folder_name=False, files_list=None):
     files_list = files_list or []
     if source_type=='folder':
         folder_name = QtWidgets.QFileDialog.getExistingDirectory()
@@ -203,7 +203,7 @@ def set_up_list_widget_placeholder(main_window: 'MainWindow', list_widget: QtWid
     # Set default cursor as PointingHand
     list_widget.setCursor(QtCore.Qt.CursorShape.PointingHandCursor)
 
-def onClickSelectOutputFolder(main_window: 'MainWindow'):
+def select_output_media_folder(main_window: 'MainWindow'):
     folder_name = QtWidgets.QFileDialog.getExistingDirectory()
     if folder_name:
         main_window.outputFolderLineEdit.setText(folder_name)

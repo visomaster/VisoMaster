@@ -103,11 +103,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.targetVideosList.viewport().setAcceptDrops(False)
         self.inputFacesList.setAcceptDrops(True)
         self.inputFacesList.viewport().setAcceptDrops(False)
-        listWidgetEventFilter = ListWidgetEventFilter(self, self)
-        self.targetVideosList.installEventFilter(listWidgetEventFilter)
-        self.targetVideosList.viewport().installEventFilter(listWidgetEventFilter)
-        self.inputFacesList.installEventFilter(listWidgetEventFilter)
-        self.inputFacesList.viewport().installEventFilter(listWidgetEventFilter)
+        list_widget_event_filter = ListWidgetEventFilter(self, self)
+        self.targetVideosList.installEventFilter(list_widget_event_filter)
+        self.targetVideosList.viewport().installEventFilter(list_widget_event_filter)
+        self.inputFacesList.installEventFilter(list_widget_event_filter)
+        self.inputFacesList.viewport().installEventFilter(list_widget_event_filter)
 
         # Initialize graphics frame to view frames
         self.scene = QtWidgets.QGraphicsScene()
@@ -120,7 +120,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         video_slider_event_filter = VideoSeekSliderEventFilter(self, self.videoSeekSlider)
         self.videoSeekSlider.installEventFilter(video_slider_event_filter)
-        self.videoSeekSlider.valueChanged.connect(partial(video_control_actions.OnChangeSlider, self))
+        self.videoSeekSlider.valueChanged.connect(partial(video_control_actions.on_change_video_seek_slider, self))
         self.videoSeekSlider.sliderPressed.connect(partial(video_control_actions.on_slider_pressed, self))
         self.videoSeekSlider.sliderReleased.connect(partial(video_control_actions.on_slider_released, self))
         self.videoSeekSlider.sliderMoved.connect(partial(print, 'Slider Moved ()'))
@@ -139,20 +139,20 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         video_seek_line_edit_event_filter = videoSeekSliderLineEditEventFilter(self, self.videoSeekLineEdit)
         self.videoSeekLineEdit.installEventFilter(video_seek_line_edit_event_filter)
 
-        # Connect the Play/Stop button to the OnClickPlayButton method
-        self.buttonMediaPlay.toggled.connect(partial(video_control_actions.OnClickPlayButton, self))
-        self.buttonMediaRecord.toggled.connect(partial(video_control_actions.OnClickRecordButton, self))
+        # Connect the Play/Stop button to the play_video method
+        self.buttonMediaPlay.toggled.connect(partial(video_control_actions.play_video, self))
+        self.buttonMediaRecord.toggled.connect(partial(video_control_actions.record_video, self))
         # self.buttonMediaStop.clicked.connect(partial(self.video_processor.stop_processing))
         self.findTargetFacesButton.clicked.connect(partial(card_actions.find_target_faces, self))
         self.clearTargetFacesButton.clicked.connect(partial(card_actions.clear_target_faces, self))
-        self.targetVideosSearchBox.textChanged.connect(partial(filter_actions.filterTargetVideos, self))
-        self.filterImagesCheckBox.clicked.connect(partial(filter_actions.filterTargetVideos, self))
-        self.filterVideosCheckBox.clicked.connect(partial(filter_actions.filterTargetVideos, self))
-        self.filterWebcamsCheckBox.clicked.connect(partial(filter_actions.filterTargetVideos, self))
-        self.filterWebcamsCheckBox.clicked.connect(partial(list_view_actions.onClickLoadWebcams, self))
+        self.targetVideosSearchBox.textChanged.connect(partial(filter_actions.filter_target_videos, self))
+        self.filterImagesCheckBox.clicked.connect(partial(filter_actions.filter_target_videos, self))
+        self.filterVideosCheckBox.clicked.connect(partial(filter_actions.filter_target_videos, self))
+        self.filterWebcamsCheckBox.clicked.connect(partial(filter_actions.filter_target_videos, self))
+        self.filterWebcamsCheckBox.clicked.connect(partial(list_view_actions.load_target_webcams, self))
 
-        self.inputFacesSearchBox.textChanged.connect(partial(filter_actions.filterInputFaces, self))
-        self.inputEmbeddingsSearchBox.textChanged.connect(partial(filter_actions.filterMergedEmbeddings, self))
+        self.inputFacesSearchBox.textChanged.connect(partial(filter_actions.filter_input_faces, self))
+        self.inputEmbeddingsSearchBox.textChanged.connect(partial(filter_actions.filter_merged_embeddings, self))
         self.openEmbeddingButton.clicked.connect(partial(save_load_actions.open_embeddings_from_file, self))
         self.saveEmbeddingButton.clicked.connect(partial(save_load_actions.save_embeddings_to_file, self))
         self.saveEmbeddingAsButton.clicked.connect(partial(save_load_actions.save_embeddings_to_file, self, True))
@@ -172,12 +172,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         layout_actions.add_widgets_to_tab_layout(self, LAYOUT_DATA=FACE_EDITOR_LAYOUT_DATA, layoutWidget=self.faceEditorWidgetsLayout, data_type='parameter')
 
         # Set up output folder select button (It is inside the settings tab Widget)
-        self.outputFolderButton.clicked.connect(partial(list_view_actions.onClickSelectOutputFolder, self))
+        self.outputFolderButton.clicked.connect(partial(list_view_actions.select_output_media_folder, self))
         # Create a control value for OutputMediaFolder
         common_widget_actions.create_control(self, 'OutputMediaFolder', '')
 
         # Initialize the button states
-        video_control_actions.resetMediaButtons(self)
+        video_control_actions.reset_media_buttons(self)
 
         #Set GPU Memory Progressbar
         font = self.vramProgressBar.font()
@@ -192,7 +192,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.setupUi(self)
         self.initialize_variables()
         self.initialize_widgets()
-        self.loadLastWorkspace()
+        self.load_last_workspace()
 
     def resizeEvent(self, event: QtGui.QResizeEvent):
         print("Called resizeEvent()")
@@ -221,11 +221,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # Optionally handle the event if needed
         event.accept()
 
-    def loadLastWorkspace(self):
+    def load_last_workspace(self):
         # Show the load workspace dialog if the file exists
         if Path('last_workspace.json').is_file():
             load_dialog = widget_components.LoadLastWorkspaceDialog(self)
             load_dialog.exec_()
 
-    def saveLastWorkspace(self):
+    def save_last_workspace(self):
         pass

@@ -196,7 +196,7 @@ class FilterWorker(qtc.QThread):
         self.search_text = search_text
         self.filter_list = filter_list
         self.filter_list_widget = self.get_list_widget()
-        self.filtered_results.connect(partial(filter_actions.updateFilteredList, main_window, self.filter_list_widget))
+        self.filtered_results.connect(partial(filter_actions.update_filtered_list, main_window, self.filter_list_widget))
 
     def get_list_widget(self,):
         list_widget = False
@@ -210,14 +210,14 @@ class FilterWorker(qtc.QThread):
 
     def run(self,):
         if self.filter_list == 'target_videos':
-            self.filterTargetVideos(self.main_window, self.search_text)
+            self.filter_target_videos(self.main_window, self.search_text)
         elif self.filter_list == 'input_faces':
-            self.filterInputFaces(self.main_window, self.search_text)
+            self.filter_input_faces(self.main_window, self.search_text)
         elif self.filter_list == 'merged_embeddings':
-            self.filterMergedEmbeddings(self.main_window, self.search_text)
+            self.filter_merged_embeddings(self.main_window, self.search_text)
 
 
-    def filterTargetVideos(self, main_window: 'MainWindow', search_text: str = ''):
+    def filter_target_videos(self, main_window: 'MainWindow', search_text: str = ''):
         search_text = main_window.targetVideosSearchBox.text().lower()
         include_file_types = []
         if main_window.filterImagesCheckBox.isChecked():
@@ -237,7 +237,7 @@ class FilterWorker(qtc.QThread):
 
         self.filtered_results.emit(visible_indices)
 
-    def filterInputFaces(self, main_window: 'MainWindow', search_text: str):
+    def filter_input_faces(self, main_window: 'MainWindow', search_text: str):
         search_text = search_text.lower()
         visible_indices = []
 
@@ -249,7 +249,7 @@ class FilterWorker(qtc.QThread):
 
         self.filtered_results.emit(visible_indices)
 
-    def filterMergedEmbeddings(self, main_window: 'MainWindow', search_text: str):
+    def filter_merged_embeddings(self, main_window: 'MainWindow', search_text: str):
         search_text = search_text.lower()
         visible_indices = []
 
