@@ -98,10 +98,6 @@ def set_up_video_seek_slider(main_window: 'MainWindow'):
     main_window.videoSeekSlider.remove_marker_and_paint = partial(remove_marker_and_paint, main_window.videoSeekSlider)
     main_window.videoSeekSlider.paintEvent = partial(paintEvent, main_window.videoSeekSlider)
 
-    # main_window.videoSeekSlider.add_marker = add_marker.__get__(main_window.videoSeekSlider)
-    # main_window.videoSeekSlider.remove_marker = remove_marker.__get__(main_window.videoSeekSlider)
-    # main_window.videoSeekSlider.paintEvent = paintEvent.__get__(main_window.videoSeekSlider)
-
 def add_video_slider_marker(main_window: 'MainWindow'):
     current_position = int(main_window.videoSeekSlider.value())
     print("current_position", current_position)

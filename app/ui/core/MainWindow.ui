@@ -19,7 +19,7 @@
    <string>Rope-Live 0.1a</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="media.qrc">
+   <iconset>
     <normaloff>:/media/Media/rope_logo.jpg</normaloff>:/media/Media/rope_logo.jpg</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
@@ -154,7 +154,7 @@
               <string/>
              </property>
              <property name="icon">
-              <iconset resource="media.qrc">
+              <iconset>
                <normaloff>:/media/Media/previous_marker_off.png</normaloff>:/media/Media/previous_marker_off.png</iconset>
              </property>
              <property name="flat">
@@ -184,7 +184,7 @@
               <string/>
              </property>
              <property name="icon">
-              <iconset resource="media.qrc">
+              <iconset>
                <normaloff>:/media/Media/rec_off.png</normaloff>:/media/Media/rec_off.png</iconset>
              </property>
              <property name="checkable">
@@ -229,7 +229,7 @@
               <string/>
              </property>
              <property name="icon">
-              <iconset resource="media.qrc">
+              <iconset>
                <normaloff>:/media/Media/play_off.png</normaloff>:/media/Media/play_off.png</iconset>
              </property>
              <property name="checkable">
@@ -274,7 +274,7 @@
               <string/>
              </property>
              <property name="icon">
-              <iconset resource="media.qrc">
+              <iconset>
                <normaloff>:/media/Media/next_marker_off.png</normaloff>:/media/Media/next_marker_off.png</iconset>
              </property>
              <property name="flat">
@@ -307,7 +307,7 @@
               <string/>
              </property>
              <property name="icon">
-              <iconset resource="media.qrc">
+              <iconset>
                <normaloff>:/media/Media/add_marker_hover.png</normaloff>:/media/Media/add_marker_hover.png</iconset>
              </property>
              <property name="flat">
@@ -324,7 +324,7 @@
               <string/>
              </property>
              <property name="icon">
-              <iconset resource="media.qrc">
+              <iconset>
                <normaloff>:/media/Media/remove_marker_hover.png</normaloff>:/media/Media/remove_marker_hover.png</iconset>
              </property>
              <property name="flat">
@@ -341,7 +341,7 @@
               <string/>
              </property>
              <property name="icon">
-              <iconset resource="media.qrc">
+              <iconset>
                <normaloff>:/media/Media/previous_marker_hover.png</normaloff>:/media/Media/previous_marker_hover.png</iconset>
              </property>
              <property name="flat">
@@ -358,7 +358,7 @@
               <string/>
              </property>
              <property name="icon">
-              <iconset resource="media.qrc">
+              <iconset>
                <normaloff>:/media/Media/next_marker_hover.png</normaloff>:/media/Media/next_marker_hover.png</iconset>
              </property>
              <property name="flat">
@@ -375,7 +375,7 @@
               <string/>
              </property>
              <property name="icon">
-              <iconset resource="media.qrc">
+              <iconset>
                <normaloff>:/media/Media/fullscreen.png</normaloff>:/media/Media/fullscreen.png</iconset>
              </property>
              <property name="flat">
@@ -491,7 +491,7 @@
                <string/>
               </property>
               <property name="icon">
-               <iconset resource="media.qrc">
+               <iconset>
                 <normaloff>:/media/Media/open_file.png</normaloff>:/media/Media/open_file.png</iconset>
               </property>
               <property name="flat">
@@ -508,7 +508,7 @@
                <string/>
               </property>
               <property name="icon">
-               <iconset resource="media.qrc">
+               <iconset>
                 <normaloff>:/media/Media/save_file.png</normaloff>:/media/Media/save_file.png</iconset>
               </property>
               <property name="flat">
@@ -525,7 +525,7 @@
                <string/>
               </property>
               <property name="icon">
-               <iconset resource="media.qrc">
+               <iconset>
                 <normaloff>:/media/Media/save_file_as.png</normaloff>:/media/Media/save_file_as.png</iconset>
               </property>
               <property name="flat">
@@ -695,7 +695,7 @@
             <string/>
            </property>
            <property name="icon">
-            <iconset resource="media.qrc">
+            <iconset>
              <normaloff>:/media/Media/image.png</normaloff>:/media/Media/image.png</iconset>
            </property>
            <property name="checked">
@@ -712,7 +712,7 @@
             <string/>
            </property>
            <property name="icon">
-            <iconset resource="media.qrc">
+            <iconset>
              <normaloff>:/media/Media/video.png</normaloff>:/media/Media/video.png</iconset>
            </property>
            <property name="checked">
@@ -729,7 +729,7 @@
             <string/>
            </property>
            <property name="icon">
-            <iconset resource="media.qrc">
+            <iconset>
              <normaloff>:/media/Media/webcam.png</normaloff>:/media/Media/webcam.png</iconset>
            </property>
            <property name="checked">
@@ -815,7 +815,7 @@
         <enum>QTabWidget::TabPosition::North</enum>
        </property>
        <property name="currentIndex">
-        <number>2</number>
+        <number>0</number>
        </property>
        <property name="tabsClosable">
         <bool>false</bool>
@@ -826,6 +826,16 @@
        <property name="tabBarAutoHide">
         <bool>false</bool>
        </property>
+       <widget class="QWidget" name="general_tab">
+        <attribute name="title">
+         <string>General</string>
+        </attribute>
+        <layout class="QVBoxLayout" name="generalWidgetsLayout_1">
+         <item>
+          <layout class="QVBoxLayout" name="generalWidgetsLayout"/>
+         </item>
+        </layout>
+       </widget>
        <widget class="QWidget" name="face_swap_tab">
         <attribute name="title">
          <string>Face Swap</string>

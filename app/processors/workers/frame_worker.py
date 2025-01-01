@@ -151,6 +151,7 @@ class FrameWorker(threading.Thread):
                             sim = self.models_processor.findCosineDistance(fface[2], target_face.get_embedding(control['RecognitionModelSelection'])) # Recognition for comparing
                             if sim>=parameters['SimilarityThresholdSlider']:
                                 s_e = None
+                                fface[0] = self.keypoints_adjustments(fface[0], parameters) #Make keypoint adjustments
                                 if self.main_window.swapfacesButton.isChecked():
                                     arcface_model = self.models_processor.get_arcface_model(parameters['SwapModelSelection'])
                                     if parameters['SwapModelSelection'] != 'DeepFaceLive (DFM)':
@@ -203,14 +204,8 @@ class FrameWorker(threading.Thread):
 
         # RGB to BGR
         return img[..., ::-1]
-
-    def swap_core(self, img, kps_5, kps=False, s_e=None, t_e=None, parameters=None, control=None, dfm_model=False): # img = RGB
-        s_e = s_e if isinstance(s_e, np.ndarray) else []
-        t_e = t_e if isinstance(t_e, np.ndarray) else []
-        parameters = parameters or {}
-        control = control or {}
-        # parameters = self.parameters.copy()
-        swapper_model = parameters['SwapModelSelection']
+    
+    def keypoints_adjustments(self, kps_5, parameters):
 
         # Change the ref points
         if parameters['FaceAdjEnableToggle']:
@@ -235,6 +230,16 @@ class FrameWorker(threading.Thread):
             kps_5[3][1] += parameters['MouthLeftYAmountSlider']
             kps_5[4][0] += parameters['MouthRightXAmountSlider']
             kps_5[4][1] += parameters['MouthRightYAmountSlider']
+        return kps_5
+
+    def swap_core(self, img, kps_5, kps=False, s_e=None, t_e=None, parameters=None, control=None, dfm_model=False): # img = RGB
+        s_e = s_e if isinstance(s_e, np.ndarray) else []
+        t_e = t_e if isinstance(t_e, np.ndarray) else []
+        parameters = parameters or {}
+        control = control or {}
+        # parameters = self.parameters.copy()
+        swapper_model = parameters['SwapModelSelection']
+
 
         tform = trans.SimilarityTransform()
         if swapper_model != 'GhostFace-v1' and swapper_model != 'GhostFace-v2' and swapper_model != 'GhostFace-v3' and swapper_model != 'CSCS':

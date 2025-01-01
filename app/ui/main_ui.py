@@ -20,6 +20,7 @@ from app.processors.models_processor import ModelsProcessor
 from app.ui.widgets import widget_components
 from app.ui.widgets.event_filters import GraphicsViewEventFilter, VideoSeekSliderEventFilter, videoSeekSliderLineEditEventFilter, ListWidgetEventFilter
 from app.ui.widgets import ui_workers
+from app.ui.widgets.general_layout_data import GENERAL_LAYOUT_DATA
 from app.ui.widgets.swapper_layout_data import SWAPPER_LAYOUT_DATA
 from app.ui.widgets.settings_layout_data import SETTINGS_LAYOUT_DATA
 from app.ui.widgets.face_editor_layout_data import FACE_EDITOR_LAYOUT_DATA
@@ -167,6 +168,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.facesPanelCheckBox.toggled.connect(partial(layout_actions.show_hide_faces_panel, self))
         self.mediaPanelCheckBox.toggled.connect(partial(layout_actions.show_hide_input_target_media_panel, self))
 
+        layout_actions.add_widgets_to_tab_layout(self, LAYOUT_DATA=GENERAL_LAYOUT_DATA, layoutWidget=self.generalWidgetsLayout, data_type='parameter')
         layout_actions.add_widgets_to_tab_layout(self, LAYOUT_DATA=SWAPPER_LAYOUT_DATA, layoutWidget=self.swapWidgetsLayout, data_type='parameter')
         layout_actions.add_widgets_to_tab_layout(self, LAYOUT_DATA=SETTINGS_LAYOUT_DATA, layoutWidget=self.settingsWidgetsLayout, data_type='control')
         layout_actions.add_widgets_to_tab_layout(self, LAYOUT_DATA=FACE_EDITOR_LAYOUT_DATA, layoutWidget=self.faceEditorWidgetsLayout, data_type='parameter')

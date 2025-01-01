@@ -371,6 +371,7 @@ class FaceLandmarkDetectors:
         return pred_5, pred, []
 
     def detect_face_landmark_203(self, img, bbox, det_kpss, from_points=False):
+        IM = None
         if from_points == False:
             w, h = (bbox[2] - bbox[0]), (bbox[3] - bbox[1])
             center = (bbox[2] + bbox[0]) / 2, (bbox[3] + bbox[1]) / 2
@@ -407,7 +408,6 @@ class FaceLandmarkDetectors:
 
         out_pts = out_pts.reshape((-1, 2)) * 224.0
 
-        IM=None
         if len(det_kpss) == 0 or det_kpss.shape[0] == 5:
             IM = faceutil.invertAffineTransform(M)
 
