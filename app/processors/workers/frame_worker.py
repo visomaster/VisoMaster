@@ -151,8 +151,8 @@ class FrameWorker(threading.Thread):
                 face_kps_all = kpss[i]
                 face_emb, _ = self.models_processor.run_recognize_direct(img, face_kps_5, control['SimilarityTypeSelection'], control['RecognitionModelSelection'])
                 det_faces_data.append({'kps_5': face_kps_5, 'kps_all': face_kps_all, 'embedding': face_emb})
-        img_orig = img.clone()
-        debug_mode = self.is_compare_mode()
+
+        compare_mode = self.is_compare_mode()
         if det_faces_data:
             # Loop through target faces to see if they match our found face embeddings
             for i, fface in enumerate(det_faces_data):
@@ -170,30 +170,33 @@ class FrameWorker(threading.Thread):
                                         s_e = target_face.assigned_input_embedding.get(arcface_model, None)
                                         if s_e is not None and np.isnan(s_e).any():
                                             s_e = None
-                                    if debug_mode:
-                                        img = self.swap_core(img_orig, fface['kps_5'], s_e=s_e, t_e=target_face.get_embedding(arcface_model), parameters=parameters, control=control, dfm_model=parameters['DFMModelSelection'])
-                                        self.compare_images.append(img)
-                                    else:
-                                        img = self.swap_core(img, fface['kps_5'], s_e=s_e, t_e=target_face.get_embedding(arcface_model), parameters=parameters, control=control, dfm_model=parameters['DFMModelSelection'])
+
+                                        img, fface['original_face'], fface['swap_mask'] = self.swap_core(img, fface['kps_5'], s_e=s_e, t_e=target_face.get_embedding(arcface_model), parameters=parameters, control=control, dfm_model=parameters['DFMModelSelection'])
+                                        # cv2.imwrite('temp_swap_face.png', swapped_face.permute(1,2,0).cpu().numpy())
                                 if self.main_window.editFacesButton.isChecked():
                                     img = self.swap_edit_face_core(img, fface['kps_all'], parameters, control)
 
         if control['ManualRotationEnableToggle']:
             img = v2.functional.rotate(img, angle=-control['ManualRotationAngleSlider'], interpolation=v2.InterpolationMode.BILINEAR, expand=True)
 
-        if control['FrameEnhancerEnableToggle']:
+
+        if control["ShowLandmarksEnableToggle"] and det_faces_data:
+            img = img.permute(1,2,0)
+            img = self.paint_face_landmarks(img, det_faces_data, control)
+            img = img.permute(2,0,1)
+
+        if compare_mode:
+            img = self.get_compare_faces_image(img, det_faces_data, control)
+
+        if control['FrameEnhancerEnableToggle'] and not compare_mode:
             img = self.enhance_core(img, control=control)
 
         img = img.permute(1,2,0)
         img = img.cpu().numpy()
-
-        if control["ShowLandmarksEnableToggle"] and det_faces_data:
-            img = self.paint_face_landmarks(img, det_faces_data, parameters, control)
-
         # RGB to BGR
         return img[..., ::-1]
     
-    def keypoints_adjustments(self, kps_5, parameters):
+    def keypoints_adjustments(self, kps_5: np.ndarray, parameters: dict) -> np.ndarray:
         # Change the ref points
         if parameters['FaceAdjEnableToggle']:
             kps_5[:,0] += parameters['KpsXSlider']
@@ -219,7 +222,7 @@ class FrameWorker(threading.Thread):
             kps_5[4][1] += parameters['MouthRightYAmountSlider']
         return kps_5
     
-    def paint_face_landmarks(self, img, det_faces_data, parameters, control):
+    def paint_face_landmarks(self, img: torch.Tensor, det_faces_data: list, control: dict) -> torch.Tensor:
         # if img_y <= 720:
         #     p = 1
         # else:
@@ -244,20 +247,75 @@ class FrameWorker(threading.Thread):
                                     img[int(kpoint[1])+i][int(kpoint[0])+j][0] = kcolor[0]
                                     img[int(kpoint[1])+i][int(kpoint[0])+j][1] = kcolor[1]
                                     img[int(kpoint[1])+i][int(kpoint[0])+j][2] = kcolor[2]
+
                                 except ValueError:
                                     #print("Key-points value {} exceed the image size {}.".format(kpoint, (img_x, img_y)))
                                     continue
         return img
+
+    def get_compare_faces_image(self, img: torch.Tensor, det_faces_data: dict, control: dict) -> torch.Tensor:
+        imgs_to_vstack = []  # Renamed for vertical stacking
+        for _, fface in enumerate(det_faces_data):
+            for _, target_face in self.main_window.target_faces.items():
+                parameters = self.parameters[target_face.face_id]  # Use the parameters of the target face
+                sim = self.models_processor.findCosineDistance(
+                    fface['embedding'], 
+                    target_face.get_embedding(control['RecognitionModelSelection'])
+                )
+                if sim >= parameters['SimilarityThresholdSlider']:
+                    modified_face = self.get_cropped_face_using_kps(img, fface['kps_5'], parameters)
+                    # Apply frame enhancer
+                    if control['FrameEnhancerEnableToggle']:
+                        # Enhance the face and resize it to the original size for stacking
+                        modified_face_enhance = self.enhance_core(modified_face, control=control)
+                        modified_face_enhance = modified_face_enhance.float() / 255.0
+                        # Resize source_tensor to match the size of target_tensor
+                        modified_face = torch.functional.F.interpolate(
+                            modified_face_enhance.unsqueeze(0),  # Add batch dimension
+                            size=modified_face.shape[1:],  # Target size: [H, W]
+                            mode='bilinear',  # Interpolation mode
+                            align_corners=False  # Avoid alignment artifacts
+                        ).squeeze(0)  # Remove batch dimension
+                        
+                        modified_face = (modified_face * 255).clamp(0, 255).to(dtype=torch.uint8)
+                    imgs_to_cat = []
+                    
+                    # Append tensors to imgs_to_cat
+                    if fface['original_face'] is not None:
+                        imgs_to_cat.append(fface['original_face'].permute(2, 0, 1))
+                    imgs_to_cat.append(modified_face)
+                    if fface['swap_mask'] is not None:
+                        fface['swap_mask'] = 255-fface['swap_mask']
+                        imgs_to_cat.append(fface['swap_mask'].permute(2, 0, 1))
+  
+                    # Concatenate horizontally for comparison
+                    img_compare = torch.cat(imgs_to_cat, dim=2)
+
+                    # Add horizontally concatenated image to vertical stack list
+                    imgs_to_vstack.append(img_compare)
     
-    def swap_core(self, img, kps_5, kps=False, s_e=None, t_e=None, parameters=None, control=None, dfm_model=False): # img = RGB
-        s_e = s_e if isinstance(s_e, np.ndarray) else []
-        t_e = t_e if isinstance(t_e, np.ndarray) else []
-        parameters = parameters or {}
-        control = control or {}
-        # parameters = self.parameters.copy()
-        swapper_model = parameters['SwapModelSelection']
+        if imgs_to_vstack:
+            # Find the maximum width
+            max_width = max(img_to_stack.size(2) for img_to_stack in imgs_to_vstack)
+            
+            # Pad images to have the same width
+            padded_imgs = [
+                torch.nn.functional.pad(img_to_stack, (0, max_width - img_to_stack.size(2), 0, 0)) 
+                for img_to_stack in imgs_to_vstack
+            ]
+            # Stack images vertically
+            img_vstack = torch.cat(padded_imgs, dim=1)  # Use dim=1 for vertical stacking
+            img = img_vstack
+        return img
+        
+    def get_cropped_face_using_kps(self, img: torch.Tensor, kps_5: np.ndarray, parameters: dict) -> torch.Tensor:
+        tform = self.get_face_similarity_tform(parameters['SwapModelSelection'], kps_5)
+        # Grab 512 face from image and create 256 and 128 copys
+        face_512 = v2.functional.affine(img, tform.rotation*57.2958, (tform.translation[0], tform.translation[1]) , tform.scale, 0, center = (0,0), interpolation=v2.InterpolationMode.BILINEAR )
+        face_512 = v2.functional.crop(face_512, 0,0, 512, 512)# 3, 512, 512
+        return face_512
 
-
+    def get_face_similarity_tform(self, swapper_model: str, kps_5: np.ndarray) -> trans.SimilarityTransform:
         tform = trans.SimilarityTransform()
         if swapper_model != 'GhostFace-v1' and swapper_model != 'GhostFace-v2' and swapper_model != 'GhostFace-v3' and swapper_model != 'CSCS':
             dst = faceutil.get_arcface_template(image_size=512, mode='arcface128')
@@ -270,6 +328,18 @@ class FrameWorker(threading.Thread):
             dst = faceutil.get_arcface_template(image_size=512, mode='arcfacemap')
             M, _ = faceutil.estimate_norm_arcface_template(kps_5, src=dst)
             tform.params[0:2] = M
+        return tform
+    
+    def swap_core(self, img, kps_5, kps=False, s_e=None, t_e=None, parameters=None, control=None, dfm_model=False): # img = RGB
+        s_e = s_e if isinstance(s_e, np.ndarray) else []
+        t_e = t_e if isinstance(t_e, np.ndarray) else []
+        parameters = parameters or {}
+        control = control or {}
+        # parameters = self.parameters.copy()
+        swapper_model = parameters['SwapModelSelection']
+
+        tform = self.get_face_similarity_tform(swapper_model, kps_5)
+
 
         # Scaling Transforms
         t512 = v2.Resize((512, 512), interpolation=v2.InterpolationMode.BILINEAR, antialias=False)
@@ -637,84 +707,67 @@ class FrameWorker(threading.Thread):
 
         swap = torch.mul(swap, swap_mask)
 
-        if not parameters['ViewFaceMaskEnableToggle'] and not parameters['ViewFaceCompareEnableToggle']:
-            # Calculate the area to be mergerd back to the original frame
-            IM512 = tform.inverse.params[0:2, :]
-            corners = np.array([[0,0], [0,511], [511, 0], [511, 511]])
+        # For face comparing
+        original_face_512_clone = None
+        if parameters['ViewFaceCompareEnableToggle']:
+            original_face_512_clone = original_face_512.clone()
+            original_face_512_clone = original_face_512_clone.type(torch.uint8)
+            original_face_512_clone = original_face_512_clone.permute(1, 2, 0)
+        swap_mask_clone = None
+        # Uninvert and create image from swap mask
+        if parameters['ViewFaceMaskEnableToggle']:
+            swap_mask_clone = swap_mask.clone()
+            swap_mask_clone = torch.sub(1, swap_mask_clone)
+            swap_mask_clone = torch.cat((swap_mask_clone,swap_mask_clone,swap_mask_clone),0)
+            swap_mask_clone = swap_mask_clone.permute(1, 2, 0)
+            swap_mask_clone = torch.mul(swap_mask_clone, 255.).type(torch.uint8)
 
-            x = (IM512[0][0]*corners[:,0] + IM512[0][1]*corners[:,1] + IM512[0][2])
-            y = (IM512[1][0]*corners[:,0] + IM512[1][1]*corners[:,1] + IM512[1][2])
+        # Calculate the area to be mergerd back to the original frame
+        IM512 = tform.inverse.params[0:2, :]
+        corners = np.array([[0,0], [0,511], [511, 0], [511, 511]])
 
-            left = floor(np.min(x))
-            if left<0:
-                left=0
-            top = floor(np.min(y))
-            if top<0:
-                top=0
-            right = ceil(np.max(x))
-            if right>img.shape[2]:
-                right=img.shape[2]
-            bottom = ceil(np.max(y))
-            if bottom>img.shape[1]:
-                bottom=img.shape[1]
+        x = (IM512[0][0]*corners[:,0] + IM512[0][1]*corners[:,1] + IM512[0][2])
+        y = (IM512[1][0]*corners[:,0] + IM512[1][1]*corners[:,1] + IM512[1][2])
 
-            # Untransform the swap
-            swap = v2.functional.pad(swap, (0,0,img.shape[2]-512, img.shape[1]-512))
-            swap = v2.functional.affine(swap, tform.inverse.rotation*57.2958, (tform.inverse.translation[0], tform.inverse.translation[1]), tform.inverse.scale, 0,interpolation=v2.InterpolationMode.BILINEAR, center = (0,0) )
-            swap = swap[0:3, top:bottom, left:right]
-            swap = swap.permute(1, 2, 0)
+        left = floor(np.min(x))
+        if left<0:
+            left=0
+        top = floor(np.min(y))
+        if top<0:
+            top=0
+        right = ceil(np.max(x))
+        if right>img.shape[2]:
+            right=img.shape[2]
+        bottom = ceil(np.max(y))
+        if bottom>img.shape[1]:
+            bottom=img.shape[1]
 
-            # Untransform the swap mask
-            swap_mask = v2.functional.pad(swap_mask, (0,0,img.shape[2]-512, img.shape[1]-512))
-            swap_mask = v2.functional.affine(swap_mask, tform.inverse.rotation*57.2958, (tform.inverse.translation[0], tform.inverse.translation[1]), tform.inverse.scale, 0, interpolation=v2.InterpolationMode.BILINEAR, center = (0,0) )
-            swap_mask = swap_mask[0:1, top:bottom, left:right]
-            swap_mask = swap_mask.permute(1, 2, 0)
-            swap_mask = torch.sub(1, swap_mask)
+        # Untransform the swap
+        swap = v2.functional.pad(swap, (0,0,img.shape[2]-512, img.shape[1]-512))
+        swap = v2.functional.affine(swap, tform.inverse.rotation*57.2958, (tform.inverse.translation[0], tform.inverse.translation[1]), tform.inverse.scale, 0,interpolation=v2.InterpolationMode.BILINEAR, center = (0,0) )
+        swap = swap[0:3, top:bottom, left:right]
+        swap = swap.permute(1, 2, 0)
 
-            # Apply the mask to the original image areas
-            img_crop = img[0:3, top:bottom, left:right]
-            img_crop = img_crop.permute(1,2,0)
-            img_crop = torch.mul(swap_mask,img_crop)
-                
-            #Add the cropped areas and place them back into the original image
-            swap = torch.add(swap, img_crop)
-            swap = swap.type(torch.uint8)
-            swap = swap.permute(2,0,1)
-            img[0:3, top:bottom, left:right] = swap
+        # Untransform the swap mask
+        swap_mask = v2.functional.pad(swap_mask, (0,0,img.shape[2]-512, img.shape[1]-512))
+        swap_mask = v2.functional.affine(swap_mask, tform.inverse.rotation*57.2958, (tform.inverse.translation[0], tform.inverse.translation[1]), tform.inverse.scale, 0, interpolation=v2.InterpolationMode.BILINEAR, center = (0,0) )
+        swap_mask = swap_mask[0:1, top:bottom, left:right]
+        swap_mask = swap_mask.permute(1, 2, 0)
+        swap_mask = torch.sub(1, swap_mask)
 
-        elif parameters['ViewFaceMaskEnableToggle'] or parameters['ViewFaceCompareEnableToggle']:
-            # Invert swap mask
-            swap_mask = torch.sub(1, swap_mask)
+        # Apply the mask to the original image areas
+        img_crop = img[0:3, top:bottom, left:right]
+        img_crop = img_crop.permute(1,2,0)
+        img_crop = torch.mul(swap_mask,img_crop)
+            
+        #Add the cropped areas and place them back into the original image
+        swap = torch.add(swap, img_crop)
+        swap = swap.type(torch.uint8)
+        swap = swap.permute(2,0,1)
+        img[0:3, top:bottom, left:right] = swap
 
-            if parameters['ViewFaceCompareEnableToggle']:
-                original_face_512_clone = original_face_512.clone()
-                original_face_512_clone = original_face_512_clone.type(torch.uint8)
-                original_face_512_clone = original_face_512_clone.permute(1, 2, 0)
 
-            # Combine preswapped face with swap
-            original_face_512 = torch.mul(swap_mask, original_face_512)
-            original_face_512 = torch.add(swap, original_face_512)
-            original_face_512 = original_face_512.type(torch.uint8)
-            original_face_512 = original_face_512.permute(1, 2, 0)
-
-            # Uninvert and create image from swap mask
-            if parameters['ViewFaceMaskEnableToggle']:
-                swap_mask = torch.sub(1, swap_mask)
-                swap_mask = torch.cat((swap_mask,swap_mask,swap_mask),0)
-                swap_mask = swap_mask.permute(1, 2, 0)
-                swap_mask = torch.mul(swap_mask, 255.).type(torch.uint8)
-
-            # Place them side by side
-            if not parameters['ViewFaceCompareEnableToggle']:
-                img = torch.hstack([original_face_512, swap_mask])
-            elif not parameters['ViewFaceMaskEnableToggle']:
-                img = torch.hstack([original_face_512_clone, original_face_512, ])
-            else:
-                img = torch.hstack([original_face_512_clone, original_face_512, swap_mask])
-
-            img = img.permute(2,0,1)
-
-        return img
+        return img, original_face_512_clone, swap_mask_clone
 
     def enhance_core(self, img, control):
         enhancer_type = control['FrameEnhancerTypeSelection']
@@ -1192,26 +1245,10 @@ class FrameWorker(threading.Thread):
             original_face_512, M_o2c, M_c2o = faceutil.warp_face_by_face_landmark_x(img, lmk_crop, dsize=512, scale=parameters['FaceEditorCropScaleDecimalSlider'], vy_ratio=parameters['FaceEditorVYRatioDecimalSlider'], interpolation=v2.InterpolationMode.BILINEAR)
 
             out, mask_out = self.models_processor.apply_face_makeup(original_face_512, parameters)
-            if (not parameters['ViewFaceMaskEnableToggle'] and not parameters['ViewFaceCompareEnableToggle']) or self.main_window.swapfacesButton.isChecked():
+            if 1:
                 gauss = transforms.GaussianBlur(5*2+1, (5+1)*0.2)
                 out = torch.clamp(torch.div(out, 255.0), 0, 1).type(torch.float32)
                 mask_crop = gauss(self.models_processor.lp_mask_crop)
                 img = faceutil.paste_back_adv(out, M_c2o, img, mask_crop)
-            else:
-                out = out.type(torch.uint8)
-
-                # Expand mask (3, H, W)
-                mask_out = mask_out.repeat(3, 1, 1)
-                # Put mask in range [0, 255]
-                mask_out = torch.mul(mask_out, 255.0)
-                mask_out = mask_out.type(torch.uint8)
-
-                # Place them side by side
-                if not parameters['ViewFaceCompareEnableToggle']:
-                    img = torch.cat((out, mask_out), dim=2)
-                elif not parameters['ViewFaceMaskEnableToggle']:
-                    img = torch.cat((out, original_face_512), dim=2)
-                else:
-                    img = torch.cat((out, original_face_512, mask_out), dim=2)
 
         return img
