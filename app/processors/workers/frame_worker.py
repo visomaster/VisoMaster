@@ -148,9 +148,9 @@ class FrameWorker(threading.Thread):
         if len(kpss_5)>0:
             for i in range(kpss_5.shape[0]):
                 face_kps_5 = kpss_5[i]
-                face_kps = kpss[i]
+                face_kps_all = kpss[i]
                 face_emb, _ = self.models_processor.run_recognize_direct(img, face_kps_5, control['SimilarityTypeSelection'], control['RecognitionModelSelection'])
-                det_faces_data.append([face_kps_5, face_kps, face_emb])
+                det_faces_data.append({'kps_5': face_kps_5, 'kps_all': face_kps_all, 'embedding': face_emb})
         img_orig = img.clone()
         debug_mode = self.is_compare_mode()
         if det_faces_data:
@@ -160,10 +160,10 @@ class FrameWorker(threading.Thread):
                         parameters = self.parameters[target_face.face_id] #Use the parameters of the target face
 
                         if self.main_window.swapfacesButton.isChecked() or self.main_window.editFacesButton.isChecked():
-                            sim = self.models_processor.findCosineDistance(fface[2], target_face.get_embedding(control['RecognitionModelSelection'])) # Recognition for comparing
+                            sim = self.models_processor.findCosineDistance(fface['embedding'], target_face.get_embedding(control['RecognitionModelSelection'])) # Recognition for comparing
                             if sim>=parameters['SimilarityThresholdSlider']:
                                 s_e = None
-                                fface[0] = self.keypoints_adjustments(fface[0], parameters) #Make keypoints adjustments
+                                fface['kps_5'] = self.keypoints_adjustments(fface['kps_5'], parameters) #Make keypoints adjustments
                                 if self.main_window.swapfacesButton.isChecked():
                                     arcface_model = self.models_processor.get_arcface_model(parameters['SwapModelSelection'])
                                     if parameters['SwapModelSelection'] != 'DeepFaceLive (DFM)':
@@ -171,12 +171,12 @@ class FrameWorker(threading.Thread):
                                         if s_e is not None and np.isnan(s_e).any():
                                             s_e = None
                                     if debug_mode:
-                                        img = self.swap_core(img_orig, fface[0], s_e=s_e, t_e=target_face.get_embedding(arcface_model), parameters=parameters, control=control, dfm_model=parameters['DFMModelSelection'])
+                                        img = self.swap_core(img_orig, fface['kps_5'], s_e=s_e, t_e=target_face.get_embedding(arcface_model), parameters=parameters, control=control, dfm_model=parameters['DFMModelSelection'])
                                         self.compare_images.append(img)
                                     else:
-                                        img = self.swap_core(img, fface[0], s_e=s_e, t_e=target_face.get_embedding(arcface_model), parameters=parameters, control=control, dfm_model=parameters['DFMModelSelection'])
+                                        img = self.swap_core(img, fface['kps_5'], s_e=s_e, t_e=target_face.get_embedding(arcface_model), parameters=parameters, control=control, dfm_model=parameters['DFMModelSelection'])
                                 if self.main_window.editFacesButton.isChecked():
-                                    img = self.swap_edit_face_core(img, fface[1], parameters, control)
+                                    img = self.swap_edit_face_core(img, fface['kps_all'], parameters, control)
 
         if control['ManualRotationEnableToggle']:
             img = v2.functional.rotate(img, angle=-control['ManualRotationAngleSlider'], interpolation=v2.InterpolationMode.BILINEAR, expand=True)
@@ -228,14 +228,14 @@ class FrameWorker(threading.Thread):
         for i, fface in enumerate(det_faces_data):
             for _, target_face in self.main_window.target_faces.items():
                 parameters = self.parameters[target_face.face_id] #Use the parameters of the target face
-                sim = self.models_processor.findCosineDistance(fface[2], target_face.get_embedding(control['RecognitionModelSelection']))
+                sim = self.models_processor.findCosineDistance(fface['embedding'], target_face.get_embedding(control['RecognitionModelSelection']))
                 if sim>=parameters['SimilarityThresholdSlider']:
                     if parameters['LandmarksPositionAdjEnableToggle']:
                         kcolor = tuple((255, 0, 0))
-                        keypoints = fface[0]
+                        keypoints = fface['kps_5']
                     else:
                         kcolor = tuple((0, 255, 255))
-                        keypoints = fface[1]
+                        keypoints = fface['kps_all']
 
                     for kpoint in keypoints:
                         for i in range(-1, p):
