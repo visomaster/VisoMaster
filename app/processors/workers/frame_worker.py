@@ -31,6 +31,9 @@ class FrameWorker(threading.Thread):
         self.models_processor = main_window.models_processor
         self.video_processor = main_window.video_processor
         self.is_single_frame = is_single_frame
+        self.parameters = {}
+        self.target_faces = main_window.target_faces
+        self.compare_images = []
 
     def run(self):
         try:
@@ -76,6 +79,13 @@ class FrameWorker(threading.Thread):
         except Exception as e: # pylint: disable=broad-exception-caught
             print(f"Error in FrameWorker: {e}")
             traceback.print_exc()
+
+    def is_compare_mode(self):
+        for _, target_face in self.main_window.target_faces.items():
+            parameters = self.parameters[target_face.face_id]
+            if parameters['ViewFaceMaskEnableToggle'] or parameters['ViewFaceCompareEnableToggle']:
+                return True
+        return False
     
     # @misc_helpers.benchmark
     def process_frame(self):
@@ -134,16 +144,18 @@ class FrameWorker(threading.Thread):
 
         _, kpss_5, kpss = self.models_processor.run_detect(img, control['DetectorModelSelection'], max_num=control['MaxFacesToDetectSlider'], score=control['DetectorScoreSlider']/100.0, input_size=(512, 512), use_landmark_detection=use_landmark_detection, landmark_detect_mode=landmark_detect_mode, landmark_score=control["LandmarkDetectScoreSlider"]/100.0, from_points=from_points, rotation_angles=[0] if not control["AutoRotationToggle"] else [0, 90, 180, 270])
         
-        ret = []
+        det_faces_data = []
         if len(kpss_5)>0:
             for i in range(kpss_5.shape[0]):
                 face_kps_5 = kpss_5[i]
                 face_kps = kpss[i]
                 face_emb, _ = self.models_processor.run_recognize_direct(img, face_kps_5, control['SimilarityTypeSelection'], control['RecognitionModelSelection'])
-                ret.append([face_kps_5, face_kps, face_emb])
-        if ret:
+                det_faces_data.append([face_kps_5, face_kps, face_emb])
+        img_orig = img.clone()
+        debug_mode = self.is_compare_mode()
+        if det_faces_data:
             # Loop through target faces to see if they match our found face embeddings
-            for i, fface in enumerate(ret):
+            for i, fface in enumerate(det_faces_data):
                     for _, target_face in self.main_window.target_faces.items():
                         parameters = self.parameters[target_face.face_id] #Use the parameters of the target face
 
@@ -151,16 +163,18 @@ class FrameWorker(threading.Thread):
                             sim = self.models_processor.findCosineDistance(fface[2], target_face.get_embedding(control['RecognitionModelSelection'])) # Recognition for comparing
                             if sim>=parameters['SimilarityThresholdSlider']:
                                 s_e = None
-                                fface[0] = self.keypoints_adjustments(fface[0], parameters) #Make keypoint adjustments
+                                fface[0] = self.keypoints_adjustments(fface[0], parameters) #Make keypoints adjustments
                                 if self.main_window.swapfacesButton.isChecked():
                                     arcface_model = self.models_processor.get_arcface_model(parameters['SwapModelSelection'])
                                     if parameters['SwapModelSelection'] != 'DeepFaceLive (DFM)':
                                         s_e = target_face.assigned_input_embedding.get(arcface_model, None)
                                         if s_e is not None and np.isnan(s_e).any():
                                             s_e = None
-                                    
-                                    img = self.swap_core(img, fface[0], s_e=s_e, t_e=target_face.get_embedding(arcface_model), parameters=parameters, control=control, dfm_model=parameters['DFMModelSelection'])
-                        
+                                    if debug_mode:
+                                        img = self.swap_core(img_orig, fface[0], s_e=s_e, t_e=target_face.get_embedding(arcface_model), parameters=parameters, control=control, dfm_model=parameters['DFMModelSelection'])
+                                        self.compare_images.append(img)
+                                    else:
+                                        img = self.swap_core(img, fface[0], s_e=s_e, t_e=target_face.get_embedding(arcface_model), parameters=parameters, control=control, dfm_model=parameters['DFMModelSelection'])
                                 if self.main_window.editFacesButton.isChecked():
                                     img = self.swap_edit_face_core(img, fface[1], parameters, control)
 
@@ -173,40 +187,13 @@ class FrameWorker(threading.Thread):
         img = img.permute(1,2,0)
         img = img.cpu().numpy()
 
-        if control["ShowLandmarksEnableToggle"] and ret:
-            if img_y <= 720:
-                p = 1
-            else:
-                p = 2
-
-            for i, fface in enumerate(ret):
-                for _, target_face in self.main_window.target_faces.items():
-                    parameters = self.parameters[target_face.face_id] #Use the parameters of the target face
-                    sim = self.models_processor.findCosineDistance(fface[2], target_face.get_embedding(control['RecognitionModelSelection']))
-                    if sim>=parameters['SimilarityThresholdSlider']:
-                        if parameters['LandmarksPositionAdjEnableToggle']:
-                            kcolor = tuple((255, 0, 0))
-                            keypoints = fface[0]
-                        else:
-                            kcolor = tuple((0, 255, 255))
-                            keypoints = fface[1]
-
-                        for kpoint in keypoints:
-                            for i in range(-1, p):
-                                for j in range(-1, p):
-                                    try:
-                                        img[int(kpoint[1])+i][int(kpoint[0])+j][0] = kcolor[0]
-                                        img[int(kpoint[1])+i][int(kpoint[0])+j][1] = kcolor[1]
-                                        img[int(kpoint[1])+i][int(kpoint[0])+j][2] = kcolor[2]
-                                    except ValueError:
-                                        #print("Key-points value {} exceed the image size {}.".format(kpoint, (img_x, img_y)))
-                                        continue
+        if control["ShowLandmarksEnableToggle"] and det_faces_data:
+            img = self.paint_face_landmarks(img, det_faces_data, parameters, control)
 
         # RGB to BGR
         return img[..., ::-1]
     
     def keypoints_adjustments(self, kps_5, parameters):
-
         # Change the ref points
         if parameters['FaceAdjEnableToggle']:
             kps_5[:,0] += parameters['KpsXSlider']
@@ -231,7 +218,37 @@ class FrameWorker(threading.Thread):
             kps_5[4][0] += parameters['MouthRightXAmountSlider']
             kps_5[4][1] += parameters['MouthRightYAmountSlider']
         return kps_5
+    
+    def paint_face_landmarks(self, img, det_faces_data, parameters, control):
+        # if img_y <= 720:
+        #     p = 1
+        # else:
+        #     p = 2
+        p = 2 #Point thickness
+        for i, fface in enumerate(det_faces_data):
+            for _, target_face in self.main_window.target_faces.items():
+                parameters = self.parameters[target_face.face_id] #Use the parameters of the target face
+                sim = self.models_processor.findCosineDistance(fface[2], target_face.get_embedding(control['RecognitionModelSelection']))
+                if sim>=parameters['SimilarityThresholdSlider']:
+                    if parameters['LandmarksPositionAdjEnableToggle']:
+                        kcolor = tuple((255, 0, 0))
+                        keypoints = fface[0]
+                    else:
+                        kcolor = tuple((0, 255, 255))
+                        keypoints = fface[1]
 
+                    for kpoint in keypoints:
+                        for i in range(-1, p):
+                            for j in range(-1, p):
+                                try:
+                                    img[int(kpoint[1])+i][int(kpoint[0])+j][0] = kcolor[0]
+                                    img[int(kpoint[1])+i][int(kpoint[0])+j][1] = kcolor[1]
+                                    img[int(kpoint[1])+i][int(kpoint[0])+j][2] = kcolor[2]
+                                except ValueError:
+                                    #print("Key-points value {} exceed the image size {}.".format(kpoint, (img_x, img_y)))
+                                    continue
+        return img
+    
     def swap_core(self, img, kps_5, kps=False, s_e=None, t_e=None, parameters=None, control=None, dfm_model=False): # img = RGB
         s_e = s_e if isinstance(s_e, np.ndarray) else []
         t_e = t_e if isinstance(t_e, np.ndarray) else []
@@ -371,7 +388,7 @@ class FrameWorker(threading.Thread):
 
             elif swapper_model == 'FaceStyleInswapper256':
                 with torch.no_grad():  # Disabilita il calcolo del gradiente se è solo per inferenza
-                    for k in range(itex):
+                    for _ in range(itex):
                         input_face_disc = input_face_affined.permute(2, 0, 1)
                         input_face_disc = torch.unsqueeze(input_face_disc, 0).contiguous()
 
@@ -1168,7 +1185,7 @@ class FrameWorker(threading.Thread):
                 img = torch.mul(img, 255.0)
                 img = torch.clamp(img, 0, 255).type(torch.uint8)
 
-        if parameters['FaceMakeupEnableToggle'] or parameters['HairMakeupEnableToggle'] or parameters['EyeBrowsMakeupEnableToggle'] or parameters['LipsMakeupEnableToggle']:
+        if parameters['FaceMakeupEnableToggle'] or parameters['HairMakeupEnableToggle'] or parameters['EyeBrowsMakeupEnableToggle'] or parameters['LipsMakeupEnableToggle'] or parameters['ViewFaceCompareEnableToggle']:
             _, lmk_crop, _ = self.models_processor.run_detect_landmark( img, bbox=[], det_kpss=kps, detect_mode='203', score=0.5, from_points=True)
 
             # prepare_retargeting_image
