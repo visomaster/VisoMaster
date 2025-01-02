@@ -5,7 +5,7 @@ import numpy as np
 from functools import wraps
 from datetime import datetime
 from pathlib import Path
-
+from torchvision.transforms import v2
 import threading
 lock = threading.Lock()
 
@@ -15,6 +15,16 @@ video_extensions = ('.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv', '.webm', '.m
 DFM_MODELS_PATH = './app/onnxmodels/dfm_models'
 
 DFM_MODELS_DATA = {}
+
+def get_scaling_transforms():
+    t512 = v2.Resize((512, 512), interpolation=v2.InterpolationMode.BILINEAR, antialias=False)
+    t384 = v2.Resize((384, 384), interpolation=v2.InterpolationMode.BILINEAR, antialias=False)
+    t256 = v2.Resize((256, 256), interpolation=v2.InterpolationMode.BILINEAR, antialias=False)
+    t128 = v2.Resize((128, 128), interpolation=v2.InterpolationMode.BILINEAR, antialias=False)
+    return t512, t384, t256, t128  
+
+t512, t384, t256, t128 = get_scaling_transforms()
+
 def absoluteFilePaths(directory: str, include_subfolders=False):
     if include_subfolders:
         for dirpath,_,filenames in os.walk(directory):
