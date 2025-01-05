@@ -146,6 +146,12 @@ SETTINGS_LAYOUT_DATA: LayoutDictTypes = {
             'default': False,
             'help': 'Show Landmarks in realtime.'
         },
+        'ShowAllDetectedFacesBBoxToggle': {
+            'level': 1,
+            'label': 'Mark All Detected Faces',
+            'default': False,
+            'help': 'Draw bounding boxes to all detected faces in the frame'
+        }
     },
     'DFM Settings':{
         'MaxDFMModelsSlider':{

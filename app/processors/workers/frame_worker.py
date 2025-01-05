@@ -143,7 +143,7 @@ class FrameWorker(threading.Thread):
             # force to use from_points in landmark detector when edit face is enabled.
             from_points = True
 
-        _, kpss_5, kpss = self.models_processor.run_detect(img, control['DetectorModelSelection'], max_num=control['MaxFacesToDetectSlider'], score=control['DetectorScoreSlider']/100.0, input_size=(512, 512), use_landmark_detection=use_landmark_detection, landmark_detect_mode=landmark_detect_mode, landmark_score=control["LandmarkDetectScoreSlider"]/100.0, from_points=from_points, rotation_angles=[0] if not control["AutoRotationToggle"] else [0, 90, 180, 270])
+        bboxes, kpss_5, kpss = self.models_processor.run_detect(img, control['DetectorModelSelection'], max_num=control['MaxFacesToDetectSlider'], score=control['DetectorScoreSlider']/100.0, input_size=(512, 512), use_landmark_detection=use_landmark_detection, landmark_detect_mode=landmark_detect_mode, landmark_score=control["LandmarkDetectScoreSlider"]/100.0, from_points=from_points, rotation_angles=[0] if not control["AutoRotationToggle"] else [0, 90, 180, 270])
         
         det_faces_data = []
         if len(kpss_5)>0:
@@ -151,7 +151,7 @@ class FrameWorker(threading.Thread):
                 face_kps_5 = kpss_5[i]
                 face_kps_all = kpss[i]
                 face_emb, _ = self.models_processor.run_recognize_direct(img, face_kps_5, control['SimilarityTypeSelection'], control['RecognitionModelSelection'])
-                det_faces_data.append({'kps_5': face_kps_5, 'kps_all': face_kps_all, 'embedding': face_emb})
+                det_faces_data.append({'kps_5': face_kps_5, 'kps_all': face_kps_all, 'embedding': face_emb, 'bbox': bboxes[i]})
 
         compare_mode = self.is_compare_mode()
         if det_faces_data:
@@ -180,6 +180,8 @@ class FrameWorker(threading.Thread):
         if control['ManualRotationEnableToggle']:
             img = v2.functional.rotate(img, angle=-control['ManualRotationAngleSlider'], interpolation=v2.InterpolationMode.BILINEAR, expand=True)
 
+        if control['ShowAllDetectedFacesBBoxToggle']:
+            img = self.draw_bounding_boxes_on_detected_faces(img, det_faces_data, control)
 
         if control["ShowLandmarksEnableToggle"] and det_faces_data:
             img = img.permute(1,2,0)
@@ -252,6 +254,30 @@ class FrameWorker(threading.Thread):
                                 except ValueError:
                                     #print("Key-points value {} exceed the image size {}.".format(kpoint, (img_x, img_y)))
                                     continue
+        return img
+    
+    def draw_bounding_boxes_on_detected_faces(self, img: torch.Tensor, det_faces_data: list, control: dict):
+        for i, fface in enumerate(det_faces_data):
+            color = [0, 255, 0]
+            bbox = fface['bbox']
+            x_min, y_min, x_max, y_max = map(int, bbox)
+            # Ensure bounding box is within the image dimensions
+            _, h, w = img.shape
+            x_min, y_min = max(0, x_min), max(0, y_min)
+            x_max, y_max = min(w - 1, x_max), min(h - 1, y_max)
+            # Dynamically compute thickness based on the image resolution
+            max_dimension = max(img.shape[1], img.shape[2])  # Height and width of the image
+            thickness = max(4, max_dimension // 400)  # Thickness is 1/200th of the largest dimension, minimum 1
+            # Prepare the color tensor with the correct dimensions
+            color_tensor = torch.tensor(color, dtype=img.dtype, device=img.device).view(-1, 1, 1)
+            # Draw the top edge
+            img[:, y_min:y_min + thickness, x_min:x_max + 1] = color_tensor.expand(-1, thickness, x_max - x_min + 1)
+            # Draw the bottom edge
+            img[:, y_max - thickness + 1:y_max + 1, x_min:x_max + 1] = color_tensor.expand(-1, thickness, x_max - x_min + 1)
+            # Draw the left edge
+            img[:, y_min:y_max + 1, x_min:x_min + thickness] = color_tensor.expand(-1, y_max - y_min + 1, thickness)
+            # Draw the right edge
+            img[:, y_min:y_max + 1, x_max - thickness + 1:x_max + 1] = color_tensor.expand(-1, y_max - y_min + 1, thickness)   
         return img
 
     def get_compare_faces_image(self, img: torch.Tensor, det_faces_data: dict, control: dict) -> torch.Tensor:

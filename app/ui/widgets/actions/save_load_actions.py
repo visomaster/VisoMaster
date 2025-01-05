@@ -186,7 +186,9 @@ def load_saved_workspace(main_window: 'MainWindow', data_filename: str|bool = Fa
 
             # Load control (settings)
             control = data['control']
-            main_window.control = control
+            for control_name, control_value in control.items():
+                main_window.control[control_name] = control_value
+
             common_widget_actions.set_control_widgets_values(main_window)
             # Set output folder
             common_widget_actions.create_control(main_window, 'OutputMediaFolder', control['OutputMediaFolder'])
