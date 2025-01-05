@@ -195,6 +195,7 @@ class VideoProcessor(QObject):
             self.threads.clear()
             fps = self.media_capture.get(cv2.CAP_PROP_FPS)
             interval = 1000 / fps if fps > 0 else 30
+            interval = int(interval * 0.8) #Process 20% faster to offset the frame loading & processing time so the video will be played close to the original fps
             self.frame_read_timer.timeout.connect(self.process_next_webcam_frame)
             self.frame_read_timer.start(interval)
             self.frame_display_timer.timeout.connect(self.display_next_webcam_frame)
