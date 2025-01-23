@@ -15,7 +15,7 @@ except ModuleNotFoundError:
 
 arcface_mapping_model_dict = {
     'Inswapper128': 'Inswapper128ArcFace',
-    'FaceStyleInswapper256': 'Inswapper128ArcFace',
+    'InStyleSwapper256': 'Inswapper128ArcFace',
     'DeepFaceLive (DFM)': 'Inswapper128ArcFace',
     'SimSwap512': 'SimSwapArcFace',
     'GhostFace-v1': 'GhostArcFace',
@@ -26,7 +26,7 @@ arcface_mapping_model_dict = {
 
 models_list = [
     {'model_name': 'Inswapper128', 'local_path': f'{models_dir}/inswapper_128.fp16.onnx'},
-    {'model_name': 'FaceStyleInswapper256', 'local_path': f'{models_dir}/FaceStyleInswapper_256.fp16.onnx'},
+    {'model_name': 'InStyleSwapper256', 'local_path': f'{models_dir}/InStyleSwapper256.fp16.onnx'},
     {'model_name': 'SimSwap512', 'local_path': f'{models_dir}/simswap_512_unoff.onnx'},
     {'model_name': 'GhostFacev1', 'local_path': f'{models_dir}/ghost_unet_1_block.onnx'},
     {'model_name': 'GhostFacev2', 'local_path': f'{models_dir}/ghost_unet_2_block.onnx'},

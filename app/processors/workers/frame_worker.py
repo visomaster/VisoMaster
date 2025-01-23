@@ -389,11 +389,11 @@ class FrameWorker(threading.Thread):
                 dim = 4
                 input_face_affined = original_face_512
 
-        elif swapper_model == 'FaceStyleInswapper256':
-            latent = torch.from_numpy(self.models_processor.calc_fsis_latent(s_e)).float().to(self.models_processor.device)
+        elif swapper_model == 'InStyleSwapper256':
+            latent = torch.from_numpy(self.models_processor.calc_swapper_latent_iss(s_e)).float().to(self.models_processor.device)
             if parameters['FaceLikenessEnableToggle']:
                 factor = parameters['FaceLikenessFactorDecimalSlider']
-                dst_latent = torch.from_numpy(self.models_processor.calc_fsis_latent(t_e)).float().to(self.models_processor.device)
+                dst_latent = torch.from_numpy(self.models_processor.calc_swapper_latent_iss(t_e)).float().to(self.models_processor.device)
                 latent = latent - (factor * dst_latent)
 
             dim = 2
@@ -460,14 +460,14 @@ class FrameWorker(threading.Thread):
                     output = torch.mul(output, 255)
                     output = torch.clamp(output, 0, 255)
 
-        elif swapper_model == 'FaceStyleInswapper256':
+        elif swapper_model == 'InStyleSwapper256':
             with torch.no_grad():  # Disabilita il calcolo del gradiente se è solo per inferenza
                 for _ in range(itex):
                     input_face_disc = input_face_affined.permute(2, 0, 1)
                     input_face_disc = torch.unsqueeze(input_face_disc, 0).contiguous()
 
                     swapper_output = torch.empty((1,3,256,256), dtype=torch.float32, device=self.models_processor.device).contiguous()
-                    self.models_processor.run_fsiswapper(input_face_disc, latent, swapper_output)
+                    self.models_processor.run_iss_swapper(input_face_disc, latent, swapper_output)
 
                     swapper_output = torch.squeeze(swapper_output)
                     swapper_output = swapper_output.permute(1, 2, 0)

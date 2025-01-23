@@ -215,9 +215,9 @@ class FaceSwappers:
 
         return latent
 
-    def calc_fsis_latent(self, source_embedding):
-        if not self.models_processor.models['FaceStyleInswapper256']:
-            graph = onnx.load(self.models_processor.models_path['FaceStyleInswapper256']).graph
+    def calc_swapper_latent_iss(self, source_embedding):
+        if not self.models_processor.models['InStyleSwapper256']:
+            graph = onnx.load(self.models_processor.models_path['InStyleSwapper256']).graph
             self.models_processor.emap = onnx.numpy_helper.to_array(graph.initializer[-1])
 
         n_e = source_embedding / l2norm(source_embedding)
@@ -226,11 +226,11 @@ class FaceSwappers:
         latent /= np.linalg.norm(latent)
         return latent
 
-    def run_fsiswapper(self, image, embedding, output):
-        if not self.models_processor.models['FaceStyleInswapper256']:
-            self.models_processor.models['FaceStyleInswapper256'] = self.models_processor.load_model('FaceStyleInswapper256')
+    def run_iss_swapper(self, image, embedding, output):
+        if not self.models_processor.models['InStyleSwapper256']:
+            self.models_processor.models['InStyleSwapper256'] = self.models_processor.load_model('InStyleSwapper256')
 
-        io_binding = self.models_processor.models['FaceStyleInswapper256'].io_binding()
+        io_binding = self.models_processor.models['InStyleSwapper256'].io_binding()
         io_binding.bind_input(name='target', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=(1,3,256,256), buffer_ptr=image.data_ptr())
         io_binding.bind_input(name='source', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=(1,512), buffer_ptr=embedding.data_ptr())
         io_binding.bind_output(name='output', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=(1,3,256,256), buffer_ptr=output.data_ptr())
@@ -239,7 +239,7 @@ class FaceSwappers:
             torch.cuda.synchronize()
         elif self.models_processor.device != "cpu":
             self.models_processor.syncvec.cpu()
-        self.models_processor.models['FaceStyleInswapper256'].run_with_iobinding(io_binding)
+        self.models_processor.models['InStyleSwapper256'].run_with_iobinding(io_binding)
 
     def calc_swapper_latent_simswap512(self, source_embedding):
         latent = source_embedding.reshape(1, -1)
