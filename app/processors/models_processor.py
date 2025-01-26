@@ -151,7 +151,8 @@ class ModelsProcessor(QtCore.QObject):
                 try:
                     self.dfm_models[dfm_model] = DFMModel(self.main_window.dfm_models_data[dfm_model], self.providers, self.device)
                 except:
-                    traceback.print_exc()            
+                    traceback.print_exc()   
+                    self.dfm_models[dfm_model] = None         
                 self.main_window.model_loaded_signal.emit()
             return self.dfm_models[dfm_model]
 
