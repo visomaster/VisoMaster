@@ -2,6 +2,7 @@ import threading
 import os
 import subprocess as sp
 import gc
+import traceback
 from typing import Dict, TYPE_CHECKING
 
 from packaging import version
@@ -147,8 +148,11 @@ class ModelsProcessor(QtCore.QObject):
                     del model_instance
                     self.dfm_models.pop(model_name)
                     gc.collect()
-                self.dfm_models[dfm_model] = DFMModel(self.main_window.dfm_models_data[dfm_model], self.providers, self.device)
-            self.main_window.model_loaded_signal.emit()
+                try:
+                    self.dfm_models[dfm_model] = DFMModel(self.main_window.dfm_models_data[dfm_model], self.providers, self.device)
+                except:
+                    traceback.print_exc()            
+                self.main_window.model_loaded_signal.emit()
             return self.dfm_models[dfm_model]
 
 
