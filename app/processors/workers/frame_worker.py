@@ -169,10 +169,10 @@ class FrameWorker(threading.Thread):
                                     arcface_model = self.models_processor.get_arcface_model(parameters['SwapModelSelection'])
                                     if parameters['SwapModelSelection'] != 'DeepFaceLive (DFM)':
                                         s_e = target_face.assigned_input_embedding.get(arcface_model, None)
-                                        if s_e is not None and np.isnan(s_e).any():
-                                            s_e = None
+                                    if s_e is not None and np.isnan(s_e).any():
+                                        s_e = None
 
-                                        img, fface['original_face'], fface['swap_mask'] = self.swap_core(img, fface['kps_5'], s_e=s_e, t_e=target_face.get_embedding(arcface_model), parameters=parameters, control=control, dfm_model=parameters['DFMModelSelection'])
+                                    img, fface['original_face'], fface['swap_mask'] = self.swap_core(img, fface['kps_5'], s_e=s_e, t_e=target_face.get_embedding(arcface_model), parameters=parameters, control=control, dfm_model=parameters['DFMModelSelection'])
                                         # cv2.imwrite('temp_swap_face.png', swapped_face.permute(1,2,0).cpu().numpy())
                                 if self.main_window.editFacesButton.isChecked():
                                     img = self.swap_edit_face_core(img, fface['kps_all'], parameters, control)
@@ -366,7 +366,7 @@ class FrameWorker(threading.Thread):
         original_face_128 = t128(original_face_256)
         return original_face_512, original_face_384, original_face_256, original_face_128
     
-    def get_affined_face_dim_and_swapping_latents(self, original_faces: tuple, swapper_model, s_e, t_e, parameters,):
+    def get_affined_face_dim_and_swapping_latents(self, original_faces: tuple, swapper_model, dfm_model, s_e, t_e, parameters,):
         original_face_512, original_face_384, original_face_256, original_face_128 = original_faces
         if swapper_model == 'Inswapper128':
             latent = torch.from_numpy(self.models_processor.calc_inswapper_latent(s_e)).float().to(self.models_processor.device)
@@ -434,7 +434,7 @@ class FrameWorker(threading.Thread):
             latent = []
             input_face_affined = original_face_512
             dim = 4
-        return input_face_affined, dim, latent
+        return input_face_affined, dfm_model, dim, latent
     
     def get_swapped_and_prev_face(self, output, input_face_affined, original_face_512, latent, itex, dim, swapper_model, dfm_model, parameters, ):
         # original_face_512, original_face_384, original_face_256, original_face_128 = original_faces
@@ -577,7 +577,7 @@ class FrameWorker(threading.Thread):
         dim=1
         if (s_e is not None and len(s_e) > 0) or (swapper_model == 'DeepFaceLive (DFM)' and dfm_model):
 
-            input_face_affined, dim, latent = self.get_affined_face_dim_and_swapping_latents(original_faces, swapper_model, s_e, t_e, parameters)
+            input_face_affined, dfm_model, dim, latent = self.get_affined_face_dim_and_swapping_latents(original_faces, swapper_model, dfm_model, s_e, t_e, parameters)
 
             # Optional Scaling # change the transform matrix scaling from center
             if parameters['FaceAdjEnableToggle']:
