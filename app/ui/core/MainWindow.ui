@@ -16,11 +16,11 @@
    </font>
   </property>
   <property name="windowTitle">
-   <string>Rope-Live 0.1a</string>
+   <string>VisoMaster v1.0.0</string>
   </property>
   <property name="windowIcon">
    <iconset>
-    <normaloff>:/media/Media/rope_logo.jpg</normaloff>:/media/Media/rope_logo.jpg</iconset>
+    <normaloff>:/media/media/visomaster.png</normaloff>:/media/media/visomaster.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QHBoxLayout" name="horizontalLayout">
@@ -155,7 +155,7 @@
              </property>
              <property name="icon">
               <iconset>
-               <normaloff>:/media/Media/previous_marker_off.png</normaloff>:/media/Media/previous_marker_off.png</iconset>
+               <normaloff>:/media/media/previous_marker_off.png</normaloff>:/media/media/previous_marker_off.png</iconset>
              </property>
              <property name="flat">
               <bool>true</bool>
@@ -185,7 +185,7 @@
              </property>
              <property name="icon">
               <iconset>
-               <normaloff>:/media/Media/rec_off.png</normaloff>:/media/Media/rec_off.png</iconset>
+               <normaloff>:/media/media/rec_off.png</normaloff>:/media/media/rec_off.png</iconset>
              </property>
              <property name="checkable">
               <bool>true</bool>
@@ -230,7 +230,7 @@
              </property>
              <property name="icon">
               <iconset>
-               <normaloff>:/media/Media/play_off.png</normaloff>:/media/Media/play_off.png</iconset>
+               <normaloff>:/media/media/play_off.png</normaloff>:/media/media/play_off.png</iconset>
              </property>
              <property name="checkable">
               <bool>true</bool>
@@ -275,7 +275,7 @@
              </property>
              <property name="icon">
               <iconset>
-               <normaloff>:/media/Media/next_marker_off.png</normaloff>:/media/Media/next_marker_off.png</iconset>
+               <normaloff>:/media/media/next_marker_off.png</normaloff>:/media/media/next_marker_off.png</iconset>
              </property>
              <property name="flat">
               <bool>true</bool>
@@ -308,7 +308,7 @@
              </property>
              <property name="icon">
               <iconset>
-               <normaloff>:/media/Media/add_marker_hover.png</normaloff>:/media/Media/add_marker_hover.png</iconset>
+               <normaloff>:/media/media/add_marker_hover.png</normaloff>:/media/media/add_marker_hover.png</iconset>
              </property>
              <property name="flat">
               <bool>true</bool>
@@ -325,7 +325,7 @@
              </property>
              <property name="icon">
               <iconset>
-               <normaloff>:/media/Media/remove_marker_hover.png</normaloff>:/media/Media/remove_marker_hover.png</iconset>
+               <normaloff>:/media/media/remove_marker_hover.png</normaloff>:/media/media/remove_marker_hover.png</iconset>
              </property>
              <property name="flat">
               <bool>true</bool>
@@ -342,7 +342,7 @@
              </property>
              <property name="icon">
               <iconset>
-               <normaloff>:/media/Media/previous_marker_hover.png</normaloff>:/media/Media/previous_marker_hover.png</iconset>
+               <normaloff>:/media/media/previous_marker_hover.png</normaloff>:/media/media/previous_marker_hover.png</iconset>
              </property>
              <property name="flat">
               <bool>true</bool>
@@ -359,7 +359,7 @@
              </property>
              <property name="icon">
               <iconset>
-               <normaloff>:/media/Media/next_marker_hover.png</normaloff>:/media/Media/next_marker_hover.png</iconset>
+               <normaloff>:/media/media/next_marker_hover.png</normaloff>:/media/media/next_marker_hover.png</iconset>
              </property>
              <property name="flat">
               <bool>true</bool>
@@ -376,7 +376,7 @@
              </property>
              <property name="icon">
               <iconset>
-               <normaloff>:/media/Media/fullscreen.png</normaloff>:/media/Media/fullscreen.png</iconset>
+               <normaloff>:/media/media/fullscreen.png</normaloff>:/media/media/fullscreen.png</iconset>
              </property>
              <property name="flat">
               <bool>true</bool>
@@ -492,7 +492,7 @@
               </property>
               <property name="icon">
                <iconset>
-                <normaloff>:/media/Media/open_file.png</normaloff>:/media/Media/open_file.png</iconset>
+                <normaloff>:/media/media/open_file.png</normaloff>:/media/media/open_file.png</iconset>
               </property>
               <property name="flat">
                <bool>true</bool>
@@ -509,7 +509,7 @@
               </property>
               <property name="icon">
                <iconset>
-                <normaloff>:/media/Media/save_file.png</normaloff>:/media/Media/save_file.png</iconset>
+                <normaloff>:/media/media/save_file.png</normaloff>:/media/media/save_file.png</iconset>
               </property>
               <property name="flat">
                <bool>true</bool>
@@ -526,7 +526,7 @@
               </property>
               <property name="icon">
                <iconset>
-                <normaloff>:/media/Media/save_file_as.png</normaloff>:/media/Media/save_file_as.png</iconset>
+                <normaloff>:/media/media/save_file_as.png</normaloff>:/media/media/save_file_as.png</iconset>
               </property>
               <property name="flat">
                <bool>true</bool>
@@ -696,7 +696,7 @@
            </property>
            <property name="icon">
             <iconset>
-             <normaloff>:/media/Media/image.png</normaloff>:/media/Media/image.png</iconset>
+             <normaloff>:/media/media/image.png</normaloff>:/media/media/image.png</iconset>
            </property>
            <property name="checked">
             <bool>true</bool>
@@ -713,7 +713,7 @@
            </property>
            <property name="icon">
             <iconset>
-             <normaloff>:/media/Media/video.png</normaloff>:/media/Media/video.png</iconset>
+             <normaloff>:/media/media/video.png</normaloff>:/media/media/video.png</iconset>
            </property>
            <property name="checked">
             <bool>true</bool>
@@ -730,7 +730,7 @@
            </property>
            <property name="icon">
             <iconset>
-             <normaloff>:/media/Media/webcam.png</normaloff>:/media/Media/webcam.png</iconset>
+             <normaloff>:/media/media/webcam.png</normaloff>:/media/media/webcam.png</iconset>
            </property>
            <property name="checked">
             <bool>false</bool>
