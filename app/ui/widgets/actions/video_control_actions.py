@@ -305,18 +305,18 @@ def record_video(main_window: 'MainWindow', checked: bool):
         set_record_button_icon_to_play(main_window)
 
 def set_record_button_icon_to_play(main_window: 'MainWindow'):
-    main_window.buttonMediaRecord.setIcon(QtGui.QIcon(":/media/Media/rec_off.png"))
+    main_window.buttonMediaRecord.setIcon(QtGui.QIcon(":/media/media/rec_off.png"))
     main_window.buttonMediaRecord.setToolTip("Start Recording")
 def set_record_button_icon_to_stop(main_window: 'MainWindow'):
-    main_window.buttonMediaRecord.setIcon(QtGui.QIcon(":/media/Media/rec_on.png"))
+    main_window.buttonMediaRecord.setIcon(QtGui.QIcon(":/media/media/rec_on.png"))
     main_window.buttonMediaRecord.setToolTip("Stop Recording")
 
 def set_play_button_icon_to_play(main_window: 'MainWindow'):
-    main_window.buttonMediaPlay.setIcon(QtGui.QIcon(":/media/Media/play_off.png"))
+    main_window.buttonMediaPlay.setIcon(QtGui.QIcon(":/media/media/play_off.png"))
     main_window.buttonMediaPlay.setToolTip("Play")
 
 def set_play_button_icon_to_stop(main_window: 'MainWindow'):
-    main_window.buttonMediaPlay.setIcon(QtGui.QIcon(":/media/Media/play_on.png"))
+    main_window.buttonMediaPlay.setIcon(QtGui.QIcon(":/media/media/play_on.png"))
     main_window.buttonMediaPlay.setToolTip("Stop")
 
 def reset_media_buttons(main_window: 'MainWindow'):
@@ -333,18 +333,18 @@ def reset_media_buttons(main_window: 'MainWindow'):
 
 def set_play_button_icon(main_window: 'MainWindow'):
     if main_window.buttonMediaPlay.isChecked(): 
-        main_window.buttonMediaPlay.setIcon(QtGui.QIcon(":/media/Media/play_on.png"))
+        main_window.buttonMediaPlay.setIcon(QtGui.QIcon(":/media/media/play_on.png"))
         main_window.buttonMediaPlay.setToolTip("Stop")
     else:
-        main_window.buttonMediaPlay.setIcon(QtGui.QIcon(":/media/Media/play_off.png"))
+        main_window.buttonMediaPlay.setIcon(QtGui.QIcon(":/media/media/play_off.png"))
         main_window.buttonMediaPlay.setToolTip("Play")
 
 def set_record_button_icon(main_window: 'MainWindow'):
     if main_window.buttonMediaRecord.isChecked(): 
-        main_window.buttonMediaRecord.setIcon(QtGui.QIcon(":/media/Media/rec_on.png"))
+        main_window.buttonMediaRecord.setIcon(QtGui.QIcon(":/media/media/rec_on.png"))
         main_window.buttonMediaRecord.setToolTip("Stop Recording")
     else:
-        main_window.buttonMediaRecord.setIcon(QtGui.QIcon(":/media/Media/rec_off.png"))
+        main_window.buttonMediaRecord.setIcon(QtGui.QIcon(":/media/media/rec_off.png"))
         main_window.buttonMediaRecord.setToolTip("Start Recording")
 
 # @misc_helpers.benchmark

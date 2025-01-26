@@ -600,7 +600,7 @@ class LoadingDialog(QtWidgets.QDialog):
         self.icon_label = QtWidgets.QLabel()
         self.icon_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         self.icon_label.setPixmap(
-            QtGui.QPixmap(":/media/Media/repeat.png").scaled(
+            QtGui.QPixmap(":/media/media/repeat.png").scaled(
                 30, 30, 
                 QtCore.Qt.AspectRatioMode.KeepAspectRatio, 
                 QtCore.Qt.TransformationMode.SmoothTransformation
@@ -1126,7 +1126,7 @@ class ParameterResetDefaultButton(QtWidgets.QPushButton):
     def __init__(self, related_widget: ParameterSlider | ParameterDecimalSlider | SelectionBox, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.related_widget = related_widget
-        button_icon = QtGui.QIcon(QtGui.QPixmap(':/media/Media/reset_default.png'))
+        button_icon = QtGui.QIcon(QtGui.QPixmap(':/media/media/reset_default.png'))
         self.setIcon(button_icon)
         self.setFixedWidth(30)  # Make the line edit narrower
         self.setCursor(QtCore.Qt.PointingHandCursor)
