@@ -1089,25 +1089,6 @@ SWAPPER_LAYOUT_DATA: LayoutDictTypes = {
             'help': 'Adjust the blur of mask border.'
         },
     },
-
-    'Face Compare':{
-        'ViewFaceMaskEnableToggle':{
-            'level': 1,
-            'label': 'View Face Mask',
-            'default': False,
-            'help': 'Show Face Mask',
-            'exec_function': layout_actions.fit_image_to_view_onchange,
-            'exec_function_args': [],
-        },
-        'ViewFaceCompareEnableToggle':{
-            'level': 1,
-            'label': 'View Face Compare',
-            'default': False,
-            'help': 'Show Face Compare',
-            'exec_function': layout_actions.fit_image_to_view_onchange,
-            'exec_function_args': [],
-        },
-    },
     
     'Face Color Correction':{
         'AutoColorEnableToggle': {

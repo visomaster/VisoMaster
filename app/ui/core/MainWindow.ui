@@ -826,16 +826,6 @@
        <property name="tabBarAutoHide">
         <bool>false</bool>
        </property>
-       <widget class="QWidget" name="general_tab">
-        <attribute name="title">
-         <string>General</string>
-        </attribute>
-        <layout class="QVBoxLayout" name="generalWidgetsLayout_1">
-         <item>
-          <layout class="QVBoxLayout" name="generalWidgetsLayout"/>
-         </item>
-        </layout>
-       </widget>
        <widget class="QWidget" name="face_swap_tab">
         <attribute name="title">
          <string>Face Swap</string>
@@ -853,6 +843,16 @@
         <layout class="QVBoxLayout" name="verticalLayout_3">
          <item>
           <layout class="QVBoxLayout" name="faceEditorWidgetsLayout"/>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="common_tab">
+        <attribute name="title">
+         <string>Common</string>
+        </attribute>
+        <layout class="QVBoxLayout" name="commonWidgetsLayout_1">
+         <item>
+          <layout class="QVBoxLayout" name="commonWidgetsLayout"/>
          </item>
         </layout>
        </widget>

@@ -196,6 +196,9 @@ def load_saved_workspace(main_window: 'MainWindow', data_filename: str|bool = Fa
 
             layout_actions.fit_image_to_view_onchange(main_window)
 
+            if main_window.target_faces:
+                list(main_window.target_faces.values())[0].click()
+
         
 def save_current_workspace(main_window: 'MainWindow', data_filename:str|bool = False):
     target_faces_data = {}
