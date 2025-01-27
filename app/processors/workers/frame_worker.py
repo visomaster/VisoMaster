@@ -165,14 +165,16 @@ class FrameWorker(threading.Thread):
                             if sim>=parameters['SimilarityThresholdSlider']:
                                 s_e = None
                                 fface['kps_5'] = self.keypoints_adjustments(fface['kps_5'], parameters) #Make keypoints adjustments
+                                arcface_model = self.models_processor.get_arcface_model(parameters['SwapModelSelection'])
+
                                 if self.main_window.swapfacesButton.isChecked():
-                                    arcface_model = self.models_processor.get_arcface_model(parameters['SwapModelSelection'])
                                     if parameters['SwapModelSelection'] != 'DeepFaceLive (DFM)':
                                         s_e = target_face.assigned_input_embedding.get(arcface_model, None)
                                     if s_e is not None and np.isnan(s_e).any():
                                         s_e = None
-
-                                    img, fface['original_face'], fface['swap_mask'] = self.swap_core(img, fface['kps_5'], s_e=s_e, t_e=target_face.get_embedding(arcface_model), parameters=parameters, control=control, dfm_model=parameters['DFMModelSelection'])
+                                # swap_core function is executed even if 'Swap Faces' button is disabled,
+                                # because it also returns the original face and face mask 
+                                img, fface['original_face'], fface['swap_mask'] = self.swap_core(img, fface['kps_5'], s_e=s_e, t_e=target_face.get_embedding(arcface_model), parameters=parameters, control=control, dfm_model=parameters['DFMModelSelection'])
                                         # cv2.imwrite('temp_swap_face.png', swapped_face.permute(1,2,0).cpu().numpy())
                                 if self.main_window.editFacesButton.isChecked():
                                     img = self.swap_edit_face_core(img, fface['kps_all'], parameters, control)
