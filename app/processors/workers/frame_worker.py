@@ -455,6 +455,7 @@ class FrameWorker(threading.Thread):
                             swapper_output = swapper_output.permute(1, 2, 0)
 
                             output[j::dim, i::dim] = swapper_output.clone()
+                    prev_face = input_face_affined.clone()
                     input_face_affined = output.clone()
                     output = torch.mul(output, 255)
                     output = torch.clamp(output, 0, 255)
@@ -472,6 +473,7 @@ class FrameWorker(threading.Thread):
                     swapper_output = swapper_output.permute(1, 2, 0)
 
                     output = swapper_output.clone()
+                    prev_face = input_face_affined.clone()
                     input_face_affined = output.clone()
                     output = torch.mul(output, 255)
                     output = torch.clamp(output, 0, 255)
@@ -484,6 +486,7 @@ class FrameWorker(threading.Thread):
                 self.models_processor.run_swapper_simswap512(input_face_disc, latent, swapper_output)
                 swapper_output = torch.squeeze(swapper_output)
                 swapper_output = swapper_output.permute(1, 2, 0)
+                prev_face = input_face_affined.clone()
                 input_face_affined = swapper_output.clone()
 
                 output = swapper_output.clone()
@@ -504,6 +507,7 @@ class FrameWorker(threading.Thread):
                 swapper_output = torch.mul(swapper_output, 127.5)
                 swapper_output = torch.add(swapper_output, 127.5)
                 #swapper_output = swapper_output[:, :, [2, 1, 0]] # Inverte i canali da RGB a BGR (assumendo che l'input sia RGB)
+                prev_face = input_face_affined.clone()
                 input_face_affined = swapper_output.clone()
                 input_face_affined = torch.div(input_face_affined, 255)
 
@@ -520,6 +524,7 @@ class FrameWorker(threading.Thread):
                 swapper_output = torch.squeeze(swapper_output)
                 swapper_output = torch.add(torch.mul(swapper_output, 0.5), 0.5)
                 swapper_output = swapper_output.permute(1, 2, 0)
+                prev_face = input_face_affined.clone()
                 input_face_affined = swapper_output.clone()
 
                 output = swapper_output.clone()
@@ -528,6 +533,7 @@ class FrameWorker(threading.Thread):
         
         elif swapper_model == 'DeepFaceLive (DFM)' and dfm_model:
             out_celeb, _, _ = dfm_model.convert(original_face_512, parameters['DFMAmpMorphSlider']/100, rct=parameters['DFMRCTColorToggle'])
+            prev_face = input_face_affined.clone()
             input_face_affined = out_celeb.clone()
             output = out_celeb.clone()
 
