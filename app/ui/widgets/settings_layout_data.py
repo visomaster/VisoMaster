@@ -1,6 +1,6 @@
 from app.ui.widgets.actions import control_actions
 import cv2
-from app.helpers.types import LayoutDictTypes
+from app.helpers.typing_helper import LayoutDictTypes
 SETTINGS_LAYOUT_DATA: LayoutDictTypes = {
     'Appearance': {
         'ThemeSelection': {

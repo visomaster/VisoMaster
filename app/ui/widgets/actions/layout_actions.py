@@ -11,7 +11,7 @@ from app.ui.widgets.actions import save_load_actions
 from app.ui.widgets.actions import video_control_actions
 from app.ui.widgets import widget_components
 # from app.UI.Widgets.WidgetComponents import *
-from app.helpers.types import LayoutDictTypes
+from app.helpers.typing_helper import LayoutDictTypes
 
 def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: LayoutDictTypes, layoutWidget: QtWidgets.QVBoxLayout, data_type='parameter'):
     layout = QtWidgets.QVBoxLayout()

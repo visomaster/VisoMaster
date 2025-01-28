@@ -1,4 +1,4 @@
-from app.helpers.types import LayoutDictTypes
+from app.helpers.typing_helper import LayoutDictTypes
 
 FACE_EDITOR_LAYOUT_DATA: LayoutDictTypes = {
     '': {

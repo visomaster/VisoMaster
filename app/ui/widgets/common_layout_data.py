@@ -1,4 +1,4 @@
-from app.helpers.types import LayoutDictTypes
+from app.helpers.typing_helper import LayoutDictTypes
 import app.ui.widgets.actions.layout_actions as layout_actions
 
 COMMON_LAYOUT_DATA: LayoutDictTypes = {

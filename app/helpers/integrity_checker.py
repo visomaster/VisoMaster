@@ -1,4 +1,3 @@
-import sys
 import hashlib
 
 BUF_SIZE = 131072  # read in 128kb chunks!
@@ -25,7 +24,6 @@ def get_hash_from_hash_file(hash_file_path: str) -> str:
         hash_sha256 = hash_file.read().strip()
         return hash_sha256
     
-def check_file_integrity(file_path, hash_file_path) -> bool:
+def check_file_integrity(file_path, correct_hash) -> bool:
     actual_hash = get_file_hash(file_path)
-    correct_hash = get_hash_from_hash_file(hash_file_path)
     return actual_hash==correct_hash
