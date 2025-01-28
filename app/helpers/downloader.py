@@ -27,9 +27,3 @@ def download_file(model_name, file_path, hash_file_path, url):
         if check_file_integrity(file_path, hash_file_path):
             print("File Integrity Verified Successfully!")
             print(f"File Saved at: {file_path}")
-
-url = 'https://github.com/argenspin/rope-assets/releases/download/1.0.0/inswapper_128.fp16.onnx'
-file_path = 'inswapper_128.fp16.onnx'
-hash_file_path = 'inswapper_128.fp16.onnx.hash'
-model_name = 'Inswapper128'
-download_file(model_name, file_path, hash_file_path, url)
