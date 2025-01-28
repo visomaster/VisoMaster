@@ -99,6 +99,9 @@ def set_up_video_seek_slider(main_window: 'MainWindow'):
     main_window.videoSeekSlider.paintEvent = partial(paintEvent, main_window.videoSeekSlider)
 
 def add_video_slider_marker(main_window: 'MainWindow'):
+    if main_window.selected_video_button.file_type!='video':
+        common_widget_actions.create_and_show_messagebox(main_window, 'Markers Not Available', 'Markers can only be used for videos!', main_window.videoSeekSlider)
+        return
     current_position = int(main_window.videoSeekSlider.value())
     print("current_position", current_position)
     if not main_window.target_faces:
@@ -109,6 +112,9 @@ def add_video_slider_marker(main_window: 'MainWindow'):
         add_marker(main_window, copy.deepcopy(main_window.parameters), current_position)
 
 def remove_video_slider_marker(main_window: 'MainWindow'):
+    if main_window.selected_video_button.file_type!='video':
+        common_widget_actions.create_and_show_messagebox(main_window, 'Markers Not Available', 'Markers can only be used for videos!', main_window.videoSeekSlider)
+        return
     current_position = int(main_window.videoSeekSlider.value())
     print("current_position", current_position)
     if main_window.markers.get(current_position):

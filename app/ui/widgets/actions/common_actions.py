@@ -261,7 +261,7 @@ def extract_frame_as_pixmap(media_file_path, file_type, webcam_index=False, webc
     return None
 
 def set_widgets_values_using_face_id_parameters(main_window: 'MainWindow', face_id=False):
-    if face_id is False:
+    if (face_id is False) or (not main_window.parameters.get(face_id)):
         print("Set widgets values using default parameters")
         parameters = main_window.default_parameters
     else:
