@@ -20,7 +20,7 @@
   </property>
   <property name="windowIcon">
    <iconset>
-    <normaloff>:/media/media/visomaster.png</normaloff>:/media/media/visomaster.png</iconset>
+    <normaloff>:/media/media/visomaster_small.png</normaloff>:/media/media/visomaster_small.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QHBoxLayout" name="horizontalLayout">

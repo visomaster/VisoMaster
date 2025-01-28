@@ -30,7 +30,7 @@ class Ui_MainWindow(object):
         font.setPointSize(10)
         MainWindow.setFont(font)
         icon = QIcon()
-        icon.addFile(u":/media/media/visomaster.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        icon.addFile(u":/media/media/visomaster_small.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         MainWindow.setWindowIcon(icon)
         self.actionExit = QAction(MainWindow)
         self.actionExit.setObjectName(u"actionExit")

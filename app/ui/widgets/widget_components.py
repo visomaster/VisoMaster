@@ -588,6 +588,7 @@ class LoadingDialog(QtWidgets.QDialog):
     def __init__(self, message="Loading Models, please wait...\nDon't panic if it looks stuck!"):
         super().__init__()
         self.setWindowTitle("Loading Models")
+        self.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)
         self.setModal(True)  # Block interaction with other windows
         self.setFixedSize(225, 125)  # Increased size for better layout
 
