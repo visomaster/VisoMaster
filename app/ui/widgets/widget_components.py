@@ -523,6 +523,7 @@ class CreateEmbeddingDialog(QtWidgets.QDialog):
         self.embedding_name = ''
         self.merge_type = ''
         self.setWindowTitle("Create Embedding")
+        self.setWindowIcon(QtGui.QIcon(u":/media/media/visomaster_small.png"))
 
         # Create widgets
         self.embed_name_edit = QtWidgets.QLineEdit(self)
@@ -588,6 +589,7 @@ class LoadingDialog(QtWidgets.QDialog):
     def __init__(self, message="Loading Models, please wait...\nDon't panic if it looks stuck!"):
         super().__init__()
         self.setWindowTitle("Loading Models")
+        self.setWindowIcon(QtGui.QIcon(u":/media/media/visomaster_small.png"))
         self.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)
         self.setModal(True)  # Block interaction with other windows
         self.setFixedSize(225, 125)  # Increased size for better layout
@@ -631,6 +633,7 @@ class LoadLastWorkspaceDialog(QtWidgets.QDialog):
         super().__init__()
         self.main_window = main_window
         self.setWindowTitle("Load Last Workspace")
+        self.setWindowIcon(QtGui.QIcon(u":/media/media/visomaster_small.png"))
 
         # Create button box
         QBtn = QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel

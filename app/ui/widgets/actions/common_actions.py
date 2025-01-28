@@ -17,6 +17,8 @@ if TYPE_CHECKING:
 def create_and_show_messagebox(main_window: 'MainWindow', window_title: str, message: str, parent_widget: QtWidgets.QWidget):
     messagebox = QtWidgets.QMessageBox(parent_widget)
     messagebox.setWindowTitle(window_title)
+    messagebox.setWindowIcon(QtGui.QIcon(u":/media/media/visomaster_small.png"))
+
     messagebox.setText(message)
     messagebox.exec_()
 
