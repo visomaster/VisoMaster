@@ -1,6 +1,6 @@
 from app.helpers import miscellaneous as misc_helpers
 from app.ui.widgets.actions import layout_actions
-from app.helpers.typing import LayoutDictTypes
+from app.helpers.types import LayoutDictTypes
 
 # Widgets in Face Swap tab are created from this Layout
 SWAPPER_LAYOUT_DATA: LayoutDictTypes = {
