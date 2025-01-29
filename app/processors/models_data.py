@@ -54,7 +54,8 @@ models_list = [
     {
         "model_name": "Inswapper128",
         "local_path": "./app/onnxmodels/inswapper_128.fp16.onnx",
-        "hash": "6d51a9278a1f650cffefc18ba53f38bf2769bf4bbff89267822cf72945f8a38b"
+        "hash": "6d51a9278a1f650cffefc18ba53f38bf2769bf4bbff89267822cf72945f8a38b",
+        "url": "https://github.com/argenspin/rope-assets/releases/download/1.0.0/inswapper_128.fp16.onnx"
     },
     {
         "model_name": "InStyleSwapper256",
@@ -99,7 +100,8 @@ models_list = [
     {
         "model_name": "YoloFace8n",
         "local_path": "./app/onnxmodels/yoloface_8n.onnx",
-        "hash": "84d5bb985b0ea75fc851d7454483897b1494c71c211759b4fec3a22ac196d206"
+        "hash": "84d5bb985b0ea75fc851d7454483897b1494c71c211759b4fec3a22ac196d206",
+        "url": "https://github.com/argenspin/rope-assets/releases/download/1.0.0/yoloface_8n.onnx",
     },
     {
         "model_name": "YunetN",

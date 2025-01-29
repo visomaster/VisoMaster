@@ -4,7 +4,7 @@ import os
 
 from tqdm import tqdm
 
-from integrity_checker import check_file_integrity
+from app.helpers.integrity_checker import check_file_integrity
 
 def download_file(model_name: str, file_path: str, correct_hash: str, url: str) -> bool:
     """

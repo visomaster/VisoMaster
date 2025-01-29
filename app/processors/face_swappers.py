@@ -8,7 +8,8 @@ import onnx
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from app.processors.models_processor import ModelsProcessor
-
+from app.helpers.downloader import download_file
+from app.helpers.miscellaneous import is_file_exists
 class FaceSwappers:
     def __init__(self, models_processor: 'ModelsProcessor'):
         self.models_processor = models_processor
@@ -186,6 +187,10 @@ class FaceSwappers:
 
     def calc_inswapper_latent(self, source_embedding):
         if not self.models_processor.models['Inswapper128']:
+            if not is_file_exists(self.models_processor.models_data['Inswapper128']['local_path']):
+                with self.models_processor.model_lock:
+                    self.models_processor.main_window.model_loading_signal.emit()
+                    download_file('Inswapper128', self.models_processor.models_path['Inswapper128'], self.models_processor.models_data['Inswapper128']['hash'], self.models_processor.models_data['Inswapper128']['url'])
             graph = onnx.load(self.models_processor.models_path['Inswapper128']).graph
             self.models_processor.emap = onnx.numpy_helper.to_array(graph.initializer[-1])
 

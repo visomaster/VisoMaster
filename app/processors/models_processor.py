@@ -29,6 +29,8 @@ from app.processors.frame_enhancers import FrameEnhancers
 from app.processors.face_editors import FaceEditors
 from app.processors.utils.dfm_model import DFMModel
 from app.processors.models_data import models_list, arcface_mapping_model_dict, models_trt_list
+from app.helpers.miscellaneous import is_file_exists
+from app.helpers.downloader import download_file
 
 if TYPE_CHECKING:
     from app.ui.main_ui import MainWindow
@@ -69,10 +71,12 @@ class ModelsProcessor(QtCore.QObject):
         # Initialize models and models_path
         self.models: Dict[str, onnxruntime.InferenceSession] = {}
         self.models_path = {}
+        self.models_data = {}
         for model_data in models_list:
             model_name, model_path = model_data['model_name'], model_data['local_path']
             self.models[model_name] = None #Model Instance
             self.models_path[model_name] = model_path
+            self.models_data[model_name] = {'local_path': model_data['local_path'], 'hash': model_data['hash'], 'url': model_data.get('url')}
 
         self.dfm_models: Dict[str, DFMModel] = {}
 
@@ -122,6 +126,8 @@ class ModelsProcessor(QtCore.QObject):
         with self.model_lock:
             self.main_window.model_loading_signal.emit()
             # QApplication.processEvents()
+            if not is_file_exists(self.models_path[model_name]):
+                download_file(model_name, self.models_path[model_name], self.models_data[model_name]['hash'], self.models_data[model_name]['url'])
             if session_options is None:
                 model_instance = onnxruntime.InferenceSession(self.models_path[model_name], providers=self.providers)
             else:
