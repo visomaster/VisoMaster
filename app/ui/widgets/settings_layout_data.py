@@ -19,7 +19,7 @@ SETTINGS_LAYOUT_DATA: LayoutDictTypes = {
             'label': 'Providers Priority',
             'options': ['CUDA', 'TensorRT', 'TensorRT-Engine', 'CPU'],
             'default': 'CUDA',
-            'help': 'Select the providers priority to be used with the system.',
+            'help': 'Select the theme to be used',
             'exec_function': control_actions.change_execution_provider,
             'exec_function_args': [],
         },
