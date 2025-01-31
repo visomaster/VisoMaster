@@ -1,0 +1,54 @@
+# **Installation Guide (Nvidia)**
+
+Follow the steps below to install and run **VisoMaster** on your system.
+
+## **Prerequisites**
+Before proceeding, ensure you have the following installed on your system:
+- **Git** ([Download](https://git-scm.com/downloads))
+- **Miniconda** ([Download](https://www.anaconda.com/download))
+
+---
+
+## **Installation Steps**
+
+### **1. Clone the Repository**  
+Open a terminal or command prompt and run:  
+```sh
+git clone https://github.com/visomaster/VisoMaster.git
+cd VisoMaster
+```
+
+### **2. Create and Activate a Conda Environment**  
+```sh
+conda create -n visomaster python=3.10.13 -y
+conda activate visomaster
+```
+
+### **3. Install CUDA and cuDNN**  
+```sh
+conda install -c nvidia/label/cuda-12.4.1 cuda-runtime
+conda install -c conda-forge cudnn
+```
+
+### **4. Install Additional Dependencies**  
+```sh
+conda install scikit-image
+pip install -r requirements_cu124.txt
+```
+
+### **5. Download Models and Dependencies**  
+- Download all the files from this [page](https://github.com/visomaster/visomaster-assets/releases/tag/v0.1.0) and copy all files to the ***model_assets/*** folder.  
+- Download all the files from this [page](https://github.com/visomaster/visomaster-assets/releases/tag/v0.1.0_lp) and copy all files to the ***model_assets/liveportrait_onnx/*** folder.
+- Download all the files from this [page](https://github.com/visomaster/visomaster-assets/releases/tag/v0.1.0_dp) and copy it to the ***dependencies/*** folder.
+
+  **Note**: You do not need to download the Source code (zip) and Source code (tar.gz) files 
+### **6. Run the Application**  
+Once everything is set up, start the application by opening the **Start.bat** file.
+
+---
+
+## **Troubleshooting**
+- If you face CUDA-related issues, ensure your GPU drivers are up to date.
+- For missing models, double-check that all models are placed in the correct directories.
+
+Now you're ready to use **VisoMaster**! 🚀
