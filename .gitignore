@@ -23,11 +23,10 @@ tensorrt-engines/
 source_videos/
 source_images/
 output/
-dependencies/
-Rope_TensorRT*.bat
 unins000.dat
 unins000.exe
 test_frames*/
 test_videos*/
 *.mp4
 *.jpg
+*.exe

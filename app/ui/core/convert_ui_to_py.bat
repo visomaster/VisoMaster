@@ -1,6 +1,3 @@
-
-:: Activate the Conda environment
-call conda activate rope_pyside
 @echo off
 setlocal enabledelayedexpansion
 
