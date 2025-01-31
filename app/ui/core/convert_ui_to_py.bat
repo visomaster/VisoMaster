@@ -1,20 +1,29 @@
-call conda activate rope_pyside
-pyside6-uic C:\Users\argen\Documents\Rope-PySide\app\ui\core\MainWindow.ui -o C:\Users\argen\Documents\Rope-PySide\app\ui\core\main_window.py
-pyside6-rcc C:\Users\argen\Documents\Rope-PySide\app\ui\core\media.qrc -o C:\Users\argen\Documents\Rope-PySide\app\ui\core\media_rc.py
 
+:: Activate the Conda environment
+call conda activate rope_pyside
 @echo off
 setlocal enabledelayedexpansion
 
-:: Define file paths and strings
-set "filePath=C:\Users\argen\Documents\Rope-PySide\app\ui\core\main_window.py"
+
+:: Define relative paths
+set "UI_FILE=app\ui\core\MainWindow.ui"
+set "PY_FILE=app\ui\core\main_window.py"
+set "QRC_FILE=app\ui\core\media.qrc"
+set "RCC_PY_FILE=app\ui\core\media_rc.py"
+
+:: Run PySide6 commands
+pyside6-uic "%UI_FILE%" -o "%PY_FILE%"
+pyside6-rcc "%QRC_FILE%" -o "%RCC_PY_FILE%"
+
+:: Define search and replace strings
 set "searchString=import media_rc"
 set "replaceString=from app.ui.core import media_rc"
 
 :: Create a temporary file
-set "tempFile=%filePath%.tmp"
+set "tempFile=%PY_FILE%.tmp"
 
 :: Process the file
-(for /f "usebackq delims=" %%A in ("%filePath%") do (
+(for /f "usebackq delims=" %%A in ("%PY_FILE%") do (
     set "line=%%A"
     if "!line!"=="%searchString%" (
         echo %replaceString%
@@ -24,6 +33,6 @@ set "tempFile=%filePath%.tmp"
 )) > "%tempFile%"
 
 :: Replace the original file with the temporary file
-move /y "%tempFile%" "%filePath%"
+move /y "%tempFile%" "%PY_FILE%"
 
 echo Replacement complete.
