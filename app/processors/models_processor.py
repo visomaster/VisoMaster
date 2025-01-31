@@ -304,11 +304,11 @@ class ModelsProcessor(QtCore.QObject):
     def run_inswapper(self, image, embedding, output):
         self.face_swappers.run_inswapper(image, embedding, output)
 
-    def calc_swapper_latent_iss(self, source_embedding):
-        return self.face_swappers.calc_swapper_latent_iss(source_embedding)
+    def calc_swapper_latent_iss(self, source_embedding, version="A"):
+        return self.face_swappers.calc_swapper_latent_iss(source_embedding, version)
 
-    def run_iss_swapper(self, image, embedding, output):
-        self.face_swappers.run_iss_swapper(image, embedding, output)
+    def run_iss_swapper(self, image, embedding, output, version="A"):
+        self.face_swappers.run_iss_swapper(image, embedding, output, version)
 
     def calc_swapper_latent_simswap512(self, source_embedding):
         return self.face_swappers.calc_swapper_latent_simswap512(source_embedding)

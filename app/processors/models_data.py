@@ -40,7 +40,9 @@ except ModuleNotFoundError:
 
 arcface_mapping_model_dict = {
     'Inswapper128': 'Inswapper128ArcFace',
-    'InStyleSwapper256': 'Inswapper128ArcFace',
+    'InStyleSwapper256 Version A': 'Inswapper128ArcFace',
+    'InStyleSwapper256 Version B': 'Inswapper128ArcFace',
+    'InStyleSwapper256 Version C': 'Inswapper128ArcFace',
     'DeepFaceLive (DFM)': 'Inswapper128ArcFace',
     'SimSwap512': 'SimSwapArcFace',
     'GhostFace-v1': 'GhostArcFace',
@@ -59,11 +61,26 @@ models_list = [
         "url": f"{assets_repo}/v1.0.0/inswapper_128.fp16.onnx"
     },
     {
-        "model_name": "InStyleSwapper256",
-        "local_path": f"{models_dir}/InStyleSwapper256.fp16.onnx",
-        "hash": "1b79b3709b5dc70cfaa41511d0e08304feb8b108a2d236f396e0237588810ce7",
-        # "url": f"{assets_repo}/v1.0.0/InStyleSwapper256.fp16.onnx"
+        
+        "model_name": "InStyleSwapper256 Version A",
+        "local_path": f"{models_dir}/InStyleSwapper256_Version_A.fp16.onnx",
+        "url": f"{assets_repo}/v1.0.0/InStyleSwapper256_Version_A.fp16.onnx",
+        "hash": '',
 
+    },
+    {
+        
+        "model_name": "InStyleSwapper256 Version B",
+        "local_path": f"{models_dir}/InStyleSwapper256_Version_B.fp16.onnx",
+        "url": f"{assets_repo}/v1.0.0/InStyleSwapper256_Version_B.fp16.onnx",
+        "hash": '',
+    },
+    {
+        
+        "model_name": "InStyleSwapper256 Version C",
+        "local_path": f"{models_dir}/InStyleSwapper256_Version_C.fp16.onnx",
+        "url": f"{assets_repo}/v1.0.0/InStyleSwapper256_Version_C.fp16.onnx",
+        "hash": '',
     },
     {
         "model_name": "SimSwap512",
