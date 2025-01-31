@@ -5,7 +5,7 @@ if TYPE_CHECKING:
 
 # @misc_helpers.benchmark
 def update_graphics_view(main_window: 'MainWindow', pixmap: QtGui.QPixmap, current_frame_number, reset_fit=False):
-    print('(update_graphics_view) current_frame_number', current_frame_number)
+    # print('(update_graphics_view) current_frame_number', current_frame_number)
     
     # Update the video seek slider and line edit
     if main_window.videoSeekSlider.value() != current_frame_number:
@@ -48,13 +48,13 @@ def update_graphics_view(main_window: 'MainWindow', pixmap: QtGui.QPixmap, curre
 
 def zoom_andfit_image_to_view_onchange(main_window: 'MainWindow', new_transform):
     """Restore the previous transform (zoom and pan state) and update the view."""
-    print("Called zoom_andfit_image_to_view_onchange()")
+    # print("Called zoom_andfit_image_to_view_onchange()")
     main_window.graphicsViewFrame.setTransform(new_transform, combine=False)
 
 
 def fit_image_to_view(main_window: 'MainWindow', pixmap_item: QtWidgets.QGraphicsPixmapItem, scene_rect):
     """Reset the view and fit the image to the view, keeping the aspect ratio."""
-    print("Called fit_image_to_view()")
+    # print("Called fit_image_to_view()")
     graphicsViewFrame = main_window.graphicsViewFrame
     # Reset the transform and set the scene rectangle
     graphicsViewFrame.resetTransform()

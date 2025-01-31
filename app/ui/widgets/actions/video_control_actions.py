@@ -103,7 +103,7 @@ def add_video_slider_marker(main_window: 'MainWindow'):
         common_widget_actions.create_and_show_messagebox(main_window, 'Markers Not Available', 'Markers can only be used for videos!', main_window.videoSeekSlider)
         return
     current_position = int(main_window.videoSeekSlider.value())
-    print("current_position", current_position)
+    # print("current_position", current_position)
     if not main_window.target_faces:
         common_widget_actions.create_and_show_messagebox(main_window, 'No Target Face Found', 'You need to have atleast one target face to create a marker', main_window.videoSeekSlider)
     elif main_window.markers.get(current_position):
@@ -116,7 +116,7 @@ def remove_video_slider_marker(main_window: 'MainWindow'):
         common_widget_actions.create_and_show_messagebox(main_window, 'Markers Not Available', 'Markers can only be used for videos!', main_window.videoSeekSlider)
         return
     current_position = int(main_window.videoSeekSlider.value())
-    print("current_position", current_position)
+    # print("current_position", current_position)
     if main_window.markers.get(current_position):
         remove_marker(main_window, current_position)
     else:
@@ -231,7 +231,7 @@ def enable_zoom_and_pan(view: QtWidgets.QGraphicsView):
             zoom(self, delta // abs(delta))
     
     def reset_zoom(self:QtWidgets.QGraphicsView):
-        print("Called reset_zoom()")
+        # print("Called reset_zoom()")
         # Reset zoom level to fit the view.
         self.zoom_value = 0
         if not self.scene():
@@ -358,7 +358,7 @@ def set_record_button_icon(main_window: 'MainWindow'):
 # @misc_helpers.benchmark
 @QtCore.Slot(int)
 def on_change_video_seek_slider(main_window: 'MainWindow', new_position=0):
-    print("Called on_change_video_seek_slider()")
+    # print("Called on_change_video_seek_slider()")
     video_processor = main_window.video_processor
 
     was_processing = video_processor.stop_processing()
@@ -379,7 +379,7 @@ def on_change_video_seek_slider(main_window: 'MainWindow', new_position=0):
             update_widget_values_from_markers(main_window, new_position)
 
     # Do not automatically restart the video, let the user press Play to resume
-    print("on_change_video_seek_slider: Video stopped after slider movement.")
+    # print("on_change_video_seek_slider: Video stopped after slider movement.")
 
 def update_parameters_from_marker(main_window: 'MainWindow', new_position: int):
     if main_window.markers.get(new_position):
@@ -393,19 +393,19 @@ def update_widget_values_from_markers(main_window: 'MainWindow', new_position: i
 def on_slider_moved(main_window: 'MainWindow'):
     # print("Called on_slider_moved()")
     position = main_window.videoSeekSlider.value()
-    print(f"\nSlider Moved. position: {position}\n")
+    # print(f"\nSlider Moved. position: {position}\n")
 
 def on_slider_pressed(main_window: 'MainWindow'):
 
     position = main_window.videoSeekSlider.value()
-    print(f"\nSlider Pressed. position: {position}\n")
+    # print(f"\nSlider Pressed. position: {position}\n")
 
 # @misc_helpers.benchmark
 def on_slider_released(main_window: 'MainWindow'):
     # print("Called on_slider_released()")
 
     new_position = main_window.videoSeekSlider.value()
-    print(f"\nSlider released. New position: {new_position}\n")
+    # print(f"\nSlider released. New position: {new_position}\n")
     # Perform the update to the new frame
     video_processor = main_window.video_processor
     if video_processor.media_capture:

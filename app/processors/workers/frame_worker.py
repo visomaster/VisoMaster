@@ -44,7 +44,7 @@ class FrameWorker(threading.Thread):
             self.parameters = self.main_window.parameters.copy()
 
             # Process the frame with model inference
-            print(f"Processing frame {self.frame_number}")
+            # print(f"Processing frame {self.frame_number}")
             if self.main_window.swapfacesButton.isChecked() or self.main_window.editFacesButton.isChecked() or self.main_window.control['FrameEnhancerEnableToggle']:
                 self.frame = self.process_frame()
             else:
@@ -65,7 +65,7 @@ class FrameWorker(threading.Thread):
                 self.video_processor.frame_processed_signal.emit(self.frame_number, pixmap, self.frame)
             # Output Image/Video frame (Single frame)
             else:
-                print('Emitted single_frame_processed_signal')
+                # print('Emitted single_frame_processed_signal')
                 self.video_processor.single_frame_processed_signal.emit(self.frame_number, pixmap, self.frame)
 
 

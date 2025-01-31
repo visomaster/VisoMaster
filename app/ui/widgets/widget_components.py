@@ -798,7 +798,7 @@ class ParameterSlider(QtWidgets.QSlider, ParametersWidget):
         # Set the scaled value
         self.setValue(new_value)
 
-        print(f"Slider moved to: {new_value}")  # Debugging: log the final value
+        # print(f"Slider moved to: {new_value}")  # Debugging: log the final value
 
     def reset_to_default_value(self):
         self.setValue(int(self.default_value))
@@ -926,7 +926,7 @@ class ParameterDecimalSlider(QtWidgets.QSlider, ParametersWidget):
         # Imposta il nuovo valore
         self.setValue(new_value)
 
-        print(f"Slider moved to: {new_value}")  # Debugging: log the final value
+        # print(f"Slider moved to: {new_value}")  # Debugging: log the final value
 
     def reset_to_default_value(self):
         """Reset the slider to its default value."""

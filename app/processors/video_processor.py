@@ -78,13 +78,13 @@ class VideoProcessor(QObject):
 
     Slot(int, QPixmap, numpy.ndarray)
     def store_frame_to_display(self, frame_number, pixmap, frame):
-        print("Called store_frame_to_display()")
+        # print("Called store_frame_to_display()")
         self.frames_to_display[frame_number] = (pixmap, frame)
 
     # Use a queue to store the webcam frames, since the order of frames is not that important (Unless there are too many threads)
     Slot(QPixmap, numpy.ndarray)
     def store_webcam_frame_to_display(self, pixmap, frame):
-        print("Called store_webcam_frame_to_display()")
+        # print("Called store_webcam_frame_to_display()")
         self.webcam_frames_to_display.put((pixmap, frame))
 
     Slot(int, QPixmap, numpy.ndarray)
@@ -118,11 +118,11 @@ class VideoProcessor(QObject):
             self.next_frame_to_display += 1
 
     def display_next_webcam_frame(self):
-        print("Called display_next_webcam_frame()")
+        # print("Called display_next_webcam_frame()")
         if not self.processing:
             self.stop_processing()
         if self.webcam_frames_to_display.empty():
-            print("No Webcam frame found to display")
+            # print("No Webcam frame found to display")
             return
         else:
             pixmap, frame = self.webcam_frames_to_display.get()
@@ -208,7 +208,7 @@ class VideoProcessor(QObject):
         """Read the next frame and add it to the queue for processing."""
 
         if self.current_frame_number > self.max_frame_number:
-            print("Stopping frame_read_timer as all frames have been read!")
+            # print("Stopping frame_read_timer as all frames have been read!")
             self.frame_read_timer.stop()
             return
 
@@ -220,7 +220,7 @@ class VideoProcessor(QObject):
             ret, frame = misc_helpers.read_frame(self.media_capture, preview_mode = not self.recording)
             if ret:
                 frame = frame[..., ::-1]  # Convert BGR to RGB
-                print(f"Enqueuing frame {self.current_frame_number}")
+                # print(f"Enqueuing frame {self.current_frame_number}")
                 self.frame_queue.put(self.current_frame_number)
                 self.start_frame_worker(self.current_frame_number, frame)
                 self.current_frame_number += 1
@@ -240,7 +240,7 @@ class VideoProcessor(QObject):
 
     def process_current_frame(self):
 
-        print("\nCalled process_current_frame()",self.current_frame_number)
+        # print("\nCalled process_current_frame()",self.current_frame_number)
         # self.main_window.processed_frames.clear()
 
         self.next_frame_to_display = self.current_frame_number
@@ -248,7 +248,7 @@ class VideoProcessor(QObject):
             ret, frame = misc_helpers.read_frame(self.media_capture, preview_mode=False)
             if ret:
                 frame = frame[..., ::-1]  # Convert BGR to RGB
-                print(f"Enqueuing frame {self.current_frame_number}")
+                # print(f"Enqueuing frame {self.current_frame_number}")
                 self.frame_queue.put(self.current_frame_number)
                 self.start_frame_worker(self.current_frame_number, frame, is_single_frame=True)
                 
@@ -264,7 +264,7 @@ class VideoProcessor(QObject):
 
                 frame = frame[..., ::-1]  # Convert BGR to RGB
                 self.frame_queue.put(self.current_frame_number)
-                print("Processing current frame as image.")
+                # print("Processing current frame as image.")
                 self.start_frame_worker(self.current_frame_number, frame, is_single_frame=True)
             else:
                 print("Error: Unable to read image file.")
@@ -274,7 +274,7 @@ class VideoProcessor(QObject):
             ret, frame = misc_helpers.read_frame(self.media_capture, preview_mode = False)
             if ret:
                 frame = frame[..., ::-1]  # Convert BGR to RGB
-                print(f"Enqueuing frame {self.current_frame_number}")
+                # print(f"Enqueuing frame {self.current_frame_number}")
                 self.frame_queue.put(self.current_frame_number)
                 self.start_frame_worker(self.current_frame_number, frame, is_single_frame=True)
             else:
@@ -282,7 +282,7 @@ class VideoProcessor(QObject):
         self.join_and_clear_threads()
 
     def process_next_webcam_frame(self):
-        print("Called process_next_webcam_frame()")
+        # print("Called process_next_webcam_frame()")
 
         if self.frame_queue.qsize() >= self.num_threads:
             # print(f"Queue is full ({self.frame_queue.qsize()} frames). Throttling frame reading.")
@@ -291,7 +291,7 @@ class VideoProcessor(QObject):
             ret, frame = misc_helpers.read_frame(self.media_capture, preview_mode = False)
             if ret:
                 frame = frame[..., ::-1]  # Convert BGR to RGB
-                print(f"Enqueuing frame {self.current_frame_number}")
+                # print(f"Enqueuing frame {self.current_frame_number}")
                 self.frame_queue.put(self.current_frame_number)
                 self.start_frame_worker(self.current_frame_number, frame)
 
@@ -299,7 +299,7 @@ class VideoProcessor(QObject):
     def stop_processing(self):
         """Stop video processing and signal completion."""
         if not self.processing:
-            print("Processing not active. No action to perform.")
+            # print("Processing not active. No action to perform.")
             video_control_actions.reset_media_buttons(self.main_window)
 
             return False
@@ -370,11 +370,11 @@ class VideoProcessor(QObject):
             return True
         
     def join_and_clear_threads(self):
-        print("Joining Threads")
+        # print("Joining Threads")
         for _, thread in self.threads.items():
             if thread.is_alive():
                 thread.join()
-        print('Clearing Threads')
+        # print('Clearing Threads')
         self.threads.clear()
     
     def create_ffmpeg_subprocess(self):

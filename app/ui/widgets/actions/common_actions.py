@@ -262,10 +262,10 @@ def extract_frame_as_pixmap(media_file_path, file_type, webcam_index=False, webc
 
 def set_widgets_values_using_face_id_parameters(main_window: 'MainWindow', face_id=False):
     if (face_id is False) or (not main_window.parameters.get(face_id)):
-        print("Set widgets values using default parameters")
+        # print("Set widgets values using default parameters")
         parameters = main_window.default_parameters
     else:
-        print(f"Set widgets values using face_id {face_id}")
+        # print(f"Set widgets values using face_id {face_id}")
         parameters = main_window.parameters[face_id].copy()
     parameter_widgets = main_window.parameter_widgets
     for parameter_name, parameter_value in parameters.items():
@@ -332,8 +332,8 @@ def update_placeholder_visibility(main_window: 'MainWindow', list_widget:QtWidge
         list_widget.setCursor(QtCore.Qt.CursorShape.PointingHandCursor)
     else:
         list_widget.setCursor(QtCore.Qt.CursorShape.ArrowCursor)
-    print("SetVisible", is_visible)
-    print("targetVideosList.count()", list_widget.count())
+    # print("SetVisible", is_visible)
+    # print("targetVideosList.count()", list_widget.count())
 
 
 @QtCore.Slot()
