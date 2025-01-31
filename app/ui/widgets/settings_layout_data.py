@@ -60,8 +60,8 @@ SETTINGS_LAYOUT_DATA: LayoutDictTypes = {
         'DetectorModelSelection': {
             'level': 1,
             'label': 'Face Detect Model',
-            'options': ['Retinaface', 'Yolov8', 'SCRFD', 'Yunet'],
-            'default': 'Retinaface',
+            'options': ['RetinaFace', 'Yolov8', 'SCRFD', 'Yunet'],
+            'default': 'RetinaFace',
             'help': 'Select the face detection model to use for detecting faces in the input image or video.'
         },
         'DetectorScoreSlider': {
@@ -148,7 +148,7 @@ SETTINGS_LAYOUT_DATA: LayoutDictTypes = {
         },
         'ShowAllDetectedFacesBBoxToggle': {
             'level': 1,
-            'label': 'Mark All Detected Faces',
+            'label': 'Show Bounding Boxes',
             'default': False,
             'help': 'Draw bounding boxes to all detected faces in the frame'
         }

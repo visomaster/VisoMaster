@@ -180,6 +180,7 @@ def advance_video_slider_by_n_frames(main_window: 'MainWindow', n=30):
         if new_position > video_processor.max_frame_number:
             new_position = video_processor.max_frame_number
         main_window.videoSeekSlider.setValue(new_position)
+        main_window.video_processor.process_current_frame()
 
 def rewind_video_slider_by_n_frames(main_window: 'MainWindow', n=30):
     video_processor = main_window.video_processor
@@ -189,6 +190,7 @@ def rewind_video_slider_by_n_frames(main_window: 'MainWindow', n=30):
         if new_position < 0:
             new_position = 0
         main_window.videoSeekSlider.setValue(new_position)
+        main_window.video_processor.process_current_frame()
 
 def delete_all_markers(main_window: 'MainWindow'):
     main_window.videoSeekSlider.markers = set()

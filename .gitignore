@@ -1,6 +1,5 @@
 **/__pycache__/**
 
-*.pkl
 *.ckpt
 *.pth
 *.onnx
@@ -9,7 +8,6 @@
 *.timing
 *.dfm
 *.trt
-*.dll
 models/liveportrait_onnx/*.onnx
 models/liveportrait_onnx/*.trt
 saved_parameters*.json

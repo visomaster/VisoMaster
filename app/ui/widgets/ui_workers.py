@@ -117,6 +117,28 @@ class InputFacesLoaderWorker(qtc.QThread):
         self.files_list = files_list or []
         self.face_ids = face_ids or []
         self._running = True  # Flag to control the running state
+        self.was_playing = True
+        self.pre_load_detection_recognition_models()
+        
+    def pre_load_detection_recognition_models(self):
+        control = self.main_window.control.copy()
+        detect_model = control['DetectorModelSelection']
+        landmark_detect_model = f"FaceLandmark{control['LandmarkDetectModelSelection']}"
+        models_processor = self.main_window.models_processor
+        if self.main_window.video_processor.processing:
+            was_playing = True
+            self.main_window.buttonMediaPlay.click()
+        else:
+            was_playing = False
+        if not models_processor.models[detect_model]:
+            models_processor.models[detect_model] = models_processor.load_model(detect_model)
+        if not models_processor.models[landmark_detect_model]:
+            models_processor.models[landmark_detect_model] = models_processor.load_model(landmark_detect_model)
+        for recognition_model in ['Inswapper128ArcFace', 'SimSwapArcFace', 'GhostArcFace', 'CSCSArcFace', 'CSCSIDArcFace']:
+            if not models_processor.models[recognition_model]:
+                models_processor.models[recognition_model] = models_processor.load_model(recognition_model)
+        if was_playing:
+            self.main_window.buttonMediaPlay.click()
 
     def run(self):
         if self.folder_name or self.files_list:

@@ -22,6 +22,7 @@ def clear_target_faces(main_window: 'MainWindow', refresh_frame=True):
     main_window.target_faces = {}
     main_window.parameters = {}
 
+    main_window.selected_target_face_id = False
     # Set Parameter widget values to default
     common_widget_actions.set_widgets_values_using_face_id_parameters(main_window=main_window, face_id=False)
     if refresh_frame:

@@ -186,14 +186,6 @@ class FaceSwappers:
         self.models_processor.models['CSCS'].run_with_iobinding(io_binding)
 
     def calc_inswapper_latent(self, source_embedding):
-        if not self.models_processor.models['Inswapper128']:
-            if not is_file_exists(self.models_processor.models_data['Inswapper128']['local_path']):
-                with self.models_processor.model_lock:
-                    self.models_processor.main_window.model_loading_signal.emit()
-                    download_file('Inswapper128', self.models_processor.models_path['Inswapper128'], self.models_processor.models_data['Inswapper128']['hash'], self.models_processor.models_data['Inswapper128']['url'])
-            graph = onnx.load(self.models_processor.models_path['Inswapper128']).graph
-            self.models_processor.emap = onnx.numpy_helper.to_array(graph.initializer[-1])
-
         n_e = source_embedding / l2norm(source_embedding)
         latent = n_e.reshape((1,-1))
         latent = np.dot(latent, self.models_processor.emap)
@@ -221,10 +213,6 @@ class FaceSwappers:
         return latent
 
     def calc_swapper_latent_iss(self, source_embedding):
-        if not self.models_processor.models['InStyleSwapper256']:
-            graph = onnx.load(self.models_processor.models_path['InStyleSwapper256']).graph
-            self.models_processor.emap = onnx.numpy_helper.to_array(graph.initializer[-1])
-
         n_e = source_embedding / l2norm(source_embedding)
         latent = n_e.reshape((1,-1))
         latent = np.dot(latent, self.models_processor.emap)

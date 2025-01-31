@@ -13,13 +13,13 @@ class FaceDetectors:
     def __init__(self, models_processor: 'ModelsProcessor'):
         self.models_processor = models_processor
 
-    def run_detect(self, img, detect_mode='Retinaface', max_num=1, score=0.5, input_size=(512, 512), use_landmark_detection=False, landmark_detect_mode='203', landmark_score=0.5, from_points=False, rotation_angles=None):
+    def run_detect(self, img, detect_mode='RetinaFace', max_num=1, score=0.5, input_size=(512, 512), use_landmark_detection=False, landmark_detect_mode='203', landmark_score=0.5, from_points=False, rotation_angles=None):
         rotation_angles = rotation_angles or [0]
         bboxes = []
         kpss_5 = []
         kpss = []
 
-        if detect_mode=='Retinaface':
+        if detect_mode=='RetinaFace':
             if not self.models_processor.models['RetinaFace']:
                 self.models_processor.models['RetinaFace'] = self.models_processor.load_model('RetinaFace')
 

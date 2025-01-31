@@ -9,6 +9,7 @@ from packaging import version
 import numpy as np
 import onnxruntime
 import torch
+import onnx
 from torchvision.transforms import v2
 from PySide6 import QtCore
 try:
@@ -126,8 +127,8 @@ class ModelsProcessor(QtCore.QObject):
         with self.model_lock:
             self.main_window.model_loading_signal.emit()
             # QApplication.processEvents()
-            if not is_file_exists(self.models_path[model_name]):
-                download_file(model_name, self.models_path[model_name], self.models_data[model_name]['hash'], self.models_data[model_name]['url'])
+            # if not is_file_exists(self.models_path[model_name]):
+            #     download_file(model_name, self.models_path[model_name], self.models_data[model_name]['hash'], self.models_data[model_name]['url'])
             if session_options is None:
                 model_instance = onnxruntime.InferenceSession(self.models_path[model_name], providers=self.providers)
             else:
@@ -272,7 +273,16 @@ class ModelsProcessor(QtCore.QObject):
         self.delete_models_trt()
         torch.cuda.empty_cache()
 
-    def run_detect(self, img, detect_mode='Retinaface', max_num=1, score=0.5, input_size=(512, 512), use_landmark_detection=False, landmark_detect_mode='203', landmark_score=0.5, from_points=False, rotation_angles=None):
+
+    def load_inswapper_iss_emap(self, model_name):
+        with self.model_lock:
+            if not self.models[model_name]:
+                self.main_window.model_loading_signal.emit()
+                graph = onnx.load(self.models_path[model_name]).graph
+                self.emap = onnx.numpy_helper.to_array(graph.initializer[-1])
+                self.main_window.model_loaded_signal.emit()
+
+    def run_detect(self, img, detect_mode='RetinaFace', max_num=1, score=0.5, input_size=(512, 512), use_landmark_detection=False, landmark_detect_mode='203', landmark_score=0.5, from_points=False, rotation_angles=None):
         rotation_angles = rotation_angles or [0]
         return self.face_detectors.run_detect(img, detect_mode, max_num, score, input_size, use_landmark_detection, landmark_detect_mode, landmark_score, from_points, rotation_angles)
     
