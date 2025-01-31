@@ -275,7 +275,7 @@ def play_video(main_window: 'MainWindow', checked: bool):
         video_processor.process_video()
     else:
         video_processor = main_window.video_processor
-        print("play_video: Stopping video processing.")
+        # print("play_video: Stopping video processing.")
         set_play_button_icon_to_play(main_window)
         video_processor.stop_processing()
         main_window.buttonMediaRecord.blockSignals(True)

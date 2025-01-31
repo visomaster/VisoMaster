@@ -309,14 +309,14 @@ class VideoProcessor(QObject):
         
         if self.file_type=='video' or self.file_type=='webcam':
 
-            print("Stopping Timers")
+            # print("Stopping Timers")
             self.frame_read_timer.stop()
             self.frame_display_timer.stop()
             self.gpu_memory_update_timer.stop()
             self.join_and_clear_threads()
 
 
-            print("Clearing Threads and Queues")
+            # print("Clearing Threads and Queues")
             self.threads.clear()
             self.frames_to_display.clear()
             self.webcam_frames_to_display.queue.clear()
