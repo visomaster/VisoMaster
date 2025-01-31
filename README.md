@@ -1,4 +1,20 @@
-# **Installation Guide (Nvidia)**
+
+<img src="app/ui/core/media/visomaster_full.png" height="250"/>
+
+# VisoMaster 
+VisoMaster is a powerful yet easy-to-use tool for face swapping and editing in images and videos. It utilizes AI to produce natural-looking results with minimal effort, making it ideal for both casual users and professionals.  
+
+---
+
+## **Features**  
+✅ High-quality **AI-powered face swapping** for images and videos  
+✅ **Easy-to-use** interface with simple controls  
+✅ Supports **multiple formats** for input and output  
+✅ Efficient processing with **GPU acceleration** (CUDA support)  
+✅ **Customizable** models and fine-tuning options  
+
+
+## **Installation Guide (Nvidia)**
 
 Follow the steps below to install and run **VisoMaster** on your system.
 
