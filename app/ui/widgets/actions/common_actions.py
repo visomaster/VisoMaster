@@ -60,7 +60,7 @@ def create_default_parameter(main_window: 'MainWindow', parameter_name, paramete
 
 def create_parameter_dict_for_face_id(main_window: 'MainWindow', face_id=0):
     if not main_window.parameters.get(face_id):
-        parameters =  main_window.parameters.get(main_window.selected_target_face_id) or main_window.default_parameters
+        parameters =  main_window.parameters.get(main_window.selected_target_face_id) or main_window.current_widget_parameters or main_window.default_parameters
         main_window.parameters[face_id] = parameters.copy()
     # print("Created parameter_dict_for_face_id", face_id)
 
@@ -263,16 +263,20 @@ def extract_frame_as_pixmap(media_file_path, file_type, webcam_index=False, webc
 def set_widgets_values_using_face_id_parameters(main_window: 'MainWindow', face_id=False):
     if (face_id is False) or (not main_window.parameters.get(face_id)):
         # print("Set widgets values using default parameters")
-        parameters = main_window.default_parameters
+        if main_window.current_widget_parameters:
+            parameters = main_window.current_widget_parameters.copy()
+        else:
+            parameters = main_window.default_parameters
     else:
         # print(f"Set widgets values using face_id {face_id}")
         parameters = main_window.parameters[face_id].copy()
     parameter_widgets = main_window.parameter_widgets
     for parameter_name, parameter_value in parameters.items():
         # temporarily disable refreshing the frame to prevent slowing due to unnecessary processing
-        parameter_widgets[parameter_name].enable_refresh_frame = False
-        parameter_widgets[parameter_name].set_value(parameter_value)
-        parameter_widgets[parameter_name].enable_refresh_frame = True
+        if parameter_widgets.get(parameter_name):
+            parameter_widgets[parameter_name].enable_refresh_frame = False
+            parameter_widgets[parameter_name].set_value(parameter_value)
+            parameter_widgets[parameter_name].enable_refresh_frame = True
 
 def set_control_widgets_values(main_window: 'MainWindow'):
     """

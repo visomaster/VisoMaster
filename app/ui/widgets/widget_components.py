@@ -71,6 +71,9 @@ class TargetMediaCardButton(CardButton):
         # Stop the current video processing
         main_window.video_processor.stop_processing()
 
+        if main_window.selected_target_face_id:
+            main_window.current_widget_parameters = main_window.parameters[main_window.selected_target_face_id].copy()
+
         # Reset the frame counter
         main_window.video_processor.current_frame_number = 0
         main_window.video_processor.media_path = self.media_path
