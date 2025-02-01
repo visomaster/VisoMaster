@@ -128,6 +128,8 @@ def find_target_faces(main_window: 'MainWindow'):
         if main_window.target_faces and not main_window.selected_target_face_id:
             list(main_window.target_faces.values())[0].click()
 
+    if main_window.video_processor.processing:
+        main_window.video_processor.stop_processing()
     common_widget_actions.refresh_frame(main_window)
 
     common_widget_actions.update_gpu_memory_progressbar(main_window)
