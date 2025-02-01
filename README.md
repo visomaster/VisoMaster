@@ -75,4 +75,6 @@ Once everything is set up, start the application by opening the **Start.bat** fi
 - If you face CUDA-related issues, ensure your GPU drivers are up to date.
 - For missing models, double-check that all models are placed in the correct directories.
 
+## [Join Discord](https://discord.gg/5rx4SQuDbp)
+
 Now you're ready to use **VisoMaster**! 🚀
