@@ -21,10 +21,14 @@ def download_file(model_name: str, file_path: str, correct_hash: str, url: str) 
     """
     # Remove the file if it already exists and restart download
     if Path(file_path).is_file():
-        os.remove(file_path)
-        print(f"{file_path} already exists. Re-downloading...")
-    
-    print(f"Downloading {model_name} from {url}")
+        if check_file_integrity(file_path, correct_hash):
+            print(f"\nSkipping {model_name} as it is already downloaded!")
+            return True
+        else:  
+            print(f"\n{file_path} already exists, but its file integrity couldn't be verified. Re-downloading it!")
+            os.remove(file_path)
+
+    print(f"\nDownloading {model_name} from {url}")
     
     try:
         response = requests.get(url, stream=True, timeout=5)
