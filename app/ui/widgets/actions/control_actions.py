@@ -20,7 +20,13 @@ def change_execution_provider(main_window: 'MainWindow', new_provider):
     common_widget_actions.update_gpu_memory_progressbar(main_window)
 
 def change_threads_number(main_window: 'MainWindow', new_threads_number):
-    main_window.video_processor.set_number_of_threads(new_threads_number)
+    try:
+        num_threads = int(new_threads_number)  # **FIX: Convert to integer!**
+    except ValueError:
+        print(f"Warning: Invalid thread number input: '{new_threads_number}'. Using default.")
+        num_threads = 5  # Or use a default value, handle error appropriately
+
+    main_window.video_processor.set_number_of_threads(num_threads) # Now passing integer
     torch.cuda.empty_cache()
     common_widget_actions.update_gpu_memory_progressbar(main_window)
 

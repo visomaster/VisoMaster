@@ -1,7 +1,7 @@
+from PySide6 import QtWidgets, QtCore
 from typing import TYPE_CHECKING
 from functools import partial
 
-from PySide6 import QtWidgets, QtCore
 if TYPE_CHECKING:
     from app.ui.main_ui import MainWindow
 from app.ui.widgets.actions import common_actions as common_widget_actions
@@ -10,8 +10,9 @@ from app.ui.widgets.actions import list_view_actions
 from app.ui.widgets.actions import save_load_actions
 from app.ui.widgets.actions import video_control_actions
 from app.ui.widgets import widget_components
-# from app.UI.Widgets.WidgetComponents import *
 from app.helpers.typing_helper import LayoutDictTypes
+
+debounce_delay_ms = 100  # Debounce delay is no longer used for sliders in this implementation
 
 def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: LayoutDictTypes, layoutWidget: QtWidgets.QVBoxLayout, data_type='parameter'):
     layout = QtWidgets.QVBoxLayout()
@@ -43,7 +44,7 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: LayoutDict
                 horizontal_layout.addWidget(widget)  # Add the toggle button
                 horizontal_layout.addWidget(label)  # Add the label
                 horizontal_layout.addWidget(widget.reset_default_button)
-                
+
                 category_layout.addRow(horizontal_layout)  # Add the horizontal layout to the form layout
 
                 if data_type=='parameter':
@@ -52,12 +53,16 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: LayoutDict
                 else:
                     common_widget_actions.create_control(main_window, widget_name, widget_data['default'])
                 # Set onclick function for toggle button
-                def onchange(toggle_widget: widget_components.ToggleButton, toggle_widget_name, widget_data: dict, *args):
-                    toggle_state = toggle_widget.isChecked()
+                def onchange(toggle_widget: widget_components.ToggleButton, toggle_widget_name, widget_data: dict, checked): # ADDED checked PARAMETER
+                    toggle_state = checked # MODIFIED TO USE PASSED checked VALUE INSTEAD OF widget.isChecked()
                     if data_type=='parameter':
-                        common_widget_actions.update_parameter(main_window, toggle_widget_name, toggle_state, enable_refresh_frame=toggle_widget.enable_refresh_frame, exec_function=widget_data.get('exec_function'), exec_function_args=widget_data.get('exec_function_args', []))    
+                        common_widget_actions.update_parameter(main_window, toggle_widget_name, toggle_state, enable_refresh_frame=toggle_widget.enable_refresh_frame, exec_function=widget_data.get('exec_function'), exec_function_args=widget_data.get('exec_function_args', []))
                     elif data_type=='control':
                         common_widget_actions.update_control(main_window, toggle_widget_name, toggle_state, exec_function=widget_data.get('exec_function'), exec_function_args=widget_data.get('exec_function_args', []))
+
+                    if toggle_widget_name == 'ViewFaceCompareEnableToggle': # ADDED SYNC LOGIC HERE
+                        main_window.viewFaceCompareCheckBox.setChecked(checked) # SYNC CHECKBOX STATE
+
                 widget.toggled.connect(partial(onchange, widget, widget_name, widget_data))
 
             elif 'Selection' in widget_name:
@@ -94,23 +99,22 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: LayoutDict
 
             elif 'DecimalSlider' in widget_name:
                 widget = widget_components.ParameterDecimalSlider(
-                    label=widget_data['label'], 
-                    widget_name=widget_name, 
-                    group_layout_data=widgets, 
-                    label_widget=label, 
-                    min_value=float(widget_data['min_value']),  # Ensure min_value is float
-                    max_value=float(widget_data['max_value']),  # Ensure max_value is float
-                    default_value=float(widget_data['default']),  # Ensure default_value is float
+                    label=widget_data['label'],
+                    widget_name=widget_name,
+                    group_layout_data=widgets,
+                    label_widget=label,
+                    min_value=float(widget_data['min_value']),
+                    max_value=float(widget_data['max_value']),
+                    default_value=float(widget_data['default']),
                     decimals=int(widget_data['decimals']),
                     step_size=float(widget_data['step']),
                     main_window=main_window
                 )
-                # Use the new ParameterLineDecimalEdit class
                 widget.line_edit = widget_components.ParameterLineDecimalEdit(
-                    min_value=float(widget_data['min_value']), 
-                    max_value=float(widget_data['max_value']), 
+                    min_value=float(widget_data['min_value']),
+                    max_value=float(widget_data['max_value']),
                     default_value=str(widget_data['default']),
-                    decimals=int(widget_data['decimals']),  # Ensure it uses decimals place for consistency
+                    decimals=int(widget_data['decimals']),
                     step_size=float(widget_data['step']),
                     fixed_width=48,
                     max_length=7 if int(widget_data['decimals']) > 1 else 5
@@ -133,50 +137,42 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: LayoutDict
                 else:
                     common_widget_actions.create_control(main_window, widget_name, float(widget_data['default']))
 
-                # When slider value changes
-                def onchange_slider(slider_widget: widget_components.ParameterDecimalSlider, slider_widget_name, widget_data: dict, new_value=False):
-                    # Update the slider text box value too
-                    actual_value = slider_widget.value()  # Get float value from the slider
+                # --- Slider Released Implementation for DecimalSlider ---
+                def on_slider_released(): # Function to handle slider release
+                    new_value = widget.value()
                     if data_type=='parameter':
-                        common_widget_actions.update_parameter(main_window, slider_widget_name, actual_value, enable_refresh_frame=slider_widget.enable_refresh_frame)
+                        common_widget_actions.update_parameter(main_window, widget_name, new_value, enable_refresh_frame=widget.enable_refresh_frame)
                     elif data_type=='control':
-                        common_widget_actions.update_control(main_window, slider_widget_name, actual_value, exec_function=widget_data.get('exec_function'), exec_function_args=widget_data.get('exec_function_args', []))
-                    slider_widget.line_edit.set_value(actual_value)  # Update the line edit with the actual value
+                        common_widget_actions.update_control(main_window, widget_name, new_value, exec_function=widget_data.get('exec_function'), exec_function_args=widget_data.get('exec_function_args', []))
+                    widget.line_edit.set_value(new_value) # Update line edit value
 
-                # Invece di collegare direttamente onchange_slider, fallo dopo il debounce
-                widget.debounce_timer.timeout.connect(partial(onchange_slider, widget, widget_name, widget_data))
+                widget.sliderReleased.connect(on_slider_released) # Connect sliderReleased signal
+                # --- End Slider Released for DecimalSlider ---
 
-                # When line edit value changes
+
+                # --- Line Edit Change Handling (no changes needed, keep it) ---
                 def onchange_line_edit(slider_widget: widget_components.ParameterDecimalSlider, slider_widget_name: str, widget_data: dict, new_value=False):
                     """Handle changes in the line edit and update the slider accordingly."""
                     if not new_value:
                         new_value = 0.0
-
                     try:
-                        # Convert the text box input to float
                         new_value = float(new_value)
                     except ValueError:
-                        # If the conversion fails, reset the line edit to the current slider value
                         new_value = slider_widget.value()
-
-                    # Prevent text box value from exceeding the slider range or going below minimum
                     if new_value > (slider_widget.max_value / slider_widget.scale_factor):
                         new_value = slider_widget.max_value / slider_widget.scale_factor
                     elif new_value < (slider_widget.min_value / slider_widget.scale_factor):
                         new_value = slider_widget.min_value / slider_widget.scale_factor
-
-                    # Update the slider's internal value
                     slider_widget.setValue(new_value)
-                    # Update the line_edit text to reflect the current value
                     slider_widget.line_edit.set_value(new_value)
-
                     if data_type=='parameter':
                         common_widget_actions.update_parameter(main_window, slider_widget_name, new_value, enable_refresh_frame=slider_widget.enable_refresh_frame)
                     elif data_type=='control':
                         common_widget_actions.update_control(main_window, slider_widget_name, new_value, exec_function=widget_data.get('exec_function'), exec_function_args=widget_data.get('exec_function_args', []))
-
                 widget.line_edit.textChanged.connect(partial(onchange_line_edit, widget, widget_name, widget_data))
- 
+                # --- End Line Edit Change Handling ---
+
+
             elif 'Slider' in widget_name:
                 widget = widget_components.ParameterSlider(label=widget_data['label'], widget_name=widget_name, group_layout_data=widgets, label_widget=label, min_value=widget_data['min_value'], max_value=widget_data['max_value'], default_value=widget_data['default'], step_size=widget_data['step'], main_window=main_window)
                 widget.line_edit = widget_components.ParameterLineEdit(min_value=int(widget_data['min_value']), max_value=int(widget_data['max_value']), default_value=widget_data['default'])
@@ -186,52 +182,52 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: LayoutDict
                 horizontal_layout.addWidget(widget)
                 horizontal_layout.addWidget(widget.line_edit)
                 horizontal_layout.addWidget(widget.reset_default_button)
-
                 category_layout.addRow(horizontal_layout)
 
                 if data_type=='parameter':
-                    # Initialize parameter value
                     common_widget_actions.create_default_parameter(main_window, widget_name, int(widget_data['default']))
                 else:
-                    common_widget_actions.create_control(main_window, widget_name, int(widget_data['default']))
+                    common_widget_actions.create_control(main_window, widget_name, widget_data['default'])
 
-                # When slider value is change
-                def onchange_slider(slider_widget: widget_components.ParameterSlider, slider_widget_name, widget_data: dict, new_value=False):
+                # --- Slider Released Implementation for Slider (Integer Slider) ---
+                def on_slider_released(): # Function to handle slider release
+                    new_value = widget.value()
                     if data_type=='parameter':
-                        common_widget_actions.update_parameter(main_window, slider_widget_name, new_value, enable_refresh_frame=slider_widget.enable_refresh_frame)
+                        common_widget_actions.update_parameter(main_window, widget_name, new_value, enable_refresh_frame=widget.enable_refresh_frame)
                     elif data_type=='control':
-                        common_widget_actions.update_control(main_window, slider_widget_name, new_value, exec_function=widget_data.get('exec_function'), exec_function_args=widget_data.get('exec_function_args', []))
+                        common_widget_actions.update_control(main_window, widget_name, new_value, exec_function=widget_data.get('exec_function'), exec_function_args=widget_data.get('exec_function_args', []))
                     # Update the slider text box value too
-                    slider_widget.line_edit.setText(str(new_value))
+                    widget.line_edit.setText(str(new_value))
 
-                # Invece di collegare direttamente onchange_slider, fallo dopo il debounce
-                widget.debounce_timer.timeout.connect(partial(onchange_slider, widget, widget_name, widget_data))
+                widget.sliderReleased.connect(on_slider_released) # Connect sliderReleased signal
+                # --- End Slider Released for Slider ---
 
-                # When slider textbox value is changed
+
+                # --- Line Edit Change Handling for Slider (no changes needed, keep it) ---
                 def onchange_line_edit(slider_widget: widget_components.ParameterSlider, slider_widget_name, widget_data, new_value=False):
                     """Handle changes in the line edit and update the slider accordingly."""
                     if not new_value:
                         new_value = 0
                     try:
-                        # Prova a convertire il valore in intero, se fallisce usa il valore corrente dello slider
                         new_value = int(new_value)
                     except ValueError:
-                        # Se non è possibile convertire, mantieni il valore corrente dello slider
                         new_value = slider_widget.value()
-                    # Prevent the text box value from going above the maximum value of the slider
                     if new_value > slider_widget.max_value:
                         new_value = slider_widget.max_value
                     elif new_value < slider_widget.min_value:
                         new_value = slider_widget.min_value
-
                     slider_widget.line_edit.set_value(new_value)
                     slider_widget.setValue(int(new_value)) #Update the value of slider too
+                    
+                    # Make sure to convert new_value to int here:
                     if data_type=='parameter':
-                        common_widget_actions.update_parameter(main_window, slider_widget_name, new_value, enable_refresh_frame=slider_widget.enable_refresh_frame)
+                        common_widget_actions.update_parameter(main_window, slider_widget_name, int(new_value), enable_refresh_frame=slider_widget.enable_refresh_frame) # Converted to int
                     elif data_type=='control':
-                        common_widget_actions.update_control(main_window, slider_widget_name, new_value, exec_function=widget_data.get('exec_function'), exec_function_args=widget_data.get('exec_function_args', []))
+                        common_widget_actions.update_control(main_window, slider_widget_name, int(new_value), exec_function=widget_data.get('exec_function'), exec_function_args=widget_data.get('exec_function_args', []) ) # Converted to int
 
                 widget.line_edit.textChanged.connect(partial(onchange_line_edit, widget, widget_name, widget_data))
+                # --- End Line Edit Change Handling for Slider ---
+
 
             elif 'Text' in widget_name:
                 widget = widget_components.ParameterText(label=widget_data['label'], widget_name=widget_name, group_layout_data=widgets, label_widget=label, default_value=widget_data['default'], fixed_width=widget_data['width'], main_window=main_window, data_type=data_type, exec_function=widget_data.get('exec_function'), exec_function_args=widget_data.get('exec_function_args', []))
@@ -258,7 +254,7 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: LayoutDict
                         common_widget_actions.update_parameter(main_window, text_widget_name, new_value, enable_refresh_frame=text_widget.enable_refresh_frame)
                     else:
                         common_widget_actions.update_control(main_window, text_widget_name, new_value, exec_function=widget_data.get('exec_function'), exec_function_args=widget_data.get('exec_function_args', [])) # pylint: disable=cell-var-from-loop
-                
+
                 # Connect the 'returnPressed' signal to the on_enter_pressed function
                 widget.returnPressed.connect(partial(on_enter_pressed, widget, widget_name))
 
@@ -275,6 +271,7 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: LayoutDict
         for widget_name, widget_data in widgets.items():
             widget = main_window.parameter_widgets[widget_name]
             common_widget_actions.show_hide_related_widgets(main_window, widget, widget_name)
+
 
 def show_hide_faces_panel(main_window: 'MainWindow', checked):
     if checked:
@@ -388,3 +385,5 @@ def enable_all_parameters_and_control_widget(main_window: 'MainWindow'):
         widget.label_widget.setDisabled(False)
         if widget.line_edit:
             widget.line_edit.setDisabled(False)
+
+import app.ui.widgets.actions.graphics_view_actions as graphics_view_actions

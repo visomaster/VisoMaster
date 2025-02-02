@@ -86,8 +86,18 @@ def find_target_faces(main_window: 'MainWindow'):
             if control['ManualRotationEnableToggle']:
                 img = v2.functional.rotate(img, angle=control['ManualRotationAngleSlider'], interpolation=v2.InterpolationMode.BILINEAR, expand=True)
 
-            _, kpss_5, _ = main_window.models_processor.run_detect(img, control['DetectorModelSelection'], max_num=control['MaxFacesToDetectSlider'], score=control['DetectorScoreSlider']/100.0, input_size=(512, 512), use_landmark_detection=control['LandmarkDetectToggle'], landmark_detect_mode=control['LandmarkDetectModelSelection'], landmark_score=control["LandmarkDetectScoreSlider"]/100.0, from_points=control["DetectFromPointsToggle"], rotation_angles=[0] if not control["AutoRotationToggle"] else [0, 90, 180, 270])
-
+            _, kpss_5, _ = main_window.models_processor.run_detect(
+                img,
+                control['DetectorModelSelection'],
+                max_num=int(control['MaxFacesToDetectSlider']),
+                score=float(control['DetectorScoreSlider'])/100.0,
+                input_size=(512, 512),
+                use_landmark_detection=control['LandmarkDetectToggle'],
+                landmark_detect_mode=control['LandmarkDetectModelSelection'],
+                landmark_score=float(control["LandmarkDetectScoreSlider"])/100.0,
+                from_points=control["DetectFromPointsToggle"],
+                rotation_angles=[0] if not control["AutoRotationToggle"] else [0, 90, 180, 270]
+            )
             ret = []
             for face_kps in kpss_5:
                 face_emb, cropped_img = main_window.models_processor.run_recognize_direct(img, face_kps, control['SimilarityTypeSelection'], control['RecognitionModelSelection'])

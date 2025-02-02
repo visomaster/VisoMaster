@@ -169,7 +169,27 @@ class InputFacesLoaderWorker(qtc.QThread):
 
             img = torch.from_numpy(frame.astype('uint8')).to(self.main_window.models_processor.device)
             img = img.permute(2,0,1)
-            _, kpss_5, _ = self.main_window.models_processor.run_detect(img, control['DetectorModelSelection'], max_num=1, score=control['DetectorScoreSlider']/100.0, input_size=(512, 512), use_landmark_detection=control['LandmarkDetectToggle'], landmark_detect_mode=control['LandmarkDetectModelSelection'], landmark_score=control["LandmarkDetectScoreSlider"]/100.0, from_points=control["DetectFromPointsToggle"], rotation_angles=[0] if not control["AutoRotationToggle"] else [0, 90, 180, 270])
+            
+            try: # Add try-except for robustness in case of unexpected non-numeric values
+                detector_score = float(control['DetectorScoreSlider']) / 100.0
+            except (ValueError, TypeError):
+                print(f"Warning: Invalid value for DetectorScoreSlider: {control.get('DetectorScoreSlider')}. Using default score of 0.5.")
+                detector_score = 0.5 # Default value in case of error
+
+            try: # Add try-except for robustness
+                landmark_score = float(control["LandmarkDetectScoreSlider"]) / 100.0
+            except (ValueError, TypeError):
+                print(f"Warning: Invalid value for LandmarkDetectScoreSlider: {control.get('LandmarkDetectScoreSlider')}. Using default landmark score of 0.5.")
+                landmark_score = 0.5 # Default value in case of error
+
+            _, kpss_5, _ = self.main_window.models_processor.run_detect(img, control['DetectorModelSelection'], max_num=1,
+                                                                       score=detector_score, # Use the converted float value
+                                                                       input_size=(512, 512),
+                                                                       use_landmark_detection=control['LandmarkDetectToggle'],
+                                                                       landmark_detect_mode=control['LandmarkDetectModelSelection'],
+                                                                       landmark_score=landmark_score, # Use the converted float value
+                                                                       from_points=control["DetectFromPointsToggle"],
+                                                                       rotation_angles=[0] if not control["AutoRotationToggle"] else [0, 90, 180, 270])
 
             # If atleast one face is found
             # found_face = []

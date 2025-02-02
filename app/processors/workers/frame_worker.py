@@ -143,8 +143,19 @@ class FrameWorker(threading.Thread):
             # force to use from_points in landmark detector when edit face is enabled.
             from_points = True
 
-        bboxes, kpss_5, kpss = self.models_processor.run_detect(img, control['DetectorModelSelection'], max_num=control['MaxFacesToDetectSlider'], score=control['DetectorScoreSlider']/100.0, input_size=(512, 512), use_landmark_detection=use_landmark_detection, landmark_detect_mode=landmark_detect_mode, landmark_score=control["LandmarkDetectScoreSlider"]/100.0, from_points=from_points, rotation_angles=[0] if not control["AutoRotationToggle"] else [0, 90, 180, 270])
-        
+        try: # Add try-except for robustness in case of unexpected non-numeric values
+            detector_score = float(control['DetectorScoreSlider']) / 100.0
+        except (ValueError, TypeError):
+            print(f"Warning: Invalid value for DetectorScoreSlider: {control.get('DetectorScoreSlider')}. Using default score of 0.5.")
+            detector_score = 0.5 # Default value in case of error
+
+        try: # Add try-except for robustness
+            landmark_score = float(control["LandmarkDetectScoreSlider"]) / 100.0
+        except (ValueError, TypeError):
+            print(f"Warning: Invalid value for LandmarkDetectScoreSlider: {control.get('LandmarkDetectScoreSlider')}. Using default landmark score of 0.5.")
+            landmark_score = 0.5 # Default value in case of error
+
+        bboxes, kpss_5, kpss = self.models_processor.run_detect(img, control['DetectorModelSelection'], max_num=control['MaxFacesToDetectSlider'], score=detector_score, input_size=(512, 512), use_landmark_detection=use_landmark_detection, landmark_detect_mode=landmark_detect_mode, landmark_score=landmark_score, from_points=from_points, rotation_angles=[0] if not control["AutoRotationToggle"] else [0, 90, 180, 270])        
         det_faces_data = []
         if len(kpss_5)>0:
             for i in range(kpss_5.shape[0]):

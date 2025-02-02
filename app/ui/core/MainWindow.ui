@@ -66,6 +66,13 @@
           </widget>
          </item>
          <item>
+          <widget class="QCheckBox" name="viewFaceCompareCheckBox">  <!-- ADD THIS LINE: View Face Compare Checkbox -->
+           <property name="text">
+            <string>View Face Compare</string>
+           </property>
+          </widget>
+         </item>
+         <item>
           <spacer name="horizontalSpacer_8">
            <property name="orientation">
             <enum>Qt::Orientation::Horizontal</enum>

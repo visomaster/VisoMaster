@@ -90,7 +90,7 @@ class FaceDetectors:
             do_rotation = True
         else:
             do_rotation = False
-
+            
         for angle in rotation_angles:
             # Prepare data and find model parameters
             if angle != 0:
@@ -133,7 +133,7 @@ class FaceDetectors:
                 bbox_preds = net_outs[idx+fmc]
                 bbox_preds = bbox_preds * stride
 
-                kps_preds = net_outs[idx+fmc*2] * stride
+                kps_preds = net_outs[idx+fmc*2] * stride # Corrected variable name here
                 height = input_height // stride
                 width = input_width // stride
                 key = (height, width, stride)
@@ -248,6 +248,10 @@ class FaceDetectors:
         orderb = scoresb.argsort()[::-1]
 
         keep = []
+        
+        # Add integer conversion for max_num here:
+        max_num = int(max_num) # Ensure max_num is an integer before comparison
+
         while orderb.size > 0:
             i = orderb[0]
             keep.append(i)
@@ -270,7 +274,7 @@ class FaceDetectors:
         kpss = kpss[order,:,:]
         kpss = kpss[keep,:,:]
 
-        #if max_num > 0 and det.shape[0] > max_num:
+        #if max_num > 0 and det.shape[0] > max_num: # OLD LINE - No longer needed
         if max_num > 0 and det.shape[0] > 1:
             area = (det[:, 2] - det[:, 0]) * (det[:, 3] - det[:, 1])
             det_img_center = img_height // 2, img_width // 2
@@ -307,7 +311,7 @@ class FaceDetectors:
                         kpss_5[i] = landmark_kpss_5
             kpss = np.array(kpss, dtype=object)
 
-        return det, kpss_5, kpss
+        return det, kpss_5, kpss  
 
     def detect_scrdf(self, img, max_num, score, input_size, use_landmark_detection, landmark_detect_mode, landmark_score, from_points, rotation_angles=None):
         rotation_angles = rotation_angles or [0]

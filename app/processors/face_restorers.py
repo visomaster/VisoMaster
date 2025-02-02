@@ -29,7 +29,7 @@ class FaceRestorers:
 
             elif restorer_det_type == 'Reference':
                 try:
-                    dst, _, _ = self.models_processor.run_detect_landmark(swapped_face_upscaled, bbox=np.array([0, 0, 512, 512]), det_kpss=[], detect_mode='5', score=detect_score/100.0, from_points=False)
+                    dst, _, _ = self.models_processor.run_detect_landmark(swapped_face_upscaled, bbox=np.array([0, 0, 512, 512]), det_kpss=[], detect_mode='5', score=float(detect_score)/100.0, from_points=False)
                 except Exception as e: # pylint: disable=broad-except
                     print(f"exception: {e}")
                     return swapped_face_upscaled
