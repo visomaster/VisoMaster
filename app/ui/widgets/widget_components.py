@@ -306,6 +306,10 @@ class TargetFaceCardButton(CardButton):
 
     def remove_target_face_from_list(self):
         main_window = self.main_window
+
+        if main_window.video_processor.processing:
+            main_window.video_processor.stop_processing()
+            
         for i in range(main_window.targetFacesList.count()-1, -1, -1):
             list_item = main_window.targetFacesList.item(i)
             if list_item:
