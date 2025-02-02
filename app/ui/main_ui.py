@@ -197,7 +197,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.load_last_workspace()
 
     def resizeEvent(self, event: QtGui.QResizeEvent):
-        print("Called resizeEvent()")
+        # print("Called resizeEvent()")
         super().resizeEvent(event)
         # Call the method to fit the image to the view whenever the window resizes
         if self.scene.items():
