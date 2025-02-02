@@ -29,7 +29,7 @@ class VideoProcessor(QObject):
     frame_processed_signal = Signal(int, QPixmap, numpy.ndarray)
     webcam_frame_processed_signal = Signal(QPixmap, numpy.ndarray)
     single_frame_processed_signal = Signal(int, QPixmap, numpy.ndarray)
-    def __init__(self, main_window: 'MainWindow', num_threads=5):
+    def __init__(self, main_window: 'MainWindow', num_threads=2):
         super().__init__()
         self.main_window = main_window
         self.frame_queue = queue.Queue(maxsize=num_threads)
