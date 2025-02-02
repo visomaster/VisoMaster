@@ -20,9 +20,6 @@ class FaceRestorers:
         t1024 = v2.Resize((1024, 1024), antialias=False)
         t2048 = v2.Resize((2048, 2048), antialias=False)
 
-        if not isinstance(swapped_face_upscaled, np.ndarray) or swapped_face_upscaled.shape[0] == 0:
-            return swapped_face_upscaled  # Return the unprocessed face if input is invalid
-
         # If using a separate detection mode
         if restorer_det_type == 'Blend' or restorer_det_type == 'Reference':
             if restorer_det_type == 'Blend':
@@ -37,9 +34,15 @@ class FaceRestorers:
                     print(f"exception: {e}")
                     return swapped_face_upscaled
 
+            # Return non-enhanced face if keypoints are empty
+            if not isinstance(dst, np.ndarray) or len(dst)==0:
+                return swapped_face_upscaled
+            
             tform = trans.SimilarityTransform()
-            tform.estimate(dst, self.models_processor.FFHQ_kps)
-
+            try:
+                tform.estimate(dst, self.models_processor.FFHQ_kps)
+            except:
+                return swapped_face_upscaled
             # Transform, scale, and normalize
             temp = v2.functional.affine(swapped_face_upscaled, tform.rotation*57.2958, (tform.translation[0], tform.translation[1]) , tform.scale, 0, center = (0,0) )
             temp = v2.functional.crop(temp, 0,0, 512, 512)

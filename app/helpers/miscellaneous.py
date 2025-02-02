@@ -54,6 +54,8 @@ def is_video_file(file_name: str):
     return file_name.lower().endswith(video_extensions)
 
 def is_file_exists(file_path: str) -> bool:
+    if not file_path:
+        return False
     return Path(file_path).is_file()
 
 def get_file_type(file_name):

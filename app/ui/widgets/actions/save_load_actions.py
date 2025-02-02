@@ -13,6 +13,7 @@ from app.ui.widgets.actions import list_view_actions
 from app.ui.widgets.actions import video_control_actions
 from app.ui.widgets.actions import layout_actions
 from app.ui.widgets import ui_workers
+import app.helpers.miscellaneous as misc_helpers
 
 if TYPE_CHECKING:
     from app.ui.main_ui import MainWindow
@@ -53,7 +54,7 @@ def save_embeddings_to_file(main_window: 'MainWindow', save_as=False):
 
     # Definisce il nome del file di salvataggio
     embedding_filename = main_window.loaded_embedding_filename
-    if not embedding_filename or save_as:
+    if not embedding_filename or not misc_helpers.is_file_exists(embedding_filename) or save_as:
         embedding_filename, _ = QtWidgets.QFileDialog.getSaveFileName(main_window, filter='JSON (*.json)')
 
     # Crea una lista di dizionari, ciascuno con il nome dell'embedding e il relativo embedding_store
