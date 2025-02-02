@@ -20,6 +20,9 @@ class FaceRestorers:
         t1024 = v2.Resize((1024, 1024), antialias=False)
         t2048 = v2.Resize((2048, 2048), antialias=False)
 
+        if not isinstance(swapped_face_upscaled, np.ndarray) or swapped_face_upscaled.shape[0] == 0:
+            return swapped_face_upscaled  # Return the unprocessed face if input is invalid
+
         # If using a separate detection mode
         if restorer_det_type == 'Blend' or restorer_det_type == 'Reference':
             if restorer_det_type == 'Blend':
