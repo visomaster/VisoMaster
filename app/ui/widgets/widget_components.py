@@ -239,10 +239,12 @@ class TargetFaceCardButton(CardButton):
             main_window.merged_embeddings[embedding_id].setChecked(True)
         
         main_window.selected_target_face_id = self.face_id
+
         # print('main_window.selected_target_face_id', main_window.selected_target_face_id)     
         common_widget_actions.set_widgets_values_using_face_id_parameters(main_window=main_window, face_id=self.face_id)      
-
         # common_widget_actions.refresh_frame(main_window)
+
+        main_window.current_widget_parameters = main_window.parameters[self.face_id]
 
     def calculate_assigned_input_embedding(self):
         control = self.main_window.control.copy()
