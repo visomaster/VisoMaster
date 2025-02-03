@@ -339,6 +339,12 @@ class ModelsProcessor(QtCore.QObject):
     
     def run_deoldify_video(self, image, output):
         return self.frame_enhancers.run_deoldify_video(image, output)
+    
+    def run_ddcolor_artistic(self, image, output):
+        return self.frame_enhancers.run_ddcolor_artistic(image, output)
+
+    def run_ddcolor(self, tensor_gray_rgb, output_ab):
+        return self.frame_enhancers.run_ddcolor(tensor_gray_rgb, output_ab)
 
     def run_occluder(self, image, output):
         self.face_masks.run_occluder(image, output)
