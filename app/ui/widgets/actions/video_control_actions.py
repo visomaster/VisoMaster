@@ -302,6 +302,10 @@ def record_video(main_window: 'MainWindow', checked: bool):
             common_widget_actions.create_and_show_messagebox(main_window, 'No Output Folder Selected','Please select an Output folder to save the Videos before recording!', main_window)
             main_window.buttonMediaRecord.setChecked(False)
             return
+        if not misc_helpers.is_ffmpeg_in_path():
+            common_widget_actions.create_and_show_messagebox(main_window, 'FFMPEG Not Found','FFMPEG was not found in your system. Check your installation!', main_window)
+            main_window.buttonMediaRecord.setChecked(False)
+            return
         video_processor.recording = True
         main_window.buttonMediaPlay.setChecked(True)
         set_record_button_icon_to_stop(main_window)

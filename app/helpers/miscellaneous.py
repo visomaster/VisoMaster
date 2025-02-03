@@ -1,4 +1,5 @@
 import os
+import shutil
 import cv2
 import time
 import numpy as np
@@ -124,3 +125,19 @@ def get_output_file_path(original_media_path, output_folder, media_type='video')
         output_filename = f'{temp_path.stem}_{date_and_time}.mp4'
     output_file_path = os.path.join(output_folder, output_filename)
     return output_file_path
+
+def is_ffmpeg_in_path():
+    if not cmd_exist('ffmpeg'):
+        print("FFMPEG Not found in your system!")
+        return False
+    return True
+
+def cmd_exist(cmd):
+    try:
+        return shutil.which(cmd) is not None
+    except ImportError:
+        return any(
+            os.access(os.path.join(path, cmd), os.X_OK)
+            for path in os.environ["PATH"].split(os.pathsep)
+        )
+
