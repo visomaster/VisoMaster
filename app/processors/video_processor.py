@@ -394,7 +394,7 @@ class VideoProcessor(QObject):
             "-s", f"{frame_width}x{frame_height}",  # Frame resolution
             "-r", str(self.fps),          # Frame rate
             "-i", "pipe:",                # Input from stdin
-            "-vf", "format=yuvj420p",     # Output video format
+            "-vf", f"pad=ceil(iw/2)*2:ceil(ih/2)*2,format=yuvj420p",  # Padding and format conversion            
             "-c:v", "libx264",            # H.264 codec
             "-crf", "18",                 # Quality setting
             self.temp_file                # Output file
