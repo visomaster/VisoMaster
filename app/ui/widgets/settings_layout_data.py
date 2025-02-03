@@ -59,7 +59,7 @@ SETTINGS_LAYOUT_DATA: LayoutDictTypes = {
     'Auto Swap':{
         'AutoSwapToggle': {
             'level': 1,
-            'label': 'Auto Swap Images',
+            'label': 'Auto Swap',
             'default': False,
             'help': 'Automatically Swap all faces using selected Source Faces/Embeddings when loading an video/image file'
         },
