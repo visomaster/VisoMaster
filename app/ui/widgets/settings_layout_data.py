@@ -56,6 +56,14 @@ SETTINGS_LAYOUT_DATA: LayoutDictTypes = {
             'help': 'Set the maximum FPS of the video when playing'
         },
     },
+    'Auto Swap':{
+        'AutoSwapToggle': {
+            'level': 1,
+            'label': 'Auto Swap Images',
+            'default': False,
+            'help': 'Automatically Swap all faces using selected Source Faces/Embeddings when loading an video/image file'
+        },
+    },
     'Detectors': {
         'DetectorModelSelection': {
             'level': 1,

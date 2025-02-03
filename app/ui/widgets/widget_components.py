@@ -74,6 +74,9 @@ class TargetMediaCardButton(CardButton):
         if main_window.selected_target_face_id:
             main_window.current_widget_parameters = main_window.parameters[main_window.selected_target_face_id].copy()
 
+        if main_window.control['AutoSwapToggle']:
+            prev_selected_input_faces = [face for _,face in main_window.input_faces.items() if face.isChecked()]
+            prev_selected_embeddings = [embed for _,embed in main_window.merged_embeddings.items() if embed.isChecked()]
         # Reset the frame counter
         main_window.video_processor.current_frame_number = 0
         main_window.video_processor.media_path = self.media_path
@@ -159,6 +162,20 @@ class TargetMediaCardButton(CardButton):
         
         main_window.loading_new_media = True
         common_widget_actions.refresh_frame(main_window)
+
+        if main_window.control['AutoSwapToggle']:
+            card_actions.find_target_faces(main_window)
+            for _, target_face in main_window.target_faces.items():
+                for input_face in prev_selected_input_faces:
+                    target_face.assigned_input_faces[input_face.face_id] = input_face.embedding_store
+                for embedding in prev_selected_embeddings:
+                    target_face.assigned_merged_embeddings[embedding.embedding_id] = embedding.embedding_store
+                target_face.calculate_assigned_input_embedding()
+            if main_window.target_faces:
+                list(main_window.target_faces.values())[0].click()
+            common_widget_actions.refresh_frame(main_window)
+
+
         # list_view_actions.find_target_faces(main_window)
 
     def remove_target_media_from_list(self):
