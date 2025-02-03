@@ -46,6 +46,13 @@ def create_control(main_window: 'MainWindow', control_name, control_value):
 
 def update_control(main_window: 'MainWindow', control_name, control_value, exec_function=None, exec_function_args:list=None):
     exec_function_args = exec_function_args or []
+    current_position = main_window.videoSeekSlider.value()
+
+    # Update marker control too
+    # Do not update values of control with exec_function (like max threads count) as it would slow down the app heavily
+    if main_window.markers.get(current_position) and not exec_function:
+        main_window.markers[current_position]['control'][control_name] = control_value
+
     if exec_function:
         # Only execute the function if the value is different from current
         if main_window.control[control_name] != control_value:
@@ -71,7 +78,7 @@ def update_parameter(main_window: 'MainWindow', parameter_name, parameter_value,
 
     # Update marker parameters too
     if main_window.markers.get(current_position) and face_id:
-        main_window.markers[current_position][face_id][parameter_name] = parameter_value
+        main_window.markers[current_position]['parameters'][face_id][parameter_name] = parameter_value
 
     if main_window.target_faces and face_id:
         old_parameter_value = main_window.parameters[face_id][parameter_name]
@@ -278,7 +285,7 @@ def set_widgets_values_using_face_id_parameters(main_window: 'MainWindow', face_
             parameter_widgets[parameter_name].set_value(parameter_value)
             parameter_widgets[parameter_name].enable_refresh_frame = True
 
-def set_control_widgets_values(main_window: 'MainWindow'):
+def set_control_widgets_values(main_window: 'MainWindow', enable_exec_func = True):
     """
     Set the values of control widgets based on the `control` data in the `main_window`.
 
@@ -307,14 +314,16 @@ def set_control_widgets_values(main_window: 'MainWindow'):
             # Set the widget value
             widget.set_value(control_value)
 
-            # Execute any associated function, if defined
-            exec_function_data = settings_options[control_name].get('exec_function')
-            if exec_function_data:
-                exec_function = partial(
-                    exec_function_data, main_window
-                )
-                exec_args = settings_options[control_name].get('exec_fuction_args', [])
-                exec_function(control_value, *exec_args)
+
+            if enable_exec_func:
+                # Execute any associated function, if defined
+                exec_function_data = settings_options[control_name].get('exec_function')
+                if exec_function_data:
+                    exec_function = partial(
+                        exec_function_data, main_window
+                    )
+                    exec_args = settings_options[control_name].get('exec_fuction_args', [])
+                    exec_function(control_value, *exec_args)
 
             # Re-enable frame refresh
             widget.enable_refresh_frame = True
