@@ -60,10 +60,12 @@ conda install scikit-image
 pip install -r requirements_cu124.txt
 ```
 
-### **5. Download Models and Dependencies**  
-- Download all the files from this [page](https://github.com/visomaster/visomaster-assets/releases/tag/v0.1.0) and copy all files to the ***model_assets/*** folder.  
-- Download all the files from this [page](https://github.com/visomaster/visomaster-assets/releases/tag/v0.1.0_lp) and copy all files to the ***model_assets/liveportrait_onnx/*** folder.
-- Download all the files from this [page](https://github.com/visomaster/visomaster-assets/releases/tag/v0.1.0_dp) and copy it to the ***dependencies/*** folder.
+### **5. Download Models and Other Dependencies**  
+1. Download all the required models
+```sh
+python download_models.py
+```
+2. Download all the files from this [page](https://github.com/visomaster/visomaster-assets/releases/tag/v0.1.0_dp) and copy it to the ***dependencies/*** folder.
 
   **Note**: You do not need to download the Source code (zip) and Source code (tar.gz) files 
 ### **6. Run the Application**  
@@ -74,5 +76,7 @@ Once everything is set up, start the application by opening the **Start.bat** fi
 ## **Troubleshooting**
 - If you face CUDA-related issues, ensure your GPU drivers are up to date.
 - For missing models, double-check that all models are placed in the correct directories.
+
+## [Join Discord](https://discord.gg/5rx4SQuDbp)
 
 Now you're ready to use **VisoMaster**! 🚀

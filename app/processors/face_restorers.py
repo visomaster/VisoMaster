@@ -34,9 +34,15 @@ class FaceRestorers:
                     print(f"exception: {e}")
                     return swapped_face_upscaled
 
+            # Return non-enhanced face if keypoints are empty
+            if not isinstance(dst, np.ndarray) or len(dst)==0:
+                return swapped_face_upscaled
+            
             tform = trans.SimilarityTransform()
-            tform.estimate(dst, self.models_processor.FFHQ_kps)
-
+            try:
+                tform.estimate(dst, self.models_processor.FFHQ_kps)
+            except:
+                return swapped_face_upscaled
             # Transform, scale, and normalize
             temp = v2.functional.affine(swapped_face_upscaled, tform.rotation*57.2958, (tform.translation[0], tform.translation[1]) , tform.scale, 0, center = (0,0) )
             temp = v2.functional.crop(temp, 0,0, 512, 512)

@@ -1,4 +1,5 @@
 import os
+import shutil
 import cv2
 import time
 import numpy as np
@@ -10,7 +11,7 @@ import threading
 lock = threading.Lock()
 
 image_extensions = ('.jpg', '.jpeg', '.jpe', '.png', '.webp', '.tif', '.tiff', '.jp2', '.exr', '.hdr', '.ras', '.pnm', '.ppm', '.pgm', '.pbm', '.pfm')
-video_extensions = ('.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv', '.webm', '.m4v', '.3gp')
+video_extensions = ('.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv', '.webm', '.m4v', '.3gp', '.gif')
 
 DFM_MODELS_PATH = './model_assets/dfm_models'
 
@@ -54,6 +55,8 @@ def is_video_file(file_name: str):
     return file_name.lower().endswith(video_extensions)
 
 def is_file_exists(file_path: str) -> bool:
+    if not file_path:
+        return False
     return Path(file_path).is_file()
 
 def get_file_type(file_name):
@@ -122,3 +125,19 @@ def get_output_file_path(original_media_path, output_folder, media_type='video')
         output_filename = f'{temp_path.stem}_{date_and_time}.mp4'
     output_file_path = os.path.join(output_folder, output_filename)
     return output_file_path
+
+def is_ffmpeg_in_path():
+    if not cmd_exist('ffmpeg'):
+        print("FFMPEG Not found in your system!")
+        return False
+    return True
+
+def cmd_exist(cmd):
+    try:
+        return shutil.which(cmd) is not None
+    except ImportError:
+        return any(
+            os.access(os.path.join(path, cmd), os.X_OK)
+            for path in os.environ["PATH"].split(os.pathsep)
+        )
+

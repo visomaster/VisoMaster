@@ -66,7 +66,7 @@ class ModelsProcessor(QtCore.QObject):
             ('TensorrtExecutionProvider', self.trt_ep_options),
             ('CPUExecutionProvider')
         ]       
-        self.nThreads = 5
+        self.nThreads = 2
         self.syncvec = torch.empty((1, 1), dtype=torch.float32, device=self.device)
 
         # Initialize models and models_path

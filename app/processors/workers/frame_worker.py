@@ -40,7 +40,7 @@ class FrameWorker(threading.Thread):
         try:
             # Update parameters from markers (if exists) without concurrent access from other threads
             with self.main_window.models_processor.model_lock:
-                video_control_actions.update_parameters_from_marker(self.main_window, self.frame_number)
+                video_control_actions.update_parameters_and_control_from_marker(self.main_window, self.frame_number)
             self.parameters = self.main_window.parameters.copy()
 
             # Process the frame with model inference

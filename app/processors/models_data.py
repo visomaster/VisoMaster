@@ -65,7 +65,7 @@ models_list = [
         "model_name": "InStyleSwapper256 Version A",
         "local_path": f"{models_dir}/InStyleSwapper256_Version_A.fp16.onnx",
         "url": f"{assets_repo}/v0.1.0/InStyleSwapper256_Version_A.fp16.onnx",
-        "hash": '',
+        "hash": '0e0ef024b935abca69fd367a385200ed46b83a3cc618287ffe89440e2cc646da',
 
     },
     {
@@ -73,14 +73,14 @@ models_list = [
         "model_name": "InStyleSwapper256 Version B",
         "local_path": f"{models_dir}/InStyleSwapper256_Version_B.fp16.onnx",
         "url": f"{assets_repo}/v0.1.0/InStyleSwapper256_Version_B.fp16.onnx",
-        "hash": '',
+        "hash": '0870b6c75eaea239bdd72b6c6d0910cb285310736e356c17a2cd67a961738116',
     },
     {
         
         "model_name": "InStyleSwapper256 Version C",
         "local_path": f"{models_dir}/InStyleSwapper256_Version_C.fp16.onnx",
         "url": f"{assets_repo}/v0.1.0/InStyleSwapper256_Version_C.fp16.onnx",
-        "hash": '',
+        "hash": '6eaefc04cfb1461222ab72a814ad5b5673ab1af4267f7eb9054e308797567cde',
     },
     {
         "model_name": "SimSwap512",
@@ -400,49 +400,49 @@ models_list = [
         "model_name": "LivePortraitMotionExtractor",
         "local_path": f"{models_dir}/liveportrait_onnx/motion_extractor.onnx",
         "hash": "99d4b3c9dd3fd301910de9415a29560e38c0afaa702da51398281376cc36fdd3",
-        "url": f"{assets_repo}/v0.1.0/motion_extractor.onnx"
+        "url": f"{assets_repo}/v0.1.0_lp/motion_extractor.onnx"
 
     },
     {
         "model_name": "LivePortraitAppearanceFeatureExtractor",
         "local_path": f"{models_dir}/liveportrait_onnx/appearance_feature_extractor.onnx",
         "hash": "dbbbb44e4bba12302d7137bdee6a0f249b45fb6dd879509fd5baa27d70c40e32",
-        "url": f"{assets_repo}/v0.1.0/appearance_feature_extractor.onnx"
+        "url": f"{assets_repo}/v0.1.0_lp/appearance_feature_extractor.onnx"
 
     },
     {
         "model_name": "LivePortraitStitchingEye",
         "local_path": f"{models_dir}/liveportrait_onnx/stitching_eye.onnx",
         "hash": "251004fe4a994c57c8cd9f2c50f3d89feb289fb42e6bc3af74470a3a9fa7d83b",
-        "url": f"{assets_repo}/v0.1.0/stitching_eye.onnx"
+        "url": f"{assets_repo}/v0.1.0_lp/stitching_eye.onnx"
 
     },
     {
         "model_name": "LivePortraitStitchingLip",
         "local_path": f"{models_dir}/liveportrait_onnx/stitching_lip.onnx",
         "hash": "1ca793eac4b0dc5464f1716cdaa62e595c2c2272c9971a444e39c164578dc34b",
-        "url": f"{assets_repo}/v0.1.0/stitching_lip.onnx"
+        "url": f"{assets_repo}/v0.1.0_lp/stitching_lip.onnx"
 
     },
     {
         "model_name": "LivePortraitStitching",
         "local_path": f"{models_dir}/liveportrait_onnx/stitching.onnx",
         "hash": "43598e9747a19f4c55d8e1604fb7d7fa70ab22377d129cb7d1fe38c9a737cc79",
-        "url": f"{assets_repo}/v0.1.0/stitching.onnx"
+        "url": f"{assets_repo}/v0.1.0_lp/stitching.onnx"
 
     },
     {
         "model_name": "LivePortraitWarpingSpade",
         "local_path": f"{models_dir}/liveportrait_onnx/warping_spade.onnx",
         "hash": "d6ee9af4352b47e88e0521eba6b774c48204afddc8d91c671a5f7b8a0dfb4971",
-        "url": f"{assets_repo}/v0.1.0/warping_spade.onnx"
+        "url": f"{assets_repo}/v0.1.0_lp/warping_spade.onnx"
 
     },
     {
         "model_name": "LivePortraitWarpingSpadeFix",
         "local_path": f"{models_dir}/liveportrait_onnx/warping_spade-fix.onnx",
         "hash": "a6164debbf1e851c3dcefa622111c42a78afd9bb8f1540e7d01172ddf642c3b5",
-        "url": f"{assets_repo}/v0.1.0/warping_spade-fix.onnx"
+        "url": f"{assets_repo}/v0.1.0_lp/warping_spade-fix.onnx"
 
     }
 ]

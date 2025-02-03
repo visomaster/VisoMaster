@@ -16,6 +16,8 @@ if TYPE_CHECKING:
     from app.ui.main_ui import MainWindow
 
 def clear_target_faces(main_window: 'MainWindow', refresh_frame=True):
+    if main_window.video_processor.processing:
+        main_window.video_processor.stop_processing()
     main_window.targetFacesList.clear()
     for _, target_face in main_window.target_faces.items():
         target_face.deleteLater()
@@ -137,5 +139,9 @@ def find_target_faces(main_window: 'MainWindow'):
             # Select the first target face if no target face is already selected
         if main_window.target_faces and not main_window.selected_target_face_id:
             list(main_window.target_faces.values())[0].click()
+
+    if main_window.video_processor.processing:
+        main_window.video_processor.stop_processing()
+    common_widget_actions.refresh_frame(main_window)
 
     common_widget_actions.update_gpu_memory_progressbar(main_window)

@@ -12,7 +12,7 @@ def get_file_hash(file_path: str) -> str:
                 break
             hash_sha256.update(data)  
 
-    print("SHA256: {0}".format(hash_sha256.hexdigest()))
+    # print("SHA256: {0}".format(hash_sha256.hexdigest()))
     return hash_sha256.hexdigest()
 
 def write_hash_to_file(hash: str, hash_file_path: str):

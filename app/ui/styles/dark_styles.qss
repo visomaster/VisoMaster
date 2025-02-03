@@ -11,6 +11,12 @@ QPushButton {
     font-weight: bold;
 }
 
+QToolTip {
+    color: #ffffff;
+    background-color: #2f3d4b;
+    padding: 2px;
+}
+
 /* Base button style */
 TargetMediaCardButton, TargetFaceCardButton, InputFaceCardButton {
     background-color: #141516;  /* Dark blue background */

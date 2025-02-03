@@ -71,6 +71,9 @@ class TargetMediaCardButton(CardButton):
         # Stop the current video processing
         main_window.video_processor.stop_processing()
 
+        if main_window.selected_target_face_id:
+            main_window.current_widget_parameters = main_window.parameters[main_window.selected_target_face_id].copy()
+
         # Reset the frame counter
         main_window.video_processor.current_frame_number = 0
         main_window.video_processor.media_path = self.media_path
@@ -236,10 +239,12 @@ class TargetFaceCardButton(CardButton):
             main_window.merged_embeddings[embedding_id].setChecked(True)
         
         main_window.selected_target_face_id = self.face_id
+
         # print('main_window.selected_target_face_id', main_window.selected_target_face_id)     
         common_widget_actions.set_widgets_values_using_face_id_parameters(main_window=main_window, face_id=self.face_id)      
-
         # common_widget_actions.refresh_frame(main_window)
+
+        main_window.current_widget_parameters = main_window.parameters[self.face_id]
 
     def calculate_assigned_input_embedding(self):
         control = self.main_window.control.copy()
@@ -303,6 +308,10 @@ class TargetFaceCardButton(CardButton):
 
     def remove_target_face_from_list(self):
         main_window = self.main_window
+
+        if main_window.video_processor.processing:
+            main_window.video_processor.stop_processing()
+            
         for i in range(main_window.targetFacesList.count()-1, -1, -1):
             list_item = main_window.targetFacesList.item(i)
             if list_item:

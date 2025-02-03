@@ -25,6 +25,7 @@ from app.ui.widgets.swapper_layout_data import SWAPPER_LAYOUT_DATA
 from app.ui.widgets.settings_layout_data import SETTINGS_LAYOUT_DATA
 from app.ui.widgets.face_editor_layout_data import FACE_EDITOR_LAYOUT_DATA
 from app.helpers.miscellaneous import DFM_MODELS_DATA
+from app.helpers.typing_helper import ParametersTypes, ControlTypes
 
 ParametersWidgetTypes = Dict[str, widget_components.ToggleButton|widget_components.SelectionBox|widget_components.ParameterDecimalSlider|widget_components.ParameterSlider|widget_components.ParameterText]
 
@@ -64,10 +65,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.default_parameters: Dict[str, bool|int|float|str] = {}
         self.copied_parameters: Dict[str, bool|int|float|str] = {}
+        self.current_widget_parameters: Dict[str, bool|int|float|str] = {}
 
-        self.markers: Dict[int, Dict[str, Dict[str, bool|int|float|str]]] = {} #Video Markers (Contains parameters for each face)
+        self.markers: Dict[int, Dict[ParametersTypes, ControlTypes]] = {} #Video Markers (Contains parameters for each face)
         self.parameters_list = {}
-        self.control = {}
+        self.control: ControlTypes = {}
         self.parameter_widgets: ParametersWidgetTypes = {}
         self.loaded_embedding_filename: str = ''
 
@@ -216,7 +218,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.load_last_workspace()
 
     def resizeEvent(self, event: QtGui.QResizeEvent):
-        print("Called resizeEvent()")
+        # print("Called resizeEvent()")
         super().resizeEvent(event)
         # Call the method to fit the image to the view whenever the window resizes
         if self.scene.items():
