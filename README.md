@@ -70,7 +70,7 @@ python download_models.py
   **Note**: You do not need to download the Source code (zip) and Source code (tar.gz) files 
 ### **6. Run the Application**  
 Once everything is set up, start the application by opening the **Start.bat** file.
-
+On Linux just run `python main.py`.
 ---
 
 ## **Troubleshooting**
