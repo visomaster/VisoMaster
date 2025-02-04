@@ -1,4 +1,5 @@
 import pickle
+from sys import platform
 from typing import TYPE_CHECKING
 
 import torch
@@ -387,7 +388,11 @@ class FaceEditors:
             if self.models_processor.provider_name == "TensorRT-Engine":
                 if face_editor_type == 'Human-Face':
                     if not self.models_processor.models_trt['LivePortraitWarpingSpadeFix']:
-                        self.models_processor.models_trt['LivePortraitWarpingSpadeFix'] = self.models_processor.load_model_trt('LivePortraitWarpingSpadeFix', custom_plugin_path=f'{models_dir}/grid_sample_3d_plugin.dll', precision="fp16")
+                        path = f'{models_dir}/grid_sample_3d_plugin.dll'
+                        if platform.system().lower() == 'linux':
+                            path = f'{models_dir}/libgrid_sample_3d_plugin.so'
+                        self.models_processor.models_trt['LivePortraitWarpingSpadeFix'] = self.models_processor.load_model_trt(
+                            'LivePortraitWarpingSpadeFix', custom_plugin_path=path, precision="fp16")
 
                 warping_spade_model = self.models_processor.models_trt['LivePortraitWarpingSpadeFix']
 
