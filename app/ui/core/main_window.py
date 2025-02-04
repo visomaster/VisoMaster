@@ -498,7 +498,7 @@ class Ui_MainWindow(object):
         QMetaObject.connectSlotsByName(MainWindow)
     # setupUi
     def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"VisoMaster v0.1.0", None))
+        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"VisoMaster v0.1.1-dev", None))
         self.actionExit.setText(QCoreApplication.translate("MainWindow", u"Exit", None))
         self.actionLoad_Embeddings.setText(QCoreApplication.translate("MainWindow", u"Load Embeddings", None))
         self.actionSave_Embeddings.setText(QCoreApplication.translate("MainWindow", u"Save Embeddings", None))
