@@ -29,7 +29,7 @@ def change_theme(main_window: 'MainWindow', new_theme):
 
     def get_style_data(filename, theme='dark', custom_colors=None):
         custom_colors = custom_colors or {"primary": "#4facc9"}
-        with open(f"app/UI/Styles/{filename}", "r") as f: # pylint: disable=unspecified-encoding
+        with open(f"app/ui/styles/{filename}", "r") as f: # pylint: disable=unspecified-encoding
             _style = f.read()
             _style = qdarktheme.load_stylesheet(theme=theme, custom_colors=custom_colors)+'\n'+_style
         return _style
