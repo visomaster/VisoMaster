@@ -74,7 +74,7 @@ class TargetMediaCardButton(CardButton):
         if main_window.selected_target_face_id:
             main_window.current_widget_parameters = main_window.parameters[main_window.selected_target_face_id].copy()
 
-        if main_window.control['AutoSwapToggle']:
+        if main_window.control.get('AutoSwapToggle'):
             prev_selected_input_faces = [face for _,face in main_window.input_faces.items() if face.isChecked()]
             prev_selected_embeddings = [embed for _,embed in main_window.merged_embeddings.items() if embed.isChecked()]
         # Reset the frame counter
