@@ -163,7 +163,7 @@ class TargetMediaCardButton(CardButton):
         main_window.loading_new_media = True
         common_widget_actions.refresh_frame(main_window)
 
-        if main_window.control['AutoSwapToggle']:
+        if main_window.control.get('AutoSwapToggle'):
             card_actions.find_target_faces(main_window)
             for _, target_face in main_window.target_faces.items():
                 for input_face in prev_selected_input_faces:
