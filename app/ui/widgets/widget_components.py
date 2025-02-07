@@ -807,6 +807,7 @@ class ParameterSlider(QtWidgets.QSlider, ParametersWidget):
         self.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Minimum)
         # Set a fixed width for the slider
         self.setFixedWidth(fixed_width)
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_Hover)
 
         # Connect sliderMoved with debounce
         self.sliderMoved.connect(self.start_debounce)
@@ -887,21 +888,27 @@ class ParameterSlider(QtWidgets.QSlider, ParametersWidget):
     def mousePressEvent(self, event):
         """Handle the mouse press event to update the slider value immediately."""
         if event.button() == QtCore.Qt.LeftButton:  # Verifica che sia il pulsante sinistro del mouse
-            # Calcola la posizione cliccata lungo la barra dello slider
-            new_position = QtWidgets.QStyle.sliderValueFromPosition(
-                self.minimum(), self.maximum(), event.pos().x(), self.width()
-            )
-            # Applica lo step size, arrotondando il valore allo step più vicino
-            new_value = round(new_position / self.step_size) * self.step_size
-
-            # Aggiorna immediatamente il valore dello slider
-            self.setValue(new_value)
+            self.setValue(self.pos_to_value(event.pos().x()))
 
         # Chiama il metodo della classe base per gestire il resto dell'evento
         super().mousePressEvent(event)
 
+    def mouseMoveEvent(self, event: QtGui.QMouseEvent) -> None:
+        new_value = self.pos_to_value(event.pos().x())
+        QtWidgets.QToolTip.showText(QtGui.QCursor.pos(), f'{new_value}')
+        super().mouseMoveEvent(event)
+
     def set_value(self, value):
         self.setValue(value)
+
+    def pos_to_value(self, x) -> float:
+        # Calcola la posizione cliccata lungo la barra dello slider
+        new_position = QtWidgets.QStyle.sliderValueFromPosition(
+            self.minimum(), self.maximum(), x, self.width()
+        )
+        # Applica lo step size, arrotondando il valore allo step più vicino
+        return round(new_position / self.step_size) * self.step_size
+
     
 class ParameterDecimalSlider(QtWidgets.QSlider, ParametersWidget):
     def __init__(self, min_value=0.0, max_value=1.0, default_value=0.00, decimals=2, step_size=0.01, fixed_width = 130, *args, **kwargs):
@@ -935,6 +942,7 @@ class ParameterDecimalSlider(QtWidgets.QSlider, ParametersWidget):
         self.setOrientation(QtCore.Qt.Orientation.Horizontal)
         self.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Minimum)
         self.setFixedWidth(fixed_width)
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_Hover)
 
         # Connect sliderMoved with debounce
         self.sliderMoved.connect(self.start_debounce)
@@ -1022,28 +1030,34 @@ class ParameterDecimalSlider(QtWidgets.QSlider, ParametersWidget):
     def mousePressEvent(self, event):
         """Handle the mouse press event to update the slider value immediately."""
         if event.button() == QtCore.Qt.LeftButton:  # Verifica che sia il pulsante sinistro del mouse
-            # Calcola la posizione cliccata lungo la barra dello slider
-            new_position = QtWidgets.QStyle.sliderValueFromPosition(
-                self.minimum(), self.maximum(), event.pos().x(), self.width()
-            )
-
-            # Converti la nuova posizione nello spazio decimale
-            new_value = new_position / self.scale_factor
-
-            # Applica lo step size, arrotondando il valore allo step più vicino
-            new_value = round(new_value / self.step_size) * self.step_size
-
-            # Imposta il nuovo valore con la precisione corretta
-            new_value = round(new_value, self.decimals)
-
             # Aggiorna immediatamente il valore dello slider
-            self.setValue(new_value)
+            self.setValue(self.pos_to_value(event.pos().x()))
 
         # Chiama il metodo della classe base per gestire il resto dell'evento
         super().mousePressEvent(event)
 
+    def mouseMoveEvent(self, event: QtGui.QMouseEvent) -> None:
+        new_value = self.pos_to_value(event.pos().x())
+        QtWidgets.QToolTip.showText(QtGui.QCursor.pos(), f'{new_value}')
+        super().mouseMoveEvent(event)
+
     def set_value(self, value):
         self.setValue(value)
+
+    def pos_to_value(self, x) -> float:
+        new_position = QtWidgets.QStyle.sliderValueFromPosition(
+            self.minimum(), self.maximum(), x, self.width()
+        )
+
+        # Converti la nuova posizione nello spazio decimale
+        new_value = new_position / self.scale_factor
+
+        # Applica lo step size, arrotondando il valore allo step più vicino
+        new_value = round(new_value / self.step_size) * self.step_size
+
+        # Imposta il nuovo valore con la precisione corretta
+        return round(new_value, self.decimals)
+
 
 class ParameterLineEdit(QtWidgets.QLineEdit):
     def __init__(self, min_value: int, max_value: int, default_value: str, fixed_width: int = 38, max_length: int = 3, alignment: int = 1, *args, **kwargs):
