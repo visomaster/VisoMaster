@@ -51,7 +51,7 @@ class ModelsProcessor(QtCore.QObject):
         self.device = device
         self.model_lock = threading.RLock()  # Reentrant lock for model access
         self.trt_ep_options = {
-            'trt_max_workspace_size': 3 << 30,  # Dimensione massima dello spazio di lavoro in bytes
+            # 'trt_max_workspace_size': 3 << 30,  # Dimensione massima dello spazio di lavoro in bytes
             'trt_engine_cache_enable': True,
             'trt_engine_cache_path': "tensorrt-engines",
             'trt_timing_cache_enable': True,
