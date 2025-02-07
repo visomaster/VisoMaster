@@ -63,7 +63,6 @@ class ModelsProcessor(QtCore.QObject):
         }
         self.providers = [
             ('CUDAExecutionProvider'),
-            ('TensorrtExecutionProvider', self.trt_ep_options),
             ('CPUExecutionProvider')
         ]       
         self.nThreads = 2
