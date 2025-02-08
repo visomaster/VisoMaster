@@ -1,2 +1,2 @@
 call scripts\setenv.bat
-%PYTHON_EXECUTABLE% main.py
+"%PYTHON_EXECUTABLE%" main.py
