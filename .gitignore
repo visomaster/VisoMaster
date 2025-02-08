@@ -23,10 +23,14 @@ tensorrt-engines/
 source_videos/
 source_images/
 output/
-unins000.dat
-unins000.exe
 test_frames*/
 test_videos*/
+install.dat
+visomaster.ico
+dependencies/CUDA/
+dependencies/Python/
+dependencies/git-portable/
+dependencies/TensorRT/
 *.mp4
 *.jpg
 *.exe
