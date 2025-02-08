@@ -40,7 +40,7 @@ COMMON_LAYOUT_DATA: LayoutDictTypes = {
             'level': 2,
             'label': 'Alignment',
             'options': ['Original', 'Blend', 'Reference'],
-            'default': 'Reference',
+            'default': 'Original',
             'parentToggle': 'FaceRestorerEnableToggle',
             'requiredToggleValue': True,
             'help': 'Select the alignment method for restoring the face to its original or blended position.'

@@ -46,6 +46,13 @@ def create_control(main_window: 'MainWindow', control_name, control_value):
 
 def update_control(main_window: 'MainWindow', control_name, control_value, exec_function=None, exec_function_args:list=None):
     exec_function_args = exec_function_args or []
+    current_position = main_window.videoSeekSlider.value()
+
+    # Update marker control too
+    # Do not update values of control with exec_function (like max threads count) as it would slow down the app heavily
+    if main_window.markers.get(current_position) and not exec_function:
+        main_window.markers[current_position]['control'][control_name] = control_value
+
     if exec_function:
         # Only execute the function if the value is different from current
         if main_window.control[control_name] != control_value:
@@ -60,7 +67,7 @@ def create_default_parameter(main_window: 'MainWindow', parameter_name, paramete
 
 def create_parameter_dict_for_face_id(main_window: 'MainWindow', face_id=0):
     if not main_window.parameters.get(face_id):
-        parameters =  main_window.parameters.get(main_window.selected_target_face_id) or main_window.default_parameters
+        parameters =  main_window.parameters.get(main_window.selected_target_face_id) or main_window.current_widget_parameters or main_window.default_parameters
         main_window.parameters[face_id] = parameters.copy()
     # print("Created parameter_dict_for_face_id", face_id)
 
@@ -71,7 +78,7 @@ def update_parameter(main_window: 'MainWindow', parameter_name, parameter_value,
 
     # Update marker parameters too
     if main_window.markers.get(current_position) and face_id:
-        main_window.markers[current_position][face_id][parameter_name] = parameter_value
+        main_window.markers[current_position]['parameters'][face_id][parameter_name] = parameter_value
 
     if main_window.target_faces and face_id:
         old_parameter_value = main_window.parameters[face_id][parameter_name]
@@ -263,18 +270,22 @@ def extract_frame_as_pixmap(media_file_path, file_type, webcam_index=False, webc
 def set_widgets_values_using_face_id_parameters(main_window: 'MainWindow', face_id=False):
     if (face_id is False) or (not main_window.parameters.get(face_id)):
         # print("Set widgets values using default parameters")
-        parameters = main_window.default_parameters
+        if main_window.current_widget_parameters:
+            parameters = main_window.current_widget_parameters.copy()
+        else:
+            parameters = main_window.default_parameters
     else:
         # print(f"Set widgets values using face_id {face_id}")
         parameters = main_window.parameters[face_id].copy()
     parameter_widgets = main_window.parameter_widgets
     for parameter_name, parameter_value in parameters.items():
         # temporarily disable refreshing the frame to prevent slowing due to unnecessary processing
-        parameter_widgets[parameter_name].enable_refresh_frame = False
-        parameter_widgets[parameter_name].set_value(parameter_value)
-        parameter_widgets[parameter_name].enable_refresh_frame = True
+        if parameter_widgets.get(parameter_name):
+            parameter_widgets[parameter_name].enable_refresh_frame = False
+            parameter_widgets[parameter_name].set_value(parameter_value)
+            parameter_widgets[parameter_name].enable_refresh_frame = True
 
-def set_control_widgets_values(main_window: 'MainWindow'):
+def set_control_widgets_values(main_window: 'MainWindow', enable_exec_func = True):
     """
     Set the values of control widgets based on the `control` data in the `main_window`.
 
@@ -303,14 +314,16 @@ def set_control_widgets_values(main_window: 'MainWindow'):
             # Set the widget value
             widget.set_value(control_value)
 
-            # Execute any associated function, if defined
-            exec_function_data = settings_options[control_name].get('exec_function')
-            if exec_function_data:
-                exec_function = partial(
-                    exec_function_data, main_window
-                )
-                exec_args = settings_options[control_name].get('exec_fuction_args', [])
-                exec_function(control_value, *exec_args)
+
+            if enable_exec_func:
+                # Execute any associated function, if defined
+                exec_function_data = settings_options[control_name].get('exec_function')
+                if exec_function_data:
+                    exec_function = partial(
+                        exec_function_data, main_window
+                    )
+                    exec_args = settings_options[control_name].get('exec_fuction_args', [])
+                    exec_function(control_value, *exec_args)
 
             # Re-enable frame refresh
             widget.enable_refresh_frame = True

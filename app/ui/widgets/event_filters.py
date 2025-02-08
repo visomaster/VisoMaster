@@ -64,6 +64,13 @@ class VideoSeekSliderEventFilter(QtCore.QObject):
                 QtCore.QTimer.singleShot(0, self.main_window.video_processor.process_current_frame)
                 
                 return result  # Return the result of the default handling
+        elif event.type() == QtCore.QEvent.Type.Wheel:
+            # Allow default slider movement
+            result = super().eventFilter(slider, event)
+            
+            # After the slider moves, call the custom processing function
+            QtCore.QTimer.singleShot(0, self.main_window.video_processor.process_current_frame)
+            return result
 
         # For other events, use the default behavior
         return super().eventFilter(slider, event)

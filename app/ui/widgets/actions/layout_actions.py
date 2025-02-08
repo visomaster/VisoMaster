@@ -344,6 +344,9 @@ def disable_all_parameters_and_control_widget(main_window: 'MainWindow'):
         target_media_button.setDisabled(True)
     for _, input_face_button in main_window.input_faces.items():
         input_face_button.setDisabled(True)
+    for _, target_face_button in main_window.target_faces.items():
+        target_face_button.setDisabled(True)
+
 
     # Disable parameters and controls dict widgets
     for _, widget in main_window.parameter_widgets.items():
@@ -380,6 +383,8 @@ def enable_all_parameters_and_control_widget(main_window: 'MainWindow'):
         target_media_button.setDisabled(False)
     for _, input_face_button in main_window.input_faces.items():
         input_face_button.setDisabled(False)
+    for _, target_face_button in main_window.target_faces.items():
+        target_face_button.setDisabled(False)
 
     # Enable parameters and controls dict widgets
     for _, widget in main_window.parameter_widgets.items():

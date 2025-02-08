@@ -1,5 +1,6 @@
 import pickle
 from typing import TYPE_CHECKING
+import platform
 
 import torch
 import numpy as np
@@ -13,6 +14,8 @@ from app.processors.utils import faceutil
 if TYPE_CHECKING:
     from app.processors.models_processor import ModelsProcessor
     
+SYSTEM_PLATFORM = platform.system()
+
 class FaceEditors:
     def __init__(self, models_processor: 'ModelsProcessor'):
         self.models_processor = models_processor
@@ -387,7 +390,14 @@ class FaceEditors:
             if self.models_processor.provider_name == "TensorRT-Engine":
                 if face_editor_type == 'Human-Face':
                     if not self.models_processor.models_trt['LivePortraitWarpingSpadeFix']:
-                        self.models_processor.models_trt['LivePortraitWarpingSpadeFix'] = self.models_processor.load_model_trt('LivePortraitWarpingSpadeFix', custom_plugin_path=f'{models_dir}/grid_sample_3d_plugin.dll', precision="fp16")
+                        if SYSTEM_PLATFORM == 'Windows':
+                            plugin_path = f'{models_dir}/grid_sample_3d_plugin.dll'
+                        elif SYSTEM_PLATFORM == 'Linux':
+                            plugin_path = f'{models_dir}/libgrid_sample_3d_plugin.so'
+                        else:
+                            raise ValueError("TensorRT-Engine is only supported on Windows and Linux systems!")
+
+                        self.models_processor.models_trt['LivePortraitWarpingSpadeFix'] = self.models_processor.load_model_trt('LivePortraitWarpingSpadeFix', custom_plugin_path=plugin_path, precision="fp16")
 
                 warping_spade_model = self.models_processor.models_trt['LivePortraitWarpingSpadeFix']
 

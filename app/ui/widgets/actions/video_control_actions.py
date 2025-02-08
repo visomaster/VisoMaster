@@ -109,7 +109,7 @@ def add_video_slider_marker(main_window: 'MainWindow'):
     elif main_window.markers.get(current_position):
         common_widget_actions.create_and_show_messagebox(main_window, 'Marker Already Exists!', 'A Marker already exists for this position!', main_window.videoSeekSlider)
     else:
-        add_marker(main_window, copy.deepcopy(main_window.parameters), current_position)
+        add_marker(main_window, copy.deepcopy(main_window.parameters), main_window.control.copy(), current_position)
 
 def remove_video_slider_marker(main_window: 'MainWindow'):
     if main_window.selected_video_button.file_type!='video':
@@ -122,9 +122,9 @@ def remove_video_slider_marker(main_window: 'MainWindow'):
     else:
         common_widget_actions.create_and_show_messagebox(main_window, 'No Marker Found!', 'No Marker Found for this position!', main_window.videoSeekSlider)
 
-def add_marker(main_window: 'MainWindow', parameters, position,):
+def add_marker(main_window: 'MainWindow', parameters, control, position,):
     main_window.videoSeekSlider.add_marker_and_paint(position)
-    main_window.markers[position] = parameters
+    main_window.markers[position] = {'parameters': parameters, 'control': control}
     print(f"Marker Added for Frame: {position}")
 
 def remove_marker(main_window: 'MainWindow', position):
@@ -164,11 +164,11 @@ def move_slider_to_next_nearest_marker(main_window: 'MainWindow'):
 def move_slider_to_previous_nearest_marker(main_window: 'MainWindow'):
     move_slider_to_nearest_marker(main_window, "previous")
 
-def remove_face_parameters_from_markers(main_window: 'MainWindow', face_id):
-    for _, parameters in main_window.markers.items():
-        parameters.pop(face_id)
+def remove_face_parameters_and_control_from_markers(main_window: 'MainWindow', face_id):
+    for _, marker_data in main_window.markers.items():
+        marker_data['parameters'].pop(face_id)
         # If the parameters is empty, then there is no longer any marker to be set for any target face
-        if not parameters:
+        if not marker_data['parameters']:
             delete_all_markers(main_window)
             break
 
@@ -302,6 +302,10 @@ def record_video(main_window: 'MainWindow', checked: bool):
             common_widget_actions.create_and_show_messagebox(main_window, 'No Output Folder Selected','Please select an Output folder to save the Videos before recording!', main_window)
             main_window.buttonMediaRecord.setChecked(False)
             return
+        if not misc_helpers.is_ffmpeg_in_path():
+            common_widget_actions.create_and_show_messagebox(main_window, 'FFMPEG Not Found','FFMPEG was not found in your system. Check your installation!', main_window)
+            main_window.buttonMediaRecord.setChecked(False)
+            return
         video_processor.recording = True
         main_window.buttonMediaPlay.setChecked(True)
         set_record_button_icon_to_stop(main_window)
@@ -375,20 +379,22 @@ def on_change_video_seek_slider(main_window: 'MainWindow', new_position=0):
             graphics_view_actions.update_graphics_view(main_window, pixmap, new_position)
             # restore slider position 
             video_processor.media_capture.set(cv2.CAP_PROP_POS_FRAMES, new_position)
-            update_parameters_from_marker(main_window, new_position)
+            update_parameters_and_control_from_marker(main_window, new_position)
             update_widget_values_from_markers(main_window, new_position)
 
     # Do not automatically restart the video, let the user press Play to resume
     # print("on_change_video_seek_slider: Video stopped after slider movement.")
 
-def update_parameters_from_marker(main_window: 'MainWindow', new_position: int):
+def update_parameters_and_control_from_marker(main_window: 'MainWindow', new_position: int):
     if main_window.markers.get(new_position):
-        main_window.parameters = copy.deepcopy(main_window.markers[new_position])
+        main_window.parameters = copy.deepcopy(main_window.markers[new_position]['parameters'])
+        main_window.control = main_window.markers[new_position]['control'].copy()
 
 def update_widget_values_from_markers(main_window: 'MainWindow', new_position: int):
     if main_window.markers.get(new_position):
         if main_window.selected_target_face_id is not None:
             common_widget_actions.set_widgets_values_using_face_id_parameters(main_window, main_window.selected_target_face_id)
+            common_widget_actions.set_control_widgets_values(main_window, enable_exec_func=False)
 
 def on_slider_moved(main_window: 'MainWindow'):
     # print("Called on_slider_moved()")

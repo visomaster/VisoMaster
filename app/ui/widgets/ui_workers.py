@@ -156,6 +156,7 @@ class InputFacesLoaderWorker(qtc.QThread):
             image_files = files_list
 
         i=0
+        image_files.sort()
         for image_file_path in image_files:
             if not self._running:  # Check if the thread is still running
                 break
@@ -164,6 +165,8 @@ class InputFacesLoaderWorker(qtc.QThread):
             if folder_name:
                 image_file_path = os.path.join(folder_name, image_file_path)
             frame = cv2.imread(image_file_path)
+            if frame is None:
+                continue
             # Frame must be in RGB format
             frame = frame[..., ::-1]  # Swap the channels from BGR to RGB
 

@@ -51,7 +51,7 @@ class ModelsProcessor(QtCore.QObject):
         self.device = device
         self.model_lock = threading.RLock()  # Reentrant lock for model access
         self.trt_ep_options = {
-            'trt_max_workspace_size': 3 << 30,  # Dimensione massima dello spazio di lavoro in bytes
+            # 'trt_max_workspace_size': 3 << 30,  # Dimensione massima dello spazio di lavoro in bytes
             'trt_engine_cache_enable': True,
             'trt_engine_cache_path': "tensorrt-engines",
             'trt_timing_cache_enable': True,
@@ -63,10 +63,9 @@ class ModelsProcessor(QtCore.QObject):
         }
         self.providers = [
             ('CUDAExecutionProvider'),
-            ('TensorrtExecutionProvider', self.trt_ep_options),
             ('CPUExecutionProvider')
         ]       
-        self.nThreads = 5
+        self.nThreads = 2
         self.syncvec = torch.empty((1, 1), dtype=torch.float32, device=self.device)
 
         # Initialize models and models_path
@@ -339,6 +338,12 @@ class ModelsProcessor(QtCore.QObject):
     
     def run_deoldify_video(self, image, output):
         return self.frame_enhancers.run_deoldify_video(image, output)
+    
+    def run_ddcolor_artistic(self, image, output):
+        return self.frame_enhancers.run_ddcolor_artistic(image, output)
+
+    def run_ddcolor(self, tensor_gray_rgb, output_ab):
+        return self.frame_enhancers.run_ddcolor(tensor_gray_rgb, output_ab)
 
     def run_occluder(self, image, output):
         self.face_masks.run_occluder(image, output)

@@ -29,7 +29,7 @@ class VideoProcessor(QObject):
     frame_processed_signal = Signal(int, QPixmap, numpy.ndarray)
     webcam_frame_processed_signal = Signal(QPixmap, numpy.ndarray)
     single_frame_processed_signal = Signal(int, QPixmap, numpy.ndarray)
-    def __init__(self, main_window: 'MainWindow', num_threads=5):
+    def __init__(self, main_window: 'MainWindow', num_threads=2):
         super().__init__()
         self.main_window = main_window
         self.frame_queue = queue.Queue(maxsize=num_threads)
@@ -394,7 +394,7 @@ class VideoProcessor(QObject):
             "-s", f"{frame_width}x{frame_height}",  # Frame resolution
             "-r", str(self.fps),          # Frame rate
             "-i", "pipe:",                # Input from stdin
-            "-vf", "format=yuvj420p",     # Output video format
+            "-vf", f"pad=ceil(iw/2)*2:ceil(ih/2)*2,format=yuvj420p",  # Padding and format conversion            
             "-c:v", "libx264",            # H.264 codec
             "-crf", "18",                 # Quality setting
             self.temp_file                # Output file

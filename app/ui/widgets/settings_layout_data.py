@@ -28,7 +28,7 @@ SETTINGS_LAYOUT_DATA: LayoutDictTypes = {
             'label': 'Number of Threads',
             'min_value': '1',
             'max_value': '30',
-            'default': '5',
+            'default': '2',
             'step': 1,
             'help': 'Set number of execution threads while playing and recording. Depends strongly on GPU VRAM.',
             'exec_function': control_actions.change_threads_number,
@@ -54,6 +54,14 @@ SETTINGS_LAYOUT_DATA: LayoutDictTypes = {
             'requiredToggleValue': True,
             'step': 1,
             'help': 'Set the maximum FPS of the video when playing'
+        },
+    },
+    'Auto Swap':{
+        'AutoSwapToggle': {
+            'level': 1,
+            'label': 'Auto Swap',
+            'default': False,
+            'help': 'Automatically Swap all faces using selected Source Faces/Embeddings when loading an video/image file'
         },
     },
     'Detectors': {

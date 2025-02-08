@@ -13,6 +13,7 @@ from app.ui.widgets.actions import list_view_actions
 from app.ui.widgets.actions import video_control_actions
 from app.ui.widgets.actions import layout_actions
 from app.ui.widgets import ui_workers
+import app.helpers.miscellaneous as misc_helpers
 
 if TYPE_CHECKING:
     from app.ui.main_ui import MainWindow
@@ -53,7 +54,7 @@ def save_embeddings_to_file(main_window: 'MainWindow', save_as=False):
 
     # Definisce il nome del file di salvataggio
     embedding_filename = main_window.loaded_embedding_filename
-    if not embedding_filename or save_as:
+    if not embedding_filename or not misc_helpers.is_file_exists(embedding_filename) or save_as:
         embedding_filename, _ = QtWidgets.QFileDialog.getSaveFileName(main_window, filter='JSON (*.json)')
 
     # Crea una lista di dizionari, ciascuno con il nome dell'embedding e il relativo embedding_store
@@ -177,17 +178,17 @@ def load_saved_workspace(main_window: 'MainWindow', data_filename: str|bool = Fa
                 main_window.target_faces[face_id].assigned_input_embedding = assigned_input_embedding
                 # main_window.control = target_face_data['control']
 
-            # Add markers
-            video_control_actions.remove_all_markers(main_window)
-            for marker_position, marker_parameters in data['markers'].items():
-                video_control_actions.add_marker(main_window, marker_parameters, int(marker_position))
-            # main_window.videoSeekSlider.setValue(0)
-            # video_control_actions.update_widget_values_from_markers(main_window, 0)
-
             # Load control (settings)
             control = data['control']
             for control_name, control_value in control.items():
                 main_window.control[control_name] = control_value
+
+            # Add markers
+            video_control_actions.remove_all_markers(main_window)
+            for marker_position, marker_data in data['markers'].items():
+                video_control_actions.add_marker(main_window, marker_data['parameters'], marker_data['control'], int(marker_position))
+            # main_window.videoSeekSlider.setValue(0)
+            # video_control_actions.update_widget_values_from_markers(main_window, 0)
 
             common_widget_actions.set_control_widgets_values(main_window)
             # Set output folder
