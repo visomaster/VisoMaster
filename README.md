@@ -13,8 +13,13 @@ VisoMaster is a powerful yet easy-to-use tool for face swapping and editing in i
 ✅ Efficient processing with **GPU acceleration** (CUDA support)  
 ✅ **Customizable** models and fine-tuning options  
 
+## Automatic Installation (Windows)
+- For Windows users with an Nvidia GPU, we provide an automatic installer for easy set up. 
+- You can get the installer from the [releases](https://github.com/visomaster/VisoMaster/releases/tag/v0.1.1) page or from this [link](https://github.com/visomaster/VisoMaster/releases/download/v0.1.1/VisoMaster_Setup.exe).
+- Choose the correct CUDA version inside the installer based on your GPU Compatibility.
+- After successful installation, go to your installed directory and run the **Start_Portable.bat** file to launch **VisoMaster**
 
-## **Installation Guide (Nvidia)**
+## **Manual Installation Guide (Nvidia)**
 
 Follow the steps below to install and run **VisoMaster** on your system.
 
