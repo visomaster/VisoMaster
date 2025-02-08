@@ -397,6 +397,12 @@ models_list = [
 
     },
     {
+        "model_name": "RD64ClipText",
+        "local_path": f"{models_dir}/rd64-uni-refined.pth",
+        "hash": "a4956f9a7978a75630b08c9d6ec075b7c51cf43b4751b686e3a011d4012ddc9d",
+        "url": f"{assets_repo}/v0.1.0/rd64-uni-refined.pth",
+    },
+    {
         "model_name": "LivePortraitMotionExtractor",
         "local_path": f"{models_dir}/liveportrait_onnx/motion_extractor.onnx",
         "hash": "99d4b3c9dd3fd301910de9415a29560e38c0afaa702da51398281376cc36fdd3",
