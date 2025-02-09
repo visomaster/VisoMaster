@@ -74,7 +74,7 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: LayoutDict
 
                 widget.reset_default_button = widget_components.ParameterResetDefaultButton(related_widget=widget)
 
-                horizontal_layout = add_horizontal_layout_to_category(category_layout, label, widget, widget, widget.reset_default_button)
+                horizontal_layout = add_horizontal_layout_to_category(category_layout, label, widget, widget.reset_default_button)
 
 
                 if data_type=='parameter':
@@ -327,6 +327,11 @@ def disable_all_parameters_and_control_widget(main_window: 'MainWindow'):
     main_window.frameAdvanceButton.setDisabled(True)
     main_window.frameRewindButton.setDisabled(True)
 
+    # Enable compare checkboxes
+    main_window.faceCompareCheckBox.setDisabled(True)
+    main_window.faceMaskCheckBox.setDisabled(True)
+
+
     # Disable list items
     for _, embed_button in main_window.merged_embeddings.items():
         embed_button.setDisabled(True)
@@ -365,6 +370,10 @@ def enable_all_parameters_and_control_widget(main_window: 'MainWindow'):
     main_window.previousMarkerButton.setDisabled(False)
     main_window.frameAdvanceButton.setDisabled(False)
     main_window.frameRewindButton.setDisabled(False)
+
+    # Enable compare checkboxes
+    main_window.faceCompareCheckBox.setDisabled(False)
+    main_window.faceMaskCheckBox.setDisabled(False)
 
     # Enable list items
     for _, embed_button in main_window.merged_embeddings.items():

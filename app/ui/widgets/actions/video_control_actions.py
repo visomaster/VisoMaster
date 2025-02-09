@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 import app.helpers.miscellaneous as misc_helpers
 from app.ui.widgets.actions import common_actions as common_widget_actions
 from app.ui.widgets.actions import graphics_view_actions
-
+import app.ui.widgets.actions.layout_actions as layout_actions
 
 def set_up_video_seek_line_edit(main_window: 'MainWindow'):
     video_processor = main_window.video_processor
@@ -425,6 +425,9 @@ def process_edit_faces(main_window: 'MainWindow'):
     video_processor = main_window.video_processor
     video_processor.process_current_frame()
 
+def process_compare_checkboxes(main_window: 'MainWindow'):
+    main_window.video_processor.process_current_frame()
+    layout_actions.fit_image_to_view_onchange(main_window)
 
 def save_current_frame_to_file(main_window: 'MainWindow'):
     frame = main_window.video_processor.current_frame.copy()

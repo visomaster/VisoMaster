@@ -35,6 +35,8 @@ class FrameWorker(threading.Thread):
         self.parameters = {}
         self.target_faces = main_window.target_faces
         self.compare_images = []
+        self.is_view_face_compare: bool = False
+        self.is_view_face_mask: bool = False
 
     def run(self):
         try:
@@ -42,6 +44,9 @@ class FrameWorker(threading.Thread):
             with self.main_window.models_processor.model_lock:
                 video_control_actions.update_parameters_and_control_from_marker(self.main_window, self.frame_number)
             self.parameters = self.main_window.parameters.copy()
+            # Check if view mask or face compare checkboxes are checked
+            self.is_view_face_compare = self.main_window.faceCompareCheckBox.isChecked() 
+            self.is_view_face_mask = self.main_window.faceMaskCheckBox.isChecked() 
 
             # Process the frame with model inference
             # print(f"Processing frame {self.frame_number}")
@@ -80,13 +85,6 @@ class FrameWorker(threading.Thread):
         except Exception as e: # pylint: disable=broad-exception-caught
             print(f"Error in FrameWorker: {e}")
             traceback.print_exc()
-
-    def is_compare_mode(self):
-        for _, target_face in self.main_window.target_faces.items():
-            parameters = self.parameters[target_face.face_id]
-            if parameters['ViewFaceMaskEnableToggle'] or parameters['ViewFaceCompareEnableToggle']:
-                return True
-        return False
     
     # @misc_helpers.benchmark
     def process_frame(self):
@@ -153,7 +151,8 @@ class FrameWorker(threading.Thread):
                 face_emb, _ = self.models_processor.run_recognize_direct(img, face_kps_5, control['SimilarityTypeSelection'], control['RecognitionModelSelection'])
                 det_faces_data.append({'kps_5': face_kps_5, 'kps_all': face_kps_all, 'embedding': face_emb, 'bbox': bboxes[i]})
 
-        compare_mode = self.is_compare_mode()
+        compare_mode = self.is_view_face_mask or self.is_view_face_compare
+        
         if det_faces_data:
             # Loop through target faces to see if they match our found face embeddings
             for i, fface in enumerate(det_faces_data):
@@ -762,13 +761,13 @@ class FrameWorker(threading.Thread):
 
         # For face comparing
         original_face_512_clone = None
-        if parameters['ViewFaceCompareEnableToggle']:
+        if self.is_view_face_compare:
             original_face_512_clone = original_face_512.clone()
             original_face_512_clone = original_face_512_clone.type(torch.uint8)
             original_face_512_clone = original_face_512_clone.permute(1, 2, 0)
         swap_mask_clone = None
         # Uninvert and create image from swap mask
-        if parameters['ViewFaceMaskEnableToggle']:
+        if self.is_view_face_mask:
             swap_mask_clone = swap_mask.clone()
             swap_mask_clone = torch.sub(1, swap_mask_clone)
             swap_mask_clone = torch.cat((swap_mask_clone,swap_mask_clone,swap_mask_clone),0)
@@ -1291,7 +1290,7 @@ class FrameWorker(threading.Thread):
                 img = torch.mul(img, 255.0)
                 img = torch.clamp(img, 0, 255).type(torch.uint8)
 
-        if parameters['FaceMakeupEnableToggle'] or parameters['HairMakeupEnableToggle'] or parameters['EyeBrowsMakeupEnableToggle'] or parameters['LipsMakeupEnableToggle'] or parameters['ViewFaceCompareEnableToggle']:
+        if parameters['FaceMakeupEnableToggle'] or parameters['HairMakeupEnableToggle'] or parameters['EyeBrowsMakeupEnableToggle'] or parameters['LipsMakeupEnableToggle']:
             _, lmk_crop, _ = self.models_processor.run_detect_landmark( img, bbox=[], det_kpss=kps, detect_mode='203', score=0.5, from_points=True)
 
             # prepare_retargeting_image

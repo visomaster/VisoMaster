@@ -72,11 +72,25 @@
            </property>
            <property name="sizeHint" stdset="0">
             <size>
-             <width>40</width>
+             <width>20</width>
              <height>20</height>
             </size>
            </property>
           </spacer>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="faceCompareCheckBox">
+           <property name="text">
+            <string>VIew Face Compare</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="faceMaskCheckBox">
+           <property name="text">
+            <string>View Face Mask</string>
+           </property>
+          </widget>
          </item>
         </layout>
        </item>
