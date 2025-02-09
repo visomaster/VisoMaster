@@ -265,6 +265,9 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: LayoutDict
             horizontal_layout.setContentsMargins(spacing_level * 10, 0, 0, 0)
 
             main_window.parameter_widgets[widget_name] = widget
+        # category_layout.setContentsMargins(20,20,20,20)
+        category_layout.setVerticalSpacing(2)
+        category_layout.setHorizontalSpacing(2)
 
         layout.addWidget(group_box)
 
