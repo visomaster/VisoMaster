@@ -21,6 +21,15 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: LayoutDict
     scroll_content.setLayout(layout)
     scroll_area.setWidget(scroll_content)
 
+    def add_horizontal_layout_to_category(category_layout: QtWidgets.QFormLayout, *widgets):
+        # Create a horizontal layout
+        horizontal_layout = QtWidgets.QHBoxLayout()
+        
+        for widget in widgets:
+            horizontal_layout.addWidget(widget)  # Add the toggle button
+        category_layout.addRow(horizontal_layout)  # Add the horizontal layout to the form layout
+        return horizontal_layout
+
     for category, widgets in LAYOUT_DATA.items():
         group_box = widget_components.FormGroupBox(main_window, title=category)
         category_layout = QtWidgets.QFormLayout()
@@ -38,13 +47,7 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: LayoutDict
                 widget.reset_default_button = widget_components.ParameterResetDefaultButton(related_widget=widget)
 
                 # Create a horizontal layout
-                horizontal_layout = QtWidgets.QHBoxLayout()
-                # In case of toggle button, add show widget first, then its label
-                horizontal_layout.addWidget(widget)  # Add the toggle button
-                horizontal_layout.addWidget(label)  # Add the label
-                horizontal_layout.addWidget(widget.reset_default_button)
-                
-                category_layout.addRow(horizontal_layout)  # Add the horizontal layout to the form layout
+                horizontal_layout = add_horizontal_layout_to_category(category_layout, widget, label, widget.reset_default_button)
 
                 if data_type=='parameter':
                     # Initialize parameter value
@@ -71,12 +74,8 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: LayoutDict
 
                 widget.reset_default_button = widget_components.ParameterResetDefaultButton(related_widget=widget)
 
-                horizontal_layout = QtWidgets.QHBoxLayout()
-                horizontal_layout.addWidget(label)
-                horizontal_layout.addWidget(widget)
-                horizontal_layout.addWidget(widget.reset_default_button)
+                horizontal_layout = add_horizontal_layout_to_category(category_layout, label, widget, widget, widget.reset_default_button)
 
-                category_layout.addRow(horizontal_layout)
 
                 if data_type=='parameter':
                     # Initialize parameter value
@@ -118,13 +117,8 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: LayoutDict
                 widget.reset_default_button = widget_components.ParameterResetDefaultButton(related_widget=widget)
 
                 # Layout for widgets
-                horizontal_layout = QtWidgets.QHBoxLayout()
-                horizontal_layout.addWidget(label)
-                horizontal_layout.addWidget(widget)
-                horizontal_layout.addWidget(widget.line_edit)
-                horizontal_layout.addWidget(widget.reset_default_button)
+                horizontal_layout = add_horizontal_layout_to_category(category_layout, label, widget, widget.line_edit, widget.reset_default_button)
 
-                category_layout.addRow(horizontal_layout)
 
                 if data_type=='parameter':
                     # Initialize parameter value
@@ -181,13 +175,9 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: LayoutDict
                 widget = widget_components.ParameterSlider(label=widget_data['label'], widget_name=widget_name, group_layout_data=widgets, label_widget=label, min_value=widget_data['min_value'], max_value=widget_data['max_value'], default_value=widget_data['default'], step_size=widget_data['step'], main_window=main_window)
                 widget.line_edit = widget_components.ParameterLineEdit(min_value=int(widget_data['min_value']), max_value=int(widget_data['max_value']), default_value=widget_data['default'])
                 widget.reset_default_button = widget_components.ParameterResetDefaultButton(related_widget=widget)
-                horizontal_layout = QtWidgets.QHBoxLayout()
-                horizontal_layout.addWidget(label)
-                horizontal_layout.addWidget(widget)
-                horizontal_layout.addWidget(widget.line_edit)
-                horizontal_layout.addWidget(widget.reset_default_button)
+                
+                horizontal_layout = add_horizontal_layout_to_category(category_layout, label, widget, widget.line_edit, widget.reset_default_button)
 
-                category_layout.addRow(horizontal_layout)
 
                 if data_type=='parameter':
                     # Initialize parameter value
@@ -236,12 +226,9 @@ def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: LayoutDict
             elif 'Text' in widget_name:
                 widget = widget_components.ParameterText(label=widget_data['label'], widget_name=widget_name, group_layout_data=widgets, label_widget=label, default_value=widget_data['default'], fixed_width=widget_data['width'], main_window=main_window, data_type=data_type, exec_function=widget_data.get('exec_function'), exec_function_args=widget_data.get('exec_function_args', []))
                 widget.reset_default_button = widget_components.ParameterResetDefaultButton(related_widget=widget)
-                horizontal_layout = QtWidgets.QHBoxLayout()
-                horizontal_layout.addWidget(label)
-                horizontal_layout.addWidget(widget)
-                horizontal_layout.addWidget(widget.reset_default_button)
 
-                category_layout.addRow(horizontal_layout)
+                horizontal_layout = add_horizontal_layout_to_category(category_layout, label, widget, widget.reset_default_button)
+
 
                 if data_type=='parameter':
                     # Initialize parameter value
