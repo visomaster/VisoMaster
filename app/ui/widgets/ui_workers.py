@@ -165,7 +165,7 @@ class InputFacesLoaderWorker(qtc.QThread):
                 return
             if folder_name:
                 image_file_path = os.path.join(folder_name, image_file_path)
-            frame = cv2.imread(image_file_path)
+            frame = misc_helpers.read_image_file(image_file_path)
             if frame is None:
                 continue
             # Frame must be in RGB format

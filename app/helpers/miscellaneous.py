@@ -115,6 +115,10 @@ def read_frame(capture_obj: cv2.VideoCapture, preview_mode=False):
         # frame = cv2.resize(fr2ame, dsize=(width, height), interpolation=cv2.INTER_LANCZOS4)
     return ret, frame
 
+def read_image_file(image_path):
+    img = cv2.imdecode(np.fromfile(image_path, np.uint8), cv2.IMREAD_UNCHANGED)
+    return img
+
 def get_output_file_path(original_media_path, output_folder, media_type='video'):
     date_and_time = datetime.now().strftime(r'%Y_%m_%d_%H_%M_%S')
     input_filename = os.path.basename(original_media_path)
