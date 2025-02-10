@@ -116,7 +116,14 @@ def read_frame(capture_obj: cv2.VideoCapture, preview_mode=False):
     return ret, frame
 
 def read_image_file(image_path):
-    img = cv2.imdecode(np.fromfile(image_path, np.uint8), cv2.IMREAD_UNCHANGED)
+    try:
+        img = cv2.imdecode(np.fromfile(image_path, np.uint8), cv2.IMREAD_UNCHANGED)
+    except:
+        print("Failed To Load: ", image_path)
+        return None
+    if img is not None and len(img.shape) == 3 and img.shape[2] == 4:
+        img = cv2.cvtColor(img, cv2.COLOR_RGBA2RGB)  # Remove alpha channel
+
     return img
 
 def get_output_file_path(original_media_path, output_folder, media_type='video'):
