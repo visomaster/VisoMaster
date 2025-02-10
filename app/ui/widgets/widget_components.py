@@ -345,7 +345,7 @@ class TargetFaceCardButton(CardButton):
         # Otherwise reset parameter widgets value to the default
         else:
             common_widget_actions.set_widgets_values_using_face_id_parameters(main_window, face_id=False)
-        video_control_actions.remove_face_parameters_from_markers(main_window, self.face_id) #Remove parameters for the face from all markers
+        video_control_actions.remove_face_parameters_and_control_from_markers(main_window, self.face_id) #Remove parameters for the face from all markers
         common_widget_actions.refresh_frame(self.main_window)
         self.deleteLater()
 
