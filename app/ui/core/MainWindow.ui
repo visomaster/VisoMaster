@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1376</width>
-    <height>586</height>
+    <height>585</height>
    </rect>
   </property>
   <property name="font">
@@ -19,7 +19,7 @@
    <string>VisoMaster v0.1.1</string>
   </property>
   <property name="windowIcon">
-   <iconset>
+   <iconset resource="media.qrc">
     <normaloff>:/media/media/visomaster_small.png</normaloff>:/media/media/visomaster_small.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
@@ -72,11 +72,25 @@
            </property>
            <property name="sizeHint" stdset="0">
             <size>
-             <width>40</width>
+             <width>20</width>
              <height>20</height>
             </size>
            </property>
           </spacer>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="faceCompareCheckBox">
+           <property name="text">
+            <string>VIew Face Compare</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="faceMaskCheckBox">
+           <property name="text">
+            <string>View Face Mask</string>
+           </property>
+          </widget>
          </item>
         </layout>
        </item>
@@ -154,7 +168,7 @@
               <string/>
              </property>
              <property name="icon">
-              <iconset>
+              <iconset resource="media.qrc">
                <normaloff>:/media/media/previous_marker_off.png</normaloff>:/media/media/previous_marker_off.png</iconset>
              </property>
              <property name="flat">
@@ -184,7 +198,7 @@
               <string/>
              </property>
              <property name="icon">
-              <iconset>
+              <iconset resource="media.qrc">
                <normaloff>:/media/media/rec_off.png</normaloff>:/media/media/rec_off.png</iconset>
              </property>
              <property name="checkable">
@@ -229,7 +243,7 @@
               <string/>
              </property>
              <property name="icon">
-              <iconset>
+              <iconset resource="media.qrc">
                <normaloff>:/media/media/play_off.png</normaloff>:/media/media/play_off.png</iconset>
              </property>
              <property name="checkable">
@@ -274,7 +288,7 @@
               <string/>
              </property>
              <property name="icon">
-              <iconset>
+              <iconset resource="media.qrc">
                <normaloff>:/media/media/next_marker_off.png</normaloff>:/media/media/next_marker_off.png</iconset>
              </property>
              <property name="flat">
@@ -307,7 +321,7 @@
               <string/>
              </property>
              <property name="icon">
-              <iconset>
+              <iconset resource="media.qrc">
                <normaloff>:/media/media/add_marker_hover.png</normaloff>:/media/media/add_marker_hover.png</iconset>
              </property>
              <property name="flat">
@@ -324,7 +338,7 @@
               <string/>
              </property>
              <property name="icon">
-              <iconset>
+              <iconset resource="media.qrc">
                <normaloff>:/media/media/remove_marker_hover.png</normaloff>:/media/media/remove_marker_hover.png</iconset>
              </property>
              <property name="flat">
@@ -341,7 +355,7 @@
               <string/>
              </property>
              <property name="icon">
-              <iconset>
+              <iconset resource="media.qrc">
                <normaloff>:/media/media/previous_marker_hover.png</normaloff>:/media/media/previous_marker_hover.png</iconset>
              </property>
              <property name="flat">
@@ -358,7 +372,7 @@
               <string/>
              </property>
              <property name="icon">
-              <iconset>
+              <iconset resource="media.qrc">
                <normaloff>:/media/media/next_marker_hover.png</normaloff>:/media/media/next_marker_hover.png</iconset>
              </property>
              <property name="flat">
@@ -375,7 +389,7 @@
               <string/>
              </property>
              <property name="icon">
-              <iconset>
+              <iconset resource="media.qrc">
                <normaloff>:/media/media/fullscreen.png</normaloff>:/media/media/fullscreen.png</iconset>
              </property>
              <property name="flat">
@@ -471,6 +485,9 @@
             <property name="toolTip">
              <string>Save Embedding</string>
             </property>
+            <property name="autoScroll">
+             <bool>false</bool>
+            </property>
            </widget>
           </item>
           <item row="0" column="2">
@@ -491,7 +508,7 @@
                <string/>
               </property>
               <property name="icon">
-               <iconset>
+               <iconset resource="media.qrc">
                 <normaloff>:/media/media/open_file.png</normaloff>:/media/media/open_file.png</iconset>
               </property>
               <property name="flat">
@@ -508,7 +525,7 @@
                <string/>
               </property>
               <property name="icon">
-               <iconset>
+               <iconset resource="media.qrc">
                 <normaloff>:/media/media/save_file.png</normaloff>:/media/media/save_file.png</iconset>
               </property>
               <property name="flat">
@@ -525,7 +542,7 @@
                <string/>
               </property>
               <property name="icon">
-               <iconset>
+               <iconset resource="media.qrc">
                 <normaloff>:/media/media/save_file_as.png</normaloff>:/media/media/save_file_as.png</iconset>
               </property>
               <property name="flat">
@@ -539,6 +556,9 @@
            <widget class="QListWidget" name="targetFacesList">
             <property name="autoFillBackground">
              <bool>true</bool>
+            </property>
+            <property name="autoScroll">
+             <bool>false</bool>
             </property>
            </widget>
           </item>
@@ -695,7 +715,7 @@
             <string/>
            </property>
            <property name="icon">
-            <iconset>
+            <iconset resource="media.qrc">
              <normaloff>:/media/media/image.png</normaloff>:/media/media/image.png</iconset>
            </property>
            <property name="checked">
@@ -712,7 +732,7 @@
             <string/>
            </property>
            <property name="icon">
-            <iconset>
+            <iconset resource="media.qrc">
              <normaloff>:/media/media/video.png</normaloff>:/media/media/video.png</iconset>
            </property>
            <property name="checked">
@@ -729,7 +749,7 @@
             <string/>
            </property>
            <property name="icon">
-            <iconset>
+            <iconset resource="media.qrc">
              <normaloff>:/media/media/webcam.png</normaloff>:/media/media/webcam.png</iconset>
            </property>
            <property name="checked">
@@ -743,6 +763,9 @@
         <widget class="QListWidget" name="targetVideosList">
          <property name="acceptDrops">
           <bool>true</bool>
+         </property>
+         <property name="autoScroll">
+          <bool>false</bool>
          </property>
         </widget>
        </item>
@@ -773,6 +796,9 @@
         <widget class="QListWidget" name="inputFacesList">
          <property name="acceptDrops">
           <bool>true</bool>
+         </property>
+         <property name="autoScroll">
+          <bool>false</bool>
          </property>
         </widget>
        </item>

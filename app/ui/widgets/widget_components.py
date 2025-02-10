@@ -10,6 +10,7 @@ import cv2
 import numpy as np
 
 import app.ui.widgets.actions.common_actions as common_widget_actions
+import app.ui.widgets.actions.layout_actions as layout_actions
 from app.ui.widgets.actions import video_control_actions
 from app.ui.widgets.actions import graphics_view_actions
 from app.ui.widgets.actions import card_actions
@@ -174,6 +175,7 @@ class TargetMediaCardButton(CardButton):
             if main_window.target_faces:
                 list(main_window.target_faces.values())[0].click()
             common_widget_actions.refresh_frame(main_window)
+            layout_actions.fit_image_to_view_onchange(main_window)
 
 
         # list_view_actions.find_target_faces(main_window)

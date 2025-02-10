@@ -10,6 +10,7 @@ import numpy
 from PySide6 import QtCore as qtc
 from PySide6.QtGui import QPixmap
 
+from app.processors.models_data import detection_model_mapping, landmark_model_mapping
 from app.helpers import miscellaneous as misc_helpers
 from app.ui.widgets.actions import common_actions as common_widget_actions
 from app.ui.widgets.actions import filter_actions
@@ -122,8 +123,8 @@ class InputFacesLoaderWorker(qtc.QThread):
         
     def pre_load_detection_recognition_models(self):
         control = self.main_window.control.copy()
-        detect_model = control['DetectorModelSelection']
-        landmark_detect_model = f"FaceLandmark{control['LandmarkDetectModelSelection']}"
+        detect_model = detection_model_mapping[control['DetectorModelSelection']]
+        landmark_detect_model = landmark_model_mapping[control['LandmarkDetectModelSelection']]
         models_processor = self.main_window.models_processor
         if self.main_window.video_processor.processing:
             was_playing = True
@@ -132,7 +133,7 @@ class InputFacesLoaderWorker(qtc.QThread):
             was_playing = False
         if not models_processor.models[detect_model]:
             models_processor.models[detect_model] = models_processor.load_model(detect_model)
-        if not models_processor.models[landmark_detect_model]:
+        if not models_processor.models[landmark_detect_model] and control['LandmarkDetectToggle']:
             models_processor.models[landmark_detect_model] = models_processor.load_model(landmark_detect_model)
         for recognition_model in ['Inswapper128ArcFace', 'SimSwapArcFace', 'GhostArcFace', 'CSCSArcFace', 'CSCSIDArcFace']:
             if not models_processor.models[recognition_model]:

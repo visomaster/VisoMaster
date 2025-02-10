@@ -43,7 +43,7 @@ def change_theme(main_window: 'MainWindow', new_theme):
         _style = get_style_data('light_styles.qss', 'light',)
 
     elif new_theme == "Dark-Blue":
-        _style = qdarkstyle.load_stylesheet() # Applica lo stile dark-blue 
+        _style = get_style_data('dark_styles.qss', 'dark',) + qdarkstyle.load_stylesheet() # Applica lo stile dark-blue 
 
     app.setStyleSheet(_style)
 

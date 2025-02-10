@@ -378,7 +378,7 @@ SWAPPER_LAYOUT_DATA: LayoutDictTypes = {
             'max_value': '100',
             'default': '0',
             'step': 1,
-            'parentToggle': 'OccluderEnableToggle, DFLXSegEnableToggle',
+            'parentToggle': 'OccluderEnableToggle | DFLXSegEnableToggle',
             'requiredToggleValue': True,
             'help': 'Blend value for Occluder and XSeg.'
         },
@@ -876,7 +876,7 @@ SWAPPER_LAYOUT_DATA: LayoutDictTypes = {
             'max_value': '50',
             'default': '0',
             'step': 1,
-            'parentToggle': 'RestoreEyesEnableToggle, RestoreMouthEnableToggle',
+            'parentToggle': 'RestoreEyesEnableToggle | RestoreMouthEnableToggle',
             'requiredToggleValue': True,
             'help': 'Adjust the blur of mask border.'
         },
