@@ -430,12 +430,18 @@ def process_compare_checkboxes(main_window: 'MainWindow'):
     layout_actions.fit_image_to_view_onchange(main_window)
 
 def save_current_frame_to_file(main_window: 'MainWindow'):
+    if not main_window.outputFolderLineEdit.text():
+        common_widget_actions.create_and_show_messagebox(main_window, 'No Output Folder Selected','Please select an Output folder to save the Images/Videos before Saving/Recording!', main_window)
+        return
     frame = main_window.video_processor.current_frame.copy()
     if isinstance(frame, numpy.ndarray):
-        save_filename, _ = os.path.splitext(main_window.video_processor.media_path)
-        save_filename, _ = QtWidgets.QFileDialog.getSaveFileName(main_window, 'Save Frame as Image', f'{save_filename}.png', filter='PNG (*.png)',)
+        # save_filename, _ = os.path.splitext(main_window.video_processor.media_path)
+        # save_filename, _ = QtWidgets.QFileDialog.getSaveFileName(main_window, 'Save Frame as Image', f'{save_filename}.png', filter='PNG (*.png)',)
+        save_filename = misc_helpers.get_output_file_path(main_window.video_processor.media_path, main_window.control['OutputMediaFolder'], media_type='image')
         if save_filename:
             pil_image = Image.fromarray(frame[..., ::-1])
             pil_image.save(save_filename, 'PNG')
+            common_widget_actions.create_and_show_toast_message(main_window, 'Image Saved', f'Saved Current Image to file: {save_filename}')
+
     else:
         common_widget_actions.create_and_show_messagebox(main_window, 'Invalid Frame', 'Cannot save the current frame!', parent_widget=main_window.saveImageButton)

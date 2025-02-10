@@ -123,6 +123,8 @@ def get_output_file_path(original_media_path, output_folder, media_type='video')
     # output_filename = "{0}_{2}{1}".format(temp_path.stem, temp_path.suffix, date_and_time)
     if media_type=='video':
         output_filename = f'{temp_path.stem}_{date_and_time}.mp4'
+    elif media_type=='image':
+        output_filename = f'{temp_path.stem}_{date_and_time}.png'
     output_file_path = os.path.join(output_folder, output_filename)
     return output_file_path
 
