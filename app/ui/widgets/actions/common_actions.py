@@ -178,6 +178,29 @@ def show_hide_related_widgets(main_window: 'MainWindow', parent_widget, parent_w
                             current_widget.reset_default_button.show()
                             if current_widget.line_edit:
                                 current_widget.line_edit.show()
+
+                    elif '&' in parentToggles:
+                        result = [item.strip() for item in parentToggles.split('&')]
+                        parentToggle_ischecked = True
+                        # Check if any of the parentToggles are checked
+                        for _, required_widget_name in enumerate(result):
+                            ischecked = main_window.parameter_widgets[required_widget_name].isChecked()
+                            parentToggle_ischecked = parentToggle_ischecked and ischecked
+
+                        # Check if the current_widget has the required toggle value of Parent Widget's (toggle) checked state to hide/show the current_widget
+                        if group_layout_data[widget_name].get('requiredToggleValue') != parentToggle_ischecked:
+                            current_widget.hide()
+                            current_widget.label_widget.hide()
+                            current_widget.reset_default_button.hide()
+                            if current_widget.line_edit:
+                                current_widget.line_edit.hide()
+                        else:
+                            current_widget.show()
+                            current_widget.label_widget.show()
+                            current_widget.reset_default_button.show()
+                            if current_widget.line_edit:
+                                current_widget.line_edit.show()
+
                     else:
                         parentToggle_ischecked = main_window.parameter_widgets[parentToggles].isChecked()
                         if group_layout_data[widget_name].get('requiredToggleValue') != parentToggle_ischecked:

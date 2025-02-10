@@ -596,7 +596,7 @@ SWAPPER_LAYOUT_DATA: LayoutDictTypes = {
             'max_value': '255',
             'default': '0',
             'step': 1,
-            'parentToggle': 'FaceParserHairMakeupEnableToggle',
+            'parentToggle': 'FaceParserEnableToggle & FaceParserHairMakeupEnableToggle',
             'requiredToggleValue': True,
             'help': 'Red color adjustments'
         },
@@ -607,7 +607,7 @@ SWAPPER_LAYOUT_DATA: LayoutDictTypes = {
             'max_value': '255',
             'default': '0',
             'step': 3,
-            'parentToggle': 'FaceParserHairMakeupEnableToggle',
+            'parentToggle': 'FaceParserEnableToggle & FaceParserHairMakeupEnableToggle',
             'requiredToggleValue': True,
             'help': 'Green color adjustments'
         },
@@ -618,7 +618,7 @@ SWAPPER_LAYOUT_DATA: LayoutDictTypes = {
             'max_value': '255',
             'default': '0',
             'step': 1,
-            'parentToggle': 'FaceParserHairMakeupEnableToggle',
+            'parentToggle': 'FaceParserEnableToggle & FaceParserHairMakeupEnableToggle',
             'requiredToggleValue': True,
             'help': 'Blue color adjustments'
         },
@@ -630,7 +630,7 @@ SWAPPER_LAYOUT_DATA: LayoutDictTypes = {
             'default': '0.2',
             'step': 0.1,
             'decimals': 1,
-            'parentToggle': 'FaceParserHairMakeupEnableToggle',
+            'parentToggle': 'FaceParserEnableToggle & FaceParserHairMakeupEnableToggle',
             'requiredToggleValue': True,
             'help': 'Blend the value: 0.0 represents the original color, 1.0 represents the full target color.'
         },
@@ -649,7 +649,7 @@ SWAPPER_LAYOUT_DATA: LayoutDictTypes = {
             'max_value': '255',
             'default': '0',
             'step': 1,
-            'parentToggle': 'FaceParserLipsMakeupEnableToggle',
+            'parentToggle': 'FaceParserEnableToggle & FaceParserLipsMakeupEnableToggle',
             'requiredToggleValue': True,
             'help': 'Red color adjustments'
         },
@@ -660,7 +660,7 @@ SWAPPER_LAYOUT_DATA: LayoutDictTypes = {
             'max_value': '255',
             'default': '0',
             'step': 3,
-            'parentToggle': 'FaceParserLipsMakeupEnableToggle',
+            'parentToggle': 'FaceParserEnableToggle & FaceParserLipsMakeupEnableToggle',
             'requiredToggleValue': True,
             'help': 'Green color adjustments'
         },
@@ -671,7 +671,7 @@ SWAPPER_LAYOUT_DATA: LayoutDictTypes = {
             'max_value': '255',
             'default': '0',
             'step': 1,
-            'parentToggle': 'FaceParserLipsMakeupEnableToggle',
+            'parentToggle': 'FaceParserEnableToggle & FaceParserLipsMakeupEnableToggle',
             'requiredToggleValue': True,
             'help': 'Blue color adjustments'
         },
@@ -683,7 +683,7 @@ SWAPPER_LAYOUT_DATA: LayoutDictTypes = {
             'default': '0.2',
             'step': 0.1,
             'decimals': 1,
-            'parentToggle': 'FaceParserLipsMakeupEnableToggle',
+            'parentToggle': 'FaceParserEnableToggle & FaceParserLipsMakeupEnableToggle',
             'requiredToggleValue': True,
             'help': 'Blend the value: 0.0 represents the original color, 1.0 represents the full target color.'
         },

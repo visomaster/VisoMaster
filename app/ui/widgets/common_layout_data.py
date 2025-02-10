@@ -182,7 +182,7 @@ COMMON_LAYOUT_DATA: LayoutDictTypes = {
             'default': '0.03',
             'decimals': 2,
             'step': 0.01,
-            'parentToggle': 'FaceExpressionNormalizeLipsEnableToggle|FaceExpressionEnableToggle',
+            'parentToggle': 'FaceExpressionNormalizeLipsEnableToggle & FaceExpressionEnableToggle',
             'requiredToggleValue': True,
             'help': 'Threshold value for Normalize Lips.'
         },
@@ -202,7 +202,7 @@ COMMON_LAYOUT_DATA: LayoutDictTypes = {
             'default': '1.00',
             'decimals': 2,
             'step': 0.01,
-            'parentToggle': 'FaceExpressionRetargetingEyesEnableToggle|FaceExpressionEnableToggle',
+            'parentToggle': 'FaceExpressionRetargetingEyesEnableToggle & FaceExpressionEnableToggle',
             'requiredToggleValue': True,
             'help': 'Multiplier value for Retargeting Eyes.'
         },
@@ -222,7 +222,7 @@ COMMON_LAYOUT_DATA: LayoutDictTypes = {
             'default': '1.00',
             'decimals': 2,
             'step': 0.01,
-            'parentToggle': 'FaceExpressionRetargetingLipsEnableToggle|FaceExpressionEnableToggle',
+            'parentToggle': 'FaceExpressionRetargetingLipsEnableToggle & FaceExpressionEnableToggle',
             'requiredToggleValue': True,
             'help': 'Multiplier value for Retargeting Lips.'
         },
