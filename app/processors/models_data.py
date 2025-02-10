@@ -51,6 +51,23 @@ arcface_mapping_model_dict = {
     'CSCS': 'CSCSArcFace',
 }
 
+detection_model_mapping = {
+    'RetinaFace': 'RetinaFace',
+    'SCRFD': 'SCRFD2.5g',
+    'Yolov8': 'YoloFace8n',
+    'Yunet': 'YunetN',
+}
+
+landmark_model_mapping = {
+    '5': 'FaceLandmark5',
+    '68': 'FaceLandmark68',
+    '3d68': 'FaceLandmark3d68',
+    '98': 'FaceLandmark98',
+    '106': 'FaceLandmark106',
+    '203': 'FaceLandmark203',
+    '478': 'FaceLandmark478',
+}
+
 
 
 models_list = [
