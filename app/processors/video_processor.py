@@ -259,7 +259,7 @@ class VideoProcessor(QObject):
 
         # """Process a single image frame directly without queuing."""
         elif self.file_type == 'image':
-            frame = cv2.imread(self.media_path)
+            frame = misc_helpers.read_image_file(self.media_path)
             if frame is not None:
 
                 frame = frame[..., ::-1]  # Convert BGR to RGB

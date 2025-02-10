@@ -249,7 +249,7 @@ def clear_gpu_memory(main_window: 'MainWindow'):
 def extract_frame_as_pixmap(media_file_path, file_type, webcam_index=False, webcam_backend=False):
     frame = False
     if file_type=='image':
-        frame = cv2.imread(media_file_path)
+        frame = misc_helpers.read_image_file(media_file_path)
     elif file_type=='video':    
         cap = cv2.VideoCapture(media_file_path)
         ret, frame = misc_helpers.read_frame(cap)

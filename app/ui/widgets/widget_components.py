@@ -105,7 +105,7 @@ class TargetMediaCardButton(CardButton):
             main_window.video_processor.max_frame_number = max_frames_number
 
         elif self.file_type == 'image':
-            frame = cv2.imread(self.media_path)
+            frame = misc_helpers.read_image_file(self.media_path)
             max_frames_number = 0  # For an image, there is only one "frame"
             main_window.video_processor.max_frame_number = max_frames_number
 
