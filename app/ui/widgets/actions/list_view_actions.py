@@ -116,8 +116,11 @@ def select_target_medias(main_window: 'MainWindow', source_type='folder', folder
         files_list = QtWidgets.QFileDialog.getOpenFileNames()[0]
         if not files_list:
             return
-        main_window.labelTargetVideosPath.setText('Selected Files') #Just a temp text until i think of something better
-        main_window.labelTargetVideosPath.setToolTip('Selected Files')
+        # Get Folder name from the first file
+        file_dir = misc_helpers.get_dir_of_file(files_list[0])
+        main_window.labelTargetVideosPath.setText(file_dir) #Just a temp text until i think of something better
+        main_window.labelTargetVideosPath.setToolTip(file_dir)
+        main_window.last_target_media_folder_path = file_dir
 
     clear_stop_loading_target_media(main_window)
     card_actions.clear_target_faces(main_window)
@@ -165,10 +168,12 @@ def select_input_face_images(main_window: 'MainWindow', source_type='folder', fo
 
     elif source_type=='files':
         files_list = QtWidgets.QFileDialog.getOpenFileNames()[0]
-        main_window.labelInputFacesPath.setText('Selected Files') #Just a temp text until i think of something better
-        main_window.labelInputFacesPath.setToolTip('Selected Files')
         if not files_list:
             return
+        file_dir = misc_helpers.get_dir_of_file(files_list[0])
+        main_window.labelInputFacesPath.setText(file_dir) #Just a temp text until i think of something better
+        main_window.labelInputFacesPath.setToolTip(file_dir)
+        main_window.last_input_media_folder_path = file_dir
 
     clear_stop_loading_input_media(main_window)
     card_actions.clear_input_faces(main_window)
