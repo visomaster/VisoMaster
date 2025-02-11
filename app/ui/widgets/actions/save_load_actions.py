@@ -19,7 +19,8 @@ if TYPE_CHECKING:
     from app.ui.main_ui import MainWindow
 
 def open_embeddings_from_file(main_window: 'MainWindow'):
-    embedding_filename, _ = QtWidgets.QFileDialog.getOpenFileName(main_window, filter='JSON (*.json)')
+    
+    embedding_filename, _ = QtWidgets.QFileDialog.getOpenFileName(main_window, filter='JSON (*.json)', dir=misc_helpers.get_dir_of_file(main_window.loaded_embedding_filename))
     if embedding_filename:
         with open(embedding_filename, 'r') as embed_file: #pylint: disable=unspecified-encoding
             embeddings_list = json.load(embed_file)
@@ -190,6 +191,10 @@ def load_saved_workspace(main_window: 'MainWindow', data_filename: str|bool = Fa
             # main_window.videoSeekSlider.setValue(0)
             # video_control_actions.update_widget_values_from_markers(main_window, 0)
 
+            # Set target media and input faces folder names
+            main_window.last_target_media_folder_path = data.get('last_target_media_folder_path','')
+            main_window.last_input_media_folder_path = data.get('last_input_media_folder_path','')
+            main_window.loaded_embedding_filename = data.get('loaded_embedding_filename', '')
             common_widget_actions.set_control_widgets_values(main_window)
             # Set output folder
             common_widget_actions.create_control(main_window, 'OutputMediaFolder', control['OutputMediaFolder'])
@@ -231,7 +236,10 @@ def save_current_workspace(main_window: 'MainWindow', data_filename:str|bool = F
         'embeddings_data': embeddings_data,
         'input_faces_data': input_faces_data,
         'markers': main_window.markers,
-        'control': main_window.control
+        'control': main_window.control,
+        'last_target_media_folder_path': main_window.last_target_media_folder_path,
+        'last_input_media_folder_path': main_window.last_input_media_folder_path,
+        'loaded_embedding_filename': main_window.loaded_embedding_filename,
     }
     if not data_filename:
         data_filename, _ = QtWidgets.QFileDialog.getSaveFileName(main_window, filter='JSON (*.json)')
