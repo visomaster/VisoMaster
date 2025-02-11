@@ -38,8 +38,8 @@ def absoluteFilePaths(directory: str, include_subfolders=False):
                 yield file_path
 
 def truncate_text(text):
-    if len(text) >= 25:
-        return f'{text[:22]}...'
+    if len(text) >= 50:
+        return f'{text[:47]}...'
     return text
 
 def get_video_files(folder_name, include_subfolders=False):
