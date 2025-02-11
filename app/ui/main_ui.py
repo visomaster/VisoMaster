@@ -116,8 +116,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.inputFacesList.viewport().installEventFilter(list_widget_event_filter)
 
         # Set up folder open buttons for Target and Input
-        self.buttonTargetVideosPath.clicked.connect(self.actionOpen_Videos_Folder.trigger)
-        self.buttonInputFacesPath.clicked.connect(self.actionLoad_Source_Images_Folder.trigger)
+        self.buttonTargetVideosPath.clicked.connect(partial(list_view_actions.select_target_medias, self, 'folder'))
+        self.buttonInputFacesPath.clicked.connect(partial(list_view_actions.select_input_face_images, self, 'folder'))
 
         # Initialize graphics frame to view frames
         self.scene = QtWidgets.QGraphicsScene()

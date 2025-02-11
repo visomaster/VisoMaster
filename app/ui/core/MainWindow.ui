@@ -659,7 +659,7 @@
    <property name="minimumSize">
     <size>
      <width>340</width>
-     <height>365</height>
+     <height>369</height>
     </size>
    </property>
    <property name="features">
@@ -710,6 +710,12 @@
               <property name="icon">
                <iconset resource="media.qrc">
                 <normaloff>:/media/media/open_file.png</normaloff>:/media/media/open_file.png</iconset>
+              </property>
+              <property name="iconSize">
+               <size>
+                <width>18</width>
+                <height>18</height>
+               </size>
               </property>
               <property name="flat">
                <bool>true</bool>
@@ -828,6 +834,12 @@
               <property name="icon">
                <iconset resource="media.qrc">
                 <normaloff>:/media/media/open_file.png</normaloff>:/media/media/open_file.png</iconset>
+              </property>
+              <property name="iconSize">
+               <size>
+                <width>18</width>
+                <height>18</height>
+               </size>
               </property>
               <property name="flat">
                <bool>true</bool>
