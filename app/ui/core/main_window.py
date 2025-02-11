@@ -16,10 +16,10 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
     QTransform)
 from PySide6.QtWidgets import (QApplication, QCheckBox, QDockWidget, QGraphicsView,
     QGridLayout, QGroupBox, QHBoxLayout, QLabel,
-    QLineEdit, QListWidget, QListWidgetItem, QMainWindow,
-    QMenu, QMenuBar, QProgressBar, QPushButton,
-    QSizePolicy, QSlider, QSpacerItem, QTabWidget,
-    QVBoxLayout, QWidget)
+    QLineEdit, QListView, QListWidget, QListWidgetItem,
+    QMainWindow, QMenu, QMenuBar, QProgressBar,
+    QPushButton, QSizePolicy, QSlider, QSpacerItem,
+    QTabWidget, QVBoxLayout, QWidget)
 from app.ui.core import media_rc
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -267,11 +267,21 @@ class Ui_MainWindow(object):
         self.gridLayout_2.addWidget(self.facesButtonsWidget, 1, 0, 1, 1)
         self.inputEmbeddingsList = QListWidget(self.facesPanelGroupBox)
         self.inputEmbeddingsList.setObjectName(u"inputEmbeddingsList")
-        sizePolicy5 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
-        sizePolicy5.setHorizontalStretch(0)
+        sizePolicy5 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        sizePolicy5.setHorizontalStretch(4)
         sizePolicy5.setVerticalStretch(0)
         sizePolicy5.setHeightForWidth(self.inputEmbeddingsList.sizePolicy().hasHeightForWidth())
         self.inputEmbeddingsList.setSizePolicy(sizePolicy5)
+        self.inputEmbeddingsList.setMinimumSize(QSize(320, 120))
+        self.inputEmbeddingsList.setMaximumSize(QSize(16777215, 120))
+        self.inputEmbeddingsList.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.inputEmbeddingsList.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.inputEmbeddingsList.setUniformItemSizes(True)
+        self.inputEmbeddingsList.setViewMode(QListView.IconMode)
+        self.inputEmbeddingsList.setMovement(QListView.Static)
+        self.inputEmbeddingsList.setWrapping(True)
+        self.inputEmbeddingsList.setLayoutMode(QListView.Batched)
+        self.inputEmbeddingsList.setSpacing(4)
         self.inputEmbeddingsList.setAutoScroll(False)
         self.gridLayout_2.addWidget(self.inputEmbeddingsList, 1, 2, 1, 1)
         self.horizontalLayout_4 = QHBoxLayout()
@@ -319,7 +329,7 @@ class Ui_MainWindow(object):
         self.input_Target_DockWidget = QDockWidget(MainWindow)
         self.input_Target_DockWidget.setObjectName(u"input_Target_DockWidget")
         sizePolicy6 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
-        sizePolicy6.setHorizontalStretch(0)
+        sizePolicy6.setHorizontalStretch(4)
         sizePolicy6.setVerticalStretch(0)
         sizePolicy6.setHeightForWidth(self.input_Target_DockWidget.sizePolicy().hasHeightForWidth())
         self.input_Target_DockWidget.setSizePolicy(sizePolicy6)
