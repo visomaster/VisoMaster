@@ -74,7 +74,7 @@ def create_and_add_embed_button_to_list(main_window: 'MainWindow', embedding_nam
     # Passa l'intero embedding_store
     embed_button = widget_components.EmbeddingCardButton(main_window=main_window, embedding_name=embedding_name, embedding_store=embedding_store, embedding_id=embedding_id)
 
-    button_size = QtCore.QSize(120, 30)  # Imposta una dimensione fissa per i pulsanti
+    button_size = QtCore.QSize(105, 35)  # Adjusted width to fit 3 per row with proper spacing
     embed_button.setFixedSize(button_size)
     
     list_item = QtWidgets.QListWidgetItem(inputEmbeddingsList)
@@ -84,12 +84,38 @@ def create_and_add_embed_button_to_list(main_window: 'MainWindow', embedding_nam
     
     inputEmbeddingsList.setItemWidget(list_item, embed_button)
     
-    # Aggiungi padding attorno ai pulsanti
-    grid_size_with_padding = button_size + QtCore.QSize(4, 4)
-    inputEmbeddingsList.setGridSize(grid_size_with_padding)  # Add padding around the buttons
-    inputEmbeddingsList.setWrapping(True)  # Set grid size with padding
-    inputEmbeddingsList.setFlow(QtWidgets.QListView.LeftToRight)  # Set flow direction
-    inputEmbeddingsList.setResizeMode(QtWidgets.QListView.Adjust)  # Adjust layout automatically
+    # Configure grid layout for 3x3 minimum grid
+    grid_size_with_padding = button_size + QtCore.QSize(4, 4)  # Add padding around buttons
+    inputEmbeddingsList.setGridSize(grid_size_with_padding)
+    inputEmbeddingsList.setWrapping(True)
+    inputEmbeddingsList.setFlow(QtWidgets.QListView.TopToBottom)
+    inputEmbeddingsList.setResizeMode(QtWidgets.QListView.Fixed)
+    inputEmbeddingsList.setSpacing(2)
+    inputEmbeddingsList.setUniformItemSizes(True)
+    inputEmbeddingsList.setViewMode(QtWidgets.QListView.IconMode)
+    inputEmbeddingsList.setMovement(QtWidgets.QListView.Static)
+    
+    # Set viewport mode and item size
+    viewport_height = 180  # Fixed height for 3 rows (35px + padding per row)
+    inputEmbeddingsList.setFixedHeight(viewport_height)
+    
+    # Calculate grid dimensions
+    row_height = viewport_height // 3
+    col_width = grid_size_with_padding.width()
+    
+    # Set minimum width for 3 columns and adjust spacing
+    min_width = (3 * col_width) + 16  # Add extra padding for better spacing between columns
+    inputEmbeddingsList.setMinimumWidth(min_width)
+    
+    # Configure scrolling behavior
+    inputEmbeddingsList.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+    inputEmbeddingsList.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
+    inputEmbeddingsList.setVerticalScrollMode(QtWidgets.QAbstractItemView.ScrollPerPixel)
+    inputEmbeddingsList.setHorizontalScrollMode(QtWidgets.QAbstractItemView.ScrollPerPixel)
+    
+    # Set layout direction to ensure proper filling
+    inputEmbeddingsList.setLayoutDirection(QtCore.Qt.LeftToRight)
+    inputEmbeddingsList.setLayoutMode(QtWidgets.QListView.Batched)
 
     main_window.merged_embeddings[embed_button.embedding_id] = embed_button
 

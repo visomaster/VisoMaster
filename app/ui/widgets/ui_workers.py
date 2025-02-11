@@ -33,6 +33,9 @@ class TargetMediaLoaderWorker(qtc.QThread):
         self.media_ids = media_ids or []
         self.webcam_mode = webcam_mode
         self._running = True  # Flag to control the running state
+        
+        # Ensure thumbnail directory exists
+        misc_helpers.ensure_thumbnail_dir()
 
     def run(self):
         if self.folder_name:

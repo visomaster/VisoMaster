@@ -34,3 +34,4 @@ dependencies/TensorRT/
 *.mp4
 *.jpg
 *.exe
+.thumbnails
