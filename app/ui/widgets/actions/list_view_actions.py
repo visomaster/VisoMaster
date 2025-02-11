@@ -105,11 +105,12 @@ def clear_stop_loading_target_media(main_window: 'MainWindow'):
 def select_target_medias(main_window: 'MainWindow', source_type='folder', folder_name=False, files_list=None):
     files_list = files_list or []
     if source_type=='folder':
-        folder_name = QtWidgets.QFileDialog.getExistingDirectory()
+        folder_name = QtWidgets.QFileDialog.getExistingDirectory(dir=main_window.last_target_media_folder_path)
         if not folder_name:
             return
         main_window.labelTargetVideosPath.setText(misc_helpers.truncate_text(folder_name))
         main_window.labelTargetVideosPath.setToolTip(folder_name)
+        main_window.last_target_media_folder_path = folder_name
 
     elif source_type=='files':
         files_list = QtWidgets.QFileDialog.getOpenFileNames()[0]
@@ -155,11 +156,12 @@ def clear_stop_loading_input_media(main_window: 'MainWindow'):
 def select_input_face_images(main_window: 'MainWindow', source_type='folder', folder_name=False, files_list=None):
     files_list = files_list or []
     if source_type=='folder':
-        folder_name = QtWidgets.QFileDialog.getExistingDirectory()
-        main_window.labelInputFacesPath.setText(misc_helpers.truncate_text(folder_name))
-        main_window.labelInputFacesPath.setToolTip(folder_name)
+        folder_name = QtWidgets.QFileDialog.getExistingDirectory(dir=main_window.last_input_media_folder_path)
         if not folder_name:
             return
+        main_window.labelInputFacesPath.setText(misc_helpers.truncate_text(folder_name))
+        main_window.labelInputFacesPath.setToolTip(folder_name)
+        main_window.last_input_media_folder_path = folder_name
 
     elif source_type=='files':
         files_list = QtWidgets.QFileDialog.getOpenFileNames()[0]

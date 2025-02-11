@@ -73,6 +73,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.parameter_widgets: ParametersWidgetTypes = {}
         self.loaded_embedding_filename: str = ''
         
+        self.last_target_media_folder_path = ''
+        self.last_input_media_folder_path = ''
+
         self.is_full_screen = False
         self.dfm_models_data = DFM_MODELS_DATA
         # This flag is used to make sure new loaded media is properly fit into the graphics frame on the first load
@@ -111,6 +114,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.targetVideosList.viewport().installEventFilter(list_widget_event_filter)
         self.inputFacesList.installEventFilter(list_widget_event_filter)
         self.inputFacesList.viewport().installEventFilter(list_widget_event_filter)
+
+        # Set up folder open buttons for Target and Input
+        self.buttonTargetVideosPath.clicked.connect(self.actionOpen_Videos_Folder.trigger)
+        self.buttonInputFacesPath.clicked.connect(self.actionLoad_Source_Images_Folder.trigger)
 
         # Initialize graphics frame to view frames
         self.scene = QtWidgets.QGraphicsScene()
