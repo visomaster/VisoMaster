@@ -1,3 +1,4 @@
+import os
 import threading
 from typing import TYPE_CHECKING, Callable
 from functools import partial
@@ -271,13 +272,55 @@ def clear_gpu_memory(main_window: 'MainWindow'):
 
 def extract_frame_as_pixmap(media_file_path, file_type, webcam_index=False, webcam_backend=False):
     frame = False
-    if file_type=='image':
-        frame = misc_helpers.read_image_file(media_file_path)
-    elif file_type=='video':    
+    
+    # For non-webcam media, check for cached thumbnail
+    if file_type in ['image', 'video']:
+        # Ensure thumbnail directory exists
+        misc_helpers.ensure_thumbnail_dir()
+        
+        # Get hash and thumbnail path
+        file_hash = misc_helpers.get_file_hash(media_file_path)
+        thumbnail_path = misc_helpers.get_thumbnail_path(file_hash)
+        
+        # Check if cached thumbnail exists
+        if os.path.exists(thumbnail_path):
+            frame = cv2.imread(thumbnail_path)
+            if frame is not None:
+                # Convert the frame to QPixmap
+                height, width, _ = frame.shape
+                bytes_per_line = 3 * width
+                q_img = QtGui.QImage(frame.data, width, height, bytes_per_line, QtGui.QImage.Format.Format_RGB888).rgbSwapped()
+                pixmap = QtGui.QPixmap.fromImage(q_img)
+                pixmap = pixmap.scaled(70, 70, QtCore.Qt.AspectRatioMode.KeepAspectRatio)
+                return pixmap
+    
+    # If no cached thumbnail or it's a webcam, proceed with normal frame extraction
+    if file_type == 'image':
+        frame = cv2.imread(media_file_path)
+    elif file_type == 'video':    
         cap = cv2.VideoCapture(media_file_path)
+        if not cap.isOpened():
+            return None
+            
+        # Get video FPS and calculate frame number for 25 seconds
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        frame_25_sec = int(fps * 25)
+        
+        # Get total frames and check if 25 seconds is beyond video length
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        if frame_25_sec >= total_frames:
+            frame_25_sec = max(0, total_frames - 1)  # Use last frame if video is shorter
+            
+        # Seek to 25 seconds
+        cap.set(cv2.CAP_PROP_POS_FRAMES, frame_25_sec)
         ret, frame = misc_helpers.read_frame(cap)
         cap.release()
-    elif file_type=='webcam':
+        
+        # Save thumbnail for future use
+        if frame is not None and file_type != 'webcam':
+            misc_helpers.save_thumbnail(frame, thumbnail_path)
+            
+    elif file_type == 'webcam':
         camera = cv2.VideoCapture(webcam_index, webcam_backend)
         if not camera.isOpened():
             return

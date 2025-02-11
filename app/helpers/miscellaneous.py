@@ -2,6 +2,7 @@ import os
 import shutil
 import cv2
 import time
+import hashlib
 import numpy as np
 from functools import wraps
 from datetime import datetime
@@ -66,6 +67,61 @@ def get_file_type(file_name):
         return 'video'
     return None
 
+def get_file_hash(filename):
+    """Generate a hash from just the filename (not the full path)."""
+    # Use just the filename without path
+    name = os.path.basename(filename)
+    # Create hash from filename and size for uniqueness
+    file_size = os.path.getsize(filename)
+    hash_input = f"{name}_{file_size}"
+    return hashlib.md5(hash_input.encode('utf-8')).hexdigest()
+
+def get_thumbnail_path(file_hash):
+    """Get the full path to a cached thumbnail."""
+    thumbnail_dir = os.path.join(os.getcwd(), '.thumbnails')
+    # Check if PNG version exists first
+    png_path = os.path.join(thumbnail_dir, f"{file_hash}.png")
+    if os.path.exists(png_path):
+        return png_path
+    # Otherwise use JPEG path
+    return os.path.join(thumbnail_dir, f"{file_hash}.jpg")
+
+def ensure_thumbnail_dir():
+    """Create the .thumbnails directory if it doesn't exist."""
+    thumbnail_dir = os.path.join(os.getcwd(), '.thumbnails')
+    os.makedirs(thumbnail_dir, exist_ok=True)
+    return thumbnail_dir
+
+def save_thumbnail(frame, thumbnail_path):
+    """Save a frame as an optimized thumbnail."""
+    # Handle different color formats
+    if len(frame.shape) == 2:  # Grayscale
+        frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
+    elif frame.shape[2] == 4:  # RGBA
+        frame = cv2.cvtColor(frame, cv2.COLOR_RGBA2BGR)
+    
+    # Resize to exactly 70x70 pixels with high quality
+    frame = cv2.resize(frame, (70, 70), interpolation=cv2.INTER_LANCZOS4)
+    
+    # First try PNG for best quality
+    try:
+        cv2.imwrite(thumbnail_path[:-4] + '.png', frame)
+        # If PNG file is too large (>30KB), fall back to high-quality JPEG
+        if os.path.getsize(thumbnail_path[:-4] + '.png') > 30 * 1024:
+            os.remove(thumbnail_path[:-4] + '.png')
+            raise Exception("PNG too large")
+        else:
+            return
+    except:
+        # Define JPEG parameters for high quality
+        params = [
+            cv2.IMWRITE_JPEG_QUALITY, 98,  # Maximum quality for JPEG
+            cv2.IMWRITE_JPEG_OPTIMIZE, 1,  # Enable optimization
+            cv2.IMWRITE_JPEG_PROGRESSIVE, 1  # Enable progressive mode
+        ]
+        # Save as high quality JPEG
+        cv2.imwrite(thumbnail_path, frame, params)
+
 def get_dfm_models_data():
     DFM_MODELS_DATA.clear()
     for dfm_file in os.listdir(DFM_MODELS_PATH):
@@ -106,13 +162,34 @@ def benchmark(func):
         return result  # Return the result of the original function
     return wrapper
 
-def read_frame(capture_obj: cv2.VideoCapture, preview_mode=False):
-    with lock:
+def get_representative_frame(capture_obj: cv2.VideoCapture):
+    """Get a frame from a consistent position in the video."""
+    total_frames = int(capture_obj.get(cv2.CAP_PROP_FRAME_COUNT))
+    
+    # Get frame from 10% into the video
+    frame_pos = int(total_frames * 0.1)
+    capture_obj.set(cv2.CAP_PROP_POS_FRAMES, frame_pos)
+    ret, frame = capture_obj.read()
+    
+    if not ret:
+        # If failed, try first frame
+        capture_obj.set(cv2.CAP_PROP_POS_FRAMES, 0)
         ret, frame = capture_obj.read()
+    
+    return ret, frame
+
+def read_frame(capture_obj: cv2.VideoCapture, preview_mode=False, get_thumbnail=False):
+    with lock:
+        if get_thumbnail:
+            ret, frame = get_representative_frame(capture_obj)
+            # Reset position after getting thumbnail
+            capture_obj.set(cv2.CAP_PROP_POS_FRAMES, 0)
+        else:
+            ret, frame = capture_obj.read()
+            
     if ret and preview_mode:
-        pass
-        # width, height = get_scaled_resolution(capture_obj)
-        # frame = cv2.resize(fr2ame, dsize=(width, height), interpolation=cv2.INTER_LANCZOS4)
+        width, height = get_scaled_resolution(capture_obj)
+        frame = cv2.resize(frame, dsize=(width, height), interpolation=cv2.INTER_LANCZOS4)
     return ret, frame
 
 def read_image_file(image_path):
