@@ -295,9 +295,9 @@ def extract_frame_as_pixmap(media_file_path, file_type, webcam_index=False, webc
                 return pixmap
     
     # If no cached thumbnail or it's a webcam, proceed with normal frame extraction
-    if file_type == 'image':
-        frame = cv2.imread(media_file_path)
-    elif file_type == 'video':    
+    if file_type=='image':
+        frame = misc_helpers.read_image_file(media_file_path)
+    elif file_type=='video':    
         cap = cv2.VideoCapture(media_file_path)
         if not cap.isOpened():
             return None

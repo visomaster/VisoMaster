@@ -204,6 +204,10 @@ def load_saved_workspace(main_window: 'MainWindow', data_filename: str|bool = Fa
 
             if main_window.target_faces:
                 list(main_window.target_faces.values())[0].click()
+            else:
+                main_window.current_widget_parameters = data.get('current_widget_parameters', {})
+                common_widget_actions.set_widgets_values_using_face_id_parameters(main_window) 
+
 
         
 def save_current_workspace(main_window: 'MainWindow', data_filename:str|bool = False):
@@ -240,6 +244,8 @@ def save_current_workspace(main_window: 'MainWindow', data_filename:str|bool = F
         'last_target_media_folder_path': main_window.last_target_media_folder_path,
         'last_input_media_folder_path': main_window.last_input_media_folder_path,
         'loaded_embedding_filename': main_window.loaded_embedding_filename,
+        'current_widget_parameters': main_window.current_widget_parameters.copy()
+
     }
     if not data_filename:
         data_filename, _ = QtWidgets.QFileDialog.getSaveFileName(main_window, filter='JSON (*.json)')
