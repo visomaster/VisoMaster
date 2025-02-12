@@ -105,7 +105,7 @@ This project was made possible by the combined efforts of **[@argenspin](https:/
 
 ### **argenspin** ###
 - [BuyMeACoffee](https://buymeacoffee.com/argenspin)
-- BTC: bc1qeuqdla6u7y8krsrh4aa2qzy74r4ha0et72elgw9szf969sayelcq5n03qx
+- BTC: bc1qe8y7z0lkjsw6ssnlyzsncw0f4swjgh58j9vrqm84gw2nscgvvs5s4fts8g
 - ETH: 0x967a442FBd13617DE8d5fDC75234b2052122156B
 ### **Alucard24** ###
 - [PayPal](https://www.paypal.com/donate/?business=XJX2E5ZTMZUSQ&no_recurring=0&item_name=Support+us+with+a+donation!+Your+contribution+helps+us+continue+improving+and+providing+quality+content.+Thank+you!&currency_code=EUR)
