@@ -23,7 +23,7 @@
 ### 🚀 **Other Powerful Features**  
 - **Live Playback**: See processed video in real-time before saving  
 - **Face Embeddings**: Use multiple source faces for better accuracy & similarity  
-- **Live Swapping via Webcam**
+- **Live Swapping via Webcam**: Stream to virtual camera for Twitch, YouTube, Zoom, etc.  
 - **User-Friendly Interface**: Intuitive and easy to use  
 - **Video Markers**: Adjust settings per frame for precise results  
 - **TensorRT Support**: Leverages supported GPUs for ultra-fast processing  
@@ -100,9 +100,19 @@ On Linux just run `python main.py`.
 
 ## [Join Discord](https://discord.gg/5rx4SQuDbp)
 
-Now you're ready to use **VisoMaster**! 🚀
+## Support The Project ##
+This project was made possible by the combined efforts of **[@argenspin](https://github.com/argenspin)** and **[@Alucard24](https://github.com/alucard24)** with the support of countless other members in our Discord community. If you wish to support us for the continued development of **Visomaster**, you can donate to either of us (or Both if you're double Awesome :smiley: )
 
-### Disclaimer: ###
+### **argenspin** ###
+- [BuyMeACoffee](https://buymeacoffee.com/argenspin)
+- BTC: bc1qeuqdla6u7y8krsrh4aa2qzy74r4ha0et72elgw9szf969sayelcq5n03qx
+- ETH: 0x967a442FBd13617DE8d5fDC75234b2052122156B
+### **Alucard24** ###
+- [PayPal](https://www.paypal.com/donate/?business=XJX2E5ZTMZUSQ&no_recurring=0&item_name=Support+us+with+a+donation!+Your+contribution+helps+us+continue+improving+and+providing+quality+content.+Thank+you!&currency_code=EUR)
+- BTC: 15ny8vV3ChYsEuDta6VG3aKdT6Ra7duRAc
+
+
+## Disclaimer: ##
 **VisoMaster** is a hobby project that we are making available to the community as a thank you to all of the contributors ahead of us.
 We've copied the disclaimer from [Swap-Mukham](https://github.com/harisreedhar/Swap-Mukham) here since it is well-written and applies 100% to this repo.
  
