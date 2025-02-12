@@ -1,17 +1,33 @@
 
-<img src="app/ui/core/media/visomaster_full.png" height="250"/>
-
 # VisoMaster 
-VisoMaster is a powerful yet easy-to-use tool for face swapping and editing in images and videos. It utilizes AI to produce natural-looking results with minimal effort, making it ideal for both casual users and professionals.  
+### VisoMaster is a powerful yet easy-to-use tool for face swapping and editing in images and videos. It utilizes AI to produce natural-looking results with minimal effort, making it ideal for both casual users and professionals.  
 
 ---
+<img src=".github/screenshot.png" height="auto"/>
 
-## **Features**  
-✅ High-quality **AI-powered face swapping** for images and videos  
-✅ **Easy-to-use** interface with simple controls  
-✅ Supports **multiple formats** for input and output  
-✅ Efficient processing with **GPU acceleration** (CUDA support)  
-✅ **Customizable** models and fine-tuning options  
+## Features  
+
+### 🔄 **Face Swap**  
+- Supports multiple face swapper models  
+- Compatible with DeepFaceLab trained models (DFM)  
+- Advanced multi-face swapping with masking options for each facial part  
+- Occlusion masking support (DFL XSeg Masking)  
+- Works with all popular face detectors & landmark detectors  
+- Expression Restorer: Transfers original expressions to the swapped face  
+- Face Restoration: Supports all popular upscaling & enhancement models  
+
+### 🎭 **Face Editor (LivePortrait Models)**  
+- Manually adjust expressions and poses for different face parts  
+- Fine-tune colors for Face, Hair, Eyebrows, and Lips using RGB adjustments  
+
+### 🚀 **Other Powerful Features**  
+- **Live Playback**: See processed video in real-time before saving  
+- **Face Embeddings**: Use multiple source faces for better accuracy & similarity  
+- **Live Swapping via Webcam**
+- **User-Friendly Interface**: Intuitive and easy to use  
+- **Video Markers**: Adjust settings per frame for precise results  
+- **TensorRT Support**: Leverages supported GPUs for ultra-fast processing  
+- **Many More Advanced Features** 🎉  
 
 ## Automatic Installation (Windows)
 - For Windows users with an Nvidia GPU, we provide an automatic installer for easy set up. 
