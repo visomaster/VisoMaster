@@ -117,14 +117,17 @@ def read_frame(capture_obj: cv2.VideoCapture, preview_mode=False):
 
 def read_image_file(image_path):
     try:
-        img = cv2.imdecode(np.fromfile(image_path, np.uint8), cv2.IMREAD_UNCHANGED)
-    except:
-        print("Failed To Load: ", image_path)
+        img_array = np.fromfile(image_path, np.uint8)
+        img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)  # Always load as BGR
+    except Exception as e:
+        print(f"Failed to load {image_path}: {e}")
         return None
-    if img is not None and len(img.shape) == 3 and img.shape[2] == 4:
-        img = cv2.cvtColor(img, cv2.COLOR_RGBA2RGB)  # Remove alpha channel
 
-    return img
+    if img is None:
+        print("Failed to decode:", image_path)
+        return None
+
+    return img  # Return BGR format
 
 def get_output_file_path(original_media_path, output_folder, media_type='video'):
     date_and_time = datetime.now().strftime(r'%Y_%m_%d_%H_%M_%S')

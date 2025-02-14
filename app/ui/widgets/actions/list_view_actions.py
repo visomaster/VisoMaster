@@ -45,7 +45,7 @@ def add_media_thumbnail_button(main_window: 'MainWindow', buttonClass: 'widget_c
 
     button: widget_components.CardButton = buttonClass(*constructor_args, main_window=main_window)
     button.setIcon(QtGui.QIcon(pixmap))
-    button.setIconSize(button_size - QtCore.QSize(3, 3))  # Slightly smaller than the button size to add some margin
+    button.setIconSize(button_size - QtCore.QSize(8, 8))  # Slightly smaller than the button size to add some margin
     button.setFixedSize(button_size)
     button.setCheckable(True)
     if buttonClass in [widget_components.TargetFaceCardButton, widget_components.InputFaceCardButton]:
