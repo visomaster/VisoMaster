@@ -108,6 +108,7 @@ This project was made possible by the combined efforts of **[@argenspin](https:/
 - BTC: bc1qe8y7z0lkjsw6ssnlyzsncw0f4swjgh58j9vrqm84gw2nscgvvs5s4fts8g
 - ETH: 0x967a442FBd13617DE8d5fDC75234b2052122156B
 ### **Alucard24** ###
+- [BuyMeACoffee](https://buymeacoffee.com/alucard_24)
 - [PayPal](https://www.paypal.com/donate/?business=XJX2E5ZTMZUSQ&no_recurring=0&item_name=Support+us+with+a+donation!+Your+contribution+helps+us+continue+improving+and+providing+quality+content.+Thank+you!&currency_code=EUR)
 - BTC: 15ny8vV3ChYsEuDta6VG3aKdT6Ra7duRAc
 
