@@ -36,6 +36,7 @@ class TargetMediaCardButton(CardButton):
         self.is_webcam = is_webcam
         self.webcam_index = webcam_index
         self.webcam_backend = webcam_backend
+        self.media_capture: cv2.VideoCapture|bool = False
         self.setCheckable(True)
         self.setToolTip(media_path)
         layout = QtWidgets.QVBoxLayout(self)
@@ -56,10 +57,39 @@ class TargetMediaCardButton(CardButton):
         """)
 
         # Set the context menu policy to trigger the custom context menu on right-click
-        # self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         # Connect the custom context menu request signal to the custom slot
-        # self.customContextMenuRequested.connect(self.on_context_menu)
-        # self.create_context_menu()
+        self.customContextMenuRequested.connect(self.on_context_menu)
+        self.create_context_menu()
+
+    def reset_media_state(self):
+        main_window = self.main_window
+        # Deselect the currently selected video
+        if main_window.selected_video_button:
+            main_window.selected_video_button.toggle()  # Deselect the previous video
+            main_window.selected_video_button = False
+        
+        # Stop the current video processing
+        main_window.video_processor.stop_processing()
+
+    def reset_related_widgets_and_values(self):
+        main_window = self.main_window
+
+        # Set up videoSeekLineEdit
+        video_control_actions.set_up_video_seek_line_edit(main_window)
+        # Clear current target faces
+        card_actions.clear_target_faces(main_window, refresh_frame=False)
+        # Uncheck input faces
+        card_actions.uncheck_all_input_faces(main_window)
+        # Uncheck merged embeddings
+        card_actions.uncheck_all_merged_embeddings(main_window)
+        # Remove all markers
+        video_control_actions.remove_all_markers(main_window)
+
+        main_window.cur_selected_target_face_button = False
+
+        # Reset buttons and slider
+        video_control_actions.reset_media_buttons(main_window)
 
     def load_media(self):
 
@@ -101,6 +131,7 @@ class TargetMediaCardButton(CardButton):
             max_frames_number = int(media_capture.get(cv2.CAP_PROP_FRAME_COUNT)) - 1
             _, frame = misc_helpers.read_frame(media_capture)
             main_window.video_processor.media_capture = media_capture
+            self.media_capture = media_capture
             main_window.video_processor.fps = media_capture.get(cv2.CAP_PROP_FPS)
             main_window.video_processor.max_frame_number = max_frames_number
 
@@ -118,6 +149,7 @@ class TargetMediaCardButton(CardButton):
             max_frames_number = 999999
             _, frame = misc_helpers.read_frame(media_capture)
             main_window.video_processor.media_capture = media_capture
+            self.media_capture = media_capture
             main_window.video_processor.fps = media_capture.get(cv2.CAP_PROP_FPS)
             main_window.video_processor.max_frame_number = max_frames_number
 
@@ -130,21 +162,8 @@ class TargetMediaCardButton(CardButton):
             pixmap = common_widget_actions.get_pixmap_from_frame(main_window, frame)
             graphics_view_actions.update_graphics_view(main_window, pixmap, 0, reset_fit=True)
 
-        # Set up videoSeekLineEdit
-        video_control_actions.set_up_video_seek_line_edit(main_window)
-        # Clear current target faces
-        card_actions.clear_target_faces(main_window, refresh_frame=False)
-        # Uncheck input faces
-        card_actions.uncheck_all_input_faces(main_window)
-        # Uncheck merged embeddings
-        card_actions.uncheck_all_merged_embeddings(main_window)
-        # Remove all markers
-        video_control_actions.remove_all_markers(main_window)
+        self.reset_related_widgets_and_values()
 
-        main_window.cur_selected_target_face_button = False
-
-        # Reset buttons and slider
-        video_control_actions.reset_media_buttons(main_window)
         main_window.video_processor.file_type = self.file_type
         main_window.videoSeekSlider.blockSignals(True)  # Block signals to prevent unnecessary updates
         main_window.videoSeekSlider.setMaximum(max_frames_number)
@@ -182,16 +201,61 @@ class TargetMediaCardButton(CardButton):
 
     def remove_target_media_from_list(self):
         main_window = self.main_window
+
+        # Deselect the currently selected video
+        if main_window.selected_video_button == self:
+            self.reset_media_state()
+        
+            # Reset the frame counter
+            main_window.video_processor.current_frame_number = 0
+            main_window.video_processor.media_path = False
+            main_window.parameters = {}
+            main_window.selected_target_face_id = False
+
+            main_window.video_processor.media_capture = False
+            main_window.video_processor.fps = 0
+            main_window.video_processor.max_frame_number = 0
+
+            self.main_window.scene.clear()
+
+            self.reset_related_widgets_and_values()
+
+            main_window.videoSeekSlider.blockSignals(True)  # Block signals to prevent unnecessary updates
+            main_window.videoSeekSlider.setMaximum(1)
+            main_window.videoSeekSlider.setValue(0)  # Set the slider to 0 for the new video
+            main_window.videoSeekSlider.blockSignals(False)  # Unblock signals
+            # Append the selected video button to the list
+            main_window.selected_video_button = False
+
+
+            # Update the graphics frame after the reset
+            main_window.graphicsViewFrame.update()
+
+            main_window.video_processor.file_type = None
+
+            if self.media_capture:
+                self.media_capture.release()
+                self.media_capture = False
+
         for i in range(main_window.targetVideosList.count()-1, -1, -1):
             list_item = main_window.targetVideosList.item(i)
             if list_item:
                 if list_item.listWidget().itemWidget(list_item) == self:
                     main_window.targetVideosList.takeItem(i)   
                     main_window.target_videos.pop(self.media_id)
-                    # Pop parameters using the target's face_id
+
+        # If the target media list is empty, show the placeholder text
+        if not main_window.target_videos:
+            main_window.placeholder_update_signal.emit(self.main_window.targetVideosList, False)
+
+        self.deleteLater()
 
     def create_context_menu(self):
-        pass
+        self.popMenu = QtWidgets.QMenu(self)
+        remove_action = QtGui.QAction('Remove from list', self)
+        remove_action.triggered.connect(self.remove_target_media_from_list)
+        self.popMenu.addAction(remove_action)
+
     def on_context_menu(self, point):
         # show context menu
         self.popMenu.exec_(self.mapToGlobal(point))
