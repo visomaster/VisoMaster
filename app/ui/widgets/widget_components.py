@@ -273,7 +273,7 @@ class TargetFaceCardButton(CardButton):
 
         self.embedding_store = embedding_store  # Key: embedding_swap_model, Value: embedding
 
-        self.assigned_input_faces: Dict[str, Dict[str, np.ndarray]] = {}  # Inside Dict: {Key: embedding_swap_model, Value: InputFaceCardButton.embedding_store}
+        self.assigned_input_faces: Dict[str, Dict[str, np.ndarray]] = {}  # Inside Dict (key - input face_id): {Key: embedding_swap_model, Value: InputFaceCardButton.embedding_store}
         self.assigned_merged_embeddings: Dict[str, Dict[str, np.ndarray]] = {}  # Key: embedding_swap_model, Value: EmbeddingCardButton.embedding_store
         self.assigned_input_embedding = {}  # Key: embedding_swap_model, Value: np.ndarray
         
@@ -493,14 +493,32 @@ class InputFaceCardButton(CardButton):
                         input_face_button.setChecked(False)
 
         common_widget_actions.refresh_frame(main_window)
+        
+    def remove_input_face_from_list(self):
+        main_window = self.main_window
+        for i in range(main_window.inputFacesList.count()-1, -1, -1):
+            list_item = main_window.inputFacesList.item(i)
+            if list_item.listWidget().itemWidget(list_item) == self:
+                main_window.inputFacesList.takeItem(i)   
+                main_window.input_faces.pop(self.face_id)
+                for target_face_id in main_window.target_faces:
+                    main_window.target_faces[target_face_id].remove_assigned_input_face(self.face_id)
+        common_widget_actions.refresh_frame(self.main_window)
+        self.deleteLater()
+        # If the input faces list is empty, show the placeholder text
+        if not main_window.input_faces:
+            main_window.placeholder_update_signal.emit(self.main_window.inputFacesList, False)
 
     def create_context_menu(self):
         # create context menu
         self.popMenu = QtWidgets.QMenu(self)
-        remove_action = QtGui.QAction('Create embedding from selected faces', self)
-        remove_action.triggered.connect(self.create_embedding_from_selected_faces)
-        self.popMenu.addAction(remove_action)
+        create_embed_action = QtGui.QAction('Create embedding from selected faces', self)
+        create_embed_action.triggered.connect(self.create_embedding_from_selected_faces)
+        self.popMenu.addAction(create_embed_action)
 
+        remove_action = QtGui.QAction('Remove from list', self)
+        remove_action.triggered.connect(self.remove_input_face_from_list)
+        self.popMenu.addAction(remove_action)
     def on_context_menu(self, point):
         # show context menu
         self.popMenu.exec_(self.mapToGlobal(point))
