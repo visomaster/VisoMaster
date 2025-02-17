@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 import uuid
+import copy
 from functools import partial
 from typing import TYPE_CHECKING, Dict
 
@@ -13,6 +14,7 @@ from app.ui.widgets.actions import list_view_actions
 from app.ui.widgets.actions import video_control_actions
 from app.ui.widgets.actions import layout_actions
 from app.ui.widgets import ui_workers
+from app.helpers.typing_helper import ParametersTypes, MarkerTypes
 import app.helpers.miscellaneous as misc_helpers
 
 if TYPE_CHECKING:
@@ -78,10 +80,27 @@ def save_embeddings_to_file(main_window: 'MainWindow', save_as=False):
 
         main_window.loaded_embedding_filename = embedding_filename
 
+# This method is used to convert the data type of Parameters Dict
+# Parameters are converted to dict when serializing to JSON
+# Parameters are converted to ParametersDict when reading from JSON 
+def convert_parameters_to_supported_type(main_window: 'MainWindow', parameters: dict|ParametersTypes, convert_type: dict|misc_helpers.ParametersDict):
+    if convert_type==dict:
+        parameters = parameters.data
+    elif convert_type==misc_helpers.ParametersDict:
+        parameters = misc_helpers.ParametersDict(parameters, main_window.default_parameters)
+    return parameters
+
+def convert_markers_to_supported_type(main_window: 'MainWindow', markers: MarkerTypes, convert_type: dict|misc_helpers.ParametersDict):
+    # Convert Parameters inside the markers from ParametersDict to dict
+    for _,marker_data in markers.items():
+        for target_face_id, target_parameters in marker_data['parameters'].items():
+            marker_data['parameters'][target_face_id] = convert_parameters_to_supported_type(main_window, target_parameters, convert_type)
+    return markers
+
 def save_current_parameters_and_control(main_window: 'MainWindow', face_id):
     data_filename, _ = QtWidgets.QFileDialog.getSaveFileName(main_window, filter='JSON (*.json)')
     data = {
-        'parameters': main_window.parameters[face_id].copy(),
+        'parameters': convert_parameters_to_supported_type(main_window, main_window.parameters[face_id], dict),
         'control': main_window.control.copy(),
     }
 
@@ -95,14 +114,13 @@ def load_parameters_and_settings(main_window: 'MainWindow', face_id, load_settin
     if data_filename:
         with open(data_filename, 'r') as data_file: #pylint: disable=unspecified-encoding
             data = json.load(data_file)
-            main_window.parameters[face_id] = data['parameters'].copy()
+            main_window.parameters[face_id] = convert_parameters_to_supported_type(main_window, data['parameters'].copy(), misc_helpers.ParametersDict)
             if main_window.selected_target_face_id == face_id:
                 common_widget_actions.set_widgets_values_using_face_id_parameters(main_window, face_id)
             if load_settings:
                 main_window.control = data['control']
                 common_widget_actions.set_control_widgets_values(main_window)
             common_widget_actions.refresh_frame(main_window)
-
 
 def load_saved_workspace(main_window: 'MainWindow', data_filename: str|bool = False):
     if not data_filename:
@@ -161,7 +179,7 @@ def load_saved_workspace(main_window: 'MainWindow', data_filename: str|bool = Fa
                 pixmap = common_widget_actions.get_pixmap_from_frame(main_window, cropped_face)
                 embedding_store: Dict[str, np.ndarray] = {embed_model: np.array(embedding) for embed_model, embedding in target_face_data['embedding_store'].items()}
                 list_view_actions.add_media_thumbnail_to_target_faces_list(main_window, cropped_face, embedding_store, pixmap, face_id)
-                main_window.parameters[face_id] = target_face_data['parameters']
+                main_window.parameters[face_id] = convert_parameters_to_supported_type(main_window, main_window.parameters[face_id], misc_helpers.ParametersDict)
 
                 # Set assigned embeddinng buttons
                 embed_buttons = main_window.merged_embeddings
@@ -186,6 +204,10 @@ def load_saved_workspace(main_window: 'MainWindow', data_filename: str|bool = Fa
 
             # Add markers
             video_control_actions.remove_all_markers(main_window)
+
+            # Convert params to ParametersDict
+            data['markers'] = convert_markers_to_supported_type(main_window, data['markers'], misc_helpers.ParametersDict)
+        
             for marker_position, marker_data in data['markers'].items():
                 video_control_actions.add_marker(main_window, marker_data['parameters'], marker_data['control'], int(marker_position))
             # main_window.videoSeekSlider.setValue(0)
@@ -207,8 +229,6 @@ def load_saved_workspace(main_window: 'MainWindow', data_filename: str|bool = Fa
             else:
                 main_window.current_widget_parameters = data.get('current_widget_parameters', {})
                 common_widget_actions.set_widgets_values_using_face_id_parameters(main_window) 
-
-
         
 def save_current_workspace(main_window: 'MainWindow', data_filename:str|bool = False):
     target_faces_data = {}
@@ -220,7 +240,7 @@ def save_current_workspace(main_window: 'MainWindow', data_filename:str|bool = F
         target_faces_data[face_id] = {
             'cropped_face': target_face.cropped_face.tolist(), 
             'embedding_store': {embed_model: embedding.tolist() for embed_model, embedding in target_face.embedding_store.items()},
-            'parameters': main_window.parameters[face_id].copy(), #Store the current parameters. This will be overriden when loading the workspace, if there are markers for the video.
+            'parameters': main_window.parameters[face_id].data.copy(), #Store the current parameters. This will be overriden when loading the workspace, if there are markers for the video.
             'control': main_window.control.copy(), #Store the current control settings. This will be overriden when loading the workspace, if there are markers for the video.
             'assigned_input_faces': [input_face_id for input_face_id in target_face.assigned_input_faces.keys()],
             'assigned_merged_embeddings': [embedding_id for embedding_id in target_face.assigned_merged_embeddings.keys()],
@@ -233,18 +253,22 @@ def save_current_workspace(main_window: 'MainWindow', data_filename:str|bool = F
     
     target_medias_data = [{'media_id': media_id, 'media_path': target_media.media_path}  for media_id,target_media in main_window.target_videos.items() if not target_media.is_webcam]
     selected_media_id = main_window.selected_video_button.media_id if main_window.selected_video_button else False
+    markers = copy.deepcopy(main_window.markers)
+    # Convert params to dict
+    markers = convert_markers_to_supported_type(main_window, markers, dict)
+
     save_data = {
         'selected_media_id': selected_media_id,
         'target_medias_data': target_medias_data,
         'target_faces_data': target_faces_data,
         'embeddings_data': embeddings_data,
         'input_faces_data': input_faces_data,
-        'markers': main_window.markers,
+        'markers': markers,
         'control': main_window.control,
         'last_target_media_folder_path': main_window.last_target_media_folder_path,
         'last_input_media_folder_path': main_window.last_input_media_folder_path,
         'loaded_embedding_filename': main_window.loaded_embedding_filename,
-        'current_widget_parameters': main_window.current_widget_parameters.copy()
+        'current_widget_parameters': convert_parameters_to_supported_type(main_window, main_window.current_widget_parameters, dict)
     }
     if not data_filename:
         data_filename, _ = QtWidgets.QFileDialog.getSaveFileName(main_window, filter='JSON (*.json)')

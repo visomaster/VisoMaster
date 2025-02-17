@@ -68,6 +68,7 @@ def create_default_parameter(main_window: 'MainWindow', parameter_name, paramete
 def create_parameter_dict_for_face_id(main_window: 'MainWindow', face_id=0):
     if not main_window.parameters.get(face_id):
         parameters =  main_window.parameters.get(main_window.selected_target_face_id) or main_window.current_widget_parameters or main_window.default_parameters
+        parameters = misc_helpers.ParametersDict(parameters, main_window.default_parameters)
         main_window.parameters[face_id] = parameters.copy()
     # print("Created parameter_dict_for_face_id", face_id)
 

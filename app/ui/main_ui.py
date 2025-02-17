@@ -24,8 +24,8 @@ from app.ui.widgets.common_layout_data import COMMON_LAYOUT_DATA
 from app.ui.widgets.swapper_layout_data import SWAPPER_LAYOUT_DATA
 from app.ui.widgets.settings_layout_data import SETTINGS_LAYOUT_DATA
 from app.ui.widgets.face_editor_layout_data import FACE_EDITOR_LAYOUT_DATA
-from app.helpers.miscellaneous import DFM_MODELS_DATA
-from app.helpers.typing_helper import ParametersTypes, ControlTypes
+from app.helpers.miscellaneous import DFM_MODELS_DATA, ParametersDict
+from app.helpers.typing_helper import FacesParametersTypes, ParametersTypes, ControlTypes, MarkerTypes
 
 ParametersWidgetTypes = Dict[str, widget_components.ToggleButton|widget_components.SelectionBox|widget_components.ParameterDecimalSlider|widget_components.ParameterSlider|widget_components.ParameterText]
 
@@ -61,13 +61,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 # -----
             # }
         # '''
-        self.parameters: ParametersTypes = {} 
+        self.parameters: FacesParametersTypes = {} 
 
-        self.default_parameters: Dict[str, bool|int|float|str] = {}
-        self.copied_parameters: Dict[str, bool|int|float|str] = {}
-        self.current_widget_parameters: Dict[str, bool|int|float|str] = {}
+        self.default_parameters: ParametersTypes = {}
+        self.copied_parameters: ParametersTypes = {}
+        self.current_widget_parameters: ParametersTypes = {}
 
-        self.markers: Dict[int, Dict[ParametersTypes, ControlTypes]] = {} #Video Markers (Contains parameters for each face)
+        self.markers: MarkerTypes = {} #Video Markers (Contains parameters for each face)
         self.parameters_list = {}
         self.control: ControlTypes = {}
         self.parameter_widgets: ParametersWidgetTypes = {}

@@ -15,7 +15,7 @@ import numpy as np
 from app.processors.utils import faceutil
 import app.ui.widgets.actions.common_actions as common_widget_actions
 from app.ui.widgets.actions import video_control_actions
-from app.helpers.miscellaneous import t512,t384,t256,t128
+from app.helpers.miscellaneous import t512,t384,t256,t128, ParametersDict
 
 if TYPE_CHECKING:
     from app.ui.main_ui import MainWindow
@@ -157,7 +157,7 @@ class FrameWorker(threading.Thread):
             # Loop through target faces to see if they match our found face embeddings
             for i, fface in enumerate(det_faces_data):
                     for _, target_face in self.main_window.target_faces.items():
-                        parameters = self.parameters[target_face.face_id] #Use the parameters of the target face
+                        parameters = ParametersDict(self.parameters[target_face.face_id], self.main_window.default_parameters) #Use the parameters of the target face
 
                         if self.main_window.swapfacesButton.isChecked() or self.main_window.editFacesButton.isChecked():
                             sim = self.models_processor.findCosineDistance(fface['embedding'], target_face.get_embedding(control['RecognitionModelSelection'])) # Recognition for comparing
@@ -738,8 +738,10 @@ class FrameWorker(threading.Thread):
                 swap = swap.permute(2, 0, 1)
 
         if parameters['JPEGCompressionEnableToggle']:
-            swap = faceutil.jpegBlur(swap, parameters["JPEGCompressionAmountSlider"])
-
+            try:
+                swap = faceutil.jpegBlur(swap, parameters["JPEGCompressionAmountSlider"])
+            except:
+                pass
         if parameters['FinalBlendAdjEnableToggle'] and parameters['FinalBlendAdjEnableToggle'] > 0:
             final_blur_strength = parameters['FinalBlendAmountSlider']  # Ein Parameter steuert beides
             # Bestimme kernel_size und sigma basierend auf dem Parameter
