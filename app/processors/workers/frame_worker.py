@@ -737,6 +737,9 @@ class FrameWorker(threading.Thread):
                 swap = torch.clamp(swap, 0, 255)
                 swap = swap.permute(2, 0, 1)
 
+        if parameters['JPEGCompressionEnableToggle']:
+            swap = faceutil.jpegBlur(swap, parameters["JPEGCompressionAmountSlider"])
+
         if parameters['FinalBlendAdjEnableToggle'] and parameters['FinalBlendAdjEnableToggle'] > 0:
             final_blur_strength = parameters['FinalBlendAmountSlider']  # Ein Parameter steuert beides
             # Bestimme kernel_size und sigma basierend auf dem Parameter

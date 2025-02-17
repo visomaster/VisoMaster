@@ -1032,6 +1032,24 @@ SWAPPER_LAYOUT_DATA: LayoutDictTypes = {
             'requiredToggleValue': True,
             'help': 'Add noise to swapped face.'
         },
+        
+        'JPEGCompressionEnableToggle': {
+            'level': 1,
+            'label': 'JPEG Compression',
+            'default': False,
+            'help': 'Apply JPEG Compression to the swapped face to make output more realistic',
+        },
+        'JPEGCompressionAmountSlider': {
+            'level': 1,
+            'label': 'Compression',
+            'min_value': '1',
+            'max_value': '100',
+            'default': '50',
+            'step': 1,
+            'parentToggle': 'JPEGCompressionEnableToggle',
+            'requiredToggleValue': True,
+            'help': 'Adjust the JPEG Compression amount'
+        }
     },
     'Blend Adjustments':{
         'FinalBlendAdjEnableToggle': {
