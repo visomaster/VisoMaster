@@ -2,6 +2,7 @@ import os
 import shutil
 import cv2
 import time
+from collections import UserDict
 import numpy as np
 from functools import wraps
 from datetime import datetime
@@ -16,6 +17,21 @@ video_extensions = ('.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv', '.webm', '.m
 DFM_MODELS_PATH = './model_assets/dfm_models'
 
 DFM_MODELS_DATA = {}
+
+# Datatype used for storing parameter values
+# Major use case for subclassing this is to fallback to a default value, when trying to access value from a non-existing key
+# Helps when saving/importing workspace or parameters from external file after a future update including new Parameter widgets
+class ParametersDict(UserDict):
+    def __init__(self, parameters, default_parameters: dict):
+        super().__init__(parameters)
+        self._default_parameters = default_parameters
+        
+    def __getitem__(self, key):
+        try:
+            return self.data[key]
+        except KeyError:
+            self.__setitem__(key, self._default_parameters[key])
+            return self._default_parameters[key]     
 
 def get_scaling_transforms():
     t512 = v2.Resize((512, 512), interpolation=v2.InterpolationMode.BILINEAR, antialias=False)
