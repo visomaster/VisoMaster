@@ -633,6 +633,10 @@ class FrameWorker(threading.Thread):
         # Create image mask
         swap_mask = torch.ones((128, 128), dtype=torch.float32, device=self.models_processor.device)
         swap_mask = torch.unsqueeze(swap_mask,0)
+        
+        # Expression Restorer
+        if parameters['FaceExpressionEnableToggle']:
+            swap = self.apply_face_expression_restorer(original_face_512, swap, parameters)
 
         # Restorer
         if parameters["FaceRestorerEnableToggle"]:
@@ -759,8 +763,8 @@ class FrameWorker(threading.Thread):
         swap_mask = torch.mul(swap_mask, border_mask)
         swap_mask = t512(swap_mask)
 
-        if parameters['FaceExpressionEnableToggle']:
-            swap = self.apply_face_expression_restorer(original_face_512, swap, parameters)
+        #if parameters['FaceExpressionEnableToggle']:
+            #swap = self.apply_face_expression_restorer(original_face_512, swap, parameters)
 
         swap = torch.mul(swap, swap_mask)
 
