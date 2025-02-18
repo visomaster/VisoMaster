@@ -15,11 +15,13 @@ from app.helpers.typing_helper import LayoutDictTypes
 
 def add_widgets_to_tab_layout(main_window: 'MainWindow', LAYOUT_DATA: LayoutDictTypes, layoutWidget: QtWidgets.QVBoxLayout, data_type='parameter'):
     layout = QtWidgets.QVBoxLayout()
+    layout.setContentsMargins(0, 0, 10, 0)  # Adjust left margin (20px in this example)
     scroll_area = QtWidgets.QScrollArea()
     scroll_area.setWidgetResizable(True)
     scroll_content = QtWidgets.QWidget()
     scroll_content.setLayout(layout)
     scroll_area.setWidget(scroll_content)
+    scroll_area.setFrameShape(QtWidgets.QFrame.NoFrame)
 
     def add_horizontal_layout_to_category(category_layout: QtWidgets.QFormLayout, *widgets):
         # Create a horizontal layout
