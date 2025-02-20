@@ -33,9 +33,9 @@ FACE_EDITOR_LAYOUT_DATA: LayoutDictTypes = {
         },
         'FaceEditorEnableToggle': {
             'level': 1,
-            'label': 'Enable Face Pose/Epression Editor',
+            'label': 'Enable Face Pose/Expression Editor',
             'default': False,
-            'help': 'Enable Face Pose/Epression Editor.'
+            'help': 'Enable Face Pose/Expression Editor.'
         },
         'FaceEditorTypeSelection': {
             'level': 2,
