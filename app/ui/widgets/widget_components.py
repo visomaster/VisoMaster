@@ -170,6 +170,7 @@ class TargetMediaCardButton(CardButton):
         main_window.video_processor.media_path = self.media_path
         main_window.parameters = {}
         main_window.selected_target_face_id = False
+        main_window.video_processor.current_frame = []
 
         # Release the previous media_capture if it exists
         if main_window.video_processor.media_capture:
@@ -216,6 +217,7 @@ class TargetMediaCardButton(CardButton):
                 # restore initial video position after reading. == 0
                 media_capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
 
+            main_window.video_processor.current_frame = frame
             pixmap = common_widget_actions.get_pixmap_from_frame(main_window, frame)
             graphics_view_actions.update_graphics_view(main_window, pixmap, 0, reset_fit=True)
 
@@ -273,6 +275,7 @@ class TargetMediaCardButton(CardButton):
             main_window.selected_target_face_id = False
 
             main_window.video_processor.media_capture = False
+            main_window.video_processor.current_frame = []
             main_window.video_processor.fps = 0
             main_window.video_processor.max_frame_number = 0
 

@@ -136,11 +136,15 @@ class VideoProcessor(QObject):
             self.send_frame_to_virtualcam(frame)
             graphics_view_actions.update_graphics_view(self.main_window, pixmap, 0)
 
-    def send_frame_to_virtualcam(self, frame):
+    def send_frame_to_virtualcam(self, frame: numpy.ndarray):
         if self.main_window.control['SendVirtCamFramesEnableToggle'] and self.virtcam:
-            # print("virtcam",self.virtcam)
+            # Check if the dimensions of the frame matches that of the Virtcam object
+            # If it doesn't match, reinstantiate the Virtcam object with new dimensions
+            height, width, _ = frame.shape
+            if self.virtcam.height!=height or self.virtcam.width!=width:
+                self.enable_virtualcam()
             try:
-                self.virtcam.send(frame[..., ::-1])
+                self.virtcam.send(frame)
                 self.virtcam.sleep_until_next_frame()
             except Exception as e:
                 print(e)
@@ -420,13 +424,16 @@ class VideoProcessor(QObject):
     def enable_virtualcam(self, backend=False):
         #Check if capture contains any cv2 stream or is it an empty list
         if self.media_capture:
-            vid_height = int(self.media_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
-            vid_width = int(self.media_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+            if isinstance(self.current_frame, numpy.ndarray):
+                frame_height, frame_width, _ = self.current_frame.shape
+            else:
+                frame_height = int(self.media_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                frame_width = int(self.media_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
             self.disable_virtualcam()
             try:
                 backend = backend or self.main_window.control['VirtCamBackendSelection']
                 # self.virtcam = pyvirtualcam.Camera(width=vid_width, height=vid_height, fps=int(self.fps), backend='unitycapture', device='Unity Video Capture')
-                self.virtcam = pyvirtualcam.Camera(width=vid_width, height=vid_height, fps=int(self.fps), backend=backend)
+                self.virtcam = pyvirtualcam.Camera(width=frame_width, height=frame_height, fps=int(self.fps), backend=backend, fmt=pyvirtualcam.PixelFormat.BGR)
 
             except Exception as e:
                 print(e)
