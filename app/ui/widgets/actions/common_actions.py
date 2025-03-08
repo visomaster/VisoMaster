@@ -84,8 +84,8 @@ def update_parameter(main_window: 'MainWindow', parameter_name, parameter_value,
         main_window.markers[current_position]['parameters'][face_id][parameter_name] = parameter_value
 
     if main_window.target_faces and face_id:
+        # Store old value and update the parameters with new value
         old_parameter_value = main_window.parameters[face_id][parameter_name]
-
         main_window.parameters[face_id][parameter_name] = parameter_value
 
         if enable_refresh_frame:
