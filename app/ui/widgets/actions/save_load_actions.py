@@ -179,7 +179,7 @@ def load_saved_workspace(main_window: 'MainWindow', data_filename: str|bool = Fa
                 pixmap = common_widget_actions.get_pixmap_from_frame(main_window, cropped_face)
                 embedding_store: Dict[str, np.ndarray] = {embed_model: np.array(embedding) for embed_model, embedding in target_face_data['embedding_store'].items()}
                 list_view_actions.add_media_thumbnail_to_target_faces_list(main_window, cropped_face, embedding_store, pixmap, face_id)
-                main_window.parameters[face_id] = convert_parameters_to_supported_type(main_window, main_window.parameters[face_id], misc_helpers.ParametersDict)
+                main_window.parameters[face_id] = convert_parameters_to_supported_type(main_window, data['target_faces_data'][face_id]['parameters'], misc_helpers.ParametersDict)
 
                 # Set assigned embeddinng buttons
                 embed_buttons = main_window.merged_embeddings
