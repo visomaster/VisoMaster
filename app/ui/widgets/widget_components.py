@@ -3,6 +3,7 @@ import os
 from functools import partial
 import uuid
 from typing import TYPE_CHECKING, Dict
+from send2trash import send2trash
 
 from PySide6 import QtWidgets, QtGui, QtCore
 from PySide6.QtWidgets import QPushButton
@@ -310,11 +311,71 @@ class TargetMediaCardButton(CardButton):
 
         self.deleteLater()
 
+    def delete_target_media_to_trash(self):
+        main_window = self.main_window
+
+        # Deselect the currently selected video
+        if main_window.selected_video_button == self:
+            self.reset_media_state()
+        
+            # Reset the frame counter
+            main_window.video_processor.current_frame_number = 0
+            main_window.video_processor.media_path = False
+            main_window.parameters = {}
+            main_window.selected_target_face_id = False
+
+            main_window.video_processor.media_capture = False
+            main_window.video_processor.current_frame = []
+            main_window.video_processor.fps = 0
+            main_window.video_processor.max_frame_number = 0
+
+            self.main_window.scene.clear()
+
+            self.reset_related_widgets_and_values()
+
+            main_window.videoSeekSlider.blockSignals(True)  # Block signals to prevent unnecessary updates
+            main_window.videoSeekSlider.setMaximum(1)
+            main_window.videoSeekSlider.setValue(0)  # Set the slider to 0 for the new video
+            main_window.videoSeekSlider.blockSignals(False)  # Unblock signals
+            # Append the selected video button to the list
+            main_window.selected_video_button = False
+
+
+            # Update the graphics frame after the reset
+            main_window.graphicsViewFrame.update()
+
+            main_window.video_processor.file_type = None
+
+            if self.media_capture:
+                self.media_capture.release()
+                self.media_capture = False
+
+        i = self.get_item_position()
+        main_window.targetVideosList.takeItem(i)   
+        main_window.target_videos.pop(self.media_id)
+
+        # Send the file to the trash
+        if os.path.exists(self.media_path):  
+            send2trash(self.media_path.replace('/','\\'))  
+            print(f"{self.media_path} has been sent to the trash.")  
+        else:  
+            print(f"{self.media_path} does not exist.") 
+
+        # If the target media list is empty, show the placeholder text
+        if not main_window.target_videos:
+            main_window.placeholder_update_signal.emit(self.main_window.targetVideosList, False)
+
+        self.deleteLater()
+
     def create_context_menu(self):
         self.popMenu = QtWidgets.QMenu(self)
         remove_action = QtGui.QAction('Remove from list', self)
         remove_action.triggered.connect(self.remove_target_media_from_list)
         self.popMenu.addAction(remove_action)
+
+        delete_action = QtGui.QAction('Delete file to recycle bin', self)
+        delete_action.triggered.connect(self.delete_target_media_to_trash)
+        self.popMenu.addAction(delete_action)
 
     def on_context_menu(self, point):
         # show context menu
@@ -597,6 +658,27 @@ class InputFaceCardButton(CardButton):
         if not main_window.input_faces:
             main_window.placeholder_update_signal.emit(self.main_window.inputFacesList, False)
 
+    def delete_input_face_to_trash(self):
+        main_window = self.main_window
+        i = self.get_item_position()
+        main_window.inputFacesList.takeItem(i)   
+        main_window.input_faces.pop(self.face_id)
+        for target_face_id in main_window.target_faces:
+            main_window.target_faces[target_face_id].remove_assigned_input_face(self.face_id)
+
+        # Send the file to the trash
+        if os.path.exists(self.media_path):  
+            send2trash(self.media_path.replace('/','\\'))  
+            print(f"{self.media_path} has been sent to the trash.")  
+        else:  
+            print(f"{self.media_path} does not exist.") 
+
+        common_widget_actions.refresh_frame(self.main_window)
+        self.deleteLater()
+        # If the input faces list is empty, show the placeholder text
+        if not main_window.input_faces:
+            main_window.placeholder_update_signal.emit(self.main_window.inputFacesList, False)
+
     def create_context_menu(self):
         # create context menu
         self.popMenu = QtWidgets.QMenu(self)
@@ -607,6 +689,10 @@ class InputFaceCardButton(CardButton):
         remove_action = QtGui.QAction('Remove from list', self)
         remove_action.triggered.connect(self.remove_input_face_from_list)
         self.popMenu.addAction(remove_action)
+
+        delete_action = QtGui.QAction('Delete file to recycle bin', self)
+        delete_action.triggered.connect(self.delete_input_face_to_trash)
+        self.popMenu.addAction(delete_action)
     def on_context_menu(self, point):
         # show context menu
         self.popMenu.exec_(self.mapToGlobal(point))
