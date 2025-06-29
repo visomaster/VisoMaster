@@ -1,4 +1,4 @@
---extra-index-url https://download.pytorch.org/whl/cu124
+--extra-index-url https://download.pytorch.org/whl/cu128
 
 numpy==1.26.4
 opencv-python==4.10.0.84
@@ -11,9 +11,9 @@ onnxruntime-gpu==1.22.0
 packaging==24.1
 PySide6==6.8.2.1 
 kornia
-torch==2.4.1+cu124
-torchvision==0.19.1+cu124
-torchaudio==2.4.1+cu124
+torch==2.4.1+cu128
+torchvision==0.19.1+cu128
+torchaudio==2.4.1+cu128
 tensorrt==10.6.0 --extra-index-url https://pypi.nvidia.com
 tensorrt-cu12_libs==10.6.0
 tensorrt-cu12_bindings==10.6.0

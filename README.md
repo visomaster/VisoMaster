@@ -72,6 +72,11 @@ conda install -c nvidia/label/cuda-12.4.1 cuda-runtime
 ```sh
 conda install -c conda-forge cudnn
 ```
+#### CUDA 12.8
+```sh
+conda install -c nvidia/label/cuda-12.8.0 cuda-runtime
+```
+Compatible with GPUs having compute capability 9.0 or higher (e.g., RTX 5090).
 
 ### **4. Install Additional Dependencies**  
 ```sh
@@ -80,12 +85,17 @@ conda install scikit-image
 ```sh
 pip install -r requirements_cu124.txt
 ```
+```sh
+pip install -r requirements_cu128.txt
+```
 
 ### **5. Download Models and Other Dependencies**  
 1. Download all the required models
 ```sh
 python download_models.py
 ```
+For CUDA 12.8 you can run `scripts\update_cu128.bat` to install the correct
+packages and download the models in one step.
 2. Download all the files from this [page](https://github.com/visomaster/visomaster-assets/releases/tag/v0.1.0_dp) and copy it to the ***dependencies/*** folder.
 
   **Note**: You do not need to download the Source code (zip) and Source code (tar.gz) files 
