@@ -35,3 +35,5 @@ dependencies/TensorRT/
 *.jpg
 *.exe
 .thumbnails
+
+venv*/
