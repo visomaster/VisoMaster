@@ -35,7 +35,7 @@ SETTINGS_LAYOUT_DATA: LayoutDictTypes = {
             'exec_function_args': [],
         },
     },
-    'Video Settings': {
+    'Video Playback Settings': {
         'VideoPlaybackCustomFpsToggle': {
             'level': 1,
             'label': 'Set Custom Video Playback FPS',
@@ -54,6 +54,16 @@ SETTINGS_LAYOUT_DATA: LayoutDictTypes = {
             'requiredToggleValue': True,
             'step': 1,
             'help': 'Set the maximum FPS of the video when playing'
+        },
+        'LiveSoundSpeedDecimalSlider': {
+            'level': 1,
+            'label': 'Audio Playback Speed',
+            'min_value': '0.50',
+            'max_value': '2.00',
+            'default': '1.00',
+            'step': 0.01,
+            'decimals': 2,
+            'help': '[Experimental] Set the playback speed of the audio, when Live Sound is enabled'
         },
     },
     'Auto Swap':{

@@ -7,6 +7,7 @@ from pathlib import Path
 import os
 import gc
 from functools import partial
+import psutil
 
 import cv2
 import numpy
@@ -48,6 +49,8 @@ class VideoProcessor(QObject):
         self.recording = False
 
         self.virtcam: pyvirtualcam.Camera|None = None
+
+        self.ffplay_sound_sp = None
 
         self.recording_sp: subprocess.Popen|None = None 
         self.temp_file = '' 
@@ -120,7 +123,10 @@ class VideoProcessor(QObject):
             if not self.recording:
                 video_control_actions.update_widget_values_from_markers(self.main_window, self.next_frame_to_display)
             graphics_view_actions.update_graphics_view(self.main_window, pixmap, self.next_frame_to_display)
-            self.threads.pop(self.next_frame_to_display)
+            try:
+                self.threads.pop(self.next_frame_to_display)
+            except:
+                print("Thread not found in dict!")
             self.next_frame_to_display += 1
 
     def display_next_webcam_frame(self):
@@ -190,8 +196,12 @@ class VideoProcessor(QObject):
                 else:
                     fps = self.media_capture.get(cv2.CAP_PROP_FPS)
                 
+                if self.main_window.liveSoundButton.isChecked():
+                    self.start_live_sound()
+
                 interval = 1000 / fps if fps > 0 else 30
                 interval = int(interval * 0.8) #Process 20% faster to offset the frame loading & processing time so the video will be played close to the original fps
+
                 print(f"Starting frame_read_timer with an interval of {interval} ms.")
                 if self.recording:
                     self.frame_read_timer.start()
@@ -199,6 +209,7 @@ class VideoProcessor(QObject):
                 else:
                     self.frame_read_timer.start(interval)
                     self.frame_display_timer.start()
+
                 self.gpu_memory_update_timer.start(5000) #Update GPU memory progressbar every 5 Seconds
 
             else:
@@ -333,6 +344,7 @@ class VideoProcessor(QObject):
             self.frame_display_timer.stop()
             self.gpu_memory_update_timer.stop()
             self.join_and_clear_threads()
+            self.stop_live_sound()
 
 
             # print("Clearing Threads and Queues")
@@ -442,3 +454,47 @@ class VideoProcessor(QObject):
         if self.virtcam:
             self.virtcam.close()
         self.virtcam = None
+
+    def start_live_sound(self):
+        # Start up audio if requested
+        seek_time = (self.next_frame_to_display)/self.fps
+        args =  ["ffplay",
+                '-vn',
+                '-ss', str(seek_time),
+                '-nodisp',
+                '-stats',
+                '-loglevel',  'quiet',
+                '-sync',  'audio',
+                '-af', f'atempo={self.main_window.control["LiveSoundSpeedDecimalSlider"]}',
+                self.media_path]
+
+        self.ffplay_sound_sp = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+    def stop_live_sound(self):
+        if self.ffplay_sound_sp:
+            parent_pid = self.ffplay_sound_sp.pid
+
+            try:
+                # Terminate any child processes spawned by ffplay
+                try:
+                    parent_proc = psutil.Process(parent_pid)
+                    children = parent_proc.children(recursive=True)
+                    for child in children:
+                        try:
+                            child.kill()
+                        except psutil.NoSuchProcess:
+                            pass  # The child process has already terminated
+                except psutil.NoSuchProcess:
+                    pass  # The parent process has already terminated
+
+                # Terminate the parent process
+                self.ffplay_sound_sp.terminate()
+                try:
+                    self.ffplay_sound_sp.wait(timeout=2)
+                except subprocess.TimeoutExpired:
+                    self.ffplay_sound_sp.kill()
+
+            except psutil.NoSuchProcess:
+                pass  # The process no longer exists
+
+            self.ffplay_sound_sp = None
