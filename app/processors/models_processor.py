@@ -126,8 +126,8 @@ class ModelsProcessor(QtCore.QObject):
         with self.model_lock:
             self.main_window.model_loading_signal.emit()
             # QApplication.processEvents()
-            # if not is_file_exists(self.models_path[model_name]):
-            #     download_file(model_name, self.models_path[model_name], self.models_data[model_name]['hash'], self.models_data[model_name]['url'])
+            if not is_file_exists(self.models_path[model_name]):
+                download_file(model_name, self.models_path[model_name], self.models_data[model_name]['hash'], self.models_data[model_name]['url'])
             if session_options is None:
                 model_instance = onnxruntime.InferenceSession(self.models_path[model_name], providers=self.providers)
             else:
