@@ -107,9 +107,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         # Set up click to select and drop action on ListWidgets
         self.targetVideosList.setAcceptDrops(True)
-        self.targetVideosList.viewport().setAcceptDrops(False)
+        self.targetVideosList.viewport().setAcceptDrops(True)
         self.inputFacesList.setAcceptDrops(True)
-        self.inputFacesList.viewport().setAcceptDrops(False)
+        self.inputFacesList.viewport().setAcceptDrops(True)
         list_widget_event_filter = ListWidgetEventFilter(self, self)
         self.targetVideosList.installEventFilter(list_widget_event_filter)
         self.targetVideosList.viewport().installEventFilter(list_widget_event_filter)

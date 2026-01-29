@@ -54,10 +54,9 @@ class TargetMediaLoaderWorker(qtc.QThread):
 
         i=0
         media_files = video_files + image_files
-        for media_file in media_files:
+        for media_file_path in media_files:
             if not self._running:  # Check if the thread is still running
                 break
-            media_file_path = os.path.join(folder_name, media_file)
             file_type = misc_helpers.get_file_type(media_file_path)
             pixmap = common_widget_actions.extract_frame_as_pixmap(media_file_path, file_type)
             if self.media_ids:
@@ -166,8 +165,6 @@ class InputFacesLoaderWorker(qtc.QThread):
                 break
             if not misc_helpers.is_image_file(image_file_path):
                 return
-            if folder_name:
-                image_file_path = os.path.join(folder_name, image_file_path)
             frame = misc_helpers.read_image_file(image_file_path)
             if frame is None:
                 continue
