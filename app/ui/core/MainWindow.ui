@@ -135,6 +135,54 @@
          <item>
           <layout class="QHBoxLayout" name="horizontalLayoutMediaButtons">
            <item>
+            <spacer name="horizontalSpacer_7">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+             <property name="sizeType">
+              <enum>QSizePolicy::Policy::MinimumExpanding</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QPushButton" name="liveSoundButton">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="toolTip">
+              <string>[Experimental] Toggle Live Sound while the video is playing</string>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+             <property name="icon">
+              <iconset resource="media.qrc">
+               <normaloff>:/media/media/audio_off.png</normaloff>:/media/media/audio_off.png</iconset>
+             </property>
+             <property name="iconSize">
+              <size>
+               <width>16</width>
+               <height>20</height>
+              </size>
+             </property>
+             <property name="checkable">
+              <bool>true</bool>
+             </property>
+             <property name="flat">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
             <spacer name="horizontalSpacer">
              <property name="orientation">
               <enum>Qt::Orientation::Horizontal</enum>
@@ -559,35 +607,35 @@
               <height>120</height>
              </size>
             </property>
-            <property name="verticalScrollBarPolicy">
-             <enum>Qt::ScrollBarAlwaysOff</enum>
-            </property>
-            <property name="horizontalScrollBarPolicy">
-             <enum>Qt::ScrollBarAsNeeded</enum>
-            </property>
             <property name="toolTip">
              <string>Save Embedding</string>
             </property>
-            <property name="uniformItemSizes">
-             <bool>true</bool>
+            <property name="verticalScrollBarPolicy">
+             <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
             </property>
-            <property name="viewMode">
-             <enum>QListView::IconMode</enum>
+            <property name="horizontalScrollBarPolicy">
+             <enum>Qt::ScrollBarPolicy::ScrollBarAsNeeded</enum>
+            </property>
+            <property name="autoScroll">
+             <bool>false</bool>
             </property>
             <property name="movement">
-             <enum>QListView::Static</enum>
-            </property>
-            <property name="wrapping">
-             <bool>true</bool>
+             <enum>QListView::Movement::Static</enum>
             </property>
             <property name="layoutMode">
-             <enum>QListView::Batched</enum>
+             <enum>QListView::LayoutMode::Batched</enum>
             </property>
             <property name="spacing">
              <number>4</number>
             </property>
-            <property name="autoScroll">
-             <bool>false</bool>
+            <property name="viewMode">
+             <enum>QListView::ViewMode::IconMode</enum>
+            </property>
+            <property name="uniformItemSizes">
+             <bool>true</bool>
+            </property>
+            <property name="wrapping" stdset="0">
+             <bool>true</bool>
             </property>
            </widget>
           </item>

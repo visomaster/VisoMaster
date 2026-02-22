@@ -149,6 +149,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         video_seek_line_edit_event_filter = videoSeekSliderLineEditEventFilter(self, self.videoSeekLineEdit)
         self.videoSeekLineEdit.installEventFilter(video_seek_line_edit_event_filter)
 
+        # Audio toggle
+        self.liveSoundButton.toggled.connect(partial(video_control_actions.toggle_live_sound, self))
+
         # Connect the Play/Stop button to the play_video method
         self.buttonMediaPlay.toggled.connect(partial(video_control_actions.play_video, self))
         self.buttonMediaRecord.toggled.connect(partial(video_control_actions.record_video, self))
