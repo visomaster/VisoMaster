@@ -327,6 +327,12 @@ class ModelsProcessor(QtCore.QObject):
     def run_swapper_cscs(self, image, embedding, output):
         self.face_swappers.run_swapper_cscs(image, embedding, output)
 
+    def calc_swapper_latent_hyperswap256(self, source_embedding, version="A"):
+        return self.face_swappers.calc_swapper_latent_hyperswap256(source_embedding, version)
+
+    def run_hyperswap256(self, image, embedding, output, version="A"):
+        self.face_swappers.run_hyperswap256(image, embedding, output, version)
+
     def run_enhance_frame_tile_process(self, img, enhancer_type, tile_size=256, scale=1):
         return self.frame_enhancers.run_enhance_frame_tile_process(img, enhancer_type, tile_size, scale)
 

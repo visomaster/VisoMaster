@@ -442,6 +442,18 @@ class FrameWorker(threading.Thread):
             latent = []
             input_face_affined = original_face_512
             dim = 4
+
+        elif swapper_model in ( 'Hyperswap256 Version A', 'Hyperswap256 Version B', 'Hyperswap256 Version C'):
+            version = swapper_model[-1]
+            latent = torch.from_numpy(self.models_processor.calc_swapper_latent_hyperswap256(s_e, version)).float().to(self.models_processor.device)
+            if parameters['FaceLikenessEnableToggle']:
+                factor = parameters['FaceLikenessFactorDecimalSlider']
+                dst_latent = torch.from_numpy(self.models_processor.calc_swapper_latent_hyperswap256(t_e, version)).float().to(self.models_processor.device)
+                latent = latent - (factor * dst_latent)
+
+            dim = 2
+            input_face_affined = original_face_256
+
         return input_face_affined, dfm_model, dim, latent
     
     def get_swapped_and_prev_face(self, output, input_face_affined, original_face_512, latent, itex, dim, swapper_model, dfm_model, parameters, ):
@@ -484,6 +496,26 @@ class FrameWorker(threading.Thread):
                     output = swapper_output.clone()
                     prev_face = input_face_affined.clone()
                     input_face_affined = output.clone()
+                    output = torch.mul(output, 255)
+                    output = torch.clamp(output, 0, 255)
+
+        elif swapper_model in ('Hyperswap256 Version A', 'Hyperswap256 Version B', 'Hyperswap256 Version C'):
+            version = swapper_model[-1] #Version Name
+            with torch.no_grad():
+                for _ in range(itex):
+                    input_face_disc = input_face_affined.permute(2, 0, 1)
+                    input_face_disc = torch.unsqueeze(input_face_disc, 0).contiguous()
+
+                    swapper_output = torch.empty((1,3,256,256), dtype=torch.float32, device=self.models_processor.device).contiguous()
+                    self.models_processor.run_hyperswap256(input_face_disc, latent, swapper_output, version)
+
+                    swapper_output = torch.squeeze(swapper_output)
+                    swapper_output = swapper_output.permute(1, 2, 0)
+
+                    output = swapper_output.clone()
+                    prev_face = input_face_affined.clone()
+                    input_face_affined = output.clone()
+
                     output = torch.mul(output, 255)
                     output = torch.clamp(output, 0, 255)
 

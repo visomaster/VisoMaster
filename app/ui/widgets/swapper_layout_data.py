@@ -8,7 +8,20 @@ SWAPPER_LAYOUT_DATA: LayoutDictTypes = {
         'SwapModelSelection': {
             'level': 1,
             'label': 'Swapper Model',
-            'options': ['Inswapper128', 'InStyleSwapper256 Version A', 'InStyleSwapper256 Version B', 'InStyleSwapper256 Version C', 'DeepFaceLive (DFM)', 'SimSwap512', 'GhostFace-v1', 'GhostFace-v2', 'GhostFace-v3', 'CSCS'],            'default': 'Inswapper128',
+            'options': [
+                'Inswapper128',
+                'InStyleSwapper256 Version A',
+                'InStyleSwapper256 Version B',
+                'InStyleSwapper256 Version C',
+                'Hyperswap256 Version A',
+                'Hyperswap256 Version B',
+                'Hyperswap256 Version C',
+                'DeepFaceLive (DFM)',
+                'SimSwap512',
+                'GhostFace-v1',
+                'GhostFace-v2',
+                'GhostFace-v3',
+                'CSCS'],            'default': 'Inswapper128',
             'help': 'Choose which swapper model to use for face swapping.'
         },
         'SwapperResSelection': {
