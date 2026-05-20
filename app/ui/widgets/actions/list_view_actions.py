@@ -161,18 +161,19 @@ def select_target_medias(main_window: 'MainWindow', source_type='folder', folder
 
 @QtCore.Slot()
 def load_target_webcams(main_window: 'MainWindow',):
-    if main_window.filterWebcamsCheckBox.isChecked():
-        main_window.video_loader_worker = ui_workers.TargetMediaLoaderWorker(main_window=main_window, webcam_mode=True)
-        main_window.video_loader_worker.webcam_thumbnail_ready.connect(partial(add_webcam_thumbnail_to_target_videos_list, main_window))
-        main_window.video_loader_worker.start()
-    else:
-        main_window.placeholder_update_signal.emit(main_window.targetVideosList, True)
-        for _, target_video in main_window.target_videos.copy().items(): #Use a copy of the dict to prevent Dictionary changed during iteration exceptions
-            if target_video.file_type == 'webcam':
-                target_video.remove_target_media_from_list()
-                if target_video == main_window.selected_video_button:
-                    main_window.selected_video_button = False
-        main_window.placeholder_update_signal.emit(main_window.targetVideosList, False)
+    main_window.video_loader_worker = ui_workers.TargetMediaLoaderWorker(main_window=main_window, webcam_mode=True)
+    main_window.video_loader_worker.webcam_thumbnail_ready.connect(partial(add_webcam_thumbnail_to_target_videos_list, main_window))
+    main_window.video_loader_worker.start()
+
+@QtCore.Slot(str, QtGui.QPixmap, str, str)
+def add_webrtc_thumbnail_to_target_videos_list(main_window: 'MainWindow', media_path, pixmap, file_type, media_id):
+    add_media_thumbnail_button(main_window, widget_components.TargetMediaCardButton, main_window.targetVideosList, main_window.target_videos, pixmap, media_path=media_path, file_type=file_type, media_id=media_id)
+
+@QtCore.Slot()
+def load_target_webrtc(main_window: 'MainWindow'):
+    main_window.video_loader_worker = ui_workers.TargetMediaLoaderWorker(main_window=main_window, webrtc_mode=True)
+    main_window.video_loader_worker.webrtc_thumbnail_ready.connect(partial(add_webrtc_thumbnail_to_target_videos_list, main_window))
+    main_window.video_loader_worker.start()
 
 def clear_stop_loading_input_media(main_window: 'MainWindow'):
     if main_window.input_faces_loader_worker:

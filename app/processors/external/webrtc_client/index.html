@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VisoMaster WebRTC Camera</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo-area">
+        <div class="logo-icon">VM</div>
+        <div>
+          <h1>VisoMaster</h1>
+          <p class="subtitle">WebRTC Remote Camera</p>
+        </div>
+      </div>
+    </header>
+
+    <div class="card">
+      <div class="video-wrapper">
+        <video id="localVideo" autoplay muted playsinline></video>
+        <div class="video-overlay" id="videoOverlay">
+          <span>Camera preview will appear here</span>
+        </div>
+      </div>
+
+      <div class="controls">
+        <div class="select-row">
+          <label for="cameraSelect">Camera</label>
+          <select id="cameraSelect"></select>
+        </div>
+        <div class="select-row">
+          <label for="resolutionSelect">Resolution</label>
+          <select id="resolutionSelect">
+            <option value="640x480">640 × 480</option>
+            <option value="1280x720" selected>1280 × 720</option>
+            <option value="1920x1080">1920 × 1080</option>
+          </select>
+        </div>
+
+        <button id="startBtn" class="btn btn-primary">Start Streaming</button>
+        <button id="stopBtn"  class="btn btn-danger" disabled>Stop Streaming</button>
+      </div>
+
+      <div id="statusBar" class="status idle">
+        <span class="status-dot"></span>
+        <span id="statusText">Idle — select a camera and press Start</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

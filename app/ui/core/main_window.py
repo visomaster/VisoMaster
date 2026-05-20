@@ -14,12 +14,12 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
     QIcon, QImage, QKeySequence, QLinearGradient,
     QPainter, QPalette, QPixmap, QRadialGradient,
     QTransform)
-from PySide6.QtWidgets import (QApplication, QCheckBox, QDockWidget, QGraphicsView,
-    QGridLayout, QGroupBox, QHBoxLayout, QLabel,
-    QLineEdit, QListView, QListWidget, QListWidgetItem,
-    QMainWindow, QMenu, QMenuBar, QProgressBar,
-    QPushButton, QSizePolicy, QSlider, QSpacerItem,
-    QTabWidget, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDockWidget,
+    QGraphicsView, QGridLayout, QGroupBox, QHBoxLayout,
+    QLabel, QLineEdit, QListView, QListWidget,
+    QListWidgetItem, QMainWindow, QMenu, QMenuBar,
+    QProgressBar, QPushButton, QSizePolicy, QSlider,
+    QSpacerItem, QTabWidget, QVBoxLayout, QWidget)
 from app.ui.core import media_rc
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -369,6 +369,12 @@ class Ui_MainWindow(object):
         self.targetVideosSearchBox = QLineEdit(self.dockWidgetContents)
         self.targetVideosSearchBox.setObjectName(u"targetVideosSearchBox")
         self.horizontalLayout_9.addWidget(self.targetVideosSearchBox)
+        self.mediaSourceComboBox = QComboBox(self.dockWidgetContents)
+        self.mediaSourceComboBox.addItem("")
+        self.mediaSourceComboBox.addItem("")
+        self.mediaSourceComboBox.addItem("")
+        self.mediaSourceComboBox.setObjectName(u"mediaSourceComboBox")
+        self.horizontalLayout_9.addWidget(self.mediaSourceComboBox)
         self.filterImagesCheckBox = QCheckBox(self.dockWidgetContents)
         self.filterImagesCheckBox.setObjectName(u"filterImagesCheckBox")
         icon13 = QIcon()
@@ -383,13 +389,6 @@ class Ui_MainWindow(object):
         self.filterVideosCheckBox.setIcon(icon14)
         self.filterVideosCheckBox.setChecked(True)
         self.horizontalLayout_9.addWidget(self.filterVideosCheckBox)
-        self.filterWebcamsCheckBox = QCheckBox(self.dockWidgetContents)
-        self.filterWebcamsCheckBox.setObjectName(u"filterWebcamsCheckBox")
-        icon15 = QIcon()
-        icon15.addFile(u":/media/media/webcam.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.filterWebcamsCheckBox.setIcon(icon15)
-        self.filterWebcamsCheckBox.setChecked(False)
-        self.horizontalLayout_9.addWidget(self.filterWebcamsCheckBox)
         self.vboxLayout.addLayout(self.horizontalLayout_9)
         self.targetVideosList = QListWidget(self.dockWidgetContents)
         self.targetVideosList.setObjectName(u"targetVideosList")
@@ -621,6 +620,12 @@ class Ui_MainWindow(object):
         self.buttonTargetVideosPath.setText("")
         self.targetVideosSearchBox.setText("")
         self.targetVideosSearchBox.setPlaceholderText(QCoreApplication.translate("MainWindow", u"Search Videos/Images", None))
+        self.mediaSourceComboBox.setItemText(0, QCoreApplication.translate("MainWindow", u"Media", None))
+        self.mediaSourceComboBox.setItemText(1, QCoreApplication.translate("MainWindow", u"Webcam", None))
+        self.mediaSourceComboBox.setItemText(2, QCoreApplication.translate("MainWindow", u"WebRTC", None))
+#if QT_CONFIG(tooltip)
+        self.mediaSourceComboBox.setToolTip(QCoreApplication.translate("MainWindow", u"Select Media Source Type", None))
+#endif // QT_CONFIG(tooltip)
 #if QT_CONFIG(tooltip)
         self.filterImagesCheckBox.setToolTip(QCoreApplication.translate("MainWindow", u"Include Images", None))
 #endif // QT_CONFIG(tooltip)
@@ -629,10 +634,6 @@ class Ui_MainWindow(object):
         self.filterVideosCheckBox.setToolTip(QCoreApplication.translate("MainWindow", u"Include Videos", None))
 #endif // QT_CONFIG(tooltip)
         self.filterVideosCheckBox.setText("")
-#if QT_CONFIG(tooltip)
-        self.filterWebcamsCheckBox.setToolTip(QCoreApplication.translate("MainWindow", u"Include Webcams", None))
-#endif // QT_CONFIG(tooltip)
-        self.filterWebcamsCheckBox.setText("")
         self.groupBox_InputFaces_Select.setTitle(QCoreApplication.translate("MainWindow", u"Input Faces", None))
         self.labelInputFacesPath.setText(QCoreApplication.translate("MainWindow", u"Select Face Images Path", None))
 #if QT_CONFIG(tooltip)

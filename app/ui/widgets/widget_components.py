@@ -1,8 +1,10 @@
 # pylint: disable=keyword-arg-before-vararg
 import os
+import struct
 from functools import partial
 import uuid
 from typing import TYPE_CHECKING, Dict
+from multiprocessing.shared_memory import SharedMemory
 
 from PySide6 import QtWidgets, QtGui, QtCore
 from PySide6.QtWidgets import QPushButton
@@ -94,6 +96,7 @@ class TargetMediaCardButton(CardButton):
         self.webcam_index = webcam_index
         self.webcam_backend = webcam_backend
         self.media_capture: cv2.VideoCapture|bool = False
+        self.shm_handle: SharedMemory|None = None  # Shared memory for WebRTC frame buffer
         self.setCheckable(True)
         self.setToolTip(media_path)
         layout = QtWidgets.QVBoxLayout(self)
@@ -153,7 +156,16 @@ class TargetMediaCardButton(CardButton):
         main_window = self.main_window
         # Deselect the currently selected video
         if main_window.selected_video_button:
-            main_window.selected_video_button.toggle()  # Deselect the previous video
+            try:
+                # Release webcam if the previous selection was a webcam
+                if main_window.selected_video_button.file_type == 'webcam' and main_window.selected_video_button.media_capture:
+                    print(f"[Webcam] Releasing previous webcam {main_window.selected_video_button.media_path}")
+                    main_window.selected_video_button.media_capture.release()
+                    main_window.selected_video_button.media_capture = None
+                
+                main_window.selected_video_button.toggle()  # Deselect the previous video
+            except RuntimeError:
+                pass  # C++ object already deleted
             main_window.selected_video_button = False
         
         # Stop the current video processing
@@ -199,7 +211,7 @@ class TargetMediaCardButton(CardButton):
             main_window.video_processor.max_frame_number = max_frames_number
 
         elif self.file_type == 'webcam':
-            res_width, res_height = self.main_window.control['WebcamMaxResSelection'].split('x')
+            res_width, res_height = self.main_window.control.get('WebcamMaxResSelection', '640x480').split('x')
 
             media_capture = cv2.VideoCapture(self.webcam_index, self.webcam_backend)
             media_capture.set(cv2.CAP_PROP_FRAME_WIDTH, int(res_width))
@@ -209,6 +221,43 @@ class TargetMediaCardButton(CardButton):
             main_window.video_processor.media_capture = media_capture
             self.media_capture = media_capture
             main_window.video_processor.fps = media_capture.get(cv2.CAP_PROP_FPS)
+            main_window.video_processor.max_frame_number = max_frames_number
+
+        elif self.file_type == 'webrtc':
+            # Attach to the shared memory written by the WebRTC server process
+            from app.processors.external.webrtc_server import (
+                SHM_NAME, SHM_TOTAL_BYTES, SHM_HEADER_BYTES
+            )
+            # Release previous shm if any
+            if self.shm_handle:
+                try:
+                    self.shm_handle.close()
+                except Exception:
+                    pass
+                self.shm_handle = None
+            try:
+                shm = SharedMemory(name=SHM_NAME, create=False)
+                self.shm_handle = shm
+                main_window.video_processor.webrtc_shm = shm
+            except FileNotFoundError:
+                print("[WebRTC] Shared memory not found — server may not be ready yet.")
+                shm = None
+
+            # Read the first available frame (may be a blank placeholder)
+            if shm:
+                w = struct.unpack_from("<I", shm.buf, 4)[0]
+                h = struct.unpack_from("<I", shm.buf, 8)[0]
+                if w > 0 and h > 0:
+                    raw = bytes(shm.buf[SHM_HEADER_BYTES: SHM_HEADER_BYTES + w * h * 3])
+                    frame = np.frombuffer(raw, dtype=np.uint8).reshape((h, w, 3)).copy()
+                else:
+                    frame = np.zeros((480, 640, 3), dtype=np.uint8)  # blank until first real frame
+            else:
+                frame = np.zeros((480, 640, 3), dtype=np.uint8)
+
+            max_frames_number = 999999
+            main_window.video_processor.media_capture = None
+            main_window.video_processor.fps = 30.0
             main_window.video_processor.max_frame_number = max_frames_number
 
         if frame is not None:
@@ -299,6 +348,15 @@ class TargetMediaCardButton(CardButton):
             if self.media_capture:
                 self.media_capture.release()
                 self.media_capture = False
+
+            # Release WebRTC shared memory if this was a WebRTC card
+            if self.shm_handle:
+                try:
+                    self.shm_handle.close()
+                except Exception:
+                    pass
+                self.shm_handle = None
+                main_window.video_processor.webrtc_shm = None
 
         i = self.get_item_position()
         main_window.targetVideosList.takeItem(i)   

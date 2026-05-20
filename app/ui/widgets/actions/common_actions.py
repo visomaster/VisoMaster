@@ -104,6 +104,13 @@ def update_parameter(main_window: 'MainWindow', parameter_name, parameter_value,
 def refresh_frame(main_window: 'MainWindow'):
     video_processor = main_window.video_processor
     if not video_processor.processing:
+        # Don't try to process if there's no active media
+        if video_processor.file_type is None:
+            return
+        if video_processor.file_type in ('video', 'webcam') and not video_processor.media_capture:
+            return
+        if video_processor.file_type == 'webrtc' and not video_processor.webrtc_shm:
+            return
         video_processor.process_current_frame()
 
 # Function to Hide Elements conditionally from values in LayoutData (Currently supports using Selection box and Toggle button to hide other widgets)
@@ -322,8 +329,10 @@ def extract_frame_as_pixmap(media_file_path, file_type, webcam_index=False, webc
     elif file_type == 'webcam':
         camera = cv2.VideoCapture(webcam_index, webcam_backend)
         if not camera.isOpened():
+            camera.release()
             return
         ret, frame = misc_helpers.read_frame(camera)
+        camera.release()  # Release immediately after reading
         if not ret:
             return
 

@@ -1,0 +1,218 @@
+/* VisoMaster WebRTC Client — style.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --bg:         #0f1117;
+  --surface:    #1a1d27;
+  --surface2:   #22263a;
+  --border:     #2e3250;
+  --accent:     #7c6af7;
+  --accent-h:   #9b8fff;
+  --danger:     #e05260;
+  --danger-h:   #f06070;
+  --text:       #e8eaf6;
+  --text-muted: #8890b8;
+  --green:      #1abc9c;
+  --radius:     14px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+/* ── Container ─────────────────────────────────────────────────────────── */
+.container {
+  width: 100%;
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.logo-area {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.logo-icon {
+  background: linear-gradient(135deg, var(--accent), #4f40d0);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.05em;
+  box-shadow: 0 4px 18px rgba(124,106,247,.35);
+}
+
+h1 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+/* ── Card ───────────────────────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: 0 8px 40px rgba(0,0,0,.45);
+}
+
+/* ── Video area ─────────────────────────────────────────────────────────── */
+.video-wrapper {
+  position: relative;
+  background: #0a0c13;
+  aspect-ratio: 16/9;
+  overflow: hidden;
+}
+
+#localVideo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 0;
+  opacity: 0;
+  transition: opacity .4s ease;
+}
+
+#localVideo.visible { opacity: 1; }
+
+.video-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  pointer-events: none;
+  transition: opacity .3s ease;
+}
+.video-overlay.hidden { opacity: 0; }
+
+/* ── Controls ───────────────────────────────────────────────────────────── */
+.controls {
+  padding: 1.2rem 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.select-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.select-row label {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  min-width: 72px;
+}
+
+select {
+  flex: 1;
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.48rem 0.75rem;
+  font-family: inherit;
+  font-size: 0.88rem;
+  outline: none;
+  cursor: pointer;
+  transition: border-color .2s;
+}
+
+select:focus { border-color: var(--accent); }
+
+/* ── Buttons ────────────────────────────────────────────────────────────── */
+.btn {
+  padding: 0.65rem 1.2rem;
+  border: none;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .2s, transform .1s, opacity .2s;
+  letter-spacing: 0.01em;
+}
+
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.38; cursor: not-allowed; }
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), #4f40d0);
+  color: #fff;
+  box-shadow: 0 4px 18px rgba(124,106,247,.3);
+}
+.btn-primary:hover:not(:disabled) { background: linear-gradient(135deg, var(--accent-h), #6354e0); }
+
+.btn-danger {
+  background: linear-gradient(135deg, var(--danger), #a02030);
+  color: #fff;
+  box-shadow: 0 4px 18px rgba(224,82,96,.25);
+}
+.btn-danger:hover:not(:disabled) { background: linear-gradient(135deg, var(--danger-h), #c03040); }
+
+/* ── Status bar ─────────────────────────────────────────────────────────── */
+.status {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.7rem 1.4rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  border-top: 1px solid var(--border);
+  transition: background .3s;
+}
+
+.status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: background .3s;
+}
+
+.status.idle    .status-dot { background: var(--text-muted); }
+.status.active  .status-dot { background: var(--green); animation: pulse 1.4s infinite; }
+.status.error   .status-dot { background: var(--danger); }
+.status.connecting .status-dot { background: var(--accent); animation: pulse 0.8s infinite; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
+}

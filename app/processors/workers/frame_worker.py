@@ -62,7 +62,7 @@ class FrameWorker(threading.Thread):
             pixmap = common_widget_actions.get_pixmap_from_frame(self.main_window, self.frame)
 
             # Output processed Webcam frame
-            if self.video_processor.file_type=='webcam' and not self.is_single_frame:
+            if self.video_processor.file_type in ('webcam', 'webrtc') and not self.is_single_frame:
                 self.video_processor.webcam_frame_processed_signal.emit(pixmap, self.frame)
 
             #Output Video frame (while playing)

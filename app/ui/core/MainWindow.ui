@@ -776,6 +776,28 @@
           </widget>
          </item>
          <item>
+          <widget class="QComboBox" name="mediaSourceComboBox">
+           <property name="toolTip">
+            <string>Select Media Source Type</string>
+           </property>
+           <item>
+            <property name="text">
+             <string>Media</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Webcam</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>WebRTC</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+         <item>
           <widget class="QCheckBox" name="filterImagesCheckBox">
            <property name="toolTip">
             <string>Include Images</string>
@@ -806,23 +828,6 @@
            </property>
            <property name="checked">
             <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="filterWebcamsCheckBox">
-           <property name="toolTip">
-            <string>Include Webcams</string>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-           <property name="icon">
-            <iconset resource="media.qrc">
-             <normaloff>:/media/media/webcam.png</normaloff>:/media/media/webcam.png</iconset>
-           </property>
-           <property name="checked">
-            <bool>false</bool>
            </property>
           </widget>
          </item>

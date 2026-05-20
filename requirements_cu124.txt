@@ -27,3 +27,6 @@ requests
 pyqt-toast-notification==1.3.2
 qdarkstyle
 pyqtdarktheme
+aiortc
+aiohttp
+cryptography

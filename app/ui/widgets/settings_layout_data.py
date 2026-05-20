@@ -289,6 +289,62 @@ SETTINGS_LAYOUT_DATA: LayoutDictTypes = {
             'default': False,
             'help': 'Include all files from Subfolders when choosing Input Faces Folder'
         }
+    },
+    'Webcam Settings': {
+        'WebcamFlipHorizontalToggle': {
+            'level': 1,
+            'label': 'Flip Webcam Horizontally',
+            'default': False,
+            'help': 'Mirror the webcam video horizontally'
+        },
+        'WebcamShowFPSToggle': {
+            'level': 1,
+            'label': 'Show Webcam FPS',
+            'default': True,
+            'help': 'Display frames per second overlay on webcam feed'
+        },
+    },
+    'WebRTC Settings': {
+        'WebRTCEnabledToggle': {
+            'level': 1,
+            'label': 'Enable WebRTC Server',
+            'default': False,
+            'help': 'Start a local WebRTC server so a smartphone/browser can stream video directly into VisoMaster. Check the "WebRTC" checkbox in Target Media to activate.'
+        },
+        'WebRTCFlipHorizontalToggle': {
+            'level': 1,
+            'label': 'Flip WebRTC Horizontally',
+            'default': False,
+            'help': 'Mirror the WebRTC video horizontally'
+        },
+        'WebRTCShowFPSToggle': {
+            'level': 1,
+            'label': 'Show WebRTC FPS',
+            'default': True,
+            'help': 'Display frames per second overlay on WebRTC feed'
+        },
+        'WebRTCPortSlider': {
+            'level': 2,
+            'label': 'WebRTC HTTP Port',
+            'min_value': '1024',
+            'max_value': '65535',
+            'default': '9091',
+            'step': 1,
+            'parentToggle': 'WebRTCEnabledToggle',
+            'requiredToggleValue': True,
+            'help': 'Port for the HTTP WebRTC server (e.g. 9091). Open http://<your-ip>:<port> on your phone.'
+        },
+        'WebRTCHttpsPortSlider': {
+            'level': 2,
+            'label': 'WebRTC HTTPS Port',
+            'min_value': '1024',
+            'max_value': '65535',
+            'default': '9090',
+            'step': 1,
+            'parentToggle': 'WebRTCEnabledToggle',
+            'requiredToggleValue': True,
+            'help': 'Port for the HTTPS WebRTC server (e.g. 9090). Open https://<your-ip>:<port> on your phone.'
+        },
     }
 }
 

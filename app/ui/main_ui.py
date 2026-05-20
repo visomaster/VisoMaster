@@ -38,6 +38,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     display_messagebox_signal = QtCore.Signal(str, str, QtWidgets.QWidget)
     def initialize_variables(self):
         self.video_loader_worker: ui_workers.TargetMediaLoaderWorker|bool = False
+        self.webrtc_server_process = None  # multiprocessing.Process for WebRTC server
         self.input_faces_loader_worker: ui_workers.InputFacesLoaderWorker|bool = False
         self.target_videos_filter_worker = ui_workers.FilterWorker(main_window=self, search_text='', filter_list='target_videos')
         self.input_faces_filter_worker = ui_workers.FilterWorker(main_window=self, search_text='', filter_list='input_faces')
@@ -158,8 +159,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.targetVideosSearchBox.textChanged.connect(partial(filter_actions.filter_target_videos, self))
         self.filterImagesCheckBox.clicked.connect(partial(filter_actions.filter_target_videos, self))
         self.filterVideosCheckBox.clicked.connect(partial(filter_actions.filter_target_videos, self))
-        self.filterWebcamsCheckBox.clicked.connect(partial(filter_actions.filter_target_videos, self))
-        self.filterWebcamsCheckBox.clicked.connect(partial(list_view_actions.load_target_webcams, self))
+        self.mediaSourceComboBox.currentIndexChanged.connect(partial(self.on_media_source_changed))
 
         self.inputFacesSearchBox.textChanged.connect(partial(filter_actions.filter_input_faces, self))
         self.inputEmbeddingsSearchBox.textChanged.connect(partial(filter_actions.filter_merged_embeddings, self))
@@ -259,6 +259,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         list_view_actions.clear_stop_loading_input_media(self)
         list_view_actions.clear_stop_loading_target_media(self)
 
+        # Stop WebRTC server subprocess if running
+        if self.webrtc_server_process and self.webrtc_server_process.is_alive():
+            print("Stopping WebRTC server process...")
+            self.webrtc_server_process.terminate()
+            self.webrtc_server_process.join(timeout=3)
+            self.webrtc_server_process = None
+
         save_load_actions.save_current_workspace(self, 'last_workspace.json')
         # Optionally handle the event if needed
         event.accept()
@@ -268,6 +275,84 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         if Path('last_workspace.json').is_file():
             load_dialog = widget_components.LoadLastWorkspaceDialog(self)
             load_dialog.exec_()
+
+    def on_media_source_changed(self, source_index):
+        """Handle media source dropdown changes."""
+        # Stop any current processing
+        self.video_processor.stop_processing()
+        
+        # Release webcam if switching away from it
+        if self.selected_video_button and hasattr(self.selected_video_button, 'file_type') and self.selected_video_button.file_type == 'webcam':
+            if self.selected_video_button.media_capture:
+                print("[Webcam] Releasing webcam capture...")
+                self.selected_video_button.media_capture.release()
+                self.selected_video_button.media_capture = None
+            if self.video_processor.media_capture:
+                self.video_processor.media_capture.release()
+                self.video_processor.media_capture = None
+            # Give OS time to release the camera
+            import time
+            time.sleep(0.2)
+        
+        # Reset video processor state so refresh_frame doesn't crash
+        self.video_processor.file_type = None
+        self.video_processor.media_capture = None
+        self.video_processor.webrtc_shm = None
+        self.video_processor.current_frame = []
+        self.selected_video_button = False
+        
+        # Stop WebRTC server if switching away from it
+        if source_index != 2:  # Not WebRTC
+            if self.webrtc_server_process and self.webrtc_server_process.is_alive():
+                print("[WebRTC] Stopping WebRTC server...")
+                self.webrtc_server_process.terminate()
+                self.webrtc_server_process.join(timeout=3)
+                self.webrtc_server_process = None
+        
+        # Clear existing media list
+        list_view_actions.clear_stop_loading_target_media(self)
+        self.target_videos = {}
+        self.scene.clear()
+        
+        if source_index == 0:  # Media (files/folders)
+            # Show file type checkboxes
+            self.filterImagesCheckBox.setVisible(True)
+            self.filterVideosCheckBox.setVisible(True)
+            # Update placeholder text
+            if hasattr(self.targetVideosList, 'placeholder_label'):
+                self.targetVideosList.placeholder_label.setText(
+                    "<html><body style='text-align:center;'>"
+                    "<p>Drop Files</p>"
+                    "<p><b>or</b></p>"
+                    "<p>Click here to Select a Folder</p>"
+                    "</body></html>"
+                )
+        elif source_index == 1:  # Webcam
+            # Hide file type checkboxes
+            self.filterImagesCheckBox.setVisible(False)
+            self.filterVideosCheckBox.setVisible(False)
+            # Load webcams
+            list_view_actions.load_target_webcams(self)
+        elif source_index == 2:  # WebRTC
+            # Hide file type checkboxes
+            self.filterImagesCheckBox.setVisible(False)
+            self.filterVideosCheckBox.setVisible(False)
+            # Check if WebRTC is enabled in settings
+            if not self.control.get('WebRTCEnabledToggle', False):
+                from PySide6.QtWidgets import QMessageBox
+                QMessageBox.warning(
+                    self,
+                    'WebRTC Not Enabled',
+                    'Please enable the WebRTC Server in the Settings tab first.'
+                )
+                self.mediaSourceComboBox.blockSignals(True)
+                self.mediaSourceComboBox.setCurrentIndex(0)
+                self.mediaSourceComboBox.blockSignals(False)
+                self.filterImagesCheckBox.setVisible(True)
+                self.filterVideosCheckBox.setVisible(True)
+                return
+            # Load WebRTC
+            list_view_actions.load_target_webrtc(self)
 
     def save_last_workspace(self):
         pass

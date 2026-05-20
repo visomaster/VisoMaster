@@ -23,15 +23,17 @@ class TargetMediaLoaderWorker(qtc.QThread):
     # Define signals to emit when loading is done or if there are updates
     thumbnail_ready = qtc.Signal(str, QPixmap, str, str)  # Signal with media path and QPixmap and file_type, media_id
     webcam_thumbnail_ready = qtc.Signal(str, QPixmap, str, str, int, int)
+    webrtc_thumbnail_ready = qtc.Signal(str, QPixmap, str, str)  # media_path, pixmap, file_type, media_id
     finished = qtc.Signal()  # Signal to indicate completion
 
-    def __init__(self, main_window: 'MainWindow', folder_name=False, files_list=None, media_ids=None, webcam_mode=False, parent=None,):
+    def __init__(self, main_window: 'MainWindow', folder_name=False, files_list=None, media_ids=None, webcam_mode=False, webrtc_mode=False, parent=None,):
         super().__init__(parent)
         self.main_window = main_window
         self.folder_name = folder_name
         self.files_list = files_list or []
         self.media_ids = media_ids or []
         self.webcam_mode = webcam_mode
+        self.webrtc_mode = webrtc_mode
         self._running = True  # Flag to control the running state
         
         # Ensure thumbnail directory exists
@@ -44,6 +46,8 @@ class TargetMediaLoaderWorker(qtc.QThread):
             self.load_videos_and_images_from_files_list(self.files_list)
         if self.webcam_mode:
             self.load_webcams()
+        if self.webrtc_mode:
+            self.load_webrtc()
         self.finished.emit()
 
     def load_videos_and_images_from_folder(self, folder_name):
@@ -92,8 +96,8 @@ class TargetMediaLoaderWorker(qtc.QThread):
 
     def load_webcams(self,):
         self.main_window.placeholder_update_signal.emit(self.main_window.targetVideosList, True)
-        camera_backend = CAMERA_BACKENDS[self.main_window.control['WebcamBackendSelection']]
-        for i in range(int(self.main_window.control['WebcamMaxNoSelection'])):
+        camera_backend = CAMERA_BACKENDS.get(self.main_window.control.get('WebcamBackendSelection', 'Default'), cv2.CAP_ANY)
+        for i in range(int(self.main_window.control.get('WebcamMaxNoSelection', 5))):
             try:
                 pixmap = common_widget_actions.extract_frame_as_pixmap(media_file_path=f'Webcam {i}', file_type='webcam', webcam_index=i, webcam_backend=camera_backend)
                 media_id = str(uuid.uuid1().int)
@@ -104,6 +108,62 @@ class TargetMediaLoaderWorker(qtc.QThread):
             except Exception: # pylint: disable=broad-exception-caught
                 traceback.print_exc()
         self.main_window.placeholder_update_signal.emit(self.main_window.targetVideosList, False)
+
+    def load_webrtc(self):
+        """Spawn the WebRTC server subprocess and emit a placeholder thumbnail card."""
+        import multiprocessing
+        import socket
+        from app.processors.external.webrtc_server import run_server, SHM_NAME
+        from pathlib import Path
+
+        main_window = self.main_window
+        http_port = int(main_window.control.get('WebRTCPortSlider', 9091))
+        https_port = int(main_window.control.get('WebRTCHttpsPortSlider', 9090))
+
+        # Certificates path relative to external directory
+        base_dir = Path(__file__).parent.parent / "external" / "certificates"
+        cert_file = str(base_dir / "cert.pem")
+        key_file = str(base_dir / "key.pem")
+
+        # Start the server in a subprocess only if not already running
+        if not main_window.webrtc_server_process or not main_window.webrtc_server_process.is_alive():
+            p = multiprocessing.Process(
+                target=run_server,
+                kwargs={
+                    'http_port': http_port,
+                    'https_port': https_port,
+                    'cert_file': cert_file,
+                    'key_file': key_file
+                },
+                daemon=True
+            )
+            p.start()
+            main_window.webrtc_server_process = p
+            print(f"[WebRTC] Dual server started: HTTP on port {http_port}, HTTPS on port {https_port}")
+
+        # Build a simple placeholder pixmap (purple gradient rectangle)
+        img_w, img_h = 90, 90
+        placeholder = numpy.zeros((img_h, img_w, 3), dtype=numpy.uint8)
+        # Draw a gradient: purple to teal
+        for x in range(img_w):
+            r = int(124 * (1 - x / img_w))
+            g = int(26  * (x / img_w) + 100 * (1 - x / img_w))
+            b = int(156 * (1 - x / img_w) + 247 * (x / img_w))
+            placeholder[:, x] = [b, g, r]  # BGR
+        import cv2
+        placeholder = cv2.putText(
+            placeholder, 'WebRTC',
+            (5, img_h // 2 + 4),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.4, (255, 255, 255), 1, cv2.LINE_AA
+        )
+
+        media_id = str(uuid.uuid1().int)
+        pixmap = common_widget_actions.get_pixmap_from_frame(main_window, placeholder)
+        if pixmap:
+            self.webrtc_thumbnail_ready.emit('WebRTC', pixmap, 'webrtc', media_id)
+        main_window.placeholder_update_signal.emit(main_window.targetVideosList, False)
+
 
     def stop(self):
         """Stop the thread by setting the running flag to False."""
@@ -249,12 +309,19 @@ class FilterWorker(qtc.QThread):
     def filter_target_videos(self, main_window: 'MainWindow', search_text: str = ''):
         search_text = main_window.targetVideosSearchBox.text().lower()
         include_file_types = []
-        if main_window.filterImagesCheckBox.isChecked():
-            include_file_types.append('image')
-        if main_window.filterVideosCheckBox.isChecked():
-            include_file_types.append('video')
-        if main_window.filterWebcamsCheckBox.isChecked():
+        
+        # Check which media source is selected
+        source_index = main_window.mediaSourceComboBox.currentIndex()
+        
+        if source_index == 0:  # Media (files/folders)
+            if main_window.filterImagesCheckBox.isChecked():
+                include_file_types.append('image')
+            if main_window.filterVideosCheckBox.isChecked():
+                include_file_types.append('video')
+        elif source_index == 1:  # Webcam
             include_file_types.append('webcam')
+        elif source_index == 2:  # WebRTC
+            include_file_types.append('webrtc')
 
         visible_indices = []
         for i in range(main_window.targetVideosList.count()):

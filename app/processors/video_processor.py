@@ -1,5 +1,6 @@
 import threading
 import queue
+import struct
 from typing import TYPE_CHECKING, Dict, Tuple
 import time
 import subprocess
@@ -48,6 +49,14 @@ class VideoProcessor(QObject):
         self.recording = False
 
         self.virtcam: pyvirtualcam.Camera|None = None
+
+        self.webrtc_shm = None  # Shared memory handle for WebRTC frame buffer
+        self._last_webrtc_counter = 0  # Track frame counter to detect new frames
+        
+        # FPS tracking for webcam and webrtc
+        self.fps_start_time = 0.0
+        self.fps_frame_count = 0
+        self.current_fps = 0.0
 
         self.recording_sp: subprocess.Popen|None = None 
         self.temp_file = '' 
@@ -209,9 +218,17 @@ class VideoProcessor(QObject):
         # 
         elif self.file_type == 'webcam':
             print("Calling process_video() on Webcam stream")
+            if not self.media_capture:
+                print("[Webcam] ERROR: No media capture available! Select a webcam first.")
+                self.processing = False
+                video_control_actions.set_play_button_icon_to_play(self.main_window)
+                return
             self.processing = True
             self.frames_to_display.clear()
             self.threads.clear()
+            self.fps_start_time = 0.0
+            self.fps_frame_count = 0
+            self.current_fps = 0.0
             fps = self.media_capture.get(cv2.CAP_PROP_FPS)
             interval = 1000 / fps if fps > 0 else 30
             interval = int(interval * 0.8) #Process 20% faster to offset the frame loading & processing time so the video will be played close to the original fps
@@ -221,7 +238,28 @@ class VideoProcessor(QObject):
             self.frame_display_timer.start()
             self.gpu_memory_update_timer.start(5000) #Update GPU memory progressbar every 5 Seconds
 
-
+        elif self.file_type == 'webrtc':
+            print("Calling process_video() on WebRTC stream")
+            if self.webrtc_shm is None:
+                print("[WebRTC] ERROR: Shared memory not attached! Cannot play WebRTC stream.")
+                self.processing = False
+                video_control_actions.set_play_button_icon_to_play(self.main_window)
+                return
+            
+            self.processing = True
+            self.frames_to_display.clear()
+            self.threads.clear()
+            self._last_webrtc_counter = 0
+            self.fps_start_time = 0.0
+            self.fps_frame_count = 0
+            self.current_fps = 0.0
+            interval = int(1000 / 30 * 0.8)  # target ~30fps
+            self.frame_read_timer.timeout.connect(self.process_next_webrtc_frame)
+            self.frame_read_timer.start(interval)
+            self.frame_display_timer.timeout.connect(self.display_next_webcam_frame)
+            self.frame_display_timer.start()
+            self.gpu_memory_update_timer.start(5000)
+            print(f"[WebRTC] Started processing with interval {interval}ms")
 
     def process_next_frame(self):
         """Read the next frame and add it to the queue for processing."""
@@ -290,14 +328,49 @@ class VideoProcessor(QObject):
 
         # Handle webcam capture
         elif self.file_type == 'webcam':
+            if not self.media_capture:
+                return
             ret, frame = misc_helpers.read_frame(self.media_capture, preview_mode = False)
             if ret:
                 frame = frame[..., ::-1]  # Convert BGR to RGB
+                
+                # Apply horizontal flip if enabled
+                if self.main_window.control.get('WebcamFlipHorizontalToggle', False):
+                    frame = cv2.flip(frame, 1)
+                
+                # Calculate and display FPS
+                if self.main_window.control.get('WebcamShowFPSToggle', True):
+                    frame = self._add_fps_overlay(frame)
+                
                 # print(f"Enqueuing frame {self.current_frame_number}")
                 self.frame_queue.put(self.current_frame_number)
                 self.start_frame_worker(self.current_frame_number, frame, is_single_frame=True)
             else:
                 print("Unable to read Webcam frame!")
+
+        # Handle WebRTC — read latest frame from shared memory
+        elif self.file_type == 'webrtc' and self.webrtc_shm is not None:
+            try:
+                from app.processors.external.webrtc_server import SHM_HEADER_BYTES
+                w = struct.unpack_from("<I", self.webrtc_shm.buf, 4)[0]
+                h = struct.unpack_from("<I", self.webrtc_shm.buf, 8)[0]
+                if w > 0 and h > 0:
+                    raw = bytes(self.webrtc_shm.buf[SHM_HEADER_BYTES: SHM_HEADER_BYTES + w * h * 3])
+                    frame = numpy.frombuffer(raw, dtype=numpy.uint8).reshape((h, w, 3)).copy()
+                    frame = frame[..., ::-1]  # BGR -> RGB
+                    
+                    # Apply horizontal flip if enabled
+                    if self.main_window.control.get('WebRTCFlipHorizontalToggle', False):
+                        frame = cv2.flip(frame, 1)
+                    
+                    # Calculate and display FPS
+                    if self.main_window.control.get('WebRTCShowFPSToggle', True):
+                        frame = self._add_fps_overlay(frame)
+                    
+                    self.frame_queue.put(self.current_frame_number)
+                    self.start_frame_worker(self.current_frame_number, frame, is_single_frame=True)
+            except Exception as e:
+                print(f"[WebRTC] Error in process_current_frame: {e}")
         self.join_and_clear_threads()
 
     def process_next_webcam_frame(self):
@@ -310,9 +383,84 @@ class VideoProcessor(QObject):
             ret, frame = misc_helpers.read_frame(self.media_capture, preview_mode = False)
             if ret:
                 frame = frame[..., ::-1]  # Convert BGR to RGB
+                
+                # Apply horizontal flip if enabled
+                if self.main_window.control.get('WebcamFlipHorizontalToggle', False):
+                    frame = cv2.flip(frame, 1)
+                
+                # Calculate and display FPS
+                if self.main_window.control.get('WebcamShowFPSToggle', True):
+                    frame = self._add_fps_overlay(frame)
+                
                 # print(f"Enqueuing frame {self.current_frame_number}")
                 self.frame_queue.put(self.current_frame_number)
                 self.start_frame_worker(self.current_frame_number, frame)
+            else:
+                print("[Webcam] Unable to read frame, stopping.")
+                self.stop_processing()
+
+    def process_next_webrtc_frame(self):
+        """Read the latest frame from the WebRTC shared memory buffer."""
+        if self.frame_queue.qsize() >= self.num_threads:
+            return
+        if self.file_type != 'webrtc' or self.webrtc_shm is None:
+            print(f"[WebRTC] Skipping frame read: file_type={self.file_type}, shm={'attached' if self.webrtc_shm else 'None'}")
+            return
+        try:
+            from app.processors.external.webrtc_server import SHM_HEADER_BYTES
+            counter = struct.unpack_from("<I", self.webrtc_shm.buf, 0)[0]
+            if counter == self._last_webrtc_counter or counter == 0:
+                return  # No new frame yet
+            self._last_webrtc_counter = counter
+            w = struct.unpack_from("<I", self.webrtc_shm.buf, 4)[0]
+            h = struct.unpack_from("<I", self.webrtc_shm.buf, 8)[0]
+            if w == 0 or h == 0:
+                return
+            raw = bytes(self.webrtc_shm.buf[SHM_HEADER_BYTES: SHM_HEADER_BYTES + w * h * 3])
+            frame = numpy.frombuffer(raw, dtype=numpy.uint8).reshape((h, w, 3)).copy()
+            # Frame is already BGR from the server; convert to RGB for FrameWorker
+            frame = frame[..., ::-1]
+            
+            # Apply horizontal flip if enabled
+            if self.main_window.control.get('WebRTCFlipHorizontalToggle', False):
+                frame = cv2.flip(frame, 1)
+            
+            # Calculate and display FPS
+            if self.main_window.control.get('WebRTCShowFPSToggle', True):
+                frame = self._add_fps_overlay(frame)
+            
+            self.frame_queue.put(self.current_frame_number)
+            self.start_frame_worker(self.current_frame_number, frame)
+        except Exception as e:
+            print(f"[WebRTC] Error reading frame from shared memory: {e}")
+            import traceback
+            traceback.print_exc()
+
+    def _add_fps_overlay(self, frame: numpy.ndarray) -> numpy.ndarray:
+        """Add FPS overlay to frame and update FPS calculation."""
+        # Update FPS calculation
+        self.fps_frame_count += 1
+        current_time = time.time()
+        
+        if self.fps_start_time == 0:
+            self.fps_start_time = current_time
+        
+        elapsed = current_time - self.fps_start_time
+        if elapsed >= 1.0:  # Update FPS every second
+            self.current_fps = self.fps_frame_count / elapsed
+            self.fps_frame_count = 0
+            self.fps_start_time = current_time
+        
+        # Draw FPS on frame (convert to BGR for cv2.putText, then back to RGB)
+        frame_bgr = frame[..., ::-1].copy()
+        fps_text = f"FPS: {self.current_fps:.1f}"
+        cv2.putText(
+            frame_bgr, fps_text,
+            (10, 30),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1.0, (0, 255, 0), 2, cv2.LINE_AA
+        )
+        return frame_bgr[..., ::-1]  # Convert back to RGB
 
     # @misc_helpers.benchmark
     def stop_processing(self):
@@ -326,7 +474,7 @@ class VideoProcessor(QObject):
         print("Stopping video processing.")
         self.processing = False
         
-        if self.file_type=='video' or self.file_type=='webcam':
+        if self.file_type=='video' or self.file_type=='webcam' or self.file_type=='webrtc':
 
             # print("Stopping Timers")
             self.frame_read_timer.stop()
@@ -344,13 +492,14 @@ class VideoProcessor(QObject):
                 self.frame_queue.queue.clear()
 
             self.current_frame_number = self.main_window.videoSeekSlider.value()
-            self.media_capture.set(cv2.CAP_PROP_POS_FRAMES, self.current_frame_number)
+            if self.file_type in ('video', 'webcam') and self.media_capture:
+                self.media_capture.set(cv2.CAP_PROP_POS_FRAMES, self.current_frame_number)
 
             if self.recording and self.file_type=='video':
                 self.recording_sp.stdin.close()
                 self.recording_sp.wait()
 
-            self.play_end_time = float(self.media_capture.get(cv2.CAP_PROP_POS_FRAMES) / float(self.fps))
+            self.play_end_time = float(self.media_capture.get(cv2.CAP_PROP_POS_FRAMES) / float(self.fps)) if self.media_capture else 0.0
 
             if self.file_type=='video':
                 if self.recording:
