@@ -122,8 +122,6 @@ curl -sSL https://raw.githubusercontent.com/crazidev/VisoMaster/main/scripts/run
 python3 main.py
 ```
 
----
-
 ## **WebRTC Setup**
 
 WebRTC allows you to stream video from your phone or any device into VisoMaster for real-time face processing.
