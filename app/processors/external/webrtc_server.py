@@ -154,6 +154,27 @@ async def _css(request: web.Request):
     return web.Response(content_type="text/css", text=content)
 
 
+def _setup_video_transceiver(pc: RTCPeerConnection):
+    """Add a recvonly video transceiver with codec preferences including H.264."""
+    from aiortc import RTCRtpReceiver
+    
+    transceiver = pc.addTransceiver("video", direction="recvonly")
+    
+    # Get all supported video codecs and prioritize them
+    caps = RTCRtpReceiver.getCapabilities("video")
+    if caps and caps.codecs:
+        # Put H.264 first, then VP8, then everything else
+        h264_codecs = [c for c in caps.codecs if 'H264' in c.mimeType.upper()]
+        vp8_codecs = [c for c in caps.codecs if 'VP8' in c.mimeType.upper()]
+        other_codecs = [c for c in caps.codecs if 'H264' not in c.mimeType.upper() and 'VP8' not in c.mimeType.upper()]
+        
+        preferred = h264_codecs + vp8_codecs + other_codecs
+        if preferred:
+            transceiver.setCodecPreferences(preferred)
+            codec_names = [c.mimeType for c in preferred[:3]]
+            print(f"[WebRTC] Codec preferences set: {codec_names}...")
+
+
 async def _offer(request: web.Request):
     """Handle WebRTC offer from the browser."""
     params    = await request.json()
@@ -161,6 +182,9 @@ async def _offer(request: web.Request):
     shm: SharedMemory = request.app["shm"]
     pc        = RTCPeerConnection()
     pcs: set  = request.app["pcs"]
+
+    # Add a recvonly video transceiver with all supported codecs (including H.264)
+    _setup_video_transceiver(pc)
 
     # Schedule closing old connections in background (don't block the new one)
     old_pcs = list(pcs)
@@ -238,6 +262,9 @@ async def _whip(request: web.Request):
     shm: SharedMemory = request.app["shm"]
     pc = RTCPeerConnection()
     pcs: set = request.app["pcs"]
+
+    # Add a recvonly video transceiver with all supported codecs (including H.264)
+    _setup_video_transceiver(pc)
 
     # Schedule closing old connections in background (don't block the new one)
     old_pcs = list(pcs)
