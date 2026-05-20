@@ -240,11 +240,30 @@ class VideoProcessor(QObject):
 
         elif self.file_type == 'webrtc':
             print("Calling process_video() on WebRTC stream")
+            # Try to attach shared memory if not already done
             if self.webrtc_shm is None:
-                print("[WebRTC] ERROR: Shared memory not attached! Cannot play WebRTC stream.")
-                self.processing = False
-                video_control_actions.set_play_button_icon_to_play(self.main_window)
-                return
+                try:
+                    from app.processors.external.webrtc_server import SHM_NAME
+                    from multiprocessing.shared_memory import SharedMemory
+                    shm = SharedMemory(name=SHM_NAME, create=False)
+                    self.webrtc_shm = shm
+                    print("[WebRTC] Shared memory attached successfully")
+                except FileNotFoundError:
+                    print("[WebRTC] Shared memory not found yet — will keep polling until server is ready.")
+                    # Create a polling timer that tries to attach periodically
+                    self.processing = True
+                    self.frames_to_display.clear()
+                    self.threads.clear()
+                    self._last_webrtc_counter = 0
+                    self.fps_start_time = 0.0
+                    self.fps_frame_count = 0
+                    self.current_fps = 0.0
+                    self.frame_read_timer.timeout.connect(self._try_attach_webrtc_shm)
+                    self.frame_read_timer.start(500)  # Poll every 500ms until connected
+                    self.frame_display_timer.timeout.connect(self.display_next_webcam_frame)
+                    self.frame_display_timer.start()
+                    self.gpu_memory_update_timer.start(5000)
+                    return
             
             self.processing = True
             self.frames_to_display.clear()
@@ -404,13 +423,12 @@ class VideoProcessor(QObject):
         if self.frame_queue.qsize() >= self.num_threads:
             return
         if self.file_type != 'webrtc' or self.webrtc_shm is None:
-            print(f"[WebRTC] Skipping frame read: file_type={self.file_type}, shm={'attached' if self.webrtc_shm else 'None'}")
             return
         try:
             from app.processors.external.webrtc_server import SHM_HEADER_BYTES
             counter = struct.unpack_from("<I", self.webrtc_shm.buf, 0)[0]
             if counter == self._last_webrtc_counter or counter == 0:
-                return  # No new frame yet
+                return  # No new frame yet, keep waiting
             self._last_webrtc_counter = counter
             w = struct.unpack_from("<I", self.webrtc_shm.buf, 4)[0]
             h = struct.unpack_from("<I", self.webrtc_shm.buf, 8)[0]
@@ -435,6 +453,28 @@ class VideoProcessor(QObject):
             print(f"[WebRTC] Error reading frame from shared memory: {e}")
             import traceback
             traceback.print_exc()
+
+    def _try_attach_webrtc_shm(self):
+        """Poll for shared memory availability, then switch to frame reading."""
+        if self.file_type != 'webrtc' or not self.processing:
+            return
+        try:
+            from app.processors.external.webrtc_server import SHM_NAME
+            from multiprocessing.shared_memory import SharedMemory
+            shm = SharedMemory(name=SHM_NAME, create=False)
+            self.webrtc_shm = shm
+            # Also update the card's shm_handle
+            if self.main_window.selected_video_button and self.main_window.selected_video_button.file_type == 'webrtc':
+                self.main_window.selected_video_button.shm_handle = shm
+            print("[WebRTC] Shared memory attached — switching to frame reading")
+            # Switch timer from polling to frame reading
+            self.frame_read_timer.stop()
+            self.frame_read_timer.timeout.disconnect(self._try_attach_webrtc_shm)
+            interval = int(1000 / 30 * 0.8)
+            self.frame_read_timer.timeout.connect(self.process_next_webrtc_frame)
+            self.frame_read_timer.start(interval)
+        except FileNotFoundError:
+            pass  # Keep polling silently
 
     def _add_fps_overlay(self, frame: numpy.ndarray) -> numpy.ndarray:
         """Add FPS overlay to frame and update FPS calculation."""

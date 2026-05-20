@@ -156,6 +156,11 @@ async def _offer(request: web.Request):
     shm: SharedMemory = request.app["shm"]
     pc        = RTCPeerConnection()
     pcs: set  = request.app["pcs"]
+
+    # Close any existing connections (only one video source at a time)
+    for old_pc in list(pcs):
+        await old_pc.close()
+    pcs.clear()
     pcs.add(pc)
 
     video_handler = None
@@ -166,7 +171,7 @@ async def _offer(request: web.Request):
         if track.kind == "video":
             video_handler = VideoStreamTrack(track, shm)
             video_handler.start()
-            # Discard audio
+            print("[WebRTC] Video track received from browser client")
         else:
             pc.addTrack(MediaBlackhole())
 
@@ -217,6 +222,13 @@ async def _whip(request: web.Request):
     shm: SharedMemory = request.app["shm"]
     pc = RTCPeerConnection()
     pcs: set = request.app["pcs"]
+
+    # Close any existing connections (only one video source at a time)
+    for old_pc in list(pcs):
+        await old_pc.close()
+    pcs.clear()
+    # Also clear old WHIP sessions
+    _whip_sessions.clear()
     pcs.add(pc)
 
     # Generate a session ID for this WHIP resource

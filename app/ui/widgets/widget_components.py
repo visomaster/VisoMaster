@@ -291,6 +291,10 @@ class TargetMediaCardButton(CardButton):
         main_window.loading_new_media = True
         common_widget_actions.refresh_frame(main_window)
 
+        # Auto-start playback for WebRTC (wait for connection and play when frames arrive)
+        if self.file_type == 'webrtc':
+            main_window.buttonMediaPlay.setChecked(True)
+
         if main_window.control.get('AutoSwapToggle'):
             card_actions.find_target_faces(main_window)
             for _, target_face in main_window.target_faces.items():
