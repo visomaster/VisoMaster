@@ -20,14 +20,28 @@
 - Manually adjust expressions and poses for different face parts  
 - Fine-tune colors for Face, Hair, Eyebrows, and Lips using RGB adjustments  
 
+### 📡 **WebRTC Streaming (NEW)**
+- Stream video from your phone or any device directly into VisoMaster
+- **WHIP protocol support** — works with Larix Broadcaster, OBS, and other WHIP-compatible apps
+- **Browser client** — open the web UI on your phone to stream camera feed
+- **H.264 & VP8 codec support** — use hardware-accelerated encoding from your device
+- **Auto-connect** — select WebRTC mode and it waits for a connection, starts playing automatically
+- **Shared memory transport** — zero-copy frame passing between server and processor
+- **Self-signed HTTPS** — auto-generated certificates for secure local connections
+
 ### 🚀 **Other Powerful Features**  
 - **Live Playback**: See processed video in real-time before saving  
 - **Face Embeddings**: Use multiple source faces for better accuracy & similarity  
-- **Live Swapping via Webcam**: Stream to virtual camera for Twitch, YouTube, Zoom, etc.  
+- **Live Swapping via Webcam**: Stream to virtual camera for Twitch, YouTube, Zoom, etc.
+- **Webcam & WebRTC Flip**: Mirror video horizontally for natural selfie view
+- **FPS Overlay**: Real-time FPS counter for webcam and WebRTC streams
+- **Media Source Dropdown**: Quick switch between Media files, Webcam, and WebRTC
 - **User-Friendly Interface**: Intuitive and easy to use  
 - **Video Markers**: Adjust settings per frame for precise results  
 - **TensorRT Support**: Leverages supported GPUs for ultra-fast processing  
 - **Many More Advanced Features** 🎉  
+
+---
 
 ## Automatic Installation (Windows)
 - For Windows users with an Nvidia GPU, we provide an automatic installer for easy set up. 
@@ -35,68 +49,119 @@
 - Choose the correct CUDA version inside the installer based on your GPU Compatibility.
 - After successful installation, go to your installed directory and run the **Start_Portable.bat** file to launch **VisoMaster**
 
-## **Manual Installation Guide (Nvidia)**
-
-Follow the steps below to install and run **VisoMaster** on your system.
-
-## **Prerequisites**
-Before proceeding, ensure you have the following installed on your system:
-- **Git** ([Download](https://git-scm.com/downloads))
-- **Miniconda** ([Download](https://www.anaconda.com/download))
-
 ---
 
-## **Installation Steps**
+## **Manual Installation Guide (Nvidia - Windows/Linux)**
 
-### **1. Clone the Repository**  
-Open a terminal or command prompt and run:  
+### **Prerequisites**
+- **Git** ([Download](https://git-scm.com/downloads))
+- **Miniconda** ([Download](https://www.anaconda.com/download))
+- **NVIDIA GPU** with CUDA support
+
+### **Installation Steps**
+
+#### **1. Clone the Repository**  
 ```sh
-git clone https://github.com/visomaster/VisoMaster.git
-```
-```sh
+git clone https://github.com/crazidev/VisoMaster.git
 cd VisoMaster
 ```
 
-### **2. Create and Activate a Conda Environment**  
+#### **2. Create and Activate a Conda Environment**  
 ```sh
 conda create -n visomaster python=3.10.13 -y
-```
-```sh
 conda activate visomaster
 ```
 
-### **3. Install CUDA and cuDNN**  
+#### **3. Install CUDA and cuDNN**  
 ```sh
 conda install -c nvidia/label/cuda-12.4.1 cuda-runtime
-```
-```sh
 conda install -c conda-forge cudnn
 ```
 
-### **4. Install Additional Dependencies**  
+#### **4. Install Additional Dependencies**  
 ```sh
 conda install scikit-image
-```
-```sh
 pip install -r requirements_cu124.txt
 ```
 
-### **5. Download Models and Other Dependencies**  
-1. Download all the required models
+#### **5. Download Models**  
 ```sh
 python download_models.py
 ```
-2. Download all the files from this [page](https://github.com/visomaster/visomaster-assets/releases/tag/v0.1.0_dp) and copy it to the ***dependencies/*** folder.
 
-  **Note**: You do not need to download the Source code (zip) and Source code (tar.gz) files 
-### **6. Run the Application**  
-Once everything is set up, start the application by opening the **Start.bat** file.
-On Linux just run `python main.py`.
+Download all files from [visomaster-assets](https://github.com/visomaster/visomaster-assets/releases/tag/v0.1.0_dp) and copy to the `dependencies/` folder.
+
+#### **6. Run the Application**  
+```sh
+# Windows
+Start.bat
+
+# Linux
+python main.py
+```
+
+---
+
+## **Linux / RunPod Installation (Quick Setup)**
+
+For RunPod or any Linux GPU instance:
+
+```sh
+git clone https://github.com/crazidev/VisoMaster.git
+cd VisoMaster
+bash scripts/install_linux.sh
+```
+
+Or one-liner for RunPod:
+```sh
+curl -sSL https://raw.githubusercontent.com/crazidev/VisoMaster/main/scripts/runpod_setup.sh | bash
+```
+
+### Running on RunPod
+```sh
+python3 main.py
+```
+
+---
+
+## **WebRTC Setup**
+
+WebRTC allows you to stream video from your phone or any device into VisoMaster for real-time face processing.
+
+### **Quick Start**
+1. Go to **Settings** tab → Enable **WebRTC Server**
+2. Switch the media dropdown to **WebRTC**
+3. Connect from your device using one of the methods below
+
+### **Connection Methods**
+
+| Method | URL | Use Case |
+|--------|-----|----------|
+| Web Client | `http://<your-ip>:9091/` | Browser on phone/tablet |
+| WHIP (Larix, OBS) | `http://<your-ip>:9091/whip` | Professional streaming apps |
+| HTTPS Web Client | `https://<your-ip>:9090/` | Secure browser connection |
+| HTTPS WHIP | `https://<your-ip>:9090/whip` | Secure WHIP connection |
+
+### **Using with Larix Broadcaster**
+1. Install [Larix Broadcaster](https://softvelum.com/larix/) on your phone
+2. Go to Settings → Connections → New Connection
+3. Set URL to `http://<your-pc-ip>:9091/whip`
+4. Set codec to H.264 or VP8
+5. Start streaming
+
+### **Settings**
+- **HTTP Port** (default 9091): For HTTP connections
+- **HTTPS Port** (default 9090): For secure connections (auto-generates self-signed cert)
+- **Flip Horizontally**: Mirror the video for natural selfie view
+- **Show FPS**: Display real-time frame rate overlay
+
 ---
 
 ## **Troubleshooting**
 - If you face CUDA-related issues, ensure your GPU drivers are up to date.
 - For missing models, double-check that all models are placed in the correct directories.
+- For WebRTC connection issues on RunPod, ensure ports 9090 and 9091 are exposed.
+- If WHIP gets stuck, try switching codec to VP8 in your streaming app.
 
 ## [Join Discord](https://discord.gg/5rx4SQuDbp)
 
