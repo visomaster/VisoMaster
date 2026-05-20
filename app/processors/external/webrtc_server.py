@@ -117,6 +117,25 @@ class VideoStreamTrack:
 
 async def _index(request: web.Request):
     content = (CLIENT_DIR / "index.html").read_text(encoding="utf-8")
+    # Inject live-reload script before </body>
+    livereload_script = """
+<script>
+(function() {
+  var es = new EventSource('/livereload');
+  es.onmessage = function(e) {
+    if (e.data === 'reload') {
+      console.log('[LiveReload] File changed, reloading...');
+      window.location.reload();
+    }
+  };
+  es.onerror = function() {
+    console.log('[LiveReload] Connection lost, retrying...');
+    setTimeout(function() { es.close(); es = new EventSource('/livereload'); }, 3000);
+  };
+})();
+</script>
+"""
+    content = content.replace("</body>", livereload_script + "</body>")
     return web.Response(content_type="text/html", text=content)
 
 
@@ -172,7 +191,191 @@ async def _offer(request: web.Request):
     )
 
 
+# ── WHIP endpoint ─────────────────────────────────────────────────────────────
+
+# Store active WHIP sessions for teardown via DELETE
+_whip_sessions: dict = {}  # session_id -> RTCPeerConnection
+
+
+async def _whip(request: web.Request):
+    """WHIP-compliant endpoint for WebRTC ingestion from apps like Larix."""
+    # WHIP expects raw SDP in the body with Content-Type: application/sdp
+    content_type = request.content_type
+    body = await request.text()
+
+    if 'application/sdp' in content_type:
+        sdp_offer = body
+    else:
+        # Fallback: try to parse as JSON (for flexibility)
+        try:
+            params = json.loads(body)
+            sdp_offer = params.get("sdp", body)
+        except (json.JSONDecodeError, ValueError):
+            sdp_offer = body
+
+    offer = RTCSessionDescription(sdp=sdp_offer, type="offer")
+    shm: SharedMemory = request.app["shm"]
+    pc = RTCPeerConnection()
+    pcs: set = request.app["pcs"]
+    pcs.add(pc)
+
+    # Generate a session ID for this WHIP resource
+    import uuid
+    session_id = str(uuid.uuid4())
+    _whip_sessions[session_id] = pc
+
+    video_handler = None
+
+    @pc.on("track")
+    def on_track(track):
+        nonlocal video_handler
+        if track.kind == "video":
+            video_handler = VideoStreamTrack(track, shm)
+            video_handler.start()
+            print(f"[WHIP] Video track received from session {session_id}")
+
+    @pc.on("connectionstatechange")
+    async def on_connectionstatechange():
+        print(f"[WHIP] Connection state: {pc.connectionState}")
+        if pc.connectionState in ("failed", "closed"):
+            if video_handler:
+                video_handler.stop()
+            await pc.close()
+            pcs.discard(pc)
+            _whip_sessions.pop(session_id, None)
+
+    await pc.setRemoteDescription(offer)
+    answer = await pc.createAnswer()
+    await pc.setLocalDescription(answer)
+
+    # Return 201 Created with SDP answer and Location header per WHIP spec
+    resource_url = f"/whip/resource/{session_id}"
+    return web.Response(
+        status=201,
+        content_type="application/sdp",
+        text=pc.localDescription.sdp,
+        headers={
+            "Location": resource_url,
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Expose-Headers": "Location",
+        },
+    )
+
+
+async def _whip_resource_delete(request: web.Request):
+    """Handle WHIP resource teardown via DELETE."""
+    session_id = request.match_info["session_id"]
+    pc = _whip_sessions.pop(session_id, None)
+    if pc:
+        await pc.close()
+        request.app["pcs"].discard(pc)
+        return web.Response(status=200, text="Session terminated")
+    return web.Response(status=404, text="Session not found")
+
+
+async def _whip_options(request: web.Request):
+    """Handle CORS preflight for WHIP endpoint."""
+    return web.Response(
+        status=204,
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        },
+    )
+
+
+# ── Live-reload: file watcher + SSE endpoint ─────────────────────────────────
+
+# Tracks modification times of client files
+_file_mtimes: dict = {}
+_reload_clients: list = []  # list of asyncio.Queue for SSE subscribers
+
+
+def _scan_client_files() -> dict:
+    """Return {filepath: mtime} for all files in CLIENT_DIR."""
+    mtimes = {}
+    if CLIENT_DIR.is_dir():
+        for f in CLIENT_DIR.iterdir():
+            if f.is_file():
+                mtimes[str(f)] = f.stat().st_mtime
+    return mtimes
+
+
+async def _file_watcher_task():
+    """Background task that polls client files for changes and notifies SSE clients."""
+    global _file_mtimes
+    _file_mtimes = _scan_client_files()
+
+    while True:
+        await asyncio.sleep(1)  # Poll every second
+        current = _scan_client_files()
+        changed = False
+
+        for path, mtime in current.items():
+            if path not in _file_mtimes or _file_mtimes[path] != mtime:
+                changed = True
+                print(f"[WebRTC] File changed: {Path(path).name}")
+                break
+
+        # Also detect new or deleted files
+        if not changed and set(current.keys()) != set(_file_mtimes.keys()):
+            changed = True
+
+        if changed:
+            _file_mtimes = current
+            # Notify all connected SSE clients
+            for queue in _reload_clients:
+                await queue.put("reload")
+
+
+async def _livereload_sse(request: web.Request):
+    """SSE endpoint that pushes 'reload' events when client files change."""
+    response = web.StreamResponse(
+        status=200,
+        reason='OK',
+        headers={
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'Access-Control-Allow-Origin': '*',
+        }
+    )
+    await response.prepare(request)
+
+    queue = asyncio.Queue()
+    _reload_clients.append(queue)
+
+    try:
+        # Send initial heartbeat
+        await response.write(b": heartbeat\n\n")
+
+        while True:
+            msg = await queue.get()
+            await response.write(f"data: {msg}\n\n".encode())
+    except (asyncio.CancelledError, ConnectionResetError, ConnectionError):
+        pass
+    finally:
+        _reload_clients.remove(queue)
+
+    return response
+
+
+async def _on_startup(app: web.Application):
+    """Start the file watcher background task."""
+    app["file_watcher"] = asyncio.ensure_future(_file_watcher_task())
+
+
 async def _on_shutdown(app: web.Application):
+    # Stop file watcher
+    watcher = app.get("file_watcher")
+    if watcher:
+        watcher.cancel()
+        try:
+            await watcher
+        except asyncio.CancelledError:
+            pass
+
     pcs: set = app["pcs"]
     coros = [pc.close() for pc in pcs]
     await asyncio.gather(*coros)
@@ -301,10 +504,16 @@ def run_server(https_port: int = 9090, http_port: int = 9091,
     app["shm"] = shm
     app.on_shutdown.append(_on_shutdown)
 
-    app.router.add_get("/",         _index)
-    app.router.add_get("/app.js",   _javascript)
-    app.router.add_get("/style.css", _css)
-    app.router.add_post("/offer",   _offer)
+    app.router.add_get("/",             _index)
+    app.router.add_get("/app.js",       _javascript)
+    app.router.add_get("/style.css",    _css)
+    app.router.add_post("/offer",       _offer)
+    app.router.add_post("/whip",        _whip)
+    app.router.add_options("/whip",     _whip_options)
+    app.router.add_delete("/whip/resource/{session_id}", _whip_resource_delete)
+    app.router.add_get("/livereload",   _livereload_sse)
+
+    app.on_startup.append(_on_startup)
 
     # ── Auto-generate certificates if not provided or missing ─────────────────
     ssl_ctx = None
