@@ -550,7 +550,8 @@ def _kill_process_on_port(port: int):
 
 
 def run_server(https_port: int = 9090, http_port: int = 9091,
-               cert_file: str = "", key_file: str = ""):
+               cert_file: str = "", key_file: str = "",
+               host: str = "0.0.0.0"):
     """
     Start the WebRTC HTTP and HTTPS dual servers simultaneously.
     This function blocks; call it from a multiprocessing.Process.
@@ -586,11 +587,11 @@ def run_server(https_port: int = 9090, http_port: int = 9091,
     cert_path = Path(cert_file)
     key_path = Path(key_file)
 
-    if not cert_path.is_file() or not key_path.is_file():
-        try:
-            generate_self_signed_cert(cert_path, key_path)
-        except Exception as e:
-            print(f"[WebRTC] Error generating self-signed certificate: {e}")
+    # Always regenerate the certificate on startup so it includes current IPs
+    try:
+        generate_self_signed_cert(cert_path, key_path)
+    except Exception as e:
+        print(f"[WebRTC] Error generating self-signed certificate: {e}")
 
     if cert_path.is_file() and key_path.is_file():
         try:
@@ -605,15 +606,15 @@ def run_server(https_port: int = 9090, http_port: int = 9091,
         await runner.setup()
 
         # Start HTTP server
-        http_site = web.TCPSite(runner, "0.0.0.0", http_port)
+        http_site = web.TCPSite(runner, host, http_port)
         await http_site.start()
-        print(f"[WebRTC] HTTP server running on port {http_port} (http://localhost:{http_port})")
+        print(f"[WebRTC] HTTP server running on {host}:{http_port} (http://{host}:{http_port})")
 
         # Start HTTPS server
         if ssl_ctx:
-            https_site = web.TCPSite(runner, "0.0.0.0", https_port, ssl_context=ssl_ctx)
+            https_site = web.TCPSite(runner, host, https_port, ssl_context=ssl_ctx)
             await https_site.start()
-            print(f"[WebRTC] HTTPS server running on port {https_port} (https://localhost:{https_port})")
+            print(f"[WebRTC] HTTPS server running on {host}:{https_port} (https://{host}:{https_port})")
         else:
             print("[WebRTC] HTTPS server NOT started due to missing/invalid certificates.")
 

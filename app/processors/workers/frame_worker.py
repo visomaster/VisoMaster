@@ -73,18 +73,17 @@ class FrameWorker(threading.Thread):
                 # print('Emitted single_frame_processed_signal')
                 self.video_processor.single_frame_processed_signal.emit(self.frame_number, pixmap, self.frame)
 
-
-            # Mark the frame as done in the queue
+        except Exception as e: # pylint: disable=broad-exception-caught
+            print(f"Error in FrameWorker: {e}")
+            traceback.print_exc()
+        finally:
+            # Always drain the queue entry so the app never freezes on errors
             self.video_processor.frame_queue.get()
             self.video_processor.frame_queue.task_done()
 
             # Check if playback is complete
             if self.video_processor.frame_queue.empty() and not self.video_processor.processing and self.video_processor.next_frame_to_display >= self.video_processor.max_frame_number:
                 self.video_processor.stop_processing()
-
-        except Exception as e: # pylint: disable=broad-exception-caught
-            print(f"Error in FrameWorker: {e}")
-            traceback.print_exc()
     
     # @misc_helpers.benchmark
     def process_frame(self):

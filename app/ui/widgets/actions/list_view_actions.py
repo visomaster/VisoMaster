@@ -128,6 +128,27 @@ def clear_stop_loading_target_media(main_window: 'MainWindow'):
         time.sleep(0.5)
         main_window.targetVideosList.clear()
 
+def clear_stop_loading_target_media_streaming(main_window: 'MainWindow', stream_type: str):
+    """Stop any running loader worker and clear the appropriate streaming list widget."""
+    if main_window.video_loader_worker:
+        main_window.video_loader_worker.stop()
+        main_window.video_loader_worker.terminate()
+        main_window.video_loader_worker = False
+        time.sleep(0.3)
+    main_window.target_videos = {}
+    if stream_type == 'webcam':
+        main_window.webcamList.clear()
+    elif stream_type == 'webrtc':
+        main_window.webrtcList.clear()
+
+@QtCore.Slot(str, QtGui.QPixmap, str, int, int)
+def add_webcam_thumbnail_to_streaming_list(main_window: 'MainWindow', media_path, pixmap, file_type, media_id, webcam_index, webcam_backend):
+    add_media_thumbnail_button(main_window, widget_components.TargetMediaCardButton, main_window.webcamList, main_window.target_videos, pixmap, media_path=media_path, file_type=file_type, media_id=media_id, is_webcam=True, webcam_index=webcam_index, webcam_backend=webcam_backend)
+
+@QtCore.Slot(str, QtGui.QPixmap, str, str)
+def add_webrtc_thumbnail_to_streaming_list(main_window: 'MainWindow', media_path, pixmap, file_type, media_id):
+    add_media_thumbnail_button(main_window, widget_components.TargetMediaCardButton, main_window.webrtcList, main_window.target_videos, pixmap, media_path=media_path, file_type=file_type, media_id=media_id)
+
 @QtCore.Slot()
 def select_target_medias(main_window: 'MainWindow', source_type='folder', folder_name=False, files_list=None):
     files_list = files_list or []
@@ -162,7 +183,7 @@ def select_target_medias(main_window: 'MainWindow', source_type='folder', folder
 @QtCore.Slot()
 def load_target_webcams(main_window: 'MainWindow',):
     main_window.video_loader_worker = ui_workers.TargetMediaLoaderWorker(main_window=main_window, webcam_mode=True)
-    main_window.video_loader_worker.webcam_thumbnail_ready.connect(partial(add_webcam_thumbnail_to_target_videos_list, main_window))
+    main_window.video_loader_worker.webcam_thumbnail_ready.connect(partial(add_webcam_thumbnail_to_streaming_list, main_window))
     main_window.video_loader_worker.start()
 
 @QtCore.Slot(str, QtGui.QPixmap, str, str)
@@ -172,7 +193,7 @@ def add_webrtc_thumbnail_to_target_videos_list(main_window: 'MainWindow', media_
 @QtCore.Slot()
 def load_target_webrtc(main_window: 'MainWindow'):
     main_window.video_loader_worker = ui_workers.TargetMediaLoaderWorker(main_window=main_window, webrtc_mode=True)
-    main_window.video_loader_worker.webrtc_thumbnail_ready.connect(partial(add_webrtc_thumbnail_to_target_videos_list, main_window))
+    main_window.video_loader_worker.webrtc_thumbnail_ready.connect(partial(add_webrtc_thumbnail_to_streaming_list, main_window))
     main_window.video_loader_worker.start()
 
 def clear_stop_loading_input_media(main_window: 'MainWindow'):

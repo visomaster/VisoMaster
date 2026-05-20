@@ -35,3 +35,4 @@ dependencies/TensorRT/
 *.jpg
 *.exe
 .thumbnails
+certificates/

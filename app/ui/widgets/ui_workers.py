@@ -117,8 +117,9 @@ class TargetMediaLoaderWorker(qtc.QThread):
         from pathlib import Path
 
         main_window = self.main_window
-        http_port = int(main_window.control.get('WebRTCPortSlider', 9091))
-        https_port = int(main_window.control.get('WebRTCHttpsPortSlider', 9090))
+        http_port = int(main_window.control.get('WebRTCHttpPortText', 9091))
+        https_port = int(main_window.control.get('WebRTCHttpsPortText', 9090))
+        host = main_window.control.get('WebRTCBindAddressText', '0.0.0.0').strip() or '0.0.0.0'
 
         # Certificates path relative to external directory
         base_dir = Path(__file__).parent.parent / "external" / "certificates"
@@ -133,7 +134,8 @@ class TargetMediaLoaderWorker(qtc.QThread):
                     'http_port': http_port,
                     'https_port': https_port,
                     'cert_file': cert_file,
-                    'key_file': key_file
+                    'key_file': key_file,
+                    'host': host,
                 },
                 daemon=True
             )
@@ -310,18 +312,19 @@ class FilterWorker(qtc.QThread):
         search_text = main_window.targetVideosSearchBox.text().lower()
         include_file_types = []
         
-        # Check which media source is selected
-        source_index = main_window.mediaSourceComboBox.currentIndex()
-        
-        if source_index == 0:  # Media (files/folders)
+        # Determine active source from the new tab structure
+        input_tab = main_window.inputSourceTabWidget.currentIndex()
+        if input_tab == 0:  # Media tab
             if main_window.filterImagesCheckBox.isChecked():
                 include_file_types.append('image')
             if main_window.filterVideosCheckBox.isChecked():
                 include_file_types.append('video')
-        elif source_index == 1:  # Webcam
-            include_file_types.append('webcam')
-        elif source_index == 2:  # WebRTC
-            include_file_types.append('webrtc')
+        elif input_tab == 1:  # Streaming tab
+            sub_tab = main_window.streamingSubTabWidget.currentIndex()
+            if sub_tab == 0:
+                include_file_types.append('webcam')
+            elif sub_tab == 1:
+                include_file_types.append('webrtc')
 
         visible_indices = []
         for i in range(main_window.targetVideosList.count()):

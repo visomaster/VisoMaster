@@ -124,14 +124,20 @@ class ModelsProcessor(QtCore.QObject):
 
     def load_model(self, model_name, session_options=None):
         with self.model_lock:
+            model_path = self.models_path[model_name]
+            if not os.path.isfile(model_path):
+                raise FileNotFoundError(
+                    f"Model file not found for '{model_name}': {model_path}\n"
+                    "Please download the required model files before processing."
+                )
             self.main_window.model_loading_signal.emit()
             # QApplication.processEvents()
             # if not is_file_exists(self.models_path[model_name]):
             #     download_file(model_name, self.models_path[model_name], self.models_data[model_name]['hash'], self.models_data[model_name]['url'])
             if session_options is None:
-                model_instance = onnxruntime.InferenceSession(self.models_path[model_name], providers=self.providers)
+                model_instance = onnxruntime.InferenceSession(model_path, providers=self.providers)
             else:
-                model_instance = onnxruntime.InferenceSession(self.models_path[model_name], sess_options=session_options, providers=self.providers)
+                model_instance = onnxruntime.InferenceSession(model_path, sess_options=session_options, providers=self.providers)
 
             # Check if another thread has already loaded an instance for this model, if yes then delete the current one and return that instead
             if self.models[model_name]:

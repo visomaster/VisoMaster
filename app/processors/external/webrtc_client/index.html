@@ -2,31 +2,62 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>VisoMaster WebRTC Camera</title>
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
-  <div class="container">
-    <header>
-      <div class="logo-area">
-        <div class="logo-icon">VM</div>
-        <div>
-          <h1>VisoMaster</h1>
-          <p class="subtitle">WebRTC Remote Camera</p>
+  <div class="app">
+    <!-- Full-screen video preview -->
+    <div class="video-container" id="videoContainer">
+      <video id="localVideo" autoplay muted playsinline></video>
+      <div class="video-overlay" id="videoOverlay">
+        <div class="overlay-content">
+          <div class="logo-icon">VM</div>
+          <span>Tap Start to begin streaming</span>
         </div>
       </div>
-    </header>
+    </div>
 
-    <div class="card">
-      <div class="video-wrapper">
-        <video id="localVideo" autoplay muted playsinline></video>
-        <div class="video-overlay" id="videoOverlay">
-          <span>Camera preview will appear here</span>
+    <!-- Floating stats bar with status dot (visible when streaming) -->
+    <div class="stats-bar" id="statsBar">
+      <div class="stat-item status-indicator">
+        <span class="status-dot" id="statusDot"></span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">FPS</span>
+        <span class="stat-value" id="statFps">0</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Bitrate</span>
+        <span class="stat-value" id="statBitrate">0 kbps</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">RSS</span>
+        <span class="stat-value" id="statRss">—</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Res</span>
+        <span class="stat-value" id="statResolution">—</span>
+      </div>
+    </div>
+
+    <!-- Floating controls panel -->
+    <div class="controls-panel" id="controlsPanel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <div class="logo-icon-sm">VM</div>
+          <span>VisoMaster</span>
         </div>
+        <button class="panel-toggle" id="panelToggle" aria-label="Toggle settings">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+          </svg>
+        </button>
       </div>
 
-      <div class="controls">
+      <div class="panel-body" id="panelBody">
         <div class="select-row">
           <label for="cameraSelect">Camera</label>
           <select id="cameraSelect"></select>
@@ -39,15 +70,17 @@
             <option value="1920x1080">1920 × 1080</option>
           </select>
         </div>
-
-        <button id="startBtn" class="btn btn-primary">Start Streaming</button>
-        <button id="stopBtn"  class="btn btn-danger" disabled>Stop Streaming</button>
       </div>
 
-      <div id="statusBar" class="status idle">
-        <span class="status-dot"></span>
-        <span id="statusText">Idle — select a camera and press Start</span>
-      </div>
+      <!-- Single toggle button for start/stop -->
+      <button id="streamBtn" class="btn-stream">
+        <span class="btn-stream-icon" id="streamBtnIcon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="5,3 19,12 5,21"/>
+          </svg>
+        </span>
+        <span id="streamBtnText">Start Streaming</span>
+      </button>
     </div>
   </div>
 
