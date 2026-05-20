@@ -16,6 +16,7 @@ multiprocessing.Process so it does not block the Qt event loop.
 
 import asyncio
 import json
+import logging
 import os
 import ssl
 import fractions
@@ -32,6 +33,10 @@ from av import VideoFrame
 # multiprocessing shared memory
 from multiprocessing.shared_memory import SharedMemory
 import struct
+
+# Suppress noisy ICE binding errors for link-local addresses
+logging.getLogger("aioice.ice").setLevel(logging.WARNING)
+logging.getLogger("aiohttp.access").setLevel(logging.WARNING)
 
 # ── Constants ───────────────────────────────────────────────────────────────
 
@@ -157,11 +162,12 @@ async def _offer(request: web.Request):
     pc        = RTCPeerConnection()
     pcs: set  = request.app["pcs"]
 
-    # Close any existing connections (only one video source at a time)
-    for old_pc in list(pcs):
-        await old_pc.close()
+    # Schedule closing old connections in background (don't block the new one)
+    old_pcs = list(pcs)
     pcs.clear()
     pcs.add(pc)
+    if old_pcs:
+        asyncio.ensure_future(_close_old_connections(old_pcs))
 
     video_handler = None
 
@@ -202,6 +208,16 @@ async def _offer(request: web.Request):
 _whip_sessions: dict = {}  # session_id -> RTCPeerConnection
 
 
+async def _close_old_connections(old_pcs: list):
+    """Close old peer connections in the background without blocking new ones."""
+    await asyncio.sleep(0.5)  # Give new connection time to start ICE
+    for pc in old_pcs:
+        try:
+            await pc.close()
+        except Exception:
+            pass
+
+
 async def _whip(request: web.Request):
     """WHIP-compliant endpoint for WebRTC ingestion from apps like Larix."""
     # WHIP expects raw SDP in the body with Content-Type: application/sdp
@@ -223,13 +239,13 @@ async def _whip(request: web.Request):
     pc = RTCPeerConnection()
     pcs: set = request.app["pcs"]
 
-    # Close any existing connections (only one video source at a time)
-    for old_pc in list(pcs):
-        await old_pc.close()
+    # Schedule closing old connections in background (don't block the new one)
+    old_pcs = list(pcs)
     pcs.clear()
-    # Also clear old WHIP sessions
     _whip_sessions.clear()
     pcs.add(pc)
+    if old_pcs:
+        asyncio.ensure_future(_close_old_connections(old_pcs))
 
     # Generate a session ID for this WHIP resource
     import uuid
