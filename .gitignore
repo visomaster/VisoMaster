@@ -8,6 +8,7 @@
 *.timing
 *.dfm
 *.trt
+.env
 models/liveportrait_onnx/*.onnx
 models/liveportrait_onnx/*.trt
 saved_parameters*.json

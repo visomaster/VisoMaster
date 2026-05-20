@@ -139,6 +139,16 @@ class ModelsProcessor(QtCore.QObject):
             else:
                 model_instance = onnxruntime.InferenceSession(model_path, sess_options=session_options, providers=self.providers)
 
+            # Log which provider the model actually ended up using
+            active_providers = model_instance.get_providers()
+            print(f"[Models] {model_name} loaded with providers: {active_providers}")
+            
+            # Warn if CUDA was expected but not available
+            if self.device == 'cuda' and not any('CUDA' in p or 'Tensorrt' in p for p in active_providers):
+                print(f"[Models] WARNING: CUDA requested but not available for {model_name}!")
+                print(f"[Models] Available providers: {active_providers}")
+                print(f"[Models] Fix: pip uninstall onnxruntime -y && pip install onnxruntime-gpu")
+
             # Check if another thread has already loaded an instance for this model, if yes then delete the current one and return that instead
             if self.models[model_name]:
                 del model_instance

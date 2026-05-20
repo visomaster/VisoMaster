@@ -26,7 +26,7 @@ import numpy as np
 
 # aiortc / aiohttp
 from aiohttp import web
-from aiortc import RTCPeerConnection, RTCSessionDescription
+from aiortc import RTCPeerConnection, RTCSessionDescription, RTCConfiguration, RTCIceServer
 from aiortc.contrib.media import MediaBlackhole
 from av import VideoFrame
 
@@ -118,6 +118,66 @@ class VideoStreamTrack:
             _write_frame(self._shm, img)
 
 
+# ── TURN server configuration ─────────────────────────────────────────────────
+# Set these environment variables to enable TURN relay (required for RunPod/proxy setups):
+#   TURN_URL      - e.g. "turn:your-turn-server.com:3478" or "turns:your-turn-server.com:5349"
+#   TURN_USERNAME - TURN username
+#   TURN_PASSWORD - TURN credential/password
+#
+# You can also use multiple TURN servers by separating URLs with commas:
+#   TURN_URL="turn:server1.com:3478,turns:server1.com:5349"
+
+def _get_ice_servers() -> list:
+    """Build ICE server list. Uses Metered.ca TURN relay for proxy/NAT traversal."""
+    # Default: use environment variables for TURN relay
+    turn_url = os.environ.get("TURN_URL", "").strip()
+    turn_username = os.environ.get("TURN_USERNAME", "").strip()
+    turn_password = os.environ.get("TURN_PASSWORD", "").strip()
+    
+    if turn_url and turn_username and turn_password:
+        # Filter out stun: URLs — they don't need credentials
+        turn_urls = [u.strip() for u in turn_url.split(",") if u.strip() and u.strip().startswith("turn")]
+        stun_urls = [u.strip() for u in turn_url.split(",") if u.strip() and u.strip().startswith("stun")]
+        
+        servers = []
+        if stun_urls:
+            servers.append({"urls": stun_urls})
+        if turn_urls:
+            servers.append({
+                "urls": turn_urls,
+                "username": turn_username,
+                "credential": turn_password,
+            })
+        print(f"[WebRTC] TURN server configured from env: {turn_urls}")
+        return servers
+    
+    print("[WebRTC] WARNING: No TURN server configured. WebRTC may fail behind proxies/NAT.")
+    print("[WebRTC] Set TURN_URL, TURN_USERNAME, TURN_PASSWORD environment variables.")
+    return [{"urls": ["stun:stun.l.google.com:19302"]}]
+
+
+async def _turn_credentials(request: web.Request):
+    """Return TURN credentials to the browser client."""
+    turn_url = os.environ.get("TURN_URL", "").strip()
+    turn_username = os.environ.get("TURN_USERNAME", "").strip()
+    turn_password = os.environ.get("TURN_PASSWORD", "").strip()
+    
+    ice_servers = []
+    if turn_url and turn_username and turn_password:
+        urls = [u.strip() for u in turn_url.split(",") if u.strip()]
+        ice_servers.append({
+            "urls": urls,
+            "username": turn_username,
+            "credential": turn_password,
+        })
+    
+    return web.Response(
+        content_type="application/json",
+        text=json.dumps({"iceServers": ice_servers}),
+        headers={"Access-Control-Allow-Origin": "*"},
+    )
+
+
 # ── aiohttp request handlers ─────────────────────────────────────────────────
 
 async def _index(request: web.Request):
@@ -191,7 +251,24 @@ async def _offer(request: web.Request):
     params    = await request.json()
     offer     = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
     shm: SharedMemory = request.app["shm"]
-    pc        = RTCPeerConnection()
+    
+    # Use TURN relay — required for RunPod where inbound UDP is blocked.
+    # Both sides need relay candidates for the connection to work.
+    # Credentials come from environment variables.
+    turn_url = os.environ.get("TURN_URL", "").strip()
+    turn_username = os.environ.get("TURN_USERNAME", "").strip()
+    turn_password = os.environ.get("TURN_PASSWORD", "").strip()
+    
+    if turn_url and turn_username and turn_password:
+        turn_urls = [u.strip() for u in turn_url.split(",") if u.strip() and u.strip().startswith("turn")]
+        turn_servers = [
+            RTCIceServer(urls=turn_urls, username=turn_username, credential=turn_password),
+        ]
+        config = RTCConfiguration(iceServers=turn_servers)
+    else:
+        config = RTCConfiguration(iceServers=[RTCIceServer(urls=["stun:stun.l.google.com:19302"])])
+    
+    pc = RTCPeerConnection(configuration=config)
     pcs: set  = request.app["pcs"]
 
     # Schedule closing old connections in background (don't block the new one)
@@ -222,10 +299,25 @@ async def _offer(request: web.Request):
             await pc.close()
             pcs.discard(pc)
 
+    @pc.on("icegatheringstatechange")
+    def on_icegatheringstatechange():
+        print(f"[WebRTC] ICE gathering state: {pc.iceGatheringState}")
+
+    @pc.on("iceconnectionstatechange")
+    def on_iceconnectionstatechange():
+        print(f"[WebRTC] ICE connection state: {pc.iceConnectionState}")
+
     await pc.setRemoteDescription(offer)
     _set_codec_preferences(pc)
     answer = await pc.createAnswer()
     await pc.setLocalDescription(answer)
+
+    # Log the candidates in our answer for debugging
+    relay_candidates = [line for line in pc.localDescription.sdp.split('\r\n') if 'candidate' in line and 'relay' in line]
+    if relay_candidates:
+        print(f"[WebRTC] Answer includes relay candidate(s): {len(relay_candidates)}")
+    else:
+        print("[WebRTC] WARNING: No relay candidates in answer — TURN may not be working")
 
     return web.Response(
         content_type="application/json",
@@ -243,10 +335,11 @@ _whip_sessions: dict = {}  # session_id -> RTCPeerConnection
 
 async def _close_old_connections(old_pcs: list):
     """Close old peer connections in the background without blocking new ones."""
-    await asyncio.sleep(0.5)  # Give new connection time to start ICE
+    await asyncio.sleep(5)  # Give new connection time to complete ICE negotiation via TURN
     for pc in old_pcs:
         try:
-            await pc.close()
+            if pc.connectionState not in ("connected", "completed"):
+                await pc.close()
         except Exception:
             pass
 
@@ -269,7 +362,22 @@ async def _whip(request: web.Request):
 
     offer = RTCSessionDescription(sdp=sdp_offer, type="offer")
     shm: SharedMemory = request.app["shm"]
-    pc = RTCPeerConnection()
+    
+    # WHIP also uses TURN relay from environment variables
+    turn_url = os.environ.get("TURN_URL", "").strip()
+    turn_username = os.environ.get("TURN_USERNAME", "").strip()
+    turn_password = os.environ.get("TURN_PASSWORD", "").strip()
+    
+    if turn_url and turn_username and turn_password:
+        turn_urls = [u.strip() for u in turn_url.split(",") if u.strip() and u.strip().startswith("turn")]
+        turn_servers = [
+            RTCIceServer(urls=turn_urls, username=turn_username, credential=turn_password),
+        ]
+        config = RTCConfiguration(iceServers=turn_servers)
+    else:
+        config = RTCConfiguration(iceServers=[RTCIceServer(urls=["stun:stun.l.google.com:19302"])])
+    
+    pc = RTCPeerConnection(configuration=config)
     pcs: set = request.app["pcs"]
 
     # Schedule closing old connections in background (don't block the new one)
@@ -389,6 +497,54 @@ async def _file_watcher_task():
             # Notify all connected SSE clients
             for queue in _reload_clients:
                 await queue.put("reload")
+
+
+# ── WebSocket fallback for frame streaming ────────────────────────────────────
+# When WebRTC ICE fails (e.g., RunPod blocking UDP), the browser falls back to
+# sending JPEG-encoded frames over WebSocket. Higher latency than WebRTC but
+# works reliably through any HTTP proxy.
+
+async def _ws_stream(request: web.Request):
+    """WebSocket endpoint that receives JPEG frames from the browser."""
+    import cv2
+    
+    ws = web.WebSocketResponse(max_msg_size=10 * 1024 * 1024)  # 10MB max frame
+    await ws.prepare(request)
+    
+    shm: SharedMemory = request.app["shm"]
+    print("[WebSocket] Client connected for frame streaming")
+    
+    frame_count = 0
+    try:
+        async for msg in ws:
+            if msg.type == web.WSMsgType.BINARY:
+                # Decode JPEG to BGR numpy array
+                jpg_array = np.frombuffer(msg.data, dtype=np.uint8)
+                frame_bgr = cv2.imdecode(jpg_array, cv2.IMREAD_COLOR)
+                if frame_bgr is not None:
+                    _write_frame(shm, frame_bgr)
+                    frame_count += 1
+                    if frame_count % 100 == 0:
+                        print(f"[WebSocket] Received {frame_count} frames")
+            elif msg.type == web.WSMsgType.TEXT:
+                # Could be a control message
+                if msg.data == 'ping':
+                    await ws.send_str('pong')
+            elif msg.type in (web.WSMsgType.ERROR, web.WSMsgType.CLOSE):
+                break
+    except Exception as e:
+        print(f"[WebSocket] Error: {e}")
+    finally:
+        print(f"[WebSocket] Client disconnected after {frame_count} frames")
+    
+    return ws
+
+
+# ── Live-reload: file watcher + SSE endpoint ─────────────────────────────────
+
+# Tracks modification times of client files
+_file_mtimes: dict = {}
+_reload_clients: list = []  # list of asyncio.Queue for SSE subscribers
 
 
 async def _livereload_sse(request: web.Request):
@@ -571,6 +727,8 @@ def run_server(https_port: int = 9090, http_port: int = 9091,
     app.router.add_get("/app.js",       _javascript)
     app.router.add_get("/style.css",    _css)
     app.router.add_post("/offer",       _offer)
+    app.router.add_get("/turn-credentials", _turn_credentials)
+    app.router.add_get("/ws",           _ws_stream)
     app.router.add_post("/whip",        _whip)
     app.router.add_options("/whip",     _whip_options)
     app.router.add_delete("/whip/resource/{session_id}", _whip_resource_delete)
