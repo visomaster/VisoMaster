@@ -31,6 +31,7 @@ class VideoProcessor(QObject):
     frame_processed_signal = Signal(int, QPixmap, numpy.ndarray)
     webcam_frame_processed_signal = Signal(QPixmap, numpy.ndarray)
     single_frame_processed_signal = Signal(int, QPixmap, numpy.ndarray)
+    fps_update_signal = Signal(float)  # Emits current FPS for the streaming FPS label
     def __init__(self, main_window: 'MainWindow', num_threads=2):
         super().__init__()
         self.main_window = main_window
@@ -108,6 +109,7 @@ class VideoProcessor(QObject):
         else:
             graphics_view_actions.update_graphics_view(self.main_window, pixmap, frame_number,)
         self.current_frame = frame
+        self._send_frame_to_output_window(frame)
         torch.cuda.empty_cache()
         #Set GPU Memory Progressbar
         common_widget_actions.update_gpu_memory_progressbar(self.main_window)
@@ -122,6 +124,7 @@ class VideoProcessor(QObject):
 
             # Check and send the frame to virtualcam, if the option is selected
             self.send_frame_to_virtualcam(frame)
+            self._send_frame_to_output_window(frame)
 
             if self.recording:
                 self.recording_sp.stdin.write(frame.tobytes())
@@ -143,6 +146,7 @@ class VideoProcessor(QObject):
             pixmap, frame = self.webcam_frames_to_display.get()
             self.current_frame = frame
             self.send_frame_to_virtualcam(frame)
+            self._send_frame_to_output_window(frame)
             graphics_view_actions.update_graphics_view(self.main_window, pixmap, 0)
 
     def send_frame_to_virtualcam(self, frame: numpy.ndarray):
@@ -157,6 +161,14 @@ class VideoProcessor(QObject):
                 self.virtcam.sleep_until_next_frame()
             except Exception as e:
                 print(e)
+
+    def _send_frame_to_output_window(self, frame: numpy.ndarray):
+        """Send the processed frame to the output window if it is open."""
+        if (self.main_window.control.get('OutputWindowEnableToggle', False)
+                and hasattr(self.main_window, '_output_window')
+                and self.main_window._output_window is not None
+                and self.main_window._output_window.isVisible()):
+            self.main_window._output_window.update_frame(frame)
 
     def set_number_of_threads(self, value):
         self.stop_processing()
@@ -352,15 +364,7 @@ class VideoProcessor(QObject):
             ret, frame = misc_helpers.read_frame(self.media_capture, preview_mode = False)
             if ret:
                 frame = frame[..., ::-1]  # Convert BGR to RGB
-                
-                # Apply horizontal flip if enabled
-                if self.main_window.control.get('WebcamFlipHorizontalToggle', False):
-                    frame = cv2.flip(frame, 1)
-                
-                # Calculate and display FPS
-                if self.main_window.control.get('WebcamShowFPSToggle', True):
-                    frame = self._add_fps_overlay(frame)
-                
+                frame = self._apply_streaming_transforms(frame)
                 # print(f"Enqueuing frame {self.current_frame_number}")
                 self.frame_queue.put(self.current_frame_number)
                 self.start_frame_worker(self.current_frame_number, frame, is_single_frame=True)
@@ -377,15 +381,7 @@ class VideoProcessor(QObject):
                     raw = bytes(self.webrtc_shm.buf[SHM_HEADER_BYTES: SHM_HEADER_BYTES + w * h * 3])
                     frame = numpy.frombuffer(raw, dtype=numpy.uint8).reshape((h, w, 3)).copy()
                     frame = frame[..., ::-1]  # BGR -> RGB
-                    
-                    # Apply horizontal flip if enabled
-                    if self.main_window.control.get('WebRTCFlipHorizontalToggle', False):
-                        frame = cv2.flip(frame, 1)
-                    
-                    # Calculate and display FPS
-                    if self.main_window.control.get('WebRTCShowFPSToggle', True):
-                        frame = self._add_fps_overlay(frame)
-                    
+                    frame = self._apply_streaming_transforms(frame)
                     self.frame_queue.put(self.current_frame_number)
                     self.start_frame_worker(self.current_frame_number, frame, is_single_frame=True)
             except Exception as e:
@@ -402,15 +398,7 @@ class VideoProcessor(QObject):
             ret, frame = misc_helpers.read_frame(self.media_capture, preview_mode = False)
             if ret:
                 frame = frame[..., ::-1]  # Convert BGR to RGB
-                
-                # Apply horizontal flip if enabled
-                if self.main_window.control.get('WebcamFlipHorizontalToggle', False):
-                    frame = cv2.flip(frame, 1)
-                
-                # Calculate and display FPS
-                if self.main_window.control.get('WebcamShowFPSToggle', True):
-                    frame = self._add_fps_overlay(frame)
-                
+                frame = self._apply_streaming_transforms(frame)
                 # print(f"Enqueuing frame {self.current_frame_number}")
                 self.frame_queue.put(self.current_frame_number)
                 self.start_frame_worker(self.current_frame_number, frame)
@@ -438,15 +426,7 @@ class VideoProcessor(QObject):
             frame = numpy.frombuffer(raw, dtype=numpy.uint8).reshape((h, w, 3)).copy()
             # Frame is already BGR from the server; convert to RGB for FrameWorker
             frame = frame[..., ::-1]
-            
-            # Apply horizontal flip if enabled
-            if self.main_window.control.get('WebRTCFlipHorizontalToggle', False):
-                frame = cv2.flip(frame, 1)
-            
-            # Calculate and display FPS
-            if self.main_window.control.get('WebRTCShowFPSToggle', True):
-                frame = self._add_fps_overlay(frame)
-            
+            frame = self._apply_streaming_transforms(frame)
             self.frame_queue.put(self.current_frame_number)
             self.start_frame_worker(self.current_frame_number, frame)
         except Exception as e:
@@ -476,31 +456,53 @@ class VideoProcessor(QObject):
         except FileNotFoundError:
             pass  # Keep polling silently
 
-    def _add_fps_overlay(self, frame: numpy.ndarray) -> numpy.ndarray:
-        """Add FPS overlay to frame and update FPS calculation."""
-        # Update FPS calculation
+    def _apply_streaming_transforms(self, frame: numpy.ndarray) -> numpy.ndarray:
+        """Apply rotation, flip transforms and update FPS signal for streaming sources."""
+        mw = self.main_window
+
+        # Pick the right transform state based on active source
+        if self.file_type == 'webcam':
+            rotation = getattr(mw, 'webcam_rotation', 0)
+            flip_h = getattr(mw, 'webcam_flip_h', False)
+            flip_v = getattr(mw, 'webcam_flip_v', False)
+        else:  # webrtc
+            rotation = getattr(mw, 'webrtc_rotation', 0)
+            flip_h = getattr(mw, 'webrtc_flip_h', False)
+            flip_v = getattr(mw, 'webrtc_flip_v', False)
+
+        # ── Rotation ────────────────────────────────────────────────────────
+        if rotation == 90:
+            frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
+        elif rotation == 180:
+            frame = cv2.rotate(frame, cv2.ROTATE_180)
+        elif rotation == 270:
+            frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
+
+        # ── Flip ─────────────────────────────────────────────────────────────
+        if flip_h and flip_v:
+            frame = cv2.flip(frame, -1)
+        elif flip_h:
+            frame = cv2.flip(frame, 1)
+        elif flip_v:
+            frame = cv2.flip(frame, 0)
+
+        # ── FPS tracking & signal ────────────────────────────────────────────
         self.fps_frame_count += 1
         current_time = time.time()
-        
         if self.fps_start_time == 0:
             self.fps_start_time = current_time
-        
         elapsed = current_time - self.fps_start_time
-        if elapsed >= 1.0:  # Update FPS every second
+        if elapsed >= 1.0:
             self.current_fps = self.fps_frame_count / elapsed
             self.fps_frame_count = 0
             self.fps_start_time = current_time
-        
-        # Draw FPS on frame (convert to BGR for cv2.putText, then back to RGB)
-        frame_bgr = frame[..., ::-1].copy()
-        fps_text = f"FPS: {self.current_fps:.1f}"
-        cv2.putText(
-            frame_bgr, fps_text,
-            (10, 30),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            1.0, (0, 255, 0), 2, cv2.LINE_AA
-        )
-        return frame_bgr[..., ::-1]  # Convert back to RGB
+            self.fps_update_signal.emit(self.current_fps)
+
+        return frame
+
+    def _add_fps_overlay(self, frame: numpy.ndarray) -> numpy.ndarray:
+        """Legacy: kept for compatibility — delegates to _apply_streaming_transforms."""
+        return self._apply_streaming_transforms(frame)
 
     # @misc_helpers.benchmark
     def stop_processing(self):

@@ -251,6 +251,16 @@ SETTINGS_LAYOUT_DATA: LayoutDictTypes = {
             'exec_funtion_args': [],
         },
     },
+    'Output Window': {
+        'OutputWindowEnableToggle': {
+            'level': 1,
+            'label': 'Show Output Window',
+            'default': False,
+            'help': 'Open a separate borderless window showing the processed output. Use OBS "Window Capture" to capture "VisoMaster Output" for streaming without virtual camera.',
+            'exec_function': control_actions.toggle_output_window,
+            'exec_function_args': [],
+        },
+    },
     'Face Recognition': {
         'RecognitionModelSelection': {
             'level': 1,
@@ -290,62 +300,29 @@ SETTINGS_LAYOUT_DATA: LayoutDictTypes = {
             'help': 'Include all files from Subfolders when choosing Input Faces Folder'
         }
     },
-    'Webcam Settings': {
-        'WebcamFlipHorizontalToggle': {
-            'level': 1,
-            'label': 'Flip Webcam Horizontally',
-            'default': False,
-            'help': 'Mirror the webcam video horizontally'
-        },
-        'WebcamShowFPSToggle': {
-            'level': 1,
-            'label': 'Show Webcam FPS',
-            'default': True,
-            'help': 'Display frames per second overlay on webcam feed'
-        },
-    },
     'WebRTC Settings': {
-        'WebRTCEnabledToggle': {
+        'WebRTCHttpPortText': {
             'level': 1,
-            'label': 'Enable WebRTC Server',
-            'default': False,
-            'help': 'Start a local WebRTC server so a smartphone/browser can stream video directly into VisoMaster. Check the "WebRTC" checkbox in Target Media to activate.'
-        },
-        'WebRTCFlipHorizontalToggle': {
-            'level': 1,
-            'label': 'Flip WebRTC Horizontally',
-            'default': False,
-            'help': 'Mirror the WebRTC video horizontally'
-        },
-        'WebRTCShowFPSToggle': {
-            'level': 1,
-            'label': 'Show WebRTC FPS',
-            'default': True,
-            'help': 'Display frames per second overlay on WebRTC feed'
-        },
-        'WebRTCPortSlider': {
-            'level': 2,
-            'label': 'WebRTC HTTP Port',
-            'min_value': '1024',
-            'max_value': '65535',
+            'label': 'HTTP Port',
             'default': '9091',
-            'step': 1,
-            'parentToggle': 'WebRTCEnabledToggle',
-            'requiredToggleValue': True,
+            'width': 80,
             'help': 'Port for the HTTP WebRTC server (e.g. 9091). Open http://<your-ip>:<port> on your phone.'
         },
-        'WebRTCHttpsPortSlider': {
-            'level': 2,
-            'label': 'WebRTC HTTPS Port',
-            'min_value': '1024',
-            'max_value': '65535',
+        'WebRTCHttpsPortText': {
+            'level': 1,
+            'label': 'HTTPS Port',
             'default': '9090',
-            'step': 1,
-            'parentToggle': 'WebRTCEnabledToggle',
-            'requiredToggleValue': True,
+            'width': 80,
             'help': 'Port for the HTTPS WebRTC server (e.g. 9090). Open https://<your-ip>:<port> on your phone.'
         },
-    }
+        'WebRTCBindAddressText': {
+            'level': 1,
+            'label': 'Bind Address',
+            'default': '0.0.0.0',
+            'width': 130,
+            'help': 'Network interface to bind the WebRTC server to. Use 0.0.0.0 to listen on all interfaces, or enter a specific IP (e.g. 192.168.1.10) to restrict to one network adapter.'
+        },
+    },
 }
 
 CAMERA_BACKENDS = {

@@ -18,9 +18,50 @@ class GraphicsViewEventFilter(QtCore.QObject):
         if event.type() == QtCore.QEvent.Type.MouseButtonPress:
             if event.button() == QtCore.Qt.MouseButton.LeftButton:
                 self.main_window.buttonMediaPlay.click()
-                # You can emit a signal or call another function here
                 return True  # Mark the event as handled
+            elif event.button() == QtCore.Qt.MouseButton.MiddleButton:
+                self._toggle_output_window()
+                return True
+        elif event.type() == QtCore.QEvent.Type.ContextMenu:
+            self._show_context_menu(event.globalPos())
+            return True
         return False  # Pass the event to the original handler
+
+    def _toggle_output_window(self):
+        """Toggle the output window on middle-click of the preview area."""
+        from app.ui.widgets.output_window import OutputWindow
+        mw = self.main_window
+        if not hasattr(mw, '_output_window') or mw._output_window is None:
+            mw._output_window = OutputWindow(mw)
+        if mw._output_window.isVisible():
+            mw._output_window.close()
+        else:
+            mw._output_window.show()
+            # Update the control toggle if it exists
+            if 'OutputWindowEnableToggle' in mw.control:
+                mw.control['OutputWindowEnableToggle'] = True
+                if 'OutputWindowEnableToggle' in mw.parameter_widgets:
+                    widget = mw.parameter_widgets['OutputWindowEnableToggle']
+                    widget.blockSignals(True)
+                    widget.set_value(True)
+                    widget.blockSignals(False)
+            # Send the current frame if available
+            import numpy
+            if hasattr(mw.video_processor, 'current_frame') and isinstance(mw.video_processor.current_frame, numpy.ndarray) and mw.video_processor.current_frame.size > 0:
+                mw._output_window.update_frame(mw.video_processor.current_frame)
+
+    def _show_context_menu(self, global_pos):
+        """Show context menu with output window option."""
+        from app.ui.widgets.output_window import OutputWindow
+        mw = self.main_window
+        menu = QtWidgets.QMenu()
+
+        # Output window toggle
+        is_visible = (hasattr(mw, '_output_window') and mw._output_window is not None and mw._output_window.isVisible())
+        output_action = menu.addAction("Close Output Window" if is_visible else "Open Output Window (for OBS)")
+        output_action.triggered.connect(self._toggle_output_window)
+
+        menu.exec(global_pos)
     
 class videoSeekSliderLineEditEventFilter(QtCore.QObject):
     def __init__(self, main_window: 'MainWindow', parent=None):
@@ -116,6 +157,11 @@ class ListWidgetEventFilter(QtCore.QObject):
                     event.acceptProposedAction()
                     return True
 
+
+        elif list_widget == self.main_window.webcamList or list_widget == self.main_window.webcamList.viewport() or \
+             list_widget == self.main_window.webrtcList or list_widget == self.main_window.webrtcList.viewport():
+            # Streaming lists: no folder open on click, just pass through
+            pass
 
         elif list_widget == self.main_window.inputFacesList or list_widget == self.main_window.inputFacesList.viewport():
 

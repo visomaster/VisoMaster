@@ -83,16 +83,36 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # This flag is used to make sure new loaded media is properly fit into the graphics frame on the first load
         self.loading_new_media = False
 
+        # Streaming transform state — separate per source
+        self.webcam_rotation = 0   # 0, 90, 180, 270 degrees clockwise
+        self.webcam_flip_h = False
+        self.webcam_flip_v = False
+        self.webrtc_rotation = 0
+        self.webrtc_flip_h = False
+        self.webrtc_flip_v = False
+
+        # Output window for OBS capture (initialized lazily)
+        self._output_window = None
+
         self.gpu_memory_update_signal.connect(partial(common_widget_actions.set_gpu_memory_progressbar_value, self))
         self.placeholder_update_signal.connect(partial(common_widget_actions.update_placeholder_visibility, self))
         self.model_loading_signal.connect(partial(common_widget_actions.show_model_loading_dialog, self))
         self.model_loaded_signal.connect(partial(common_widget_actions.hide_model_loading_dialog, self))
         self.display_messagebox_signal.connect(partial(common_widget_actions.create_and_show_messagebox, self))
     def initialize_widgets(self):
-        # Initialize QListWidget for target media
+        # Initialize QListWidget for target media (Media tab)
         self.targetVideosList.setFlow(QtWidgets.QListWidget.LeftToRight)
         self.targetVideosList.setWrapping(True)
         self.targetVideosList.setResizeMode(QtWidgets.QListWidget.Adjust)
+
+        # Initialize QListWidgets for streaming tabs
+        self.webcamList.setFlow(QtWidgets.QListWidget.LeftToRight)
+        self.webcamList.setWrapping(True)
+        self.webcamList.setResizeMode(QtWidgets.QListWidget.Adjust)
+
+        self.webrtcList.setFlow(QtWidgets.QListWidget.LeftToRight)
+        self.webrtcList.setWrapping(True)
+        self.webrtcList.setResizeMode(QtWidgets.QListWidget.Adjust)
 
         # Initialize QListWidget for face images
         self.inputFacesList.setFlow(QtWidgets.QListWidget.LeftToRight)
@@ -102,8 +122,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # Set up Menu Actions
         layout_actions.set_up_menu_actions(self)
 
-        # Set up placeholder texts in ListWidgets (Target Videos and Input Faces)
+        # Set up placeholder texts in ListWidgets
         list_view_actions.set_up_list_widget_placeholder(self, self.targetVideosList)
+        list_view_actions.set_up_list_widget_placeholder(self, self.webcamList)
+        list_view_actions.set_up_list_widget_placeholder(self, self.webrtcList)
         list_view_actions.set_up_list_widget_placeholder(self, self.inputFacesList)
 
         # Set up click to select and drop action on ListWidgets
@@ -114,6 +136,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         list_widget_event_filter = ListWidgetEventFilter(self, self)
         self.targetVideosList.installEventFilter(list_widget_event_filter)
         self.targetVideosList.viewport().installEventFilter(list_widget_event_filter)
+        self.webcamList.installEventFilter(list_widget_event_filter)
+        self.webcamList.viewport().installEventFilter(list_widget_event_filter)
+        self.webrtcList.installEventFilter(list_widget_event_filter)
+        self.webrtcList.viewport().installEventFilter(list_widget_event_filter)
         self.inputFacesList.installEventFilter(list_widget_event_filter)
         self.inputFacesList.viewport().installEventFilter(list_widget_event_filter)
 
@@ -153,13 +179,28 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # Connect the Play/Stop button to the play_video method
         self.buttonMediaPlay.toggled.connect(partial(video_control_actions.play_video, self))
         self.buttonMediaRecord.toggled.connect(partial(video_control_actions.record_video, self))
-        # self.buttonMediaStop.clicked.connect(partial(self.video_processor.stop_processing))
         self.findTargetFacesButton.clicked.connect(partial(card_actions.find_target_faces, self))
         self.clearTargetFacesButton.clicked.connect(partial(card_actions.clear_target_faces, self))
         self.targetVideosSearchBox.textChanged.connect(partial(filter_actions.filter_target_videos, self))
         self.filterImagesCheckBox.clicked.connect(partial(filter_actions.filter_target_videos, self))
         self.filterVideosCheckBox.clicked.connect(partial(filter_actions.filter_target_videos, self))
-        self.mediaSourceComboBox.currentIndexChanged.connect(partial(self.on_media_source_changed))
+
+        # Input source tab switching (Media / Streaming)
+        self.inputSourceTabWidget.currentChanged.connect(partial(self.on_input_source_tab_changed))
+        # Streaming sub-tab switching (Webcam / WebRTC)
+        self.streamingSubTabWidget.currentChanged.connect(partial(self.on_streaming_sub_tab_changed))
+
+        # Webcam transform buttons
+        self.webcamBtnRotateCCW.clicked.connect(partial(self._on_webcam_rotate_ccw))
+        self.webcamBtnRotateCW.clicked.connect(partial(self._on_webcam_rotate_cw))
+        self.webcamBtnFlipH.toggled.connect(partial(self._on_webcam_flip_h))
+        self.webcamBtnFlipV.toggled.connect(partial(self._on_webcam_flip_v))
+
+        # WebRTC transform buttons
+        self.webrtcBtnRotateCCW.clicked.connect(partial(self._on_webrtc_rotate_ccw))
+        self.webrtcBtnRotateCW.clicked.connect(partial(self._on_webrtc_rotate_cw))
+        self.webrtcBtnFlipH.toggled.connect(partial(self._on_webrtc_flip_h))
+        self.webrtcBtnFlipV.toggled.connect(partial(self._on_webrtc_flip_v))
 
         self.inputFacesSearchBox.textChanged.connect(partial(filter_actions.filter_input_faces, self))
         self.inputEmbeddingsSearchBox.textChanged.connect(partial(filter_actions.filter_merged_embeddings, self))
@@ -203,7 +244,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         common_widget_actions.update_gpu_memory_progressbar(self)
         # Set face_swap_tab as the default focused tab
         self.tabWidget.setCurrentIndex(0)
-        # widget_actions.add_groupbox_and_widgets_from_layout_map(self)
+
+        self.video_processor.fps_update_signal.connect(self._on_fps_update)
+
+
     def __init__(self):
         super(MainWindow, self).__init__()
         self.setupUi(self)
@@ -259,6 +303,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         list_view_actions.clear_stop_loading_input_media(self)
         list_view_actions.clear_stop_loading_target_media(self)
 
+        # Close output window if open
+        if self._output_window is not None:
+            self._output_window.close()
+            self._output_window = None
+
         # Stop WebRTC server subprocess if running
         if self.webrtc_server_process and self.webrtc_server_process.is_alive():
             print("Stopping WebRTC server process...")
@@ -276,83 +325,131 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             load_dialog = widget_components.LoadLastWorkspaceDialog(self)
             load_dialog.exec_()
 
-    def on_media_source_changed(self, source_index):
-        """Handle media source dropdown changes."""
-        # Stop any current processing
+    def on_input_source_tab_changed(self, tab_index):
+        """Handle switching between Media (0) and Streaming (1) tabs."""
         self.video_processor.stop_processing()
-        
-        # Release webcam if switching away from it
+
+        # Release webcam if switching away
         if self.selected_video_button and hasattr(self.selected_video_button, 'file_type') and self.selected_video_button.file_type == 'webcam':
             if self.selected_video_button.media_capture:
-                print("[Webcam] Releasing webcam capture...")
                 self.selected_video_button.media_capture.release()
                 self.selected_video_button.media_capture = None
             if self.video_processor.media_capture:
                 self.video_processor.media_capture.release()
                 self.video_processor.media_capture = None
-            # Give OS time to release the camera
             import time
             time.sleep(0.2)
-        
-        # Reset video processor state so refresh_frame doesn't crash
+
         self.video_processor.file_type = None
         self.video_processor.media_capture = None
         self.video_processor.webrtc_shm = None
         self.video_processor.current_frame = []
         self.selected_video_button = False
-        
-        # Stop WebRTC server if switching away from it
-        if source_index != 2:  # Not WebRTC
+        self.scene.clear()
+
+        if tab_index == 0:  # Media tab — show folder group
+            self.groupBox_TargetVideos_Select.setVisible(True)
+            # Stop WebRTC server if running
+            if self.webrtc_server_process and self.webrtc_server_process.is_alive():
+                print("[WebRTC] Stopping WebRTC server (switched to Media tab)...")
+                self.webrtc_server_process.terminate()
+                self.webrtc_server_process.join(timeout=3)
+                self.webrtc_server_process = None
+            self.streamingFpsLabel.setText("FPS: --")
+            self.streamingFpsLabel.setStyleSheet("")
+
+        elif tab_index == 1:  # Streaming tab — hide folder group, trigger active sub-tab
+            self.groupBox_TargetVideos_Select.setVisible(False)
+            self.on_streaming_sub_tab_changed(self.streamingSubTabWidget.currentIndex())
+
+    def on_streaming_sub_tab_changed(self, sub_index):
+        """Handle switching between Webcam (0) and WebRTC (1) sub-tabs."""
+        if self.inputSourceTabWidget.currentIndex() != 1:
+            return
+
+        self.video_processor.stop_processing()
+
+        # Release webcam if switching away
+        if self.selected_video_button and hasattr(self.selected_video_button, 'file_type') and self.selected_video_button.file_type == 'webcam':
+            if self.selected_video_button.media_capture:
+                self.selected_video_button.media_capture.release()
+                self.selected_video_button.media_capture = None
+            if self.video_processor.media_capture:
+                self.video_processor.media_capture.release()
+                self.video_processor.media_capture = None
+            import time
+            time.sleep(0.2)
+
+        # Stop WebRTC server if switching away from WebRTC
+        if sub_index != 1:
             if self.webrtc_server_process and self.webrtc_server_process.is_alive():
                 print("[WebRTC] Stopping WebRTC server...")
                 self.webrtc_server_process.terminate()
                 self.webrtc_server_process.join(timeout=3)
                 self.webrtc_server_process = None
-        
-        # Clear existing media list
-        list_view_actions.clear_stop_loading_target_media(self)
-        self.target_videos = {}
+
+        self.video_processor.file_type = None
+        self.video_processor.media_capture = None
+        self.video_processor.webrtc_shm = None
+        self.video_processor.current_frame = []
+        self.selected_video_button = False
         self.scene.clear()
-        
-        if source_index == 0:  # Media (files/folders)
-            # Show file type checkboxes
-            self.filterImagesCheckBox.setVisible(True)
-            self.filterVideosCheckBox.setVisible(True)
-            # Update placeholder text
-            if hasattr(self.targetVideosList, 'placeholder_label'):
-                self.targetVideosList.placeholder_label.setText(
-                    "<html><body style='text-align:center;'>"
-                    "<p>Drop Files</p>"
-                    "<p><b>or</b></p>"
-                    "<p>Click here to Select a Folder</p>"
-                    "</body></html>"
-                )
-        elif source_index == 1:  # Webcam
-            # Hide file type checkboxes
-            self.filterImagesCheckBox.setVisible(False)
-            self.filterVideosCheckBox.setVisible(False)
-            # Load webcams
+        self.streamingFpsLabel.setText("FPS: --")
+        self.streamingFpsLabel.setStyleSheet("")
+        if sub_index == 0:  # Webcam
+            list_view_actions.clear_stop_loading_target_media_streaming(self, 'webcam')
             list_view_actions.load_target_webcams(self)
-        elif source_index == 2:  # WebRTC
-            # Hide file type checkboxes
-            self.filterImagesCheckBox.setVisible(False)
-            self.filterVideosCheckBox.setVisible(False)
-            # Check if WebRTC is enabled in settings
-            if not self.control.get('WebRTCEnabledToggle', False):
-                from PySide6.QtWidgets import QMessageBox
-                QMessageBox.warning(
-                    self,
-                    'WebRTC Not Enabled',
-                    'Please enable the WebRTC Server in the Settings tab first.'
-                )
-                self.mediaSourceComboBox.blockSignals(True)
-                self.mediaSourceComboBox.setCurrentIndex(0)
-                self.mediaSourceComboBox.blockSignals(False)
-                self.filterImagesCheckBox.setVisible(True)
-                self.filterVideosCheckBox.setVisible(True)
-                return
-            # Load WebRTC
+        elif sub_index == 1:  # WebRTC — auto-start server
+            list_view_actions.clear_stop_loading_target_media_streaming(self, 'webrtc')
             list_view_actions.load_target_webrtc(self)
+
+    # ── Webcam transform handlers ────────────────────────────────────────────
+    def _on_webcam_rotate_ccw(self):
+        self.webcam_rotation = (self.webcam_rotation - 90) % 360
+        self.webcamRotationLabel.setText(f"{self.webcam_rotation}°")
+
+    def _on_webcam_rotate_cw(self):
+        self.webcam_rotation = (self.webcam_rotation + 90) % 360
+        self.webcamRotationLabel.setText(f"{self.webcam_rotation}°")
+
+    def _on_webcam_flip_h(self, checked):
+        self.webcam_flip_h = checked
+
+    def _on_webcam_flip_v(self, checked):
+        self.webcam_flip_v = checked
+
+    # ── WebRTC transform handlers ────────────────────────────────────────────
+    def _on_webrtc_rotate_ccw(self):
+        self.webrtc_rotation = (self.webrtc_rotation - 90) % 360
+        self.webrtcRotationLabel.setText(f"{self.webrtc_rotation}°")
+
+    def _on_webrtc_rotate_cw(self):
+        self.webrtc_rotation = (self.webrtc_rotation + 90) % 360
+        self.webrtcRotationLabel.setText(f"{self.webrtc_rotation}°")
+
+    def _on_webrtc_flip_h(self, checked):
+        self.webrtc_flip_h = checked
+
+    def _on_webrtc_flip_v(self, checked):
+        self.webrtc_flip_v = checked
+
+    @QtCore.Slot(float)
+    def _on_fps_update(self, fps_value):
+        """Update the FPS corner label with color coding based on value."""
+        if self.inputSourceTabWidget.currentIndex() != 1:
+            return
+        self.streamingFpsLabel.setText(f"FPS: {fps_value:.1f}")
+        if fps_value >= 20:
+            color = "#4caf50"   # green — smooth
+        elif fps_value >= 10:
+            color = "#ff9800"   # orange — acceptable
+        else:
+            color = "#f44336"   # red — poor
+        self.streamingFpsLabel.setStyleSheet(f"color: {color}; font-weight: bold;")
+
+    def on_media_source_changed(self, source_index):
+        """Legacy stub — kept for workspace save/load compatibility."""
+        pass
 
     def save_last_workspace(self):
         pass

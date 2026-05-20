@@ -64,3 +64,14 @@ def toggle_virtualcam(main_window: 'MainWindow', toggle_value=False):
 def enable_virtualcam(main_window: 'MainWindow', backend):
     print('backend', backend)
     main_window.video_processor.enable_virtualcam(backend=backend)
+
+def toggle_output_window(main_window: 'MainWindow', toggle_value=False):
+    """Show or hide the borderless output window for OBS/screen capture."""
+    from app.ui.widgets.output_window import OutputWindow
+    if toggle_value:
+        if not hasattr(main_window, '_output_window') or main_window._output_window is None:
+            main_window._output_window = OutputWindow(main_window)
+        main_window._output_window.show()
+    else:
+        if hasattr(main_window, '_output_window') and main_window._output_window is not None:
+            main_window._output_window.close()
