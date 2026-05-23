@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "streamrelay"
+version = "0.1.0"
+description = "Phone/browser to AI process video streaming over WebSocket with shared-memory delivery."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "VisoMaster contributors" }]
+keywords = [
+    "webrtc",
+    "websocket",
+    "streaming",
+    "face-swap",
+    "deepfacelive",
+    "rope",
+    "visomaster",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Video :: Capture",
+    "Topic :: Multimedia :: Video :: Conversion",
+]
+
+dependencies = [
+    "aiohttp>=3.9",
+    "numpy>=1.24",
+    "opencv-python>=4.5",
+    "cryptography>=41",
+]
+
+[project.optional-dependencies]
+h264   = ["av>=11"]
+psutil = ["psutil>=5.9"]
+
+[project.urls]
+Homepage = "https://github.com/visomaster/VisoMaster"
+Source   = "https://github.com/visomaster/VisoMaster"
+
+[project.scripts]
+streamrelay-server = "streamrelay.server:_cli"
+
+[tool.setuptools.packages.find]
+where   = ["src"]
+include = ["streamrelay*"]
+
+[tool.setuptools.package-data]
+streamrelay = ["client/*.html", "client/*.js", "client/*.css"]

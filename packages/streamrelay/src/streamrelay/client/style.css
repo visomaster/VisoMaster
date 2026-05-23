@@ -1,0 +1,483 @@
+/* VisoMaster Streaming Client */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* ── Design tokens — dark ──────────────────────────────────────────────── */
+:root {
+  --bg:         #0b0d14;
+  --surface:    #141723;
+  --surface2:   #1e2236;
+  --border:     #2a2f4a;
+  --accent:     #7c6af7;
+  --accent-h:   #9b8fff;
+  --danger:     #e05260;
+  --danger-h:   #f06070;
+  --text:       #e8eaf6;
+  --text-muted: #8890b8;
+  --green:      #1abc9c;
+  --radius:     12px;
+  --pad:        1rem;
+  --gap:        10px;
+  --sidebar:    300px;
+}
+
+/* ── Light theme ───────────────────────────────────────────────────────── */
+[data-theme='light'] {
+  --bg:       #eef0f8;
+  --surface:  #ffffff;
+  --surface2: #e6e8f5;
+  --border:   #c8cce0;
+  --text:     #1a1d2e;
+  --text-muted: #5a6080;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.25s ease, color 0.25s ease;
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   MOBILE — single column, full height
+   ════════════════════════════════════════════════════════════════════════ */
+.app {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: var(--bg);
+  padding: var(--gap);
+  padding-top:    calc(env(safe-area-inset-top,    0px) + var(--gap));
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4px);
+  gap: var(--gap);
+}
+
+/* ── Stats bar ─────────────────────────────────────────────────────────── */
+.stats-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.45rem 0.5rem;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 0.55rem;
+  flex: 1;
+}
+.stat-item:not(:last-child) { border-right: 1px solid var(--border); }
+
+.stat-label {
+  font-size: 0.57rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.stat-value {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+/* ── Video preview ─────────────────────────────────────────────────────── */
+.video-container {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  background: transparent;
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+#localVideo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+#localVideo.visible { opacity: 1; }
+
+.video-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.video-overlay.hidden { opacity: 0; }
+
+.overlay-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* ── Controls panel ────────────────────────────────────────────────────── */
+.controls-panel {
+  flex-shrink: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.85rem var(--pad);
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.panel-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* ── Icon buttons ──────────────────────────────────────────────────────── */
+.icon-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+  flex-shrink: 0;
+}
+.icon-btn:hover  { color: var(--text); border-color: var(--accent); }
+.icon-btn.active { color: var(--accent); border-color: var(--accent); }
+
+/* ── Chevron ───────────────────────────────────────────────────────────── */
+.chevron-icon { transition: transform 0.25s ease; }
+.panel-toggle .chevron-icon           { transform: rotate(180deg); }
+.panel-toggle.collapsed .chevron-icon { transform: rotate(0deg); }
+
+/* ── Theme icons ───────────────────────────────────────────────────────── */
+.icon-sun  { display: none; }
+.icon-moon { display: block; }
+[data-theme='light'] .icon-sun  { display: block; }
+[data-theme='light'] .icon-moon { display: none; }
+
+/* ── Panel body ────────────────────────────────────────────────────────── */
+.panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  max-height: 280px;
+  overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.25s ease, margin 0.3s ease;
+  margin-bottom: 0.75rem;
+}
+.panel-body.collapsed { max-height: 0; opacity: 0; margin-bottom: 0; }
+
+.select-row { display: flex; align-items: center; gap: 0.75rem; }
+.select-row label {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  min-width: 68px;
+}
+
+select {
+  flex: 1;
+  min-width: 0;
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.45rem 0.7rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  -webkit-appearance: none;
+  appearance: none;
+  /* truncate long option text */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+select:focus { border-color: var(--accent); }
+
+/* ── Quality slider ────────────────────────────────────────────────────── */
+.quality-row label { display: flex; align-items: center; gap: 0.4rem; white-space: nowrap; }
+.quality-row label span {
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 600;
+  min-width: 2.8rem;
+}
+input[type='range'] {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+  outline: none;
+  cursor: pointer;
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+}
+input[type='range']::-moz-range-thumb {
+  width: 16px; height: 16px;
+  border: none; border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+}
+
+/* ── Stream button ─────────────────────────────────────────────────────── */
+.btn-stream {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.7rem 1.2rem;
+  border: none;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+  background: linear-gradient(135deg, var(--accent), #4f40d0);
+  color: #fff;
+  box-shadow: 0 3px 14px rgba(124,106,247,.35);
+}
+.btn-stream:active { transform: scale(0.97); }
+.btn-stream:hover  { background: linear-gradient(135deg, var(--accent-h), #6354e0); }
+.btn-stream.streaming {
+  background: linear-gradient(135deg, var(--danger), #a02030);
+  box-shadow: 0 3px 14px rgba(224,82,96,.35);
+}
+.btn-stream.streaming:hover { background: linear-gradient(135deg, var(--danger-h), #c03040); }
+.btn-stream.connecting {
+  background: linear-gradient(135deg, var(--danger), #a02030);
+  cursor: wait; opacity: 0.7; position: relative;
+}
+.btn-stream.connecting::after {
+  content: '';
+  position: absolute; right: 1rem; top: 50%;
+  width: 14px; height: 14px; margin-top: -7px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: btn-spin 0.7s linear infinite;
+}
+.btn-stream:disabled { cursor: not-allowed; }
+@keyframes btn-spin { to { transform: rotate(360deg); } }
+.btn-stream-icon { display: flex; align-items: center; justify-content: center; }
+
+/* ── Status dot ────────────────────────────────────────────────────────── */
+.status-indicator { display: flex; align-items: center; justify-content: center; padding: 0 0.3rem; }
+.status-dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  display: block;
+  background: var(--text-muted);
+  transition: background 0.3s, box-shadow 0.3s;
+}
+.status-dot.active {
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green), 0 0 12px var(--green);
+  animation: glow-pulse 1.4s infinite;
+}
+.status-dot.error      { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
+.status-dot.connecting { background: var(--accent);  box-shadow: 0 0 6px var(--accent); animation: glow-pulse 0.8s infinite; }
+@keyframes glow-pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+
+/* ── Codec badge ───────────────────────────────────────────────────────── */
+.stat-codec--h264 { color: var(--green); }
+.stat-codec--jpeg { color: var(--text-muted); }
+
+/* ── Logo icons ────────────────────────────────────────────────────────── */
+.logo-icon {
+  background: linear-gradient(135deg, var(--accent), #4f40d0);
+  color: #fff; font-weight: 700; font-size: 1.4rem;
+  width: 56px; height: 56px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  letter-spacing: 0.05em;
+  box-shadow: 0 4px 20px rgba(124,106,247,.4);
+}
+.logo-icon-sm {
+  background: linear-gradient(135deg, var(--accent), #4f40d0);
+  color: #fff; font-weight: 700; font-size: 0.7rem;
+  width: 26px; height: 26px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  letter-spacing: 0.05em;
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   DESKTOP — two-column layout above 768px
+   Left: stats bar + video (flex column, fills remaining width)
+   Right: controls sidebar (fixed width)
+   ════════════════════════════════════════════════════════════════════════ */
+@media (min-width: 768px) {
+  html, body { overflow: hidden; }
+
+  .app {
+    flex-direction: row;
+    align-items: stretch;
+    padding: 1.25rem;
+    gap: 1rem;
+    max-width: 1400px;
+    margin: 0 auto;
+    /* still fills the viewport height */
+    height: 100%;
+  }
+
+  /* Left column: stats on top, video below */
+  .stats-bar {
+    /* becomes the top row of the left column — handled by order */
+    order: 1;
+    flex-shrink: 0;
+    width: 100%;
+  }
+
+  .video-container {
+    order: 2;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    border-radius: var(--radius);
+  }
+
+  /* Wrap stats + video in a flex column */
+  .stats-bar,
+  .video-container {
+    /* These are siblings inside .app — use a CSS grid trick via flex-wrap */
+  }
+
+  /* Re-layout: make app a grid instead for desktop */
+  .app {
+    display: grid;
+    grid-template-columns: 1fr var(--sidebar);
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      "stats   sidebar"
+      "video   sidebar";
+  }
+
+  .stats-bar      { grid-area: stats;   align-self: start; }
+  .video-container { grid-area: video; }
+  .controls-panel {
+    grid-area: sidebar;
+    height: fit-content;
+    align-self: center;
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--radius);
+  }
+
+  /* On desktop the panel body is always visible — hide the chevron */
+  .panel-toggle { display: none; }
+  .panel-body {
+    max-height: none !important;
+    opacity: 1 !important;
+    margin-bottom: 0.75rem !important;
+    overflow: visible;
+  }
+
+  /* Slightly larger controls on desktop */
+  select, input[type='range'] { font-size: 0.9rem; }
+  .select-row label { font-size: 0.82rem; min-width: 76px; }
+  .btn-stream { padding: 0.8rem 1.2rem; font-size: 0.95rem; }
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   MOBILE LANDSCAPE — same as desktop but tighter
+   ════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 767px) and (orientation: landscape) {
+  .app {
+    display: grid;
+    grid-template-columns: 1fr 240px;
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      "stats   sidebar"
+      "video   sidebar";
+    padding: 6px;
+    gap: 6px;
+  }
+
+  .stats-bar       { grid-area: stats; }
+  .video-container { grid-area: video; }
+  .controls-panel  {
+    grid-area: sidebar;
+    height: fit-content;
+    align-self: center;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .panel-toggle { display: none; }
+  .panel-body {
+    max-height: none !important;
+    opacity: 1 !important;
+    margin-bottom: 0.5rem !important;
+    overflow: visible;
+  }
+}
+
+/* ── Live-reload toast ─────────────────────────────────────────────────── */
+.reload-toast {
+  position: fixed;
+  top: 1rem; left: 50%;
+  transform: translateX(-50%) translateY(-120%);
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.8rem; font-weight: 600;
+  padding: 0.4rem 1rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(124,106,247,0.2);
+  z-index: 9999;
+  pointer-events: none;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+  opacity: 0;
+}
+.reload-toast.visible {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
