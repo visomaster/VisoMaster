@@ -11,6 +11,16 @@ cd "$PROJECT_ROOT"
 echo "============================================"
 echo "  VisoMaster - Starting"
 echo "============================================"
+
+# ── Tailscale VPN (optional, for direct WebRTC without TURN) ──────────────
+# Set TAILSCALE_AUTHKEY in your RunPod template env vars to auto-connect.
+# Get a key from: https://login.tailscale.com/admin/settings/keys
+if [ -n "$TAILSCALE_AUTHKEY" ]; then
+    echo ""
+    echo "  Setting up Tailscale VPN tunnel..."
+    bash "$SCRIPT_DIR/setup_tailscale.sh"
+fi
+
 echo ""
 echo "  WHIP endpoint (for Larix/OBS):"
 echo "    http://<your-ip>:9091/whip"
@@ -19,27 +29,18 @@ echo "  Web client:"
 echo "    http://<your-ip>:9091/"
 echo ""
 
-# ── TURN Server Configuration (Required for RunPod/proxy environments) ──
-# WebRTC media (UDP) cannot traverse HTTP proxies. A TURN relay is needed.
-# Uncomment and set these to enable TURN relay:
+# ── TURN Server Configuration (fallback if no VPN) ───────────────────────
+# Only needed if NOT using Tailscale/WireGuard.
+# WebRTC media (UDP) cannot traverse HTTP proxies without a TURN relay.
 #
 # export TURN_URL="turn:your-turn-server.com:3478,turns:your-turn-server.com:5349"
 # export TURN_USERNAME="your-username"
 # export TURN_PASSWORD="your-password"
-#
-# Free options for testing:
-#   - Open Relay Project: https://www.metered.ca/tools/openrelay/
-#   - Self-host coturn: https://github.com/coturn/coturn
-#
-# Example with Open Relay (metered.ca free TURN):
-# export TURN_URL="turn:a.relay.metered.ca:80,turn:a.relay.metered.ca:443,turns:a.relay.metered.ca:443"
-# export TURN_USERNAME="your-api-key"
-# export TURN_PASSWORD="your-api-key"
 
-if [ -z "$TURN_URL" ]; then
-    echo "  ⚠️  WARNING: No TURN server configured!"
+if [ -z "$TAILSCALE_AUTHKEY" ] && [ -z "$TURN_URL" ]; then
+    echo "  ⚠️  WARNING: No Tailscale or TURN server configured!"
     echo "  WebRTC streaming will NOT work through RunPod proxy."
-    echo "  Set TURN_URL, TURN_USERNAME, TURN_PASSWORD env vars."
+    echo "  Either set TAILSCALE_AUTHKEY or TURN_URL/TURN_USERNAME/TURN_PASSWORD."
     echo ""
 fi
 
