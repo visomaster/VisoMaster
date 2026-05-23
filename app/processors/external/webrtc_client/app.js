@@ -142,6 +142,56 @@ function webCodecsAvailable() {
   return typeof VideoEncoder !== 'undefined' && typeof VideoFrame !== 'undefined';
 }
 
+// ── AVCC to Annex B conversion ───────────────────────────────────────────────
+// WebCodecs outputs H.264 in AVCC format (length-prefixed NALUs).
+// PyAV/FFmpeg expects Annex B format (start code prefixed: 00 00 00 01).
+function avccToAnnexB(avccData) {
+  // AVCC extradata format:
+  // [0] version, [1] profile, [2] compat, [3] level, [4] lengthSizeMinusOne
+  // [5] numSPS, then SPS entries, then numPPS, then PPS entries
+  const view = new DataView(avccData.buffer, avccData.byteOffset, avccData.byteLength);
+  const startCode = new Uint8Array([0, 0, 0, 1]);
+  const parts = [];
+  
+  try {
+    let offset = 5;
+    const numSPS = avccData[offset] & 0x1f;
+    offset++;
+    
+    for (let i = 0; i < numSPS; i++) {
+      const spsLen = view.getUint16(offset);
+      offset += 2;
+      parts.push(startCode);
+      parts.push(avccData.slice(offset, offset + spsLen));
+      offset += spsLen;
+    }
+    
+    const numPPS = avccData[offset];
+    offset++;
+    
+    for (let i = 0; i < numPPS; i++) {
+      const ppsLen = view.getUint16(offset);
+      offset += 2;
+      parts.push(startCode);
+      parts.push(avccData.slice(offset, offset + ppsLen));
+      offset += ppsLen;
+    }
+  } catch (e) {
+    // If parsing fails, just return empty — frame data will still have start code
+    return new Uint8Array(0);
+  }
+  
+  // Concatenate all parts
+  const totalLen = parts.reduce((sum, p) => sum + p.length, 0);
+  const result = new Uint8Array(totalLen);
+  let pos = 0;
+  for (const part of parts) {
+    result.set(part, pos);
+    pos += part.length;
+  }
+  return result;
+}
+
 // ── Start streaming ──────────────────────────────────────────────────────────
 async function startStreaming() {
   streamBtn.disabled = true;
@@ -244,6 +294,7 @@ async function initWebCodecsEncoder(width, height) {
     framerate: TARGET_FPS,
     latencyMode: 'realtime',
     hardwareAcceleration: 'prefer-hardware',
+    avc: { format: 'annexb' },  // Output Annex B format (start codes included)
   };
 
   // Check if config is supported
@@ -258,12 +309,25 @@ async function initWebCodecsEncoder(width, height) {
   encoder = new VideoEncoder({
     output: (chunk, metadata) => {
       if (!ws || ws.readyState !== WebSocket.OPEN) return;
-      // Send encoded chunk as binary
-      const buf = new ArrayBuffer(chunk.byteLength);
-      chunk.copyTo(buf);
-      ws.send(buf);
+      
+      const data = new Uint8Array(chunk.byteLength);
+      chunk.copyTo(data);
+      
+      // With annexb format, data already has start codes.
+      // On keyframes, prepend SPS/PPS from decoderConfig description.
+      if (chunk.type === 'key' && metadata && metadata.decoderConfig && metadata.decoderConfig.description) {
+        const desc = new Uint8Array(metadata.decoderConfig.description);
+        // Description in annexb format is already start-code prefixed SPS/PPS
+        const sendBuf = new Uint8Array(desc.length + data.length);
+        sendBuf.set(desc, 0);
+        sendBuf.set(data, desc.length);
+        ws.send(sendBuf.buffer);
+        bytesSent += sendBuf.byteLength;
+      } else {
+        ws.send(data.buffer);
+        bytesSent += data.byteLength;
+      }
       framesSent++;
-      bytesSent += buf.byteLength;
     },
     error: (e) => {
       console.error('[Encoder] Error:', e);
