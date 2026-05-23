@@ -58,16 +58,30 @@ panelToggle.addEventListener('click', () => {
 
 function setStatus(state) { statusDot.className = 'status-dot ' + state; }
 
-function updateStreamButton(streaming) {
-  isStreaming = streaming;
-  if (streaming) {
+function updateStreamButton(state) {
+  // state: 'idle' | 'connecting' | 'streaming'
+  if (state === 'streaming' || state === true) {
+    isStreaming = true;
     streamBtn.classList.add('streaming');
+    streamBtn.classList.remove('connecting');
     streamBtnIcon.innerHTML = stopIcon;
     streamBtnText.textContent = 'Stop Streaming';
-  } else {
+    streamBtn.disabled = false;
+  } else if (state === 'connecting') {
+    isStreaming = false;
     streamBtn.classList.remove('streaming');
+    streamBtn.classList.add('connecting');
+    streamBtnIcon.innerHTML = playIcon;
+    streamBtnText.textContent = 'Connecting...';
+    streamBtn.disabled = true;
+  } else {
+    // idle / false
+    isStreaming = false;
+    streamBtn.classList.remove('streaming');
+    streamBtn.classList.remove('connecting');
     streamBtnIcon.innerHTML = playIcon;
     streamBtnText.textContent = 'Start Streaming';
+    streamBtn.disabled = false;
   }
 }
 
@@ -196,8 +210,8 @@ function avccToAnnexB(avccData) {
 
 // ── Start streaming ──────────────────────────────────────────────────────────
 async function startStreaming() {
-  streamBtn.disabled = true;
   setStatus('connecting');
+  updateStreamButton('connecting');
 
   if (ws) { cleanUp(); await new Promise(r => setTimeout(r, 200)); }
 
@@ -206,7 +220,7 @@ async function startStreaming() {
   } catch (err) {
     console.error('[Stream] Camera error:', err);
     setStatus('error');
-    streamBtn.disabled = false;
+    updateStreamButton('idle');
     return;
   }
 
@@ -269,8 +283,7 @@ async function startStreaming() {
   ws.onopen = async () => {
     console.log('[Stream] WebSocket connected');
     setStatus('active');
-    updateStreamButton(true);
-    streamBtn.disabled = false;
+    updateStreamButton('streaming');
     framesSent = 0;
     bytesSent = 0;
     startStats();
@@ -487,8 +500,7 @@ function cleanUp() {
   localVideo.classList.remove('visible');
   videoOverlay.classList.remove('hidden');
 
-  updateStreamButton(false);
-  streamBtn.disabled = false;
+  updateStreamButton('idle');
   setStatus('idle');
 }
 
