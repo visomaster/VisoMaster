@@ -102,48 +102,88 @@ async def _css(request: web.Request):
 # ── WebSocket frame streaming (primary transport) ─────────────────────────────
 
 async def _ws_stream(request: web.Request):
-    """WebSocket endpoint that receives JPEG frames from the browser.
+    """WebSocket endpoint that receives video frames from the browser.
     
     Protocol:
-      - Binary messages: JPEG-encoded frame data
+      - First text message: JSON config {"type":"codec","codec":"h264"|"jpeg","width":W,"height":H}
+      - Binary messages: encoded frame data (JPEG or H.264 NAL units)
       - Text 'ping': keepalive, responds with 'pong'
-      - Text 'config:WxH': client reports its capture resolution
     """
-    ws = web.WebSocketResponse(max_msg_size=5 * 1024 * 1024)  # 5MB max
+    ws = web.WebSocketResponse(max_msg_size=5 * 1024 * 1024)
     await ws.prepare(request)
     
     shm: SharedMemory = request.app["shm"]
     print("[Stream] Client connected")
     
     frame_count = 0
+    codec = 'jpeg'  # default
+    h264_decoder = None
+    
     import time
     start_time = time.time()
     last_log_time = start_time
     
     try:
         async for msg in ws:
-            if msg.type == web.WSMsgType.BINARY:
-                # Decode JPEG to BGR — cv2.imdecode is fast for JPEG
-                frame_bgr = cv2.imdecode(
-                    np.frombuffer(msg.data, dtype=np.uint8),
-                    cv2.IMREAD_COLOR
-                )
-                if frame_bgr is not None:
-                    _write_frame(shm, frame_bgr)
-                    frame_count += 1
-                    
-                    # Log FPS every 5 seconds
-                    now = time.time()
-                    if now - last_log_time >= 5.0:
-                        elapsed = now - last_log_time
-                        fps = frame_count / (now - start_time)
-                        recent_fps = (frame_count - int((last_log_time - start_time) * fps)) / elapsed if elapsed > 0 else 0
-                        print(f"[Stream] {frame_count} frames, ~{fps:.1f} avg FPS, last 5s: ~{recent_fps:.1f} FPS")
-                        last_log_time = now
-                        
-            elif msg.type == web.WSMsgType.TEXT:
+            if msg.type == web.WSMsgType.TEXT:
                 if msg.data == 'ping':
                     await ws.send_str('pong')
+                else:
+                    # Parse config message
+                    try:
+                        config = json.loads(msg.data)
+                        if config.get('type') == 'codec':
+                            codec = config.get('codec', 'jpeg')
+                            w = config.get('width', 1280)
+                            h = config.get('height', 720)
+                            print(f"[Stream] Codec: {codec}, resolution: {w}x{h}")
+                            
+                            if codec == 'h264':
+                                # Initialize H.264 decoder using PyAV
+                                try:
+                                    import av
+                                    h264_decoder = av.CodecContext.create('h264', 'r')
+                                    h264_decoder.extradata = None
+                                    print("[Stream] H.264 decoder initialized (PyAV)")
+                                except ImportError:
+                                    print("[Stream] PyAV not available, falling back to JPEG")
+                                    codec = 'jpeg'
+                                    await ws.send_str(json.dumps({"type": "fallback", "codec": "jpeg"}))
+                    except (json.JSONDecodeError, ValueError):
+                        pass
+                        
+            elif msg.type == web.WSMsgType.BINARY:
+                if codec == 'h264' and h264_decoder is not None:
+                    # Decode H.264 frame
+                    try:
+                        import av
+                        packet = av.Packet(msg.data)
+                        frames = h264_decoder.decode(packet)
+                        for frame in frames:
+                            # Convert to BGR numpy array
+                            img = frame.to_ndarray(format='bgr24')
+                            _write_frame(shm, img)
+                            frame_count += 1
+                    except Exception:
+                        pass  # Skip corrupted frames
+                else:
+                    # Decode JPEG frame
+                    frame_bgr = cv2.imdecode(
+                        np.frombuffer(msg.data, dtype=np.uint8),
+                        cv2.IMREAD_COLOR
+                    )
+                    if frame_bgr is not None:
+                        _write_frame(shm, frame_bgr)
+                        frame_count += 1
+                
+                # Log stats periodically
+                now = time.time()
+                if now - last_log_time >= 5.0:
+                    elapsed = now - start_time
+                    fps = frame_count / elapsed if elapsed > 0 else 0
+                    print(f"[Stream] {frame_count} frames, {fps:.1f} FPS avg ({codec})")
+                    last_log_time = now
+                        
             elif msg.type in (web.WSMsgType.ERROR, web.WSMsgType.CLOSE):
                 break
     except Exception as e:
@@ -151,7 +191,7 @@ async def _ws_stream(request: web.Request):
     finally:
         elapsed = time.time() - start_time
         avg_fps = frame_count / elapsed if elapsed > 0 else 0
-        print(f"[Stream] Disconnected — {frame_count} frames in {elapsed:.1f}s ({avg_fps:.1f} FPS avg)")
+        print(f"[Stream] Disconnected — {frame_count} frames in {elapsed:.1f}s ({avg_fps:.1f} FPS)")
     
     return ws
 
