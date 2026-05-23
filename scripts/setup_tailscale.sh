@@ -2,70 +2,97 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # Tailscale Setup for RunPod
 # ─────────────────────────────────────────────────────────────────────────────
-# This script installs and connects Tailscale on a RunPod instance.
-# Once connected, your PC (also on Tailscale) can reach the pod directly
-# via its Tailscale IP — including UDP for WebRTC.
+# Installs and connects Tailscale. Tries kernel mode first (full UDP support
+# for WebRTC), falls back to userspace mode (TCP/WebSocket only).
 #
 # Prerequisites:
 #   1. Create a free Tailscale account at https://tailscale.com
 #   2. Generate an auth key at: https://login.tailscale.com/admin/settings/keys
-#      - Check "Reusable" and "Ephemeral" (auto-removes when pod stops)
-#   3. Set the auth key as environment variable TAILSCALE_AUTHKEY
-#      (either in RunPod template env vars, or export it before running this script)
+#      - Check "Reusable" and "Ephemeral"
+#   3. Set TAILSCALE_AUTHKEY environment variable
 #
 # Usage:
 #   export TAILSCALE_AUTHKEY="tskey-auth-xxxxx"
 #   bash scripts/setup_tailscale.sh
-#
-# After running:
-#   - The pod will appear in your Tailscale admin panel
-#   - Access VisoMaster at http://<tailscale-ip>:9091
-#   - WebRTC will work directly (no TURN needed!)
 # ─────────────────────────────────────────────────────────────────────────────
 
 set -e
 
-# Check for auth key
 if [ -z "$TAILSCALE_AUTHKEY" ]; then
-    echo "ERROR: TAILSCALE_AUTHKEY environment variable not set."
-    echo ""
+    echo "ERROR: TAILSCALE_AUTHKEY not set."
     echo "Get one from: https://login.tailscale.com/admin/settings/keys"
-    echo "Then: export TAILSCALE_AUTHKEY=\"tskey-auth-xxxxx\""
     exit 1
 fi
 
 echo "── Installing Tailscale ──────────────────────────────────────────"
-
-# Install Tailscale (works on Ubuntu/Debian-based RunPod images)
 if ! command -v tailscale &> /dev/null; then
     curl -fsSL https://tailscale.com/install.sh | sh
 fi
 
 echo "── Starting Tailscale daemon ─────────────────────────────────────"
 
-# Start tailscaled in background (userspace networking for containers)
-# RunPod containers don't have /dev/net/tun, so we use userspace mode
-tailscaled --tun=userspace-networking --state=/tmp/tailscale-state &
-sleep 2
+# Kill any existing tailscaled
+pkill tailscaled 2>/dev/null || true
+sleep 1
+
+# Try kernel mode first (requires /dev/net/tun — gives full UDP support)
+USE_USERSPACE=false
+if [ -e /dev/net/tun ]; then
+    echo "  /dev/net/tun found — using kernel networking (full UDP/WebRTC support)"
+    tailscaled --state=/tmp/tailscale-state --socket=/tmp/tailscale.sock &
+    sleep 2
+else
+    echo "  /dev/net/tun NOT found — using userspace networking (WebSocket only)"
+    echo "  To enable WebRTC: run pod with --cap-add=NET_ADMIN and create /dev/net/tun"
+    USE_USERSPACE=true
+    
+    # Create TUN device if we have permissions
+    if [ -w /dev ]; then
+        mkdir -p /dev/net
+        mknod /dev/net/tun c 10 200 2>/dev/null || true
+        chmod 600 /dev/net/tun 2>/dev/null || true
+        
+        if [ -e /dev/net/tun ]; then
+            echo "  Created /dev/net/tun — retrying kernel mode"
+            USE_USERSPACE=false
+            tailscaled --state=/tmp/tailscale-state --socket=/tmp/tailscale.sock &
+            sleep 2
+        fi
+    fi
+    
+    if [ "$USE_USERSPACE" = true ]; then
+        tailscaled --tun=userspace-networking --state=/tmp/tailscale-state --socket=/tmp/tailscale.sock &
+        sleep 2
+    fi
+fi
 
 echo "── Connecting to Tailscale network ───────────────────────────────"
 
-# Connect with the auth key
-# --hostname: gives the pod a recognizable name in your Tailscale panel
-# --accept-routes: allows routing through the network
 HOSTNAME="runpod-visomaster-$(hostname | tail -c 8)"
-tailscale up --authkey="$TAILSCALE_AUTHKEY" --hostname="$HOSTNAME" --accept-routes
+tailscale --socket=/tmp/tailscale.sock up --authkey="$TAILSCALE_AUTHKEY" --hostname="$HOSTNAME" --accept-routes
 
-# Get and display the Tailscale IP
-TAILSCALE_IP=$(tailscale ip -4)
+# Get Tailscale IP
+TAILSCALE_IP=$(tailscale --socket=/tmp/tailscale.sock ip -4)
+
 echo ""
 echo "══════════════════════════════════════════════════════════════════"
 echo "  Tailscale connected!"
 echo "  Tailscale IP: $TAILSCALE_IP"
 echo ""
+if [ "$USE_USERSPACE" = true ]; then
+    echo "  Mode: USERSPACE (WebSocket streaming only)"
+    echo "  WebRTC will NOT work — using WebSocket fallback"
+    echo ""
+    echo "  To enable WebRTC, recreate pod with:"
+    echo "    docker run --cap-add=NET_ADMIN --device=/dev/net/tun ..."
+else
+    echo "  Mode: KERNEL (full UDP support — WebRTC will work!)"
+fi
+echo ""
 echo "  Access VisoMaster from your PC at:"
 echo "    http://$TAILSCALE_IP:9091"
-echo ""
-echo "  WebRTC will work directly over the tunnel (no TURN needed)"
 echo "══════════════════════════════════════════════════════════════════"
 echo ""
+
+# Export for other scripts to use
+export TAILSCALE_IP
