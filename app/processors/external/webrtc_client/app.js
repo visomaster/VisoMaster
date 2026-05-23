@@ -218,19 +218,9 @@ async function startStreaming() {
   const vw = settings.width || 1280;
   const vh = settings.height || 720;
 
-  // Determine send resolution — lower = faster encoding = higher FPS
-  // Cap the longest side at 640px, preserve aspect ratio
-  const maxSendDim = 640;
-  let sendW, sendH;
-  if (vw >= vh) {
-    // Landscape
-    sendW = Math.min(vw, maxSendDim);
-    sendH = Math.round(sendW * vh / vw);
-  } else {
-    // Portrait (e.g., iPhone)
-    sendH = Math.min(vh, maxSendDim);
-    sendW = Math.round(sendH * vw / vh);
-  }
+  // Use the camera's native resolution — no downscaling
+  const sendW = vw;
+  const sendH = vh;
   statResolution.textContent = sendW + '×' + sendH;
 
   // Mirror canvas for local preview
