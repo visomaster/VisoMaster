@@ -160,12 +160,17 @@ async def _ws_stream(request: web.Request):
                         packet = av.Packet(msg.data)
                         frames = h264_decoder.decode(packet)
                         for frame in frames:
-                            # Convert to BGR numpy array
                             img = frame.to_ndarray(format='bgr24')
                             _write_frame(shm, img)
                             frame_count += 1
-                    except Exception:
-                        pass  # Skip corrupted frames
+                    except Exception as e:
+                        # If H.264 decoding fails repeatedly, switch to JPEG
+                        h264_errors = getattr(_ws_stream, '_h264_errors', 0) + 1
+                        if h264_errors > 10:
+                            print(f"[Stream] Too many H.264 errors, switching to JPEG")
+                            codec = 'jpeg'
+                            h264_decoder = None
+                            await ws.send_str(json.dumps({"type": "fallback", "codec": "jpeg"}))
                 else:
                     # Decode JPEG frame
                     frame_bgr = cv2.imdecode(

@@ -138,8 +138,10 @@ streamBtn.addEventListener('click', () => {
 });
 
 // ── WebCodecs detection ──────────────────────────────────────────────────────
+// Disabled — H.264 Annex B format issues with PyAV decoder.
+// JPEG with optimized capture loop is reliable and fast enough.
 function webCodecsAvailable() {
-  return typeof VideoEncoder !== 'undefined' && typeof VideoFrame !== 'undefined';
+  return false;  // Disabled: H.264 over WebSocket has format compatibility issues
 }
 
 // ── AVCC to Annex B conversion ───────────────────────────────────────────────
@@ -216,8 +218,9 @@ async function startStreaming() {
   const vw = settings.width || 1280;
   const vh = settings.height || 720;
 
-  // Determine send resolution (cap at 720p for performance)
-  const maxSendW = 1280;
+  // Determine send resolution — lower = faster encoding = higher FPS
+  // 640px width gives ~3x faster encoding than 1280px
+  const maxSendW = 640;
   const sendW = Math.min(vw, maxSendW);
   const sendH = Math.round(sendW * vh / vw);
   statResolution.textContent = sendW + '×' + sendH;
@@ -343,7 +346,16 @@ async function initWebCodecsEncoder(width, height) {
 function startCaptureLoop() {
   let lastFrameTime = 0;
   const interval = 1000 / TARGET_FPS;
-  let frameIndex = 0;
+
+  // Use dual-canvas pipeline: while one blob is encoding, draw to the other
+  let canvasA = sendCanvas;
+  let ctxA = sendCtx;
+  let canvasB = document.createElement('canvas');
+  canvasB.width = sendCanvas.width;
+  canvasB.height = sendCanvas.height;
+  let ctxB = canvasB.getContext('2d', { willReadFrequently: false });
+  let useA = true;
+  let encoding = false;
 
   function capture(timestamp) {
     captureLoop = requestAnimationFrame(capture);
@@ -352,8 +364,8 @@ function startCaptureLoop() {
     if (timestamp - lastFrameTime < interval) return;
     lastFrameTime = timestamp;
 
-    // Backpressure: skip if too much queued
-    if (ws.bufferedAmount > 300 * 1024) return;
+    // Backpressure
+    if (ws.bufferedAmount > 150 * 1024) return;
 
     // Draw mirrored preview
     mirrorCtx.save();
@@ -362,36 +374,37 @@ function startCaptureLoop() {
     mirrorCtx.drawImage(hiddenVideo, 0, 0, mirrorCanvas.width, mirrorCanvas.height);
     mirrorCtx.restore();
 
-    // Draw to send canvas (mirrored + potentially downscaled)
-    sendCtx.save();
-    sendCtx.translate(sendCanvas.width, 0);
-    sendCtx.scale(-1, 1);
-    sendCtx.drawImage(hiddenVideo, 0, 0, sendCanvas.width, sendCanvas.height);
-    sendCtx.restore();
+    // Skip if still encoding previous frame
+    if (encoding) return;
 
-    if (useWebCodecs && encoder && encoder.state === 'configured') {
-      // WebCodecs path — create VideoFrame from canvas and encode
-      const frame = new VideoFrame(sendCanvas, { timestamp: frameIndex * interval * 1000 });
-      const keyFrame = frameIndex % 60 === 0;  // Keyframe every 2 seconds
-      encoder.encode(frame, { keyFrame });
-      frame.close();
-      frameIndex++;
-    } else {
-      // JPEG fallback — pipelined toBlob
-      if (pendingEncode) return;
-      pendingEncode = true;
-      sendCanvas.toBlob((blob) => {
-        pendingEncode = false;
-        if (!blob || !ws || ws.readyState !== WebSocket.OPEN) return;
-        blob.arrayBuffer().then((buf) => {
-          if (ws && ws.readyState === WebSocket.OPEN) {
-            ws.send(buf);
-            framesSent++;
-            bytesSent += buf.byteLength;
-          }
-        });
-      }, 'image/jpeg', 0.82);
-    }
+    // Draw to current send canvas
+    const canvas = useA ? canvasA : canvasB;
+    const ctx = useA ? ctxA : ctxB;
+    ctx.save();
+    ctx.translate(canvas.width, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(hiddenVideo, 0, 0, canvas.width, canvas.height);
+    ctx.restore();
+
+    // Swap buffer for next frame
+    useA = !useA;
+
+    // Encode and send
+    encoding = true;
+    canvas.toBlob((blob) => {
+      encoding = false;
+      if (!blob || !ws || ws.readyState !== WebSocket.OPEN) return;
+      // Use blob.arrayBuffer() — it's fast for small blobs
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(reader.result);
+          framesSent++;
+          bytesSent += reader.result.byteLength;
+        }
+      };
+      reader.readAsArrayBuffer(blob);
+    }, 'image/jpeg', 0.70);  // 70% quality for speed — still looks good
   }
 
   captureLoop = requestAnimationFrame(capture);
