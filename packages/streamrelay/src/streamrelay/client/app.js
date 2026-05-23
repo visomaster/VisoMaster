@@ -1,4 +1,4 @@
-/* VisoMaster Streaming Client — High-Performance WebSocket */
+/* WebStreamer — High-Performance WebSocket Streaming Client */
 // @ts-check
 'use strict';
 
@@ -83,7 +83,7 @@ panelToggle.addEventListener('click', () => {
 // ── Theme toggle ─────────────────────────────────────────────────────────────
 function applyTheme(/** @type {string} */ theme) {
   document.documentElement.setAttribute('data-theme', theme);
-  localStorage.setItem('visomaster_theme', theme);
+  localStorage.setItem('webstreamer_theme', theme);
 }
 
 themeBtn.addEventListener('click', () => {
@@ -92,7 +92,7 @@ themeBtn.addEventListener('click', () => {
 });
 
 // Restore saved theme
-applyTheme(localStorage.getItem('visomaster_theme') || 'dark');
+applyTheme(localStorage.getItem('webstreamer_theme') || 'dark');
 
 function setStatus(state) { statusDot.className = 'status-dot ' + state; }
 
@@ -207,7 +207,7 @@ function getConstraints() {
 }
 
 // ── Settings persistence ─────────────────────────────────────────────────────
-const SETTINGS_KEY = 'visomaster_settings';
+const SETTINGS_KEY = 'webstreamer_settings';
 
 /** Default quality per codec (0–1). */
 const CODEC_DEFAULT_QUALITY = { auto: 0.85, h264: 0.85, jpeg: 0.85 };
