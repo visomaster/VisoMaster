@@ -115,10 +115,7 @@ class FaceRestorers:
         io_binding.bind_input(name='input', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=(1,3,512,512), buffer_ptr=image.data_ptr())
         io_binding.bind_output(name='output', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=(1,3,512,512), buffer_ptr=output.data_ptr())
 
-        if self.models_processor.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.models_processor.device != "cpu":
-            self.models_processor.syncvec.cpu()
+        self.models_processor.sync_device()
         self.models_processor.models['GFPGANv1.4'].run_with_iobinding(io_binding)
 
     def run_GPEN_256(self, image, output):
@@ -129,10 +126,7 @@ class FaceRestorers:
         io_binding.bind_input(name='input', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=(1,3,256,256), buffer_ptr=image.data_ptr())
         io_binding.bind_output(name='output', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=(1,3,256,256), buffer_ptr=output.data_ptr())
 
-        if self.models_processor.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.models_processor.device != "cpu":
-            self.models_processor.syncvec.cpu()
+        self.models_processor.sync_device()
         self.models_processor.models['GPENBFR256'].run_with_iobinding(io_binding)
 
     def run_GPEN_512(self, image, output):
@@ -143,10 +137,7 @@ class FaceRestorers:
         io_binding.bind_input(name='input', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=(1,3,512,512), buffer_ptr=image.data_ptr())
         io_binding.bind_output(name='output', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=(1,3,512,512), buffer_ptr=output.data_ptr())
 
-        if self.models_processor.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.models_processor.device != "cpu":
-            self.models_processor.syncvec.cpu()
+        self.models_processor.sync_device()
         self.models_processor.models['GPENBFR512'].run_with_iobinding(io_binding)
 
     def run_GPEN_1024(self, image, output):
@@ -157,10 +148,7 @@ class FaceRestorers:
         io_binding.bind_input(name='input', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=(1,3,1024,1024), buffer_ptr=image.data_ptr())
         io_binding.bind_output(name='output', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=(1,3,1024,1024), buffer_ptr=output.data_ptr())
 
-        if self.models_processor.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.models_processor.device != "cpu":
-            self.models_processor.syncvec.cpu()
+        self.models_processor.sync_device()
         self.models_processor.models['GPENBFR1024'].run_with_iobinding(io_binding)
 
     def run_GPEN_2048(self, image, output):
@@ -171,10 +159,7 @@ class FaceRestorers:
         io_binding.bind_input(name='input', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=(1,3,2048,2048), buffer_ptr=image.data_ptr())
         io_binding.bind_output(name='output', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=(1,3,2048,2048), buffer_ptr=output.data_ptr())
 
-        if self.models_processor.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.models_processor.device != "cpu":
-            self.models_processor.syncvec.cpu()
+        self.models_processor.sync_device()
         self.models_processor.models['GPENBFR2048'].run_with_iobinding(io_binding)
 
     def run_codeformer(self, image, output, fidelity_weight_value=0.9):
@@ -187,10 +172,7 @@ class FaceRestorers:
         io_binding.bind_cpu_input('w', w)
         io_binding.bind_output(name='y', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=(1,3,512,512), buffer_ptr=output.data_ptr())
 
-        if self.models_processor.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.models_processor.device != "cpu":
-            self.models_processor.syncvec.cpu()
+        self.models_processor.sync_device()
         self.models_processor.models['CodeFormer'].run_with_iobinding(io_binding)
 
     def run_VQFR_v2(self, image, output, fidelity_ratio_value):
@@ -208,10 +190,7 @@ class FaceRestorers:
         io_binding.bind_output('texture_dec', self.models_processor.device)
         io_binding.bind_output(name='main_dec', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=(1,3,512,512), buffer_ptr=output.data_ptr())
 
-        if self.models_processor.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.models_processor.device != "cpu":
-            self.models_processor.syncvec.cpu()
+        self.models_processor.sync_device()
         self.models_processor.models['VQFRv2'].run_with_iobinding(io_binding)
 
     def run_RestoreFormerPlusPlus(self, image, output):
@@ -236,8 +215,5 @@ class FaceRestorers:
         io_binding.bind_output('input.280', self.models_processor.device)
         io_binding.bind_output('input.288', self.models_processor.device)
 
-        if self.models_processor.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.models_processor.device != "cpu":
-            self.models_processor.syncvec.cpu()
+        self.models_processor.sync_device()
         self.models_processor.models['RestoreFormerPlusPlus'].run_with_iobinding(io_binding)

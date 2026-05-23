@@ -77,6 +77,28 @@ def find_target_faces(main_window: 'MainWindow'):
         elif video_processor.file_type=='webcam' and media_capture:
             ret, frame = misc_helpers.read_frame(media_capture)
             media_capture.set(cv2.CAP_PROP_POS_FRAMES, video_processor.current_frame_number)
+        elif video_processor.file_type=='webrtc' and video_processor.webrtc_shm is not None:
+            # Read the latest frame written to shared memory by the WebRTC server
+            try:
+                from app.processors.external.webrtc_server import SHM_HEADER_BYTES
+                import struct
+                shm = video_processor.webrtc_shm
+                w = struct.unpack_from("<I", shm.buf, 4)[0]
+                h = struct.unpack_from("<I", shm.buf, 8)[0]
+                if w > 0 and h > 0:
+                    raw = bytes(shm.buf[SHM_HEADER_BYTES: SHM_HEADER_BYTES + w * h * 3])
+                    frame = numpy.frombuffer(raw, dtype=numpy.uint8).reshape((h, w, 3)).copy()
+                    # Apply the same streaming transforms (rotation/flip) used during playback
+                    # so detection sees the frame as the user does.
+                    if hasattr(video_processor, '_apply_streaming_transforms'):
+                        # _apply_streaming_transforms expects RGB; convert temporarily
+                        frame_rgb = frame[..., ::-1]
+                        frame_rgb = video_processor._apply_streaming_transforms(frame_rgb)
+                        frame = frame_rgb[..., ::-1].copy()  # back to BGR for the shared post-processing below
+                else:
+                    print("[WebRTC] No frame available yet for Find Faces.")
+            except Exception as e:
+                print(f"[WebRTC] Error reading frame for Find Faces: {e}")
 
         if frame is not None:
         # Frame must be in RGB format
@@ -130,7 +152,12 @@ def find_target_faces(main_window: 'MainWindow'):
         if main_window.target_faces and not main_window.selected_target_face_id:
             list(main_window.target_faces.values())[0].click()
 
-    if main_window.video_processor.processing:
+    # For static media (image/video) the original behavior was to stop playback
+    # so the just-detected faces are visible on a frozen frame. For live streams
+    # (webcam/webrtc) we want playback to keep flowing — otherwise the user has
+    # to manually re-click play after every Find Faces press.
+    if main_window.video_processor.processing and \
+       main_window.video_processor.file_type not in ('webcam', 'webrtc'):
         main_window.video_processor.stop_processing()
     common_widget_actions.refresh_frame(main_window)
 

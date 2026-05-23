@@ -47,7 +47,34 @@ class ModelsProcessor(QtCore.QObject):
     def __init__(self, main_window: 'MainWindow', device='cuda'):
         super().__init__()
         self.main_window = main_window
-        self.provider_name = 'TensorRT'
+
+        # ── Detect what onnxruntime can actually use ─────────────────────────
+        # If the user/launcher asks for CUDA but the installed onnxruntime
+        # was built without the CUDA EP (e.g. plain `onnxruntime` instead of
+        # `onnxruntime-gpu`), every io_binding call that targets device_type
+        # 'cuda' will crash later with:
+        #   "There's no data transfer registered for copying tensors from
+        #    Device:[DeviceType:1 ...] to Device:[DeviceType:0 ...]"
+        # because torch tensors live on the GPU but the model is silently
+        # placed on the CPU EP. Detect that here and fall back gracefully.
+        available_eps = onnxruntime.get_available_providers()
+        if device == 'cuda' and 'CUDAExecutionProvider' not in available_eps:
+            print("[Models] WARNING: CUDA requested but onnxruntime has no "
+                  "CUDAExecutionProvider available.")
+            print(f"[Models] Available ORT providers: {available_eps}")
+            print("[Models] Falling back to CPU. To enable GPU acceleration:")
+            print("[Models]   pip uninstall onnxruntime -y")
+            print("[Models]   pip install onnxruntime-gpu")
+            device = 'cpu'
+
+        # If torch can't see CUDA either, we definitely have to use CPU,
+        # otherwise tensor.to('cuda') will fail.
+        if device == 'cuda' and not torch.cuda.is_available():
+            print("[Models] WARNING: CUDA requested but torch.cuda is "
+                  "unavailable. Falling back to CPU.")
+            device = 'cpu'
+
+        self.provider_name = 'TensorRT' if device == 'cuda' else 'CPU'
         self.device = device
         self.model_lock = threading.RLock()  # Reentrant lock for model access
         self.trt_ep_options = {
@@ -61,10 +88,15 @@ class ModelsProcessor(QtCore.QObject):
             'trt_layer_norm_fp32_fallback': True,
             'trt_builder_optimization_level': 5,
         }
-        self.providers = [
-            ('CUDAExecutionProvider'),
-            ('CPUExecutionProvider')
-        ]       
+        if self.device == 'cuda':
+            self.providers = [
+                ('CUDAExecutionProvider'),
+                ('CPUExecutionProvider')
+            ]
+        else:
+            self.providers = [
+                ('CPUExecutionProvider')
+            ]
         self.nThreads = 2
         self.syncvec = torch.empty((1, 1), dtype=torch.float32, device=self.device)
 
@@ -121,6 +153,27 @@ class ModelsProcessor(QtCore.QObject):
         
         self.lp_mask_crop = self.face_editors.lp_mask_crop
         self.lp_lip_array = self.face_editors.lp_lip_array
+
+    def     sync_device(self):
+        """Safely synchronize the active compute device.
+
+        Several model paths (notably the TensorRT EP and graph-captured
+        kernels in ORT 1.20+) capture CUDA streams while preparing
+        inference. During that window torch.cuda.synchronize() raises
+        "operation not permitted when stream is capturing", which crashes
+        the FrameWorker. Catch that case so worker threads can continue
+        — the EP itself will sync the captured stream when it completes.
+        """
+        if self.device == "cuda":
+            try:
+                torch.cuda.synchronize()
+            except RuntimeError as e:
+                # Expected during ORT/TensorRT stream capture; the EP will
+                # finalize the sync internally on stream end.
+                if "stream is capturing" not in str(e):
+                    raise
+        elif self.device != "cpu":
+            self.syncvec.cpu()
 
     def load_model(self, model_name, session_options=None):
         with self.model_lock:

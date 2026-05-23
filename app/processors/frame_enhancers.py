@@ -82,10 +82,7 @@ class FrameEnhancers:
         io_binding.bind_input(name='input', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=image.size(), buffer_ptr=image.data_ptr())
         io_binding.bind_output(name='output', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=output.size(), buffer_ptr=output.data_ptr())
 
-        if self.models_processor.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.models_processor.device != "cpu":
-            self.models_processor.syncvec.cpu()
+        self.models_processor.sync_device()
         self.models_processor.models['RealEsrganx2Plus'].run_with_iobinding(io_binding)
 
     def run_realesrganx4(self, image, output):
@@ -96,10 +93,7 @@ class FrameEnhancers:
         io_binding.bind_input(name='input', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=image.size(), buffer_ptr=image.data_ptr())
         io_binding.bind_output(name='output', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=output.size(), buffer_ptr=output.data_ptr())
 
-        if self.models_processor.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.models_processor.device != "cpu":
-            self.models_processor.syncvec.cpu()
+        self.models_processor.sync_device()
         self.models_processor.models['RealEsrganx4Plus'].run_with_iobinding(io_binding)
 
     def run_realesrx4v3(self, image, output):
@@ -110,10 +104,7 @@ class FrameEnhancers:
         io_binding.bind_input(name='input', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=image.size(), buffer_ptr=image.data_ptr())
         io_binding.bind_output(name='output', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=output.size(), buffer_ptr=output.data_ptr())
 
-        if self.models_processor.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.models_processor.device != "cpu":
-            self.models_processor.syncvec.cpu()
+        self.models_processor.sync_device()
         self.models_processor.models['RealEsrx4v3'].run_with_iobinding(io_binding)
 
     def run_bsrganx2(self, image, output):
@@ -124,10 +115,7 @@ class FrameEnhancers:
         io_binding.bind_input(name='input', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=image.size(), buffer_ptr=image.data_ptr())
         io_binding.bind_output(name='output', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=output.size(), buffer_ptr=output.data_ptr())
 
-        if self.models_processor.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.models_processor.device != "cpu":
-            self.models_processor.syncvec.cpu()
+        self.models_processor.sync_device()
         self.models_processor.models['BSRGANx2'].run_with_iobinding(io_binding)
 
     def run_bsrganx4(self, image, output):
@@ -138,10 +126,7 @@ class FrameEnhancers:
         io_binding.bind_input(name='input', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=image.size(), buffer_ptr=image.data_ptr())
         io_binding.bind_output(name='output', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=output.size(), buffer_ptr=output.data_ptr())
 
-        if self.models_processor.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.models_processor.device != "cpu":
-            self.models_processor.syncvec.cpu()
+        self.models_processor.sync_device()
         self.models_processor.models['BSRGANx4'].run_with_iobinding(io_binding)
 
     def run_ultrasharpx4(self, image, output):
@@ -152,10 +137,7 @@ class FrameEnhancers:
         io_binding.bind_input(name='input', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=image.size(), buffer_ptr=image.data_ptr())
         io_binding.bind_output(name='output', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=output.size(), buffer_ptr=output.data_ptr())
 
-        if self.models_processor.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.models_processor.device != "cpu":
-            self.models_processor.syncvec.cpu()
+        self.models_processor.sync_device()
         self.models_processor.models['UltraSharpx4'].run_with_iobinding(io_binding)
 
     def run_ultramixx4(self, image, output):
@@ -166,10 +148,7 @@ class FrameEnhancers:
         io_binding.bind_input(name='input', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=image.size(), buffer_ptr=image.data_ptr())
         io_binding.bind_output(name='output', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=output.size(), buffer_ptr=output.data_ptr())
 
-        if self.models_processor.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.models_processor.device != "cpu":
-            self.models_processor.syncvec.cpu()
+        self.models_processor.sync_device()
         self.models_processor.models['UltraMixx4'].run_with_iobinding(io_binding)
 
     def run_deoldify_artistic(self, image, output):
@@ -180,10 +159,7 @@ class FrameEnhancers:
         io_binding.bind_input(name='input', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=image.size(), buffer_ptr=image.data_ptr())
         io_binding.bind_output(name='output', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=output.size(), buffer_ptr=output.data_ptr())
 
-        if self.models_processor.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.models_processor.device != "cpu":
-            self.models_processor.syncvec.cpu()
+        self.models_processor.sync_device()
         self.models_processor.models['DeoldifyArt'].run_with_iobinding(io_binding)
 
     def run_deoldify_stable(self, image, output):
@@ -194,10 +170,7 @@ class FrameEnhancers:
         io_binding.bind_input(name='input', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=image.size(), buffer_ptr=image.data_ptr())
         io_binding.bind_output(name='output', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=output.size(), buffer_ptr=output.data_ptr())
 
-        if self.models_processor.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.models_processor.device != "cpu":
-            self.models_processor.syncvec.cpu()
+        self.models_processor.sync_device()
         self.models_processor.models['DeoldifyStable'].run_with_iobinding(io_binding)
 
     def run_deoldify_video(self, image, output):
@@ -208,10 +181,7 @@ class FrameEnhancers:
         io_binding.bind_input(name='input', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=image.size(), buffer_ptr=image.data_ptr())
         io_binding.bind_output(name='output', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=output.size(), buffer_ptr=output.data_ptr())
 
-        if self.models_processor.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.models_processor.device != "cpu":
-            self.models_processor.syncvec.cpu()
+        self.models_processor.sync_device()
         self.models_processor.models['DeoldifyVideo'].run_with_iobinding(io_binding)
 
     def run_ddcolor_artistic(self, image, output):
@@ -222,10 +192,7 @@ class FrameEnhancers:
         io_binding.bind_input(name='input', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=image.size(), buffer_ptr=image.data_ptr())
         io_binding.bind_output(name='output', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=output.size(), buffer_ptr=output.data_ptr())
 
-        if self.models_processor.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.models_processor.device != "cpu":
-            self.models_processor.syncvec.cpu()
+        self.models_processor.sync_device()
         self.models_processor.models['DDColorArt'].run_with_iobinding(io_binding)
 
     def run_ddcolor(self, image, output):
@@ -236,8 +203,5 @@ class FrameEnhancers:
         io_binding.bind_input(name='input', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=image.size(), buffer_ptr=image.data_ptr())
         io_binding.bind_output(name='output', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=output.size(), buffer_ptr=output.data_ptr())
 
-        if self.models_processor.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.models_processor.device != "cpu":
-            self.models_processor.syncvec.cpu()
+        self.models_processor.sync_device()
         self.models_processor.models['DDcolor'].run_with_iobinding(io_binding)

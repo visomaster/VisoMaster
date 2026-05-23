@@ -134,10 +134,7 @@ class FaceLandmarkDetectors:
         io_binding.bind_output(name='conf', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=(1,10752,2), buffer_ptr=conf.data_ptr())
         io_binding.bind_output(name='landmarks', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=(1,10752,10), buffer_ptr=landmarks.data_ptr())
 
-        if self.models_processor.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.models_processor.device != "cpu":
-            self.models_processor.syncvec.cpu()
+        self.models_processor.sync_device()
         self.models_processor.models['FaceLandmark5'].run_with_iobinding(io_binding)
 
         scores = torch.squeeze(conf)[:, 1]
@@ -194,10 +191,7 @@ class FaceLandmarkDetectors:
         io_binding.bind_output('heatmaps', self.models_processor.device)
 
         # Sync and run model
-        if self.models_processor.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.models_processor.device != "cpu":
-            self.models_processor.syncvec.cpu()
+        self.models_processor.sync_device()
         self.models_processor.models['FaceLandmark68'].run_with_iobinding(io_binding)
         net_outs = io_binding.copy_outputs_to_cpu()
         face_landmark_68 = net_outs[0]
@@ -234,10 +228,7 @@ class FaceLandmarkDetectors:
         io_binding.bind_output('fc1', self.models_processor.device)
 
         # Sync and run model
-        if self.models_processor.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.models_processor.device != "cpu":
-            self.models_processor.syncvec.cpu()
+        self.models_processor.sync_device()
         self.models_processor.models['FaceLandmark3d68'].run_with_iobinding(io_binding)
         pred = io_binding.copy_outputs_to_cpu()[0][0]
 
@@ -293,10 +284,7 @@ class FaceLandmarkDetectors:
             io_binding.bind_output('landmarks_xyscore', self.models_processor.device)
 
             # Sync and run model
-            if self.models_processor.device == "cuda":
-                torch.cuda.synchronize()
-            elif self.models_processor.device != "cpu":
-                self.models_processor.syncvec.cpu()
+            self.models_processor.sync_device()
             self.models_processor.models['FaceLandmark98'].run_with_iobinding(io_binding)
             landmarks_xyscore = io_binding.copy_outputs_to_cpu()[0]
 
@@ -340,10 +328,7 @@ class FaceLandmarkDetectors:
         io_binding.bind_output('fc1', self.models_processor.device)
 
         # Sync and run model
-        if self.models_processor.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.models_processor.device != "cpu":
-            self.models_processor.syncvec.cpu()
+        self.models_processor.sync_device()
         self.models_processor.models['FaceLandmark106'].run_with_iobinding(io_binding)
         pred = io_binding.copy_outputs_to_cpu()[0][0]
 
@@ -398,10 +383,7 @@ class FaceLandmarkDetectors:
         io_binding.bind_output('856', self.models_processor.device)
 
         # Sync and run model
-        if self.models_processor.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.models_processor.device != "cpu":
-            self.models_processor.syncvec.cpu()
+        self.models_processor.sync_device()
         self.models_processor.models['FaceLandmark203'].run_with_iobinding(io_binding)
         out_lst = io_binding.copy_outputs_to_cpu()
         out_pts = out_lst[2]
@@ -442,10 +424,7 @@ class FaceLandmarkDetectors:
         io_binding.bind_output('Identity_2', self.models_processor.device)
 
         # Sync and run model
-        if self.models_processor.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.models_processor.device != "cpu":
-            self.models_processor.syncvec.cpu()
+        self.models_processor.sync_device()
         self.models_processor.models['FaceLandmark478'].run_with_iobinding(io_binding)
         landmarks, faceflag, blendshapes = io_binding.copy_outputs_to_cpu() # pylint: disable=unused-variable
         landmarks = landmarks.reshape( (1,478,3))
@@ -479,10 +458,7 @@ class FaceLandmarkDetectors:
                 io_binding_bs.bind_output('output', self.models_processor.device)
 
                 # Sync and run model
-                if self.models_processor.device == "cuda":
-                    torch.cuda.synchronize()
-                elif self.models_processor.device != "cpu":
-                    self.models_processor.syncvec.cpu()
+                self.models_processor.sync_device()
                 self.models_processor.models['FaceBlendShapes'].run_with_iobinding(io_binding_bs)
                 landmark_score = io_binding_bs.copy_outputs_to_cpu()[0] # pylint: disable=unused-variable
 

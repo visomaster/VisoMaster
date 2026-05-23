@@ -89,10 +89,7 @@ class FaceSwappers:
             io_binding.bind_output(output_names[i], self.models_processor.device)
 
         # Sync and run model
-        if self.models_processor.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.models_processor.device != "cpu":
-            self.models_processor.syncvec.cpu()
+        self.models_processor.sync_device()
         self.models_processor.models[arcface_model].run_with_iobinding(io_binding)
 
         # Return embedding
@@ -124,11 +121,7 @@ class FaceSwappers:
         io_binding.bind_input(name='input', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=img.size(), buffer_ptr=img.data_ptr())
         io_binding.bind_output(name='output', device_type=self.models_processor.device)
 
-        if self.models_processor.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.models_processor.device != "cpu":
-            self.models_processor.syncvec.cpu()
-
+        self.models_processor.sync_device()
         self.models_processor.models['CSCSArcFace'].run_with_iobinding(io_binding)
 
         output = io_binding.copy_outputs_to_cpu()[0]
@@ -153,11 +146,7 @@ class FaceSwappers:
         io_binding.bind_input(name='input', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=img.size(), buffer_ptr=img.data_ptr())
         io_binding.bind_output(name='output', device_type=self.models_processor.device)
 
-        if self.models_processor.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.models_processor.device != "cpu":
-            self.models_processor.syncvec.cpu()
-            
+        self.models_processor.sync_device()
         self.models_processor.models['CSCSIDArcFace'].run_with_iobinding(io_binding)
 
         output = io_binding.copy_outputs_to_cpu()[0]
@@ -179,10 +168,7 @@ class FaceSwappers:
         io_binding.bind_input(name='input_2', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=(1,512), buffer_ptr=embedding.data_ptr())
         io_binding.bind_output(name='output', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=(1,3,256,256), buffer_ptr=output.data_ptr())
 
-        if self.models_processor.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.models_processor.device != "cpu":
-            self.models_processor.syncvec.cpu()
+        self.models_processor.sync_device()
         self.models_processor.models['CSCS'].run_with_iobinding(io_binding)
 
     def calc_inswapper_latent(self, source_embedding):
@@ -201,10 +187,7 @@ class FaceSwappers:
         io_binding.bind_input(name='source', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=(1,512), buffer_ptr=embedding.data_ptr())
         io_binding.bind_output(name='output', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=(1,3,128,128), buffer_ptr=output.data_ptr())
 
-        if self.models_processor.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.models_processor.device != "cpu":
-            self.models_processor.syncvec.cpu()
+        self.models_processor.sync_device()
         self.models_processor.models['Inswapper128'].run_with_iobinding(io_binding)
 
     def calc_swapper_latent_ghost(self, source_embedding):
@@ -229,10 +212,7 @@ class FaceSwappers:
         io_binding.bind_input(name='source', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=(1,512), buffer_ptr=embedding.data_ptr())
         io_binding.bind_output(name='output', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=(1,3,256,256), buffer_ptr=output.data_ptr())
 
-        if self.models_processor.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.models_processor.device != "cpu":
-            self.models_processor.syncvec.cpu()
+        self.models_processor.sync_device()
         self.models_processor.models[ISS_MODEL_NAME].run_with_iobinding(io_binding)
 
     def calc_swapper_latent_simswap512(self, source_embedding):
@@ -250,10 +230,7 @@ class FaceSwappers:
         io_binding.bind_input(name='onnx::Gemm_1', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=(1,512), buffer_ptr=embedding.data_ptr())
         io_binding.bind_output(name='output', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=(1,3,512,512), buffer_ptr=output.data_ptr())
 
-        if self.models_processor.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.models_processor.device != "cpu":
-            self.models_processor.syncvec.cpu()
+        self.models_processor.sync_device()
         self.models_processor.models['SimSwap512'].run_with_iobinding(io_binding)
 
     def run_swapper_ghostface(self, image, embedding, output, swapper_model='GhostFace-v2'):
@@ -284,8 +261,5 @@ class FaceSwappers:
         io_binding.bind_input(name='source', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=(1,512), buffer_ptr=embedding.data_ptr())
         io_binding.bind_output(name=output_name, device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=(1,3,256,256), buffer_ptr=output.data_ptr())
 
-        if self.models_processor.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.models_processor.device != "cpu":
-            self.models_processor.syncvec.cpu()
+        self.models_processor.sync_device()
         ghostfaceswap_model.run_with_iobinding(io_binding)

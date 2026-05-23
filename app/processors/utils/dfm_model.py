@@ -24,6 +24,17 @@ class DFMModel:
         self._input_height, self._input_width = inputs[0].shape[1:3]
         self._model_type = 1
 
+    def sync_device(self):
+        """Mirror of ModelsProcessor.sync_device() — see that method for details."""
+        if self.device == "cuda":
+            try:
+                torch.cuda.synchronize()
+            except RuntimeError as e:
+                if "stream is capturing" not in str(e):
+                    raise
+        elif self.device != "cpu":
+            self.syncvec.cpu()
+
         if len(inputs) == 2:
             if 'morph_value' not in inputs[1].name:
                 raise ValueError(f'Invalid model {model_path}')
@@ -121,10 +132,7 @@ class DFMModel:
             )
 
         # Run the model
-        if self.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.device != "cpu":
-            self.syncvec.cpu()
+        self.sync_device()
         self._sess.run_with_iobinding(io_binding)
 
         # Process outputs (resize, clip channels, and convert back to original dtype)

@@ -99,10 +99,7 @@ class FaceEditors:
                 io_binding.bind_output(name='scale', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=scale.size(), buffer_ptr=scale.data_ptr())
                 io_binding.bind_output(name='kp', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=kp.size(), buffer_ptr=kp.data_ptr())
 
-                if self.models_processor.device == "cuda":
-                    torch.cuda.synchronize()
-                elif self.models_processor.device != "cpu":
-                    self.models_processor.syncvec.cpu()
+                self.models_processor.sync_device()
                 motion_extractor_model.run_with_iobinding(io_binding)
 
                 kp_info = {
@@ -171,10 +168,7 @@ class FaceEditors:
                 io_binding.bind_input(name='img', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=I_s.size(), buffer_ptr=I_s.data_ptr())
                 io_binding.bind_output(name='output', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=output.size(), buffer_ptr=output.data_ptr())
 
-                if self.models_processor.device == "cuda":
-                    torch.cuda.synchronize()
-                elif self.models_processor.device != "cpu":
-                    self.models_processor.syncvec.cpu()
+                self.models_processor.sync_device()
                 appearance_feature_extractor_model.run_with_iobinding(io_binding)
 
         return output
@@ -222,10 +216,7 @@ class FaceEditors:
                 io_binding.bind_input(name='input', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=feat_eye.size(), buffer_ptr=feat_eye.data_ptr())
                 io_binding.bind_output(name='output', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=delta.size(), buffer_ptr=delta.data_ptr())
 
-                if self.models_processor.device == "cuda":
-                    torch.cuda.synchronize()
-                elif self.models_processor.device != "cpu":
-                    self.models_processor.syncvec.cpu()
+                self.models_processor.sync_device()
                 stitching_eye_model.run_with_iobinding(io_binding)
 
         return delta.reshape(-1, kp_source.shape[1], 3)
@@ -273,10 +264,7 @@ class FaceEditors:
                 io_binding.bind_input(name='input', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=feat_lip.size(), buffer_ptr=feat_lip.data_ptr())
                 io_binding.bind_output(name='output', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=delta.size(), buffer_ptr=delta.data_ptr())
 
-                if self.models_processor.device == "cuda":
-                    torch.cuda.synchronize()
-                elif self.models_processor.device != "cpu":
-                    self.models_processor.syncvec.cpu()
+                self.models_processor.sync_device()
                 stitching_lip_model.run_with_iobinding(io_binding)
 
         return delta.reshape(-1, kp_source.shape[1], 3)
@@ -324,10 +312,7 @@ class FaceEditors:
                 io_binding.bind_input(name='input', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=feat_stiching.size(), buffer_ptr=feat_stiching.data_ptr())
                 io_binding.bind_output(name='output', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=delta.size(), buffer_ptr=delta.data_ptr())
 
-                if self.models_processor.device == "cuda":
-                    torch.cuda.synchronize()
-                elif self.models_processor.device != "cpu":
-                    self.models_processor.syncvec.cpu()
+                self.models_processor.sync_device()
                 stitching_model.run_with_iobinding(io_binding)
 
         return delta
@@ -437,10 +422,7 @@ class FaceEditors:
                 io_binding.bind_input(name='kp_source', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=kp_source.size(), buffer_ptr=kp_source.data_ptr())
                 io_binding.bind_output(name='out', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=out.size(), buffer_ptr=out.data_ptr())
 
-                if self.models_processor.device == "cuda":
-                    torch.cuda.synchronize()
-                elif self.models_processor.device != "cpu":
-                    self.models_processor.syncvec.cpu()
+                self.models_processor.sync_device()
                 warping_spade_model.run_with_iobinding(io_binding)
 
         return out

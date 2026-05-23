@@ -115,10 +115,7 @@ class FaceDetectors:
             io_binding.bind_output('500', self.models_processor.device)
 
             # Sync and run model
-            if self.models_processor.device == "cuda":
-                torch.cuda.synchronize()
-            elif self.models_processor.device != "cpu":
-                self.models_processor.syncvec.cpu()
+            self.models_processor.sync_device()
             self.models_processor.models['RetinaFace'].run_with_iobinding(io_binding)
 
             net_outs = io_binding.copy_outputs_to_cpu()
@@ -378,10 +375,7 @@ class FaceDetectors:
                 io_binding.bind_output(output_names[i], self.models_processor.device)
 
             # Sync and run model
-            if self.models_processor.device == "cuda":
-                torch.cuda.synchronize()
-            elif self.models_processor.device != "cpu":
-                self.models_processor.syncvec.cpu()
+            self.models_processor.sync_device()
             self.models_processor.models['SCRFD2.5g'].run_with_iobinding(io_binding)
 
             net_outs = io_binding.copy_outputs_to_cpu()
@@ -635,10 +629,7 @@ class FaceDetectors:
             io_binding.bind_output('output0', self.models_processor.device)
 
             # Sync and run model
-            if self.models_processor.device == "cuda":
-                torch.cuda.synchronize()
-            elif self.models_processor.device != "cpu":
-                self.models_processor.syncvec.cpu()
+            self.models_processor.sync_device()
             self.models_processor.models['YoloFace8n'].run_with_iobinding(io_binding)
 
             net_outs = io_binding.copy_outputs_to_cpu()
@@ -879,10 +870,7 @@ class FaceDetectors:
                 io_binding.bind_output(output_names[i], self.models_processor.device)
 
             # Sync and run model
-            if self.models_processor.device == "cuda":
-                torch.cuda.synchronize()
-            elif self.models_processor.device != "cpu":
-                self.models_processor.syncvec.cpu()
+            self.models_processor.sync_device()
             self.models_processor.models['YunetN'].run_with_iobinding(io_binding)
             net_outs = io_binding.copy_outputs_to_cpu()
 

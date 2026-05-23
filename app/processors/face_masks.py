@@ -58,10 +58,7 @@ class FaceMasks:
         io_binding.bind_input(name='img', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=(1,3,256,256), buffer_ptr=image.data_ptr())
         io_binding.bind_output(name='output', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=(1,1,256,256), buffer_ptr=output.data_ptr())
 
-        if self.models_processor.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.models_processor.device != "cpu":
-            self.models_processor.syncvec.cpu()
+        self.models_processor.sync_device()
         self.models_processor.models['Occluder'].run_with_iobinding(io_binding)
 
     def apply_dfl_xseg(self, img, amount):
@@ -111,10 +108,7 @@ class FaceMasks:
         io_binding.bind_input(name='in_face:0', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=image.size(), buffer_ptr=image.data_ptr())
         io_binding.bind_output(name='out_mask:0', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=(1,1,256,256), buffer_ptr=output.data_ptr())
 
-        if self.models_processor.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.models_processor.device != "cpu":
-            self.models_processor.syncvec.cpu()
+        self.models_processor.sync_device()
         self.models_processor.models['XSeg'].run_with_iobinding(io_binding)
         
     def apply_face_parser(self, img, parameters):
@@ -234,10 +228,7 @@ class FaceMasks:
         io_binding.bind_input(name='input', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=(1,3,512,512), buffer_ptr=image.data_ptr())
         io_binding.bind_output(name='output', device_type=self.models_processor.device, device_id=0, element_type=np.float32, shape=(1,19,512,512), buffer_ptr=output.data_ptr())
 
-        if self.models_processor.device == "cuda":
-            torch.cuda.synchronize()
-        elif self.models_processor.device != "cpu":
-            self.models_processor.syncvec.cpu()
+        self.models_processor.sync_device()
         self.models_processor.models['FaceParser'].run_with_iobinding(io_binding)
 
     def run_CLIPs(self, img, CLIPText, CLIPAmount):

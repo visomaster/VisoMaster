@@ -228,7 +228,13 @@ class TensorRTPredictor:
 
         finally:
             # Sincronizza il flusso CUDA prima di restituire il contesto
-            torch.cuda.synchronize()
+            try:
+                torch.cuda.synchronize()
+            except RuntimeError as e:
+                # Tolerated when ORT/TensorRT is mid stream-capture from
+                # another worker thread; the EP will finalize the sync.
+                if "stream is capturing" not in str(e):
+                    raise
             self.context_pool.put(pool_entry)
 
     def predict_async(self, feed_dict: Dict[str, Any], stream: torch.cuda.Stream) -> OrderedDictType[str, torch.Tensor]:
@@ -266,10 +272,14 @@ class TensorRTPredictor:
 
         finally:
             # Sincronizza lo stream usato se diverso da quello corrente
-            if stream != torch.cuda.current_stream():
-                stream.synchronize()
-            else:
-                torch.cuda.synchronize()
+            try:
+                if stream != torch.cuda.current_stream():
+                    stream.synchronize()
+                else:
+                    torch.cuda.synchronize()
+            except RuntimeError as e:
+                if "stream is capturing" not in str(e):
+                    raise
             self.context_pool.put(pool_entry)
 
     def cleanup(self) -> None:
