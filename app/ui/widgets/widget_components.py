@@ -225,9 +225,8 @@ class TargetMediaCardButton(CardButton):
 
         elif self.file_type == 'webrtc':
             # Attach to the shared memory written by the WebRTC server process
-            from app.processors.external.webrtc_server import (
-                SHM_NAME, SHM_TOTAL_BYTES, SHM_HEADER_BYTES
-            )
+            from streamrelay.protocol import SHM_TOTAL_BYTES, SHM_HEADER_BYTES
+            SHM_NAME = "visomaster_webrtc_frame"
             # Release previous shm if any
             if self.shm_handle:
                 try:

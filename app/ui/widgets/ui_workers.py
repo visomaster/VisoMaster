@@ -113,7 +113,8 @@ class TargetMediaLoaderWorker(qtc.QThread):
         """Spawn the WebRTC server subprocess and emit a placeholder thumbnail card."""
         import multiprocessing
         import socket
-        from app.processors.external.webrtc_server import run_server, SHM_NAME
+        from streamrelay.server import run_server
+        SHM_NAME = "visomaster_webrtc_frame"
         from pathlib import Path
 
         main_window = self.main_window
@@ -136,6 +137,7 @@ class TargetMediaLoaderWorker(qtc.QThread):
                     'cert_file': cert_file,
                     'key_file': key_file,
                     'host': host,
+                    'shm_name': SHM_NAME,
                 },
                 daemon=True
             )

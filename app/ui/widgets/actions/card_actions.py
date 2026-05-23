@@ -80,7 +80,7 @@ def find_target_faces(main_window: 'MainWindow'):
         elif video_processor.file_type=='webrtc' and video_processor.webrtc_shm is not None:
             # Read the latest frame written to shared memory by the WebRTC server
             try:
-                from app.processors.external.webrtc_server import SHM_HEADER_BYTES
+                from streamrelay.protocol import SHM_HEADER_BYTES
                 import struct
                 shm = video_processor.webrtc_shm
                 w = struct.unpack_from("<I", shm.buf, 4)[0]

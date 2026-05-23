@@ -1,7 +1,15 @@
-from app.ui import main_ui
-from PySide6 import QtWidgets, QtCore
 import sys
 import signal
+from pathlib import Path
+
+# Bootstrap streamrelay package path so it resolves without a pip install.
+# If the user has done `pip install -e packages/streamrelay` this is a no-op.
+_streamrelay_src = Path(__file__).parent / "packages" / "streamrelay" / "src"
+if _streamrelay_src.is_dir() and str(_streamrelay_src) not in sys.path:
+    sys.path.insert(0, str(_streamrelay_src))
+
+from app.ui import main_ui
+from PySide6 import QtWidgets, QtCore
 
 import qdarktheme
 from app.ui.core.proxy_style import ProxyStyle

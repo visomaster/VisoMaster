@@ -24,6 +24,12 @@ from app.ui.widgets.actions import video_control_actions
 from app.ui.widgets.actions import layout_actions
 import app.helpers.miscellaneous as misc_helpers
 
+from streamrelay.protocol import SHM_HEADER_BYTES
+
+# VisoMaster's shared-memory block name — must match the name passed to
+# StreamServer in ui_workers.py.
+VISOMASTER_SHM_NAME: str = "visomaster_webrtc_frame"
+
 if TYPE_CHECKING:
     from app.ui.main_ui import MainWindow
 
@@ -255,9 +261,8 @@ class VideoProcessor(QObject):
             # Try to attach shared memory if not already done
             if self.webrtc_shm is None:
                 try:
-                    from app.processors.external.webrtc_server import SHM_NAME
                     from multiprocessing.shared_memory import SharedMemory
-                    shm = SharedMemory(name=SHM_NAME, create=False)
+                    shm = SharedMemory(name=VISOMASTER_SHM_NAME, create=False)
                     self.webrtc_shm = shm
                     print("[WebRTC] Shared memory attached successfully")
                 except FileNotFoundError:
@@ -374,7 +379,6 @@ class VideoProcessor(QObject):
         # Handle WebRTC — read latest frame from shared memory
         elif self.file_type == 'webrtc' and self.webrtc_shm is not None:
             try:
-                from app.processors.external.webrtc_server import SHM_HEADER_BYTES
                 w = struct.unpack_from("<I", self.webrtc_shm.buf, 4)[0]
                 h = struct.unpack_from("<I", self.webrtc_shm.buf, 8)[0]
                 if w > 0 and h > 0:
@@ -413,7 +417,6 @@ class VideoProcessor(QObject):
         if self.file_type != 'webrtc' or self.webrtc_shm is None:
             return
         try:
-            from app.processors.external.webrtc_server import SHM_HEADER_BYTES
             counter = struct.unpack_from("<I", self.webrtc_shm.buf, 0)[0]
             if counter == self._last_webrtc_counter or counter == 0:
                 return  # No new frame yet, keep waiting
@@ -439,9 +442,8 @@ class VideoProcessor(QObject):
         if self.file_type != 'webrtc' or not self.processing:
             return
         try:
-            from app.processors.external.webrtc_server import SHM_NAME
             from multiprocessing.shared_memory import SharedMemory
-            shm = SharedMemory(name=SHM_NAME, create=False)
+            shm = SharedMemory(name=VISOMASTER_SHM_NAME, create=False)
             self.webrtc_shm = shm
             # Also update the card's shm_handle
             if self.main_window.selected_video_button and self.main_window.selected_video_button.file_type == 'webrtc':
