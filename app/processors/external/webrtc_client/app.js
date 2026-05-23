@@ -138,10 +138,10 @@ streamBtn.addEventListener('click', () => {
 });
 
 // ── WebCodecs detection ──────────────────────────────────────────────────────
-// Disabled — H.264 Annex B format issues with PyAV decoder.
-// JPEG with optimized capture loop is reliable and fast enough.
+// H.264 works on iPhone/Safari but may fail on some Windows browsers.
+// Auto-detects and falls back to JPEG if encoding fails.
 function webCodecsAvailable() {
-  return false;  // Disabled: H.264 over WebSocket has format compatibility issues
+  return typeof VideoEncoder !== 'undefined' && typeof VideoFrame !== 'undefined';
 }
 
 // ── AVCC to Annex B conversion ───────────────────────────────────────────────
@@ -267,7 +267,6 @@ async function startStreaming() {
         await initWebCodecsEncoder(sendW, sendH);
         useWebCodecs = true;
         console.log('[Stream] Using WebCodecs H.264 encoder (hardware accelerated)');
-        // Tell server we're sending H.264
         ws.send(JSON.stringify({ type: 'codec', codec: 'h264', width: sendW, height: sendH }));
       } catch (e) {
         console.warn('[Stream] WebCodecs init failed, using JPEG fallback:', e.message);
@@ -281,6 +280,20 @@ async function startStreaming() {
     }
 
     startCaptureLoop();
+  };
+
+  ws.onmessage = (event) => {
+    // Handle server messages (e.g., fallback request)
+    if (typeof event.data === 'string') {
+      try {
+        const msg = JSON.parse(event.data);
+        if (msg.type === 'fallback' && msg.codec === 'jpeg') {
+          console.warn('[Stream] Server requested JPEG fallback');
+          useWebCodecs = false;
+          if (encoder) { try { encoder.close(); } catch(_){} encoder = null; }
+        }
+      } catch(_) {}
+    }
   };
 
   ws.onclose = () => { if (isStreaming) { setStatus('error'); cleanUp(); } };
@@ -356,6 +369,7 @@ function startCaptureLoop() {
   let ctxB = canvasB.getContext('2d', { willReadFrequently: false });
   let useA = true;
   let encoding = false;
+  let frameIndex = 0;
 
   function capture(timestamp) {
     captureLoop = requestAnimationFrame(capture);
@@ -374,10 +388,29 @@ function startCaptureLoop() {
     mirrorCtx.drawImage(hiddenVideo, 0, 0, mirrorCanvas.width, mirrorCanvas.height);
     mirrorCtx.restore();
 
-    // Skip if still encoding previous frame
+    // WebCodecs H.264 path
+    if (useWebCodecs && encoder && encoder.state === 'configured') {
+      // Draw to send canvas
+      const canvas = useA ? canvasA : canvasB;
+      const ctx = useA ? ctxA : ctxB;
+      ctx.save();
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(hiddenVideo, 0, 0, canvas.width, canvas.height);
+      ctx.restore();
+      useA = !useA;
+
+      const frame = new VideoFrame(canvas, { timestamp: frameIndex * interval * 1000 });
+      const keyFrame = frameIndex % 60 === 0;
+      encoder.encode(frame, { keyFrame });
+      frame.close();
+      frameIndex++;
+      return;
+    }
+
+    // JPEG fallback path — skip if still encoding previous frame
     if (encoding) return;
 
-    // Draw to current send canvas
     const canvas = useA ? canvasA : canvasB;
     const ctx = useA ? ctxA : ctxB;
     ctx.save();
@@ -385,16 +418,12 @@ function startCaptureLoop() {
     ctx.scale(-1, 1);
     ctx.drawImage(hiddenVideo, 0, 0, canvas.width, canvas.height);
     ctx.restore();
-
-    // Swap buffer for next frame
     useA = !useA;
 
-    // Encode and send
     encoding = true;
     canvas.toBlob((blob) => {
       encoding = false;
       if (!blob || !ws || ws.readyState !== WebSocket.OPEN) return;
-      // Use blob.arrayBuffer() — it's fast for small blobs
       const reader = new FileReader();
       reader.onload = () => {
         if (ws && ws.readyState === WebSocket.OPEN) {
@@ -404,7 +433,7 @@ function startCaptureLoop() {
         }
       };
       reader.readAsArrayBuffer(blob);
-    }, 'image/jpeg', 0.70);  // 70% quality for speed — still looks good
+    }, 'image/jpeg', 0.70);
   }
 
   captureLoop = requestAnimationFrame(capture);
