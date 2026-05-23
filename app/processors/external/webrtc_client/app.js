@@ -123,8 +123,8 @@ function getConstraints() {
   return {
     video: {
       deviceId: cameraSelect.value ? { exact: cameraSelect.value } : undefined,
-      width: { ideal: Math.max(w, h) },
-      height: { ideal: Math.min(w, h) },
+      width: { ideal: w },
+      height: { ideal: h },
       frameRate: { ideal: 30 },
       facingMode: 'user'
     },
@@ -219,10 +219,18 @@ async function startStreaming() {
   const vh = settings.height || 720;
 
   // Determine send resolution — lower = faster encoding = higher FPS
-  // 640px width gives ~3x faster encoding than 1280px
-  const maxSendW = 640;
-  const sendW = Math.min(vw, maxSendW);
-  const sendH = Math.round(sendW * vh / vw);
+  // Cap the longest side at 640px, preserve aspect ratio
+  const maxSendDim = 640;
+  let sendW, sendH;
+  if (vw >= vh) {
+    // Landscape
+    sendW = Math.min(vw, maxSendDim);
+    sendH = Math.round(sendW * vh / vw);
+  } else {
+    // Portrait (e.g., iPhone)
+    sendH = Math.min(vh, maxSendDim);
+    sendW = Math.round(sendH * vw / vh);
+  }
   statResolution.textContent = sendW + '×' + sendH;
 
   // Mirror canvas for local preview
