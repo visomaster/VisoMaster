@@ -134,11 +134,18 @@ async function enumerateCameras() {
 
 function getConstraints() {
   const [w, h] = resolutionSelect.value.split('x').map(Number);
+  // If the device is held in portrait (e.g., iPhone), request portrait dimensions
+  // so the browser/camera returns a portrait-aspect feed matching the device.
+  const isPortraitDevice = window.matchMedia('(orientation: portrait)').matches;
+  const longSide  = Math.max(w, h);
+  const shortSide = Math.min(w, h);
+  const reqW = isPortraitDevice ? shortSide : longSide;
+  const reqH = isPortraitDevice ? longSide  : shortSide;
   return {
     video: {
       deviceId: cameraSelect.value ? { exact: cameraSelect.value } : undefined,
-      width: { ideal: w },
-      height: { ideal: h },
+      width: { ideal: reqW },
+      height: { ideal: reqH },
       frameRate: { ideal: 30 },
       facingMode: 'user'
     },
@@ -227,31 +234,34 @@ async function startStreaming() {
   localVideo.classList.add('visible');
   videoOverlay.classList.add('hidden');
 
-  const videoTrack = localStream.getVideoTracks()[0];
-  const settings = videoTrack.getSettings();
-  const vw = settings.width || 1280;
-  const vh = settings.height || 720;
+  // Set up the hidden video element FIRST so we can read post-rotation
+  // dimensions from videoWidth/videoHeight. Browsers (especially iOS Safari)
+  // expose track settings as the sensor's native landscape resolution, but
+  // <video>.videoWidth/Height reflect the user-visible orientation after the
+  // browser applies any necessary rotation. Using those means we never need
+  // to rotate the canvas manually.
+  hiddenVideo = document.createElement('video');
+  hiddenVideo.srcObject = localStream;
+  hiddenVideo.muted = true;
+  hiddenVideo.playsInline = true;
+  await hiddenVideo.play();
 
-  // Detect if we need to rotate (portrait device with landscape camera)
-  // On iPhone: the camera is physically landscape but the device is portrait,
-  // so we need to rotate the canvas 90° to display correctly.
-  const isPortraitDevice = window.matchMedia('(orientation: portrait)').matches;
-  const isLandscapeVideo = vw > vh;
-  const needsRotation = isPortraitDevice && isLandscapeVideo;
+  // Wait for metadata so videoWidth/videoHeight are populated
+  if (!hiddenVideo.videoWidth || !hiddenVideo.videoHeight) {
+    await new Promise((resolve) => {
+      const onReady = () => { hiddenVideo.removeEventListener('loadedmetadata', onReady); resolve(); };
+      hiddenVideo.addEventListener('loadedmetadata', onReady);
+    });
+  }
 
-  // Final dimensions after rotation
-  const finalW = needsRotation ? vh : vw;
-  const finalH = needsRotation ? vw : vh;
-
-  // Use the camera's native (rotated) resolution
-  const sendW = finalW;
-  const sendH = finalH;
+  const sendW = hiddenVideo.videoWidth  || localStream.getVideoTracks()[0].getSettings().width  || 1280;
+  const sendH = hiddenVideo.videoHeight || localStream.getVideoTracks()[0].getSettings().height || 720;
   statResolution.textContent = sendW + '×' + sendH;
 
-  // Mirror canvas for local preview (final orientation)
+  // Mirror canvas for local preview (matches device orientation)
   mirrorCanvas = document.createElement('canvas');
-  mirrorCanvas.width = finalW;
-  mirrorCanvas.height = finalH;
+  mirrorCanvas.width = sendW;
+  mirrorCanvas.height = sendH;
   mirrorCtx = mirrorCanvas.getContext('2d');
 
   // Send canvas for encoding (same orientation as preview)
@@ -259,17 +269,6 @@ async function startStreaming() {
   sendCanvas.width = sendW;
   sendCanvas.height = sendH;
   sendCtx = sendCanvas.getContext('2d', { willReadFrequently: false });
-
-  // Store rotation flag for the capture loop
-  window._needsRotation = needsRotation;
-  window._videoW = vw;
-  window._videoH = vh;
-
-  hiddenVideo = document.createElement('video');
-  hiddenVideo.srcObject = localStream;
-  hiddenVideo.muted = true;
-  hiddenVideo.playsInline = true;
-  await hiddenVideo.play();
 
   // Show mirrored preview
   const previewStream = mirrorCanvas.captureStream(30);
@@ -382,26 +381,16 @@ async function initWebCodecsEncoder(width, height) {
   encoder.configure(config);
 }
 
-// ── Draw video to canvas with optional rotation + mirror ────────────────────
+// ── Draw video to canvas with selfie mirror ─────────────────────────────────
+// The <video> element automatically reports the correctly oriented dimensions
+// (videoWidth/videoHeight) regardless of device rotation, so drawImage with
+// the canvas size matching those gives us the right aspect ratio without any
+// manual rotation. We only mirror horizontally for the selfie preview.
 function drawVideoToCanvas(ctx, canvas, video) {
-  const needsRotation = window._needsRotation;
   ctx.save();
-  if (needsRotation) {
-    // Rotate 90° clockwise: portrait orientation
-    // Translate to right edge, then rotate, then mirror horizontally for selfie
-    ctx.translate(canvas.width, 0);
-    ctx.rotate(Math.PI / 2);
-    // After rotation, draw the video at its native (landscape) size
-    // The canvas dimensions have been swapped already
-    ctx.scale(1, -1);  // Flip to match selfie mirror
-    ctx.translate(0, -canvas.width);
-    ctx.drawImage(video, 0, 0, canvas.height, canvas.width);
-  } else {
-    // Standard mirror only (no rotation)
-    ctx.translate(canvas.width, 0);
-    ctx.scale(-1, 1);
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-  }
+  ctx.translate(canvas.width, 0);
+  ctx.scale(-1, 1);
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
   ctx.restore();
 }
 
