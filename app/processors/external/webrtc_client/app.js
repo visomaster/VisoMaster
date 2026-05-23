@@ -218,22 +218,38 @@ async function startStreaming() {
   const vw = settings.width || 1280;
   const vh = settings.height || 720;
 
-  // Use the camera's native resolution — no downscaling
-  const sendW = vw;
-  const sendH = vh;
+  // Detect if we need to rotate (portrait device with landscape camera)
+  // On iPhone: the camera is physically landscape but the device is portrait,
+  // so we need to rotate the canvas 90° to display correctly.
+  const isPortraitDevice = window.matchMedia('(orientation: portrait)').matches;
+  const isLandscapeVideo = vw > vh;
+  const needsRotation = isPortraitDevice && isLandscapeVideo;
+
+  // Final dimensions after rotation
+  const finalW = needsRotation ? vh : vw;
+  const finalH = needsRotation ? vw : vh;
+
+  // Use the camera's native (rotated) resolution
+  const sendW = finalW;
+  const sendH = finalH;
   statResolution.textContent = sendW + '×' + sendH;
 
-  // Mirror canvas for local preview
+  // Mirror canvas for local preview (final orientation)
   mirrorCanvas = document.createElement('canvas');
-  mirrorCanvas.width = vw;
-  mirrorCanvas.height = vh;
+  mirrorCanvas.width = finalW;
+  mirrorCanvas.height = finalH;
   mirrorCtx = mirrorCanvas.getContext('2d');
 
-  // Send canvas for encoding
+  // Send canvas for encoding (same orientation as preview)
   sendCanvas = document.createElement('canvas');
   sendCanvas.width = sendW;
   sendCanvas.height = sendH;
   sendCtx = sendCanvas.getContext('2d', { willReadFrequently: false });
+
+  // Store rotation flag for the capture loop
+  window._needsRotation = needsRotation;
+  window._videoW = vw;
+  window._videoH = vh;
 
   hiddenVideo = document.createElement('video');
   hiddenVideo.srcObject = localStream;
@@ -353,6 +369,29 @@ async function initWebCodecsEncoder(width, height) {
   encoder.configure(config);
 }
 
+// ── Draw video to canvas with optional rotation + mirror ────────────────────
+function drawVideoToCanvas(ctx, canvas, video) {
+  const needsRotation = window._needsRotation;
+  ctx.save();
+  if (needsRotation) {
+    // Rotate 90° clockwise: portrait orientation
+    // Translate to right edge, then rotate, then mirror horizontally for selfie
+    ctx.translate(canvas.width, 0);
+    ctx.rotate(Math.PI / 2);
+    // After rotation, draw the video at its native (landscape) size
+    // The canvas dimensions have been swapped already
+    ctx.scale(1, -1);  // Flip to match selfie mirror
+    ctx.translate(0, -canvas.width);
+    ctx.drawImage(video, 0, 0, canvas.height, canvas.width);
+  } else {
+    // Standard mirror only (no rotation)
+    ctx.translate(canvas.width, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  }
+  ctx.restore();
+}
+
 // ── Capture loop ─────────────────────────────────────────────────────────────
 function startCaptureLoop() {
   let lastFrameTime = 0;
@@ -379,23 +418,15 @@ function startCaptureLoop() {
     // Backpressure
     if (ws.bufferedAmount > 150 * 1024) return;
 
-    // Draw mirrored preview
-    mirrorCtx.save();
-    mirrorCtx.translate(mirrorCanvas.width, 0);
-    mirrorCtx.scale(-1, 1);
-    mirrorCtx.drawImage(hiddenVideo, 0, 0, mirrorCanvas.width, mirrorCanvas.height);
-    mirrorCtx.restore();
+    // Draw mirrored preview (with rotation if needed)
+    drawVideoToCanvas(mirrorCtx, mirrorCanvas, hiddenVideo);
 
     // WebCodecs H.264 path
     if (useWebCodecs && encoder && encoder.state === 'configured') {
       // Draw to send canvas
       const canvas = useA ? canvasA : canvasB;
       const ctx = useA ? ctxA : ctxB;
-      ctx.save();
-      ctx.translate(canvas.width, 0);
-      ctx.scale(-1, 1);
-      ctx.drawImage(hiddenVideo, 0, 0, canvas.width, canvas.height);
-      ctx.restore();
+      drawVideoToCanvas(ctx, canvas, hiddenVideo);
       useA = !useA;
 
       const frame = new VideoFrame(canvas, { timestamp: frameIndex * interval * 1000 });
@@ -411,11 +442,7 @@ function startCaptureLoop() {
 
     const canvas = useA ? canvasA : canvasB;
     const ctx = useA ? ctxA : ctxB;
-    ctx.save();
-    ctx.translate(canvas.width, 0);
-    ctx.scale(-1, 1);
-    ctx.drawImage(hiddenVideo, 0, 0, canvas.width, canvas.height);
-    ctx.restore();
+    drawVideoToCanvas(ctx, canvas, hiddenVideo);
     useA = !useA;
 
     encoding = true;
