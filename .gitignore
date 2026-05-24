@@ -37,3 +37,4 @@ dependencies/TensorRT/
 *.exe
 .thumbnails
 certificates/
+*.pem

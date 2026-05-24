@@ -119,6 +119,7 @@ class VideoProcessor(QObject):
         torch.cuda.empty_cache()
         #Set GPU Memory Progressbar
         common_widget_actions.update_gpu_memory_progressbar(self.main_window)
+        
     def display_next_frame(self):
         if not self.processing or (self.next_frame_to_display > self.max_frame_number):
             self.stop_processing()
