@@ -13,12 +13,19 @@ from __future__ import annotations
 
 import asyncio
 import copy
+import gc
 import json
+import os
+import subprocess
 import sys
+import threading
+import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, Dict
 
+import cv2
+import numpy
 import torch
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -121,144 +128,375 @@ async def lifespan(app: FastAPI):
 
     mp = ModelsProcessor(proxy)  # type: ignore[arg-type]
 
-    # ── VideoProcessor (headless stub) ────────────────────────────────────
-    # VideoProcessor is tightly coupled to Qt timers and MainWindow.
-    # For the API we use a thin wrapper that exposes only the state fields
-    # the routes need, without starting any Qt timers.
+    # ── VideoProcessor (headless — Phase 3 + 4) ──────────────────────────
+    # Full thread-based play loop; no Qt timers required.
     class _HeadlessVideoProcessor:
         """
-        Minimal VideoProcessor stand-in for the API layer.
+        Headless VideoProcessor for the FastAPI server.
 
-        Full Qt-timer-driven processing is not available here — the API
-        routes call process_current_frame() directly for single-frame
-        previews.  Playback (play/stop) is deferred to Phase 2 when the
-        Qt coupling is removed from VideoProcessor.
+        Phase 3: on_frame_done pushes JPEG frames to /ws/preview subscribers.
+        Phase 4: process_video() runs a real threading.Thread play loop so
+                 full video/webcam/webrtc playback works without a QApplication.
         """
+
         def __init__(self, mp_ref, state_ref: AppState):
-            import queue
+            import queue as _queue
             self.models_processor = mp_ref
-            self._state = state_ref
-            self.media_capture = None
-            self.file_type = None
-            self.fps = 0.0
+            self._state           = state_ref
+
+            # Media state
+            self.media_capture        = None
+            self.file_type            = None
+            self.fps                  = 0.0
             self.current_frame_number = 0
-            self.max_frame_number = 0
-            self.media_path = None
-            self.processing = False
-            self.recording = False
-            self.current_frame = []
-            self.webrtc_shm = None
+            self.max_frame_number     = 0
+            self.media_path           = None
+            self.processing           = False
+            self.recording            = False
+            self.current_frame        = []
+            self.webrtc_shm           = None
             self._last_webrtc_counter = 0
-            self.current_fps = 0.0
+
+            # FPS tracking
+            self.current_fps    = 0.0
             self.fps_start_time = 0.0
             self.fps_frame_count = 0
-            self.num_threads = int(state_ref.control.get("nThreadsSlider", 2))
-            self.frame_queue = queue.Queue(maxsize=self.num_threads)
-            self.next_frame_to_display = 0
-            self.frames_to_display = {}
 
-            # Callbacks wired below
+            # Threading
+            self.num_threads  = int(state_ref.control.get("nThreadsSlider", 2))
+            self.frame_queue  = _queue.Queue(maxsize=self.num_threads)
+            self._play_thread: threading.Thread | None = None
+            self._play_lock   = threading.Lock()
+
+            # Recording
+            self.recording_sp: subprocess.Popen | None = None
+            self.temp_file    = ""
+            self.start_time   = 0.0
+            self.play_start_time = 0.0
+            self.play_end_time   = 0.0
+
+            # Callbacks — wired by lifespan after construction
             self.on_frame_done   = lambda fn, f, s: None
             self.on_state_change = lambda ev, **kw: None
             self.on_fps_update   = lambda fps: None
 
-        def stop_processing(self) -> bool:
-            if not self.processing:
-                return False
-            self.processing = False
-            self.on_state_change('stopped')
-            return True
+        # ── Internal helpers ──────────────────────────────────────────────
 
-        def process_video(self):
-            """Stub — full playback loop requires Qt timers (Phase 2)."""
-            self.processing = True
-            self.on_state_change('playing')
+        def _make_fw_proxy(self):
+            """Build the minimal object FrameWorker reads from."""
+            st = self._state
+            class _FWProxy:
+                def __init__(self, vp, state, mp):
+                    self.video_processor   = vp
+                    self.models_processor  = mp
+                    self.parameters        = state.parameters
+                    self.target_faces      = dict(state.target_faces)
+                    self.control           = state.control
+                    self.markers           = {
+                        pos: {"parameters": m.parameters, "control": m.control}
+                        for pos, m in state.markers.items()
+                    }
+                    self.default_parameters = state.default_parameters
+            return _FWProxy(self, st, self.models_processor)
 
-        def process_current_frame(self):
-            """
-            Process a single frame synchronously and store it in current_frame.
-            Works for image and video sources; webcam/webrtc read the latest frame.
-            """
-            import numpy as np
-            import struct
-            from app.helpers.miscellaneous import read_image_file, read_frame
+        def _run_frame_worker(self, frame_rgb: numpy.ndarray, frame_number: int,
+                              is_single_frame: bool = False) -> None:
+            """Enqueue and run a FrameWorker for one frame."""
             from app.processors.workers.frame_worker import FrameWorker
+            self.frame_queue.put(frame_number)
+            proxy  = self._make_fw_proxy()
+            worker = FrameWorker(frame_rgb, proxy, frame_number,  # type: ignore[arg-type]
+                                 self.frame_queue, is_single_frame=is_single_frame)
+            if is_single_frame:
+                worker.run()
+            else:
+                worker.start()
 
-            frame = None
-            if self.file_type == "image" and self.media_path:
-                frame = read_image_file(self.media_path)
-                if frame is not None:
-                    frame = frame[..., ::-1]  # BGR → RGB
-            elif self.file_type == "video" and self.media_capture:
+        def _read_next_frame(self) -> numpy.ndarray | None:
+            """Read the next raw BGR frame from the active source. Returns RGB or None."""
+            import struct as _struct
+            from app.helpers.miscellaneous import read_frame
+
+            if self.file_type == "video" and self.media_capture:
                 ret, frame = read_frame(self.media_capture)
                 if ret:
-                    frame = frame[..., ::-1]
-                    self.media_capture.set(
-                        cv2.CAP_PROP_POS_FRAMES, self.current_frame_number
-                    )
+                    return frame[..., ::-1]   # BGR → RGB
+                return None
+
             elif self.file_type == "webcam" and self.media_capture:
-                import cv2 as cv2_local
                 ret, frame = self.media_capture.read()
                 if ret:
-                    frame = frame[..., ::-1]
+                    return frame[..., ::-1]
+                return None
+
             elif self.file_type == "webrtc" and self.webrtc_shm is not None:
                 from streamrelay.protocol import SHM_HEADER_BYTES
-                w = struct.unpack_from("<I", self.webrtc_shm.buf, 4)[0]
-                h = struct.unpack_from("<I", self.webrtc_shm.buf, 8)[0]
-                if w > 0 and h > 0:
-                    raw = bytes(self.webrtc_shm.buf[SHM_HEADER_BYTES: SHM_HEADER_BYTES + w * h * 3])
-                    frame = np.frombuffer(raw, dtype=np.uint8).reshape((h, w, 3)).copy()
-                    frame = frame[..., ::-1]
+                counter = _struct.unpack_from("<I", self.webrtc_shm.buf, 0)[0]
+                if counter == self._last_webrtc_counter or counter == 0:
+                    return None   # No new frame yet
+                self._last_webrtc_counter = counter
+                w = _struct.unpack_from("<I", self.webrtc_shm.buf, 4)[0]
+                h = _struct.unpack_from("<I", self.webrtc_shm.buf, 8)[0]
+                if w == 0 or h == 0:
+                    return None
+                raw = bytes(self.webrtc_shm.buf[SHM_HEADER_BYTES: SHM_HEADER_BYTES + w * h * 3])
+                frame = numpy.frombuffer(raw, dtype=numpy.uint8).reshape((h, w, 3)).copy()
+                return frame[..., ::-1]   # BGR → RGB
 
-            if frame is None:
+            return None
+
+        def _update_fps(self) -> None:
+            """Update FPS counter and fire on_fps_update once per second."""
+            self.fps_frame_count += 1
+            now = time.time()
+            if self.fps_start_time == 0:
+                self.fps_start_time = now
+            elapsed = now - self.fps_start_time
+            if elapsed >= 1.0:
+                self.current_fps     = self.fps_frame_count / elapsed
+                self.fps_frame_count = 0
+                self.fps_start_time  = now
+                self.on_fps_update(self.current_fps)
+                bus.emit_sync("fps_update", {"fps": round(self.current_fps, 1)})
+
+        # ── Play loop (Phase 4) ───────────────────────────────────────────
+
+        def _play_loop_video(self) -> None:
+            """Thread body for video file playback."""
+            interval = (1.0 / self.fps * 0.8) if self.fps > 0 else 0.033
+
+            while self.processing:
+                if self.current_frame_number > self.max_frame_number:
+                    break
+
+                # Back-pressure: wait if workers are saturated
+                if self.frame_queue.qsize() >= self.num_threads:
+                    time.sleep(0.005)
+                    continue
+
+                frame_rgb = self._read_next_frame()
+                if frame_rgb is None:
+                    print(f"[VP] Cannot read frame {self.current_frame_number}, stopping.")
+                    break
+
+                fn = self.current_frame_number
+                self._run_frame_worker(frame_rgb, fn, is_single_frame=False)
+                self.current_frame_number += 1
+                time.sleep(interval)
+
+            self.stop_processing()
+
+        def _play_loop_live(self) -> None:
+            """Thread body for webcam / webrtc live sources."""
+            interval = (1.0 / self.fps * 0.8) if self.fps > 0 else 0.033
+
+            while self.processing:
+                if self.frame_queue.qsize() >= self.num_threads:
+                    time.sleep(0.005)
+                    continue
+
+                frame_rgb = self._read_next_frame()
+                if frame_rgb is None:
+                    time.sleep(0.01)   # No new frame yet — poll
+                    continue
+
+                self._update_fps()
+                self._run_frame_worker(frame_rgb, self.current_frame_number,
+                                       is_single_frame=False)
+                self.current_frame_number += 1
+                time.sleep(interval)
+
+        # ── Public API ────────────────────────────────────────────────────
+
+        def process_video(self) -> None:
+            """Start the play loop in a background thread."""
+            with self._play_lock:
+                if self.processing:
+                    print("[VP] Already processing — ignoring start request.")
+                    return
+                if self.file_type is None:
+                    print("[VP] No media selected.")
+                    return
+
+                self.processing = True
+                self.fps_start_time  = 0.0
+                self.fps_frame_count = 0
+                self.current_fps     = 0.0
+                self.start_time      = time.perf_counter()
+
+                # Clear queues
+                with self.frame_queue.mutex:
+                    self.frame_queue.queue.clear()
+
+                if self.file_type == "video":
+                    if not self.media_capture or not self.media_capture.isOpened():
+                        print("[VP] Video capture not open.")
+                        self.processing = False
+                        self.on_state_change("error", message="Unable to open video")
+                        return
+                    self.play_start_time = float(
+                        self.media_capture.get(cv2.CAP_PROP_POS_FRAMES) / max(self.fps, 1)
+                    )
+                    if self.recording:
+                        self._start_ffmpeg()
+                        self.on_state_change("recording_started")
+                    target = self._play_loop_video
+                else:
+                    target = self._play_loop_live
+
+                self._play_thread = threading.Thread(target=target, daemon=True,
+                                                     name="vp-play-loop")
+                self._play_thread.start()
+                self.on_state_change("playing")
+                print(f"[VP] Play loop started for file_type={self.file_type}")
+
+        def stop_processing(self) -> bool:
+            with self._play_lock:
+                if not self.processing:
+                    self.on_state_change("stopped")
+                    return False
+
+                print("[VP] Stopping processing.")
+                self.processing = False
+
+            # Join the play thread outside the lock to avoid deadlock
+            if self._play_thread and self._play_thread.is_alive():
+                self._play_thread.join(timeout=3.0)
+            self._play_thread = None
+
+            # Drain queues
+            with self.frame_queue.mutex:
+                self.frame_queue.queue.clear()
+
+            # Finalise recording
+            if self.recording and self.file_type == "video" and self.recording_sp:
+                self.recording_sp.stdin.close()
+                self.recording_sp.wait()
+                self.play_end_time = float(
+                    self.media_capture.get(cv2.CAP_PROP_POS_FRAMES) / max(self.fps, 1)
+                ) if self.media_capture else 0.0
+                self._mux_audio()
+                self.on_state_change("recording_stopped")
+
+            self.recording    = False
+            self.recording_sp = None
+
+            torch.cuda.empty_cache()
+            gc.collect()
+            self.on_state_change("stopped")
+            print("[VP] Stopped.")
+            return True
+
+        def process_current_frame(self) -> None:
+            """Process a single frame synchronously (preview / seek)."""
+            import struct as _struct
+            from app.helpers.miscellaneous import read_image_file, read_frame
+
+            frame_rgb = None
+
+            if self.file_type == "image" and self.media_path:
+                bgr = read_image_file(self.media_path)
+                if bgr is not None:
+                    frame_rgb = bgr[..., ::-1]
+
+            elif self.file_type == "video" and self.media_capture:
+                ret, bgr = read_frame(self.media_capture)
+                if ret:
+                    frame_rgb = bgr[..., ::-1]
+                    self.media_capture.set(cv2.CAP_PROP_POS_FRAMES,
+                                           self.current_frame_number)
+
+            elif self.file_type == "webcam" and self.media_capture:
+                ret, bgr = self.media_capture.read()
+                if ret:
+                    frame_rgb = bgr[..., ::-1]
+
+            elif self.file_type == "webrtc" and self.webrtc_shm is not None:
+                from streamrelay.protocol import SHM_HEADER_BYTES
+                w = _struct.unpack_from("<I", self.webrtc_shm.buf, 4)[0]
+                h = _struct.unpack_from("<I", self.webrtc_shm.buf, 8)[0]
+                if w > 0 and h > 0:
+                    raw = bytes(self.webrtc_shm.buf[SHM_HEADER_BYTES:
+                                                    SHM_HEADER_BYTES + w * h * 3])
+                    frame_rgb = numpy.frombuffer(raw, dtype=numpy.uint8).reshape(
+                        (h, w, 3)).copy()[..., ::-1]
+
+            if frame_rgb is None:
                 return
 
-            import queue as _queue
-            self.frame_queue.put(self.current_frame_number)
+            self._run_frame_worker(frame_rgb, self.current_frame_number,
+                                   is_single_frame=True)
 
-            # Build a minimal proxy that FrameWorker can read from
-            class _FWProxy:
-                def __init__(self, vp, st, mp_ref):
-                    self.video_processor = vp
-                    self.models_processor = mp_ref
-                    self.parameters = st.parameters
-                    self.target_faces = {
-                        fid: tf for fid, tf in st.target_faces.items()
-                    }
-                    self.control = st.control
-                    self.markers = {
-                        pos: {'parameters': m.parameters, 'control': m.control}
-                        for pos, m in st.markers.items()
-                    }
-                    self.default_parameters = st.default_parameters
+        # ── Recording helpers ─────────────────────────────────────────────
 
-            fw_proxy = _FWProxy(self, self._state, self.models_processor)
-            worker = FrameWorker(
-                frame, fw_proxy, self.current_frame_number,  # type: ignore[arg-type]
-                self.frame_queue, is_single_frame=True
-            )
-            worker.run()
-            # FrameWorker calls on_frame_done directly now; current_frame is
-            # updated there via the callback wired in lifespan.
+        def _start_ffmpeg(self) -> None:
+            """Spawn the ffmpeg stdin-pipe encoder."""
+            if not isinstance(self.current_frame, numpy.ndarray) or self.current_frame.size == 0:
+                print("[VP] No reference frame for ffmpeg dimensions — using 1280x720.")
+                h, w = 720, 1280
+            else:
+                h, w = self.current_frame.shape[:2]
 
-    import cv2  # noqa: F401 — needed inside _HeadlessVideoProcessor
+            self.temp_file = "temp_output.mp4"
+            if Path(self.temp_file).is_file():
+                os.remove(self.temp_file)
+
+            args = [
+                "ffmpeg", "-hide_banner", "-loglevel", "error",
+                "-f", "rawvideo", "-pix_fmt", "bgr24",
+                "-s", f"{w}x{h}", "-r", str(max(self.fps, 1)),
+                "-i", "pipe:",
+                "-vf", "pad=ceil(iw/2)*2:ceil(ih/2)*2,format=yuvj420p",
+                "-c:v", "libx264", "-crf", "18",
+                self.temp_file,
+            ]
+            self.recording_sp = subprocess.Popen(args, stdin=subprocess.PIPE)
+
+        def _mux_audio(self) -> None:
+            """Mux audio from the original file into the recorded video."""
+            from app.helpers.miscellaneous import get_output_file_path
+            output_folder = self._state.control.get("OutputMediaFolder", ".")
+            final_path = get_output_file_path(self.media_path or "output.mp4", output_folder)
+            if Path(final_path).is_file():
+                os.remove(final_path)
+            args = [
+                "ffmpeg", "-hide_banner", "-loglevel", "error",
+                "-i", self.temp_file,
+                "-ss", str(self.play_start_time),
+                "-to", str(self.play_end_time),
+                "-i", self.media_path,
+                "-c", "copy",
+                "-map", "0:v:0", "-map", "1:a:0?",
+                "-shortest", final_path,
+            ]
+            subprocess.run(args, check=False)
+            if Path(self.temp_file).is_file():
+                os.remove(self.temp_file)
+            elapsed = time.perf_counter() - self.start_time
+            print(f"[VP] Recording saved to {final_path} ({elapsed:.1f}s)")
+            bus.emit_sync("recording_finished", {"output_path": final_path})
+
+    import cv2  # noqa: already imported at module level
     vp = _HeadlessVideoProcessor(mp, state)
 
-    # Wire callbacks
-    import numpy as _np
-
+    # ── Wire callbacks ────────────────────────────────────────────────────
     def _headless_on_frame_done(frame_number: int, frame_bgr, is_single_frame: bool):
-        if isinstance(frame_bgr, _np.ndarray):
+        if isinstance(frame_bgr, numpy.ndarray):
             vp.current_frame = frame_bgr
+            # Phase 3: push JPEG to all /ws/preview subscribers
+            bus.emit_frame_sync(frame_bgr)
+            # Phase 3: push JSON event to /ws/events subscribers
             bus.emit_sync("frame_processed", {
                 "frame_number": frame_number,
-                "width": frame_bgr.shape[1],
-                "height": frame_bgr.shape[0],
+                "width":  int(frame_bgr.shape[1]),
+                "height": int(frame_bgr.shape[0]),
             })
 
     vp.on_frame_done   = _headless_on_frame_done
-    vp.on_state_change = lambda ev, **kw: bus.emit_sync("state_updated", {"section": "playback", "event": ev, **kw})
-    vp.on_fps_update   = lambda fps: bus.emit_sync("fps_update", {"fps": fps})
+    vp.on_state_change = lambda ev, **kw: bus.emit_sync(
+        "state_updated", {"section": "playback", "event": ev, **kw}
+    )
+    vp.on_fps_update   = lambda fps: bus.emit_sync("fps_update", {"fps": round(fps, 1)})
 
     # ── Store on app.state ────────────────────────────────────────────────
     app.state.app_state = state
