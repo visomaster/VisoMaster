@@ -27,4 +27,9 @@ qdarkstyle
 pyqtdarktheme
 aiortc
 aiohttp
-cryptography
+cryptography
+
+# ── React/Electron API backend ────────────────────────────────────────────────
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+python-multipart==0.0.20
