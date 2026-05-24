@@ -227,7 +227,41 @@ Frame Enhancer: RealESRGAN x4 (if needed)
 
 ## 🔧 Troubleshooting
 
-### Issue 0: Submodule (streamrelay) is Empty/Missing
+### Issue 0: "no data transfer registered" Error
+
+**Full Error:**
+```
+Error when binding input: There's no data transfer registered for copying tensors 
+from Device:[DeviceType:1 MemoryType:0 DeviceId:0] to Device:[DeviceType:0 MemoryType:0 DeviceId:0]
+```
+
+**Cause:** `onnxruntime` (CPU-only) is installed instead of `onnxruntime-gpu`, or both are installed causing a conflict.
+
+**Quick Fix:**
+```bash
+# Run the diagnostic script
+python3 scripts/check_dependencies.py
+
+# Or run the automated fix
+bash scripts/fix_onnxruntime.sh
+```
+
+**Manual Fix:**
+```bash
+# 1. Uninstall CPU-only version
+pip uninstall onnxruntime -y
+
+# 2. Install GPU version
+pip install onnxruntime-gpu
+
+# 3. Verify CUDA provider is available
+python3 -c "import onnxruntime as ort; print(ort.get_available_providers())"
+# Should show: ['CUDAExecutionProvider', 'CPUExecutionProvider']
+```
+
+**Why this happens:** When you install packages, sometimes `onnxruntime` (CPU-only) gets installed as a dependency instead of `onnxruntime-gpu`. The two packages conflict, and CUDA support won't work.
+
+### Issue 1: Submodule (streamrelay) is Empty/Missing
 
 **Symptom:** After `git pull`, the `packages/streamrelay` folder is empty or missing
 
@@ -249,7 +283,7 @@ ls -la packages/streamrelay/
 git clone --recurse-submodules https://github.com/crazidev/VisoMaster.git
 ```
 
-### Issue 1: CUDA Not Available
+### Issue 2: CUDA Not Available
 
 ```bash
 # Check CUDA version
@@ -263,7 +297,7 @@ pip uninstall torch torchvision torchaudio -y
 pip install torch==2.4.1+cu124 torchvision==0.19.1+cu124 torchaudio==2.4.1+cu124 --extra-index-url https://download.pytorch.org/whl/cu124
 ```
 
-### Issue 2: Out of Memory
+### Issue 3: Out of Memory
 
 ```bash
 # Reduce thread count in settings
@@ -271,7 +305,7 @@ pip install torch==2.4.1+cu124 torchvision==0.19.1+cu124 torchaudio==2.4.1+cu124
 python3 -c "import torch; torch.cuda.empty_cache()"
 ```
 
-### Issue 3: TensorRT Build Fails
+### Issue 4: TensorRT Build Fails
 
 ```bash
 # Check TensorRT version
@@ -282,7 +316,7 @@ pip uninstall tensorrt tensorrt-cu12-libs tensorrt-cu12-bindings -y
 pip install tensorrt==10.6.0 --extra-index-url https://pypi.nvidia.com
 ```
 
-### Issue 4: Display/GUI Issues
+### Issue 5: Display/GUI Issues
 
 ```bash
 # Set Qt platform to offscreen
@@ -291,7 +325,7 @@ export QT_QPA_PLATFORM=offscreen
 # Or use VNC (see Remote Access section)
 ```
 
-### Issue 5: FFmpeg Not Found
+### Issue 6: FFmpeg Not Found
 
 ```bash
 # Install FFmpeg
