@@ -45,6 +45,37 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.merged_embeddings_filter_worker = ui_workers.FilterWorker(main_window=self, search_text='', filter_list='merged_embeddings')
         self.video_processor = VideoProcessor(self)
         self.models_processor = ModelsProcessor(self)
+
+        # Wire callbacks so VideoProcessor can call back into the Qt UI
+        # without importing Qt modules directly
+        def _on_state_change(event: str, **kwargs):
+            from app.ui.widgets.actions import video_control_actions, layout_actions
+            if event == 'stopped':
+                video_control_actions.reset_media_buttons(self)
+            elif event == 'recording_started':
+                layout_actions.disable_all_parameters_and_control_widget(self)
+            elif event == 'recording_stopped':
+                layout_actions.enable_all_parameters_and_control_widget(self)
+            elif event == 'error':
+                msg = kwargs.get('message', 'Unknown error')
+                self.display_messagebox_signal.emit('Error', msg, self)
+
+        def _on_frame_done(frame_number: int, frame_bgr, is_single_frame: bool):
+            from app.ui.widgets.actions import common_actions as cwa
+            pixmap = cwa.get_pixmap_from_frame(self, frame_bgr)
+            if self.video_processor.file_type in ('webcam', 'webrtc') and not is_single_frame:
+                self.video_processor.webcam_frame_processed_signal.emit(pixmap, frame_bgr)
+            elif not is_single_frame:
+                self.video_processor.frame_processed_signal.emit(frame_number, pixmap, frame_bgr)
+            else:
+                self.video_processor.single_frame_processed_signal.emit(frame_number, pixmap, frame_bgr)
+
+        def _on_fps_update(fps: float):
+            self.video_processor.fps_update_signal.emit(fps)
+
+        self.video_processor.on_frame_done   = _on_frame_done
+        self.video_processor.on_state_change = _on_state_change
+        self.video_processor.on_fps_update   = _on_fps_update
         self.target_videos: Dict[int, widget_components.TargetMediaCardButton] = {} #Contains button objects of target videos (Set as list instead of single video to support batch processing in future)
         self.target_faces: Dict[int, widget_components.TargetFaceCardButton] = {} #Contains button objects of target faces
         self.input_faces: Dict[int, widget_components.InputFaceCardButton] = {} #Contains button objects of source faces (images)

@@ -1,3 +1,4 @@
+import copy
 import traceback
 from typing import TYPE_CHECKING
 import threading
@@ -13,8 +14,6 @@ from torchvision import transforms
 import numpy as np
 
 from app.processors.utils import faceutil
-import app.ui.widgets.actions.common_actions as common_widget_actions
-from app.ui.widgets.actions import video_control_actions
 from app.helpers.miscellaneous import t512,t384,t256,t128, ParametersDict
 
 if TYPE_CHECKING:
@@ -39,39 +38,58 @@ class FrameWorker(threading.Thread):
         self.is_view_face_mask: bool = False
 
     def run(self):
+        # Duck-typed helpers so both Qt card objects and AppState TargetFace dataclasses work
+        def _get_embedding(tf, model_name):
+            """Works for both TargetFaceCardButton (Qt) and TargetFace (AppState dataclass)."""
+            if hasattr(tf, 'get_embedding'):
+                return tf.get_embedding(model_name)
+            # AppState TargetFace dataclass
+            return tf.embedding_store.store.get(model_name)
+
+        def _get_assigned_input_embedding(tf, model_name):
+            if hasattr(tf, 'assigned_input_embedding') and hasattr(tf.assigned_input_embedding, 'get'):
+                # Qt card: assigned_input_embedding is a plain dict
+                return tf.assigned_input_embedding.get(model_name, None)
+            elif hasattr(tf, 'assigned_input_embedding') and hasattr(tf.assigned_input_embedding, 'store'):
+                # AppState TargetFace: assigned_input_embedding is EmbeddingStore
+                return tf.assigned_input_embedding.store.get(model_name, None)
+            return None
+
+        def _face_id(tf):
+            if hasattr(tf, 'face_id'):
+                return tf.face_id
+            return str(id(tf))
+
+        # Store helpers on self so process_frame() can use them
+        self._get_embedding = _get_embedding
+        self._get_assigned_input_embedding = _get_assigned_input_embedding
+        self._face_id = _face_id
+
         try:
             # Update parameters from markers (if exists) without concurrent access from other threads
             with self.main_window.models_processor.model_lock:
-                video_control_actions.update_parameters_and_control_from_marker(self.main_window, self.frame_number)
+                # Inline marker update (was video_control_actions.update_parameters_and_control_from_marker)
+                if self.main_window.markers.get(self.frame_number):
+                    self.main_window.parameters = copy.deepcopy(self.main_window.markers[self.frame_number]['parameters'])
+                    self.main_window.control.update(self.main_window.markers[self.frame_number]['control'].copy())
             self.parameters = self.main_window.parameters.copy()
-            # Check if view mask or face compare checkboxes are checked
-            self.is_view_face_compare = self.main_window.faceCompareCheckBox.isChecked() 
-            self.is_view_face_mask = self.main_window.faceMaskCheckBox.isChecked() 
+            # Check if view mask or face compare flags are set
+            self.is_view_face_compare = self.main_window.control.get('_view_face_compare', False)
+            self.is_view_face_mask = self.main_window.control.get('_view_face_mask', False)
 
             # Process the frame with model inference
             # print(f"Processing frame {self.frame_number}")
-            if self.main_window.swapfacesButton.isChecked() or self.main_window.editFacesButton.isChecked() or self.main_window.control['FrameEnhancerEnableToggle']:
+            swap_on = self.main_window.control.get('_swap_enabled', False)
+            edit_on = self.main_window.control.get('_edit_enabled', False)
+            if swap_on or edit_on or self.main_window.control['FrameEnhancerEnableToggle']:
                 self.frame = self.process_frame()
             else:
                 # Img must be in BGR format
                 self.frame = self.frame[..., ::-1]  # Swap the channels from RGB to BGR
             self.frame = np.ascontiguousarray(self.frame)
 
-            # Display the frame if processing is still active
-
-            pixmap = common_widget_actions.get_pixmap_from_frame(self.main_window, self.frame)
-
-            # Output processed Webcam frame
-            if self.video_processor.file_type in ('webcam', 'webrtc') and not self.is_single_frame:
-                self.video_processor.webcam_frame_processed_signal.emit(pixmap, self.frame)
-
-            #Output Video frame (while playing)
-            elif not self.is_single_frame:
-                self.video_processor.frame_processed_signal.emit(self.frame_number, pixmap, self.frame)
-            # Output Image/Video frame (Single frame)
-            else:
-                # print('Emitted single_frame_processed_signal')
-                self.video_processor.single_frame_processed_signal.emit(self.frame_number, pixmap, self.frame)
+            # Deliver the processed frame via callback (works for both Qt UI and API server)
+            self.video_processor.on_frame_done(self.frame_number, self.frame, self.is_single_frame)
 
         except Exception as e: # pylint: disable=broad-exception-caught
             print(f"Error in FrameWorker: {e}")
@@ -131,7 +149,7 @@ class FrameWorker(threading.Thread):
         use_landmark_detection=control['LandmarkDetectToggle']
         landmark_detect_mode=control['LandmarkDetectModelSelection']
         from_points = control["DetectFromPointsToggle"]
-        if self.main_window.editFacesButton.isChecked():
+        if self.main_window.control.get('_edit_enabled', False):
             if not use_landmark_detection or landmark_detect_mode=="5":
                 # force to use landmark detector when edit face is enabled.
                 use_landmark_detection = True
@@ -156,18 +174,20 @@ class FrameWorker(threading.Thread):
             # Loop through target faces to see if they match our found face embeddings
             for i, fface in enumerate(det_faces_data):
                     for _, target_face in self.main_window.target_faces.items():
-                        parameters = ParametersDict(self.parameters[target_face.face_id], self.main_window.default_parameters) #Use the parameters of the target face
+                        parameters = ParametersDict(self.parameters[self._face_id(target_face)], self.main_window.default_parameters) #Use the parameters of the target face
 
-                        if self.main_window.swapfacesButton.isChecked() or self.main_window.editFacesButton.isChecked():
-                            sim = self.models_processor.findCosineDistance(fface['embedding'], target_face.get_embedding(control['RecognitionModelSelection'])) # Recognition for comparing
+                        swap_on = self.main_window.control.get('_swap_enabled', False)
+                        edit_on = self.main_window.control.get('_edit_enabled', False)
+                        if swap_on or edit_on:
+                            sim = self.models_processor.findCosineDistance(fface['embedding'], self._get_embedding(target_face, control['RecognitionModelSelection'])) # Recognition for comparing
                             if sim>=parameters['SimilarityThresholdSlider']:
                                 s_e = None
                                 fface['kps_5'] = self.keypoints_adjustments(fface['kps_5'], parameters) #Make keypoints adjustments
                                 arcface_model = self.models_processor.get_arcface_model(parameters['SwapModelSelection'])
                                 dfm_model=parameters['DFMModelSelection']
-                                if self.main_window.swapfacesButton.isChecked():
+                                if swap_on:
                                     if parameters['SwapModelSelection'] != 'DeepFaceLive (DFM)':
-                                        s_e = target_face.assigned_input_embedding.get(arcface_model, None)
+                                        s_e = self._get_assigned_input_embedding(target_face, arcface_model)
                                     if s_e is not None and np.isnan(s_e).any():
                                         s_e = None
                                 else:
@@ -176,9 +196,9 @@ class FrameWorker(threading.Thread):
 
                                 # swap_core function is executed even if 'Swap Faces' button is disabled,
                                 # because it also returns the original face and face mask 
-                                img, fface['original_face'], fface['swap_mask'] = self.swap_core(img, fface['kps_5'], s_e=s_e, t_e=target_face.get_embedding(arcface_model), parameters=parameters, control=control, dfm_model=dfm_model)
+                                img, fface['original_face'], fface['swap_mask'] = self.swap_core(img, fface['kps_5'], s_e=s_e, t_e=self._get_embedding(target_face, arcface_model), parameters=parameters, control=control, dfm_model=dfm_model)
                                         # cv2.imwrite('temp_swap_face.png', swapped_face.permute(1,2,0).cpu().numpy())
-                                if self.main_window.editFacesButton.isChecked():
+                                if edit_on:
                                     img = self.swap_edit_face_core(img, fface['kps_all'], parameters, control)
 
         if control['ManualRotationEnableToggle']:
@@ -237,8 +257,8 @@ class FrameWorker(threading.Thread):
         p = 2 #Point thickness
         for i, fface in enumerate(det_faces_data):
             for _, target_face in self.main_window.target_faces.items():
-                parameters = self.parameters[target_face.face_id] #Use the parameters of the target face
-                sim = self.models_processor.findCosineDistance(fface['embedding'], target_face.get_embedding(control['RecognitionModelSelection']))
+                parameters = self.parameters[self._face_id(target_face)] #Use the parameters of the target face
+                sim = self.models_processor.findCosineDistance(fface['embedding'], self._get_embedding(target_face, control['RecognitionModelSelection']))
                 if sim>=parameters['SimilarityThresholdSlider']:
                     if parameters['LandmarksPositionAdjEnableToggle']:
                         kcolor = tuple((255, 0, 0))
@@ -288,10 +308,10 @@ class FrameWorker(threading.Thread):
         imgs_to_vstack = []  # Renamed for vertical stacking
         for _, fface in enumerate(det_faces_data):
             for _, target_face in self.main_window.target_faces.items():
-                parameters = self.parameters[target_face.face_id]  # Use the parameters of the target face
+                parameters = self.parameters[self._face_id(target_face)]  # Use the parameters of the target face
                 sim = self.models_processor.findCosineDistance(
                     fface['embedding'], 
-                    target_face.get_embedding(control['RecognitionModelSelection'])
+                    self._get_embedding(target_face, control['RecognitionModelSelection'])
                 )
                 if sim >= parameters['SimilarityThresholdSlider']:
                     modified_face = self.get_cropped_face_using_kps(img, fface['kps_5'], parameters)

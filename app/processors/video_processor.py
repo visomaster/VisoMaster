@@ -19,9 +19,6 @@ from PySide6.QtGui import QPixmap
 from app.processors.workers.frame_worker import FrameWorker
 from app.ui.widgets.actions import graphics_view_actions
 from app.ui.widgets.actions import common_actions as common_widget_actions
-
-from app.ui.widgets.actions import video_control_actions
-from app.ui.widgets.actions import layout_actions
 import app.helpers.miscellaneous as misc_helpers
 
 from streamrelay.protocol import SHM_HEADER_BYTES
@@ -38,10 +35,18 @@ class VideoProcessor(QObject):
     webcam_frame_processed_signal = Signal(QPixmap, numpy.ndarray)
     single_frame_processed_signal = Signal(int, QPixmap, numpy.ndarray)
     fps_update_signal = Signal(float)  # Emits current FPS for the streaming FPS label
-    def __init__(self, main_window: 'MainWindow', num_threads=2):
+    def __init__(self, main_window: 'MainWindow', num_threads=2,
+                 on_frame_done=None,
+                 on_state_change=None,
+                 on_fps_update=None):
         super().__init__()
         self.main_window = main_window
         self.frame_queue = queue.Queue(maxsize=num_threads)
+
+        # Callback interface — wired by Qt UI or API server
+        self.on_frame_done   = on_frame_done   or (lambda fn, f, s: None)
+        self.on_state_change = on_state_change or (lambda ev, **kw: None)
+        self.on_fps_update   = on_fps_update   or (lambda fps: None)
         self.media_capture: cv2.VideoCapture|None = None
         self.file_type = None
         self.fps = 0
@@ -91,7 +96,10 @@ class VideoProcessor(QObject):
 
         # Timer to update the gpu memory usage progressbar 
         self.gpu_memory_update_timer = QTimer()
-        self.gpu_memory_update_timer.timeout.connect(partial(common_widget_actions.update_gpu_memory_progressbar, main_window))
+        if hasattr(main_window, 'gpu_memory_update_signal'):
+            from app.ui.widgets.actions import common_actions as _cwa
+            self.gpu_memory_update_timer.timeout.connect(partial(_cwa.update_gpu_memory_progressbar, main_window))
+        # else: timer runs but does nothing (no connection)
 
         self.single_frame_processed_signal.connect(self.display_current_frame)
 
@@ -136,8 +144,9 @@ class VideoProcessor(QObject):
             if self.recording:
                 self.recording_sp.stdin.write(frame.tobytes())
             # Update the widget values using parameters if it is not recording (The updation of actual parameters is already done inside the FrameWorker, this step is to make the changes appear in the widgets)
-            if not self.recording:
-                video_control_actions.update_widget_values_from_markers(self.main_window, self.next_frame_to_display)
+            if not self.recording and hasattr(self.main_window, 'parameter_widgets'):
+                from app.ui.widgets.actions import video_control_actions as _vca
+                _vca.update_widget_values_from_markers(self.main_window, self.next_frame_to_display)
             graphics_view_actions.update_graphics_view(self.main_window, pixmap, self.next_frame_to_display)
             self.threads.pop(self.next_frame_to_display)
             self.next_frame_to_display += 1
@@ -201,7 +210,10 @@ class VideoProcessor(QObject):
             if self.media_capture and self.media_capture.isOpened():
                 print("Starting video processing.")
                 if self.recording:
-                    layout_actions.disable_all_parameters_and_control_widget(self.main_window)
+                    self.on_state_change('recording_started')
+                    if hasattr(self.main_window, 'parameter_widgets'):
+                        from app.ui.widgets.actions import layout_actions as _la
+                        _la.disable_all_parameters_and_control_widget(self.main_window)
 
                 self.start_time = time.perf_counter()
                 self.processing = True
@@ -233,14 +245,20 @@ class VideoProcessor(QObject):
                 print("Error: Unable to open the video.")
                 self.processing = False
                 self.frame_read_timer.stop()
-                video_control_actions.set_play_button_icon_to_play(self.main_window)
+                self.on_state_change('error', message='Unable to open video')
+                if hasattr(self.main_window, 'buttonMediaPlay'):
+                    from app.ui.widgets.actions import video_control_actions as _vca
+                    _vca.set_play_button_icon_to_play(self.main_window)
         # 
         elif self.file_type == 'webcam':
             print("Calling process_video() on Webcam stream")
             if not self.media_capture:
                 print("[Webcam] ERROR: No media capture available! Select a webcam first.")
                 self.processing = False
-                video_control_actions.set_play_button_icon_to_play(self.main_window)
+                self.on_state_change('error', message='Unable to open video')
+                if hasattr(self.main_window, 'buttonMediaPlay'):
+                    from app.ui.widgets.actions import video_control_actions as _vca
+                    _vca.set_play_button_icon_to_play(self.main_window)
                 return
             self.processing = True
             self.frames_to_display.clear()
@@ -321,7 +339,7 @@ class VideoProcessor(QObject):
             else:
                 print("Cannot read frame!", self.current_frame_number)
                 self.stop_processing()
-                self.main_window.display_messagebox_signal.emit('Error Reading Frame', f'Error Reading Frame {self.current_frame_number}.\n Stopped Processing...!', self.main_window)
+                self.on_state_change('error', message=f'Error Reading Frame {self.current_frame_number}')
 
     def start_frame_worker(self, frame_number, frame, is_single_frame=False):
         """Start a FrameWorker to process the given frame."""
@@ -349,7 +367,7 @@ class VideoProcessor(QObject):
                 self.media_capture.set(cv2.CAP_PROP_POS_FRAMES, self.current_frame_number)
             else:
                 print("Cannot read frame!", self.current_frame_number)
-                self.main_window.display_messagebox_signal.emit('Error Reading Frame', f'Error Reading Frame {self.current_frame_number}.', self.main_window)
+                self.on_state_change('error', message=f'Error Reading Frame {self.current_frame_number}')
 
         # """Process a single image frame directly without queuing."""
         elif self.file_type == 'image':
@@ -500,6 +518,7 @@ class VideoProcessor(QObject):
             self.fps_frame_count = 0
             self.fps_start_time = current_time
             self.fps_update_signal.emit(self.current_fps)
+            self.on_fps_update(self.current_fps)
 
         return frame
 
@@ -512,7 +531,10 @@ class VideoProcessor(QObject):
         """Stop video processing and signal completion."""
         if not self.processing:
             # print("Processing not active. No action to perform.")
-            video_control_actions.reset_media_buttons(self.main_window)
+            self.on_state_change('stopped')
+            if hasattr(self.main_window, 'buttonMediaPlay'):
+                from app.ui.widgets.actions import video_control_actions as _vca
+                _vca.reset_media_buttons(self.main_window)
 
             return False
         
@@ -536,7 +558,7 @@ class VideoProcessor(QObject):
             with self.frame_queue.mutex:
                 self.frame_queue.queue.clear()
 
-            self.current_frame_number = self.main_window.videoSeekSlider.value()
+            self.current_frame_number = self.main_window.videoSeekSlider.value() if hasattr(self.main_window, 'videoSeekSlider') else self.current_frame_number
             if self.file_type in ('video', 'webcam') and self.media_capture:
                 self.media_capture.set(cv2.CAP_PROP_POS_FRAMES, self.current_frame_number)
 
@@ -571,14 +593,20 @@ class VideoProcessor(QObject):
                 print(f'Average FPS: {avg_fps}\n')
 
                 if self.recording:
-                    layout_actions.enable_all_parameters_and_control_widget(self.main_window)
+                    self.on_state_change('recording_stopped')
+                    if hasattr(self.main_window, 'parameter_widgets'):
+                        from app.ui.widgets.actions import layout_actions as _la
+                        _la.enable_all_parameters_and_control_widget(self.main_window)
 
             self.recording = False #Set recording as False to make sure the next process_video() call doesnt not record the video, unless the user press the record button
 
             print("Clearing Cache")
             torch.cuda.empty_cache()
             gc.collect()
-            video_control_actions.reset_media_buttons(self.main_window)
+            self.on_state_change('stopped')
+            if hasattr(self.main_window, 'buttonMediaPlay'):
+                from app.ui.widgets.actions import video_control_actions as _vca
+                _vca.reset_media_buttons(self.main_window)
             print("Successfully Stopped Processing")
             return True
         

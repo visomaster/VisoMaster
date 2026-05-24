@@ -154,18 +154,25 @@ async def lifespan(app: FastAPI):
             self.fps_frame_count = 0
             self.num_threads = int(state_ref.control.get("nThreadsSlider", 2))
             self.frame_queue = queue.Queue(maxsize=self.num_threads)
+            self.next_frame_to_display = 0
+            self.frames_to_display = {}
+
+            # Callbacks wired below
+            self.on_frame_done   = lambda fn, f, s: None
+            self.on_state_change = lambda ev, **kw: None
+            self.on_fps_update   = lambda fps: None
 
         def stop_processing(self) -> bool:
             if not self.processing:
                 return False
             self.processing = False
-            bus.emit_sync("state_updated", {"section": "playback", "is_playing": False})
+            self.on_state_change('stopped')
             return True
 
         def process_video(self):
             """Stub — full playback loop requires Qt timers (Phase 2)."""
             self.processing = True
-            bus.emit_sync("state_updated", {"section": "playback", "is_playing": True})
+            self.on_state_change('playing')
 
         def process_current_frame(self):
             """
@@ -215,17 +222,15 @@ async def lifespan(app: FastAPI):
                     self.video_processor = vp
                     self.models_processor = mp_ref
                     self.parameters = st.parameters
-                    self.target_faces = {}   # no Qt card objects in API mode
+                    self.target_faces = {
+                        fid: tf for fid, tf in st.target_faces.items()
+                    }
                     self.control = st.control
-                    self.markers = st.markers
+                    self.markers = {
+                        pos: {'parameters': m.parameters, 'control': m.control}
+                        for pos, m in st.markers.items()
+                    }
                     self.default_parameters = st.default_parameters
-                    # Stub buttons
-                    class _Btn:
-                        def isChecked(self): return False
-                    self.swapfacesButton = _Btn()
-                    self.editFacesButton = _Btn()
-                    self.faceCompareCheckBox = _Btn()
-                    self.faceMaskCheckBox = _Btn()
 
             fw_proxy = _FWProxy(self, self._state, self.models_processor)
             worker = FrameWorker(
@@ -233,18 +238,27 @@ async def lifespan(app: FastAPI):
                 self.frame_queue, is_single_frame=True
             )
             worker.run()
-            # FrameWorker stores the result back via signal; in headless mode
-            # we capture it from the worker's frame attribute directly.
-            if hasattr(worker, "frame") and isinstance(worker.frame, np.ndarray):
-                self.current_frame = worker.frame
-                bus.emit_sync("frame_processed", {
-                    "frame_number": self.current_frame_number,
-                    "width": self.current_frame.shape[1],
-                    "height": self.current_frame.shape[0],
-                })
+            # FrameWorker calls on_frame_done directly now; current_frame is
+            # updated there via the callback wired in lifespan.
 
     import cv2  # noqa: F401 — needed inside _HeadlessVideoProcessor
     vp = _HeadlessVideoProcessor(mp, state)
+
+    # Wire callbacks
+    import numpy as _np
+
+    def _headless_on_frame_done(frame_number: int, frame_bgr, is_single_frame: bool):
+        if isinstance(frame_bgr, _np.ndarray):
+            vp.current_frame = frame_bgr
+            bus.emit_sync("frame_processed", {
+                "frame_number": frame_number,
+                "width": frame_bgr.shape[1],
+                "height": frame_bgr.shape[0],
+            })
+
+    vp.on_frame_done   = _headless_on_frame_done
+    vp.on_state_change = lambda ev, **kw: bus.emit_sync("state_updated", {"section": "playback", "event": ev, **kw})
+    vp.on_fps_update   = lambda fps: bus.emit_sync("fps_update", {"fps": fps})
 
     # ── Store on app.state ────────────────────────────────────────────────
     app.state.app_state = state
