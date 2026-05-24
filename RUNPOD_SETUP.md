@@ -59,6 +59,14 @@ nvidia-smi
 # Clone VisoMaster
 git clone https://github.com/crazidev/VisoMaster.git
 cd VisoMaster
+
+# Initialize submodules (important!)
+git submodule update --init --recursive
+```
+
+**Note:** The `streamrelay` package is a git submodule. If you see an empty `packages/streamrelay` folder, run:
+```bash
+git submodule update --init --recursive
 ```
 
 ### Step 4: Install Dependencies
@@ -218,6 +226,28 @@ Frame Enhancer: RealESRGAN x4 (if needed)
 ---
 
 ## 🔧 Troubleshooting
+
+### Issue 0: Submodule (streamrelay) is Empty/Missing
+
+**Symptom:** After `git pull`, the `packages/streamrelay` folder is empty or missing
+
+**Solution:**
+```bash
+# Initialize and update submodules
+git submodule update --init --recursive
+
+# Verify it worked
+ls -la packages/streamrelay/
+
+# Should see files like: __init__.py, server.py, etc.
+```
+
+**Why this happens:** Git submodules are separate repositories. When you clone or pull, you need to explicitly initialize them.
+
+**Alternative:** Clone with submodules from the start:
+```bash
+git clone --recurse-submodules https://github.com/crazidev/VisoMaster.git
+```
 
 ### Issue 1: CUDA Not Available
 

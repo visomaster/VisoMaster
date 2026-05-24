@@ -79,6 +79,20 @@ apt-get install -y -qq \
 
 print_status "System dependencies installed"
 
+# Step 3.5: Initialize git submodules
+echo ""
+echo "Step 3.5/7: Initializing git submodules..."
+if [ -f ".gitmodules" ]; then
+    git submodule update --init --recursive > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        print_status "Git submodules initialized"
+    else
+        print_warning "Failed to initialize submodules (may not be critical)"
+    fi
+else
+    print_warning "No .gitmodules found (skipping)"
+fi
+
 # Step 4: Verify CUDA
 echo ""
 echo "Step 4/7: Verifying CUDA installation..."

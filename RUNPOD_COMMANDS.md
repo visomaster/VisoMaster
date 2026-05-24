@@ -6,12 +6,23 @@
 # 1. Connect to RunPod
 ssh ejfcfnjvk5nklb-644112ef@ssh.runpod.io -i ~/.ssh/id_ed25519
 
-# 2. One-command install
-git clone https://github.com/crazidev/VisoMaster.git && cd VisoMaster && bash scripts/runpod_quick_setup.sh
+# 2. Clone with submodules (recommended)
+git clone --recurse-submodules https://github.com/crazidev/VisoMaster.git
+cd VisoMaster
 
-# 3. Run VisoMaster
+# OR if you already cloned without submodules:
+git clone https://github.com/crazidev/VisoMaster.git
+cd VisoMaster
+git submodule update --init --recursive
+
+# 3. Run automated setup
+bash scripts/runpod_quick_setup.sh
+
+# 4. Run VisoMaster
 python3 main.py
 ```
+
+**⚠️ Important:** Always initialize submodules after cloning or pulling!
 
 ---
 
@@ -135,12 +146,27 @@ python3 -c "import tensorrt; print(tensorrt.__version__)"
 cd /workspace/VisoMaster
 git pull
 
+# Initialize/update submodules (IMPORTANT after pull!)
+git submodule update --init --recursive
+
 # Check current version
 git log -1 --oneline
 
 # Reset to latest
 git reset --hard origin/main
 git pull
+git submodule update --init --recursive
+```
+
+### Fix Missing Submodules
+```bash
+# If packages/streamrelay is empty after git pull:
+git submodule update --init --recursive
+
+# Verify it worked
+ls -la packages/streamrelay/
+
+# Should see: __init__.py, server.py, reader.py, etc.
 ```
 
 ### Cleanup
