@@ -1,9 +1,0 @@
-# Generated SSL certificates — machine-specific, never commit
-streamrelay-certs/
-
-# Python build artifacts
-src/*.egg-info/
-__pycache__/
-*.pyc
-dist/
-build/

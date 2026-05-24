@@ -1,0 +1,3 @@
+[submodule "packages/streamrelay"]
+	path = packages/streamrelay
+	url = https://github.com/crazidev/streamrelay.git
