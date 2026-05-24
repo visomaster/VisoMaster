@@ -27,12 +27,22 @@ router = APIRouter(prefix="/api/state", tags=["state"])
 
 
 def _build_state_response(state: AppState) -> StateResponse:
+    # Build target_faces with parameters merged in
+    target_faces_with_params = {}
+    for fid, tf in state.target_faces.items():
+        tf_data = tf.to_json()
+        raw_params = state.parameters.get(fid, {})
+        if isinstance(raw_params, ParametersDict):
+            raw_params = raw_params.data
+        tf_data["parameters"] = raw_params
+        target_faces_with_params[fid] = tf_data
+
     return StateResponse(
         selected_media_id=state.selected_media_id,
         selected_face_id=state.selected_face_id,
         control=state.control,
         target_media=[m.to_json() for m in state.target_media.values()],
-        target_faces={fid: tf.to_json() for fid, tf in state.target_faces.items()},
+        target_faces=target_faces_with_params,
         input_faces={fid: f.to_json() for fid, f in state.input_faces.items()},
         embeddings={eid: e.to_json() for eid, e in state.embeddings.items()},
         markers={str(pos): m.to_json() for pos, m in state.markers.items()},

@@ -101,18 +101,31 @@ class FaceDetectors:
                 IM = None
                 aimg = torch.unsqueeze(det_img, 0).contiguous()
 
-            io_binding = self.models_processor.models['RetinaFace'].io_binding()
-            io_binding.bind_input(name='input.1', device_type=self.models_processor.device, device_id=0, element_type=np.float32,  shape=aimg.size(), buffer_ptr=aimg.data_ptr())
+            # Get the actual device being used by the ONNX Runtime session
+            session = self.models_processor.models['RetinaFace']
+            active_providers = session.get_providers()
+            
+            # Determine the correct device for IO binding based on active providers
+            if any('CUDA' in p or 'Tensorrt' in p for p in active_providers):
+                binding_device = 'cuda'
+            else:
+                binding_device = 'cpu'
+                # Move tensor to CPU if ONNX Runtime is using CPU
+                if aimg.is_cuda:
+                    aimg = aimg.cpu()
 
-            io_binding.bind_output('448', self.models_processor.device)
-            io_binding.bind_output('471', self.models_processor.device)
-            io_binding.bind_output('494', self.models_processor.device)
-            io_binding.bind_output('451', self.models_processor.device)
-            io_binding.bind_output('474', self.models_processor.device)
-            io_binding.bind_output('497', self.models_processor.device)
-            io_binding.bind_output('454', self.models_processor.device)
-            io_binding.bind_output('477', self.models_processor.device)
-            io_binding.bind_output('500', self.models_processor.device)
+            io_binding = session.io_binding()
+            io_binding.bind_input(name='input.1', device_type=binding_device, device_id=0, element_type=np.float32,  shape=aimg.size(), buffer_ptr=aimg.data_ptr())
+
+            io_binding.bind_output('448', binding_device)
+            io_binding.bind_output('471', binding_device)
+            io_binding.bind_output('494', binding_device)
+            io_binding.bind_output('451', binding_device)
+            io_binding.bind_output('474', binding_device)
+            io_binding.bind_output('497', binding_device)
+            io_binding.bind_output('454', binding_device)
+            io_binding.bind_output('477', binding_device)
+            io_binding.bind_output('500', binding_device)
 
             # Sync and run model
             self.models_processor.sync_device()

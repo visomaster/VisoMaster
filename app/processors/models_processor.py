@@ -104,6 +104,7 @@ class ModelsProcessor(QtCore.QObject):
         self.models: Dict[str, onnxruntime.InferenceSession] = {}
         self.models_path = {}
         self.models_data = {}
+        self._model_devices = {}  # Cache for actual device used by each model
         for model_data in models_list:
             model_name, model_path = model_data['model_name'], model_data['local_path']
             self.models[model_name] = None #Model Instance
@@ -196,8 +197,14 @@ class ModelsProcessor(QtCore.QObject):
             active_providers = model_instance.get_providers()
             print(f"[Models] {model_name} loaded with providers: {active_providers}")
             
+            # Cache the actual device being used by this model
+            if any('CUDA' in p or 'Tensorrt' in p for p in active_providers):
+                self._model_devices[model_name] = 'cuda'
+            else:
+                self._model_devices[model_name] = 'cpu'
+            
             # Warn if CUDA was expected but not available
-            if self.device == 'cuda' and not any('CUDA' in p or 'Tensorrt' in p for p in active_providers):
+            if self.device == 'cuda' and self._model_devices[model_name] == 'cpu':
                 print(f"[Models] WARNING: CUDA requested but not available for {model_name}!")
                 print(f"[Models] Available providers: {active_providers}")
                 print(f"[Models] Fix: pip uninstall onnxruntime -y && pip install onnxruntime-gpu")

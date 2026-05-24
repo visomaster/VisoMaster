@@ -107,7 +107,7 @@ class MergedEmbedding:
     def from_json(cls, d: dict) -> "MergedEmbedding":
         return cls(
             embedding_id=d["embedding_id"],
-            name=d["name"],
+            name=d.get("name") or d.get("embedding_name", ""),
             embedding_store=EmbeddingStore.from_json(d.get("embedding_store", {})),
         )
 

@@ -37,33 +37,32 @@ class FrameWorker(threading.Thread):
         self.is_view_face_compare: bool = False
         self.is_view_face_mask: bool = False
 
+    # ── Duck-typed helpers — work for Qt card objects AND AppState dataclasses ──
+
+    @staticmethod
+    def _get_embedding(tf, model_name):
+        """Works for both TargetFaceCardButton (Qt) and TargetFace (AppState dataclass)."""
+        if hasattr(tf, 'get_embedding'):
+            return tf.get_embedding(model_name)
+        return tf.embedding_store.store.get(model_name)
+
+    @staticmethod
+    def _get_assigned_input_embedding(tf, model_name):
+        if hasattr(tf, 'assigned_input_embedding') and hasattr(tf.assigned_input_embedding, 'get'):
+            # Qt card: assigned_input_embedding is a plain dict
+            return tf.assigned_input_embedding.get(model_name, None)
+        elif hasattr(tf, 'assigned_input_embedding') and hasattr(tf.assigned_input_embedding, 'store'):
+            # AppState TargetFace: assigned_input_embedding is EmbeddingStore
+            return tf.assigned_input_embedding.store.get(model_name, None)
+        return None
+
+    @staticmethod
+    def _face_id(tf):
+        if hasattr(tf, 'face_id'):
+            return tf.face_id
+        return str(id(tf))
+
     def run(self):
-        # Duck-typed helpers so both Qt card objects and AppState TargetFace dataclasses work
-        def _get_embedding(tf, model_name):
-            """Works for both TargetFaceCardButton (Qt) and TargetFace (AppState dataclass)."""
-            if hasattr(tf, 'get_embedding'):
-                return tf.get_embedding(model_name)
-            # AppState TargetFace dataclass
-            return tf.embedding_store.store.get(model_name)
-
-        def _get_assigned_input_embedding(tf, model_name):
-            if hasattr(tf, 'assigned_input_embedding') and hasattr(tf.assigned_input_embedding, 'get'):
-                # Qt card: assigned_input_embedding is a plain dict
-                return tf.assigned_input_embedding.get(model_name, None)
-            elif hasattr(tf, 'assigned_input_embedding') and hasattr(tf.assigned_input_embedding, 'store'):
-                # AppState TargetFace: assigned_input_embedding is EmbeddingStore
-                return tf.assigned_input_embedding.store.get(model_name, None)
-            return None
-
-        def _face_id(tf):
-            if hasattr(tf, 'face_id'):
-                return tf.face_id
-            return str(id(tf))
-
-        # Store helpers on self so process_frame() can use them
-        self._get_embedding = _get_embedding
-        self._get_assigned_input_embedding = _get_assigned_input_embedding
-        self._face_id = _face_id
 
         try:
             # Update parameters from markers (if exists) without concurrent access from other threads
