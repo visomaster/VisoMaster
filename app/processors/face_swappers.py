@@ -15,7 +15,7 @@ class FaceSwappers:
         self.models_processor = models_processor
 
     def run_recognize_direct(self, img, kps, similarity_type='Opal', arcface_model='Inswapper128ArcFace'):
-        if not self.models_processor.models[arcface_model]:
+        if not self.models_processor.models.get(arcface_model):
             self.models_processor.models[arcface_model] = self.models_processor.load_model(arcface_model)
 
         if arcface_model == 'CSCSArcFace':

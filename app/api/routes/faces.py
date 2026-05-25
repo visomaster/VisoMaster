@@ -123,7 +123,13 @@ def find_target_faces(
     """
     Run face detection on the current frame and register new target faces.
     Skips faces already registered (cosine similarity above threshold).
+
+    When a video is actively playing we use the last processed frame stored in
+    vp.current_frame rather than calling media_capture.read() — the capture is
+    not thread-safe and concurrent reads trigger the FFmpeg async_lock assertion.
     """
+    from app.helpers.miscellaneous import read_frame as _read_frame_locked
+
     control = state.control
 
     # ── Read current frame ────────────────────────────────────────────────
@@ -131,11 +137,24 @@ def find_target_faces(
 
     if vp.file_type == "image" and vp.media_path:
         frame = read_image_file(vp.media_path)
-    elif vp.file_type == "video" and vp.media_capture:
-        ret, frame = vp.media_capture.read()
-        vp.media_capture.set(cv2.CAP_PROP_POS_FRAMES, vp.current_frame_number)
+
+    elif vp.file_type == "video":
+        # If the play loop is running, grab the last delivered frame instead of
+        # touching the capture object from this thread.
+        if vp.processing and isinstance(vp.current_frame, np.ndarray) and vp.current_frame.size > 0:
+            frame = vp.current_frame  # already BGR
+        elif vp.media_capture:
+            ret, frame = _read_frame_locked(vp.media_capture)
+            if ret:
+                vp.media_capture.set(cv2.CAP_PROP_POS_FRAMES, vp.current_frame_number)
+            else:
+                frame = None
+
     elif vp.file_type == "webcam" and vp.media_capture:
-        ret, frame = vp.media_capture.read()
+        ret, frame = _read_frame_locked(vp.media_capture)
+        if not ret:
+            frame = None
+
     elif vp.file_type == "webrtc" and vp.webrtc_shm is not None:
         from streamrelay.protocol import SHM_HEADER_BYTES
         w = struct.unpack_from("<I", vp.webrtc_shm.buf, 4)[0]
@@ -144,8 +163,12 @@ def find_target_faces(
             raw = bytes(vp.webrtc_shm.buf[SHM_HEADER_BYTES: SHM_HEADER_BYTES + w * h * 3])
             frame = np.frombuffer(raw, dtype=np.uint8).reshape((h, w, 3)).copy()
 
+    # Fall back to last known frame if nothing else is available
+    if frame is None and isinstance(getattr(vp, "current_frame", None), np.ndarray) and vp.current_frame.size > 0:
+        frame = vp.current_frame
+
     if frame is None:
-        raise HTTPException(status_code=400, detail="No frame available. Select a media source first.")
+        raise HTTPException(status_code=400, detail="No frame available. Select a media source and play or seek first.")
 
     # BGR → RGB → CHW tensor
     frame_rgb = frame[..., ::-1]
@@ -174,36 +197,21 @@ def find_target_faces(
 
     recognition_model = control.get("RecognitionModelSelection", "Inswapper128ArcFace")
     similarity_type = control.get("SimilarityTypeSelection", "Opal")
-    all_recognition_models = _recognition_model_options()
+
+    # Clear existing target faces and parameters so Find always gives a fresh
+    # result from the current frame rather than skipping already-registered faces.
+    state.target_faces.clear()
+    state.parameters.clear()
+    state.selected_face_id = None
 
     new_faces: List[FaceCard] = []
 
     for face_kps in kpss_5:
         face_emb, cropped_img = mp.run_recognize_direct(img, face_kps, similarity_type, recognition_model)
 
-        # De-duplicate against existing target faces
-        already_found = False
-        for existing in state.target_faces.values():
-            existing_emb = existing.embedding_store.store.get(recognition_model)
-            if existing_emb is not None:
-                sim = mp.findCosineDistance(existing_emb, face_emb)
-                threshold = state.get_parameters(existing.face_id).get(
-                    "SimilarityThresholdSlider", 65
-                )
-                if sim >= threshold:
-                    already_found = True
-                    break
-        if already_found:
-            continue
-
-        # Build embedding store for all recognition models
-        emb_store: dict[str, np.ndarray] = {}
-        for model in all_recognition_models:
-            if model == recognition_model:
-                emb_store[model] = face_emb
-            else:
-                emb, _ = mp.run_recognize_direct(img, face_kps, similarity_type, model)
-                emb_store[model] = emb
+        # Only store the embedding for the currently selected recognition model.
+        # Other model embeddings are computed on-demand during swapping.
+        emb_store: dict[str, np.ndarray] = {recognition_model: face_emb}
 
         face_id = str(uuid.uuid1().int)
         cropped_bgr = cropped_img.cpu().numpy()[..., ::-1]
@@ -255,6 +263,7 @@ def assign_input_face(
     face_id: str,
     input_face_id: str,
     state: AppState = Depends(get_app_state),
+    vp=Depends(get_video_processor),
 ):
     tf = state.target_faces.get(face_id)
     if tf is None:
@@ -265,6 +274,7 @@ def assign_input_face(
         tf.assigned_input_face_ids.append(input_face_id)
     merge_method = state.control.get("EmbMergeMethodSelection", "Mean")
     tf.assigned_input_embedding = _compute_assigned_embedding(state, tf, merge_method)
+    vp.process_current_frame()
     return OkResponse(message=f"Assigned input face {input_face_id} to target {face_id}")
 
 
@@ -273,6 +283,7 @@ def unassign_input_face(
     face_id: str,
     input_face_id: str,
     state: AppState = Depends(get_app_state),
+    vp=Depends(get_video_processor),
 ):
     tf = state.target_faces.get(face_id)
     if tf is None:
@@ -280,6 +291,7 @@ def unassign_input_face(
     tf.assigned_input_face_ids = [x for x in tf.assigned_input_face_ids if x != input_face_id]
     merge_method = state.control.get("EmbMergeMethodSelection", "Mean")
     tf.assigned_input_embedding = _compute_assigned_embedding(state, tf, merge_method)
+    vp.process_current_frame()
     return OkResponse(message=f"Unassigned input face {input_face_id} from target {face_id}")
 
 
@@ -288,6 +300,7 @@ def assign_embedding(
     face_id: str,
     embedding_id: str,
     state: AppState = Depends(get_app_state),
+    vp=Depends(get_video_processor),
 ):
     tf = state.target_faces.get(face_id)
     if tf is None:
@@ -298,6 +311,7 @@ def assign_embedding(
         tf.assigned_embedding_ids.append(embedding_id)
     merge_method = state.control.get("EmbMergeMethodSelection", "Mean")
     tf.assigned_input_embedding = _compute_assigned_embedding(state, tf, merge_method)
+    vp.process_current_frame()
     return OkResponse(message=f"Assigned embedding {embedding_id} to target {face_id}")
 
 
@@ -306,6 +320,7 @@ def unassign_embedding(
     face_id: str,
     embedding_id: str,
     state: AppState = Depends(get_app_state),
+    vp=Depends(get_video_processor),
 ):
     tf = state.target_faces.get(face_id)
     if tf is None:
@@ -313,6 +328,7 @@ def unassign_embedding(
     tf.assigned_embedding_ids = [x for x in tf.assigned_embedding_ids if x != embedding_id]
     merge_method = state.control.get("EmbMergeMethodSelection", "Mean")
     tf.assigned_input_embedding = _compute_assigned_embedding(state, tf, merge_method)
+    vp.process_current_frame()
     return OkResponse(message=f"Unassigned embedding {embedding_id} from target {face_id}")
 
 
@@ -381,7 +397,6 @@ def scan_input_folder(
     control = state.control
     recognition_model = control.get("RecognitionModelSelection", "Inswapper128ArcFace")
     similarity_type = control.get("SimilarityTypeSelection", "Opal")
-    all_recognition_models = _recognition_model_options()
 
     items: List[InputFaceCard] = []
     for file_path in image_files:
@@ -403,10 +418,9 @@ def scan_input_folder(
             continue
 
         face_kps = kpss_5[0]
-        emb_store: dict[str, np.ndarray] = {}
-        for model in all_recognition_models:
-            emb, cropped = mp.run_recognize_direct(img, face_kps, similarity_type, model)
-            emb_store[model] = emb
+        # Only embed with the currently selected model; others are loaded on-demand during swapping.
+        emb, cropped = mp.run_recognize_direct(img, face_kps, similarity_type, recognition_model)
+        emb_store: dict[str, np.ndarray] = {recognition_model: emb}
 
         face_id = str(uuid.uuid1().int)
         cropped_bgr = cropped.cpu().numpy()[..., ::-1]

@@ -135,6 +135,10 @@ class ScanFolderResponse(BaseModel):
     items: List[MediaCard]
 
 
+class AddFilesRequest(BaseModel):
+    paths: List[str]
+
+
 class SelectMediaRequest(BaseModel):
     media_id: str
 
@@ -200,6 +204,7 @@ class PlaybackState(BaseModel):
     is_recording: bool
     swap_enabled: bool
     edit_enabled: bool
+    loop_enabled: bool = False
 
 
 class SeekRequest(BaseModel):
@@ -243,8 +248,8 @@ class WebcamListResponse(BaseModel):
 class WebRTCStartResponse(BaseModel):
     http_url: str
     https_url: str
-    whip_url: str
-    whip_https_url: str
+    ws_url: str
+    wss_url: str
 
 
 class StreamTransformRequest(BaseModel):

@@ -29,10 +29,27 @@ class ParametersDict(UserDict):
         
     def __getitem__(self, key):
         try:
-            return self.data[key]
+            value = self.data[key]
         except KeyError:
-            self.__setitem__(key, self._default_parameters[key])
-            return self._default_parameters[key]     
+            value = self._default_parameters[key]
+            self.__setitem__(key, value)
+        # Layout data stores slider defaults as strings (e.g. '60', '0.9').
+        # Coerce them to numbers on read so comparisons like
+        # `sim >= parameters['SimilarityThresholdSlider']` never raise UFuncTypeError.
+        if isinstance(value, str) and value != '':
+            try:
+                coerced = int(value)
+                self.data[key] = coerced
+                return coerced
+            except ValueError:
+                pass
+            try:
+                coerced = float(value)
+                self.data[key] = coerced
+                return coerced
+            except ValueError:
+                pass
+        return value
 
 def get_scaling_transforms():
     t512 = v2.Resize((512, 512), interpolation=v2.InterpolationMode.BILINEAR, antialias=False)

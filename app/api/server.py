@@ -59,6 +59,16 @@ async def lifespan(app: FastAPI):
                 default = cfg.get("default")
                 if callable(default):
                     default = default()
+                # Layout data stores numeric slider defaults as strings (e.g. '60').
+                # Coerce them to int/float so numeric comparisons (e.g. sim >= threshold) work.
+                if isinstance(default, str):
+                    try:
+                        default = int(default)
+                    except ValueError:
+                        try:
+                            default = float(default)
+                        except ValueError:
+                            pass  # keep as string (e.g. model name selections)
                 target[name] = default
 
     from app.ui.widgets.common_layout_data import COMMON_LAYOUT_DATA
@@ -168,6 +178,9 @@ async def lifespan(app: FastAPI):
             self._play_thread: threading.Thread | None = None
             self._play_lock   = threading.Lock()
 
+            # Playback position tracking (mirrors Qt VideoProcessor interface used by FrameWorker)
+            self.next_frame_to_display = 0
+
             # Recording
             self.recording_sp: subprocess.Popen | None = None
             self.temp_file    = ""
@@ -213,7 +226,14 @@ async def lifespan(app: FastAPI):
                 worker.start()
 
         def _read_next_frame(self) -> numpy.ndarray | None:
-            """Read the next raw BGR frame from the active source. Returns RGB or None."""
+            """Read the next raw BGR frame from the active source. Returns RGB or None.
+
+            All cv2.VideoCapture reads go through the global lock in
+            app.helpers.miscellaneous.read_frame so that concurrent calls from
+            the play loop thread and the API request threads never touch the
+            capture object simultaneously (which triggers the FFmpeg async_lock
+            assertion).
+            """
             import struct as _struct
             from app.helpers.miscellaneous import read_frame
 
@@ -224,12 +244,22 @@ async def lifespan(app: FastAPI):
                 return None
 
             elif self.file_type == "webcam" and self.media_capture:
-                ret, frame = self.media_capture.read()
+                ret, frame = read_frame(self.media_capture)
                 if ret:
                     return frame[..., ::-1]
                 return None
 
-            elif self.file_type == "webrtc" and self.webrtc_shm is not None:
+            elif self.file_type == "webrtc":
+                # Lazy-attach shared memory if not yet connected (subprocess may
+                # still be starting up when the play loop begins).
+                if self.webrtc_shm is None:
+                    try:
+                        from multiprocessing.shared_memory import SharedMemory as _SHM
+                        self.webrtc_shm = _SHM(name="visomaster_webrtc_frame", create=False)
+                        print("[VP] Lazily attached WebRTC shared memory.")
+                    except FileNotFoundError:
+                        return None  # subprocess not ready yet — keep polling
+
                 from streamrelay.protocol import SHM_HEADER_BYTES
                 counter = _struct.unpack_from("<I", self.webrtc_shm.buf, 0)[0]
                 if counter == self._last_webrtc_counter or counter == 0:
@@ -267,6 +297,19 @@ async def lifespan(app: FastAPI):
 
             while self.processing:
                 if self.current_frame_number > self.max_frame_number:
+                    if self._state.loop_enabled:
+                        # Seek back to the beginning and keep playing
+                        self.current_frame_number = 0
+                        if self.media_capture:
+                            self.media_capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                        bus.emit_sync("playback_state", {
+                            "current_frame": 0,
+                            "max_frame": self.max_frame_number,
+                            "is_playing": True,
+                            "is_recording": self.recording,
+                            "loop_enabled": True,
+                        })
+                        continue
                     break
 
                 # Back-pressure: wait if workers are saturated
@@ -359,8 +402,15 @@ async def lifespan(app: FastAPI):
                 print("[VP] Stopping processing.")
                 self.processing = False
 
-            # Join the play thread outside the lock to avoid deadlock
-            if self._play_thread and self._play_thread.is_alive():
+            # Join the play thread outside the lock to avoid deadlock.
+            # Skip the join when stop_processing() is called from within the play
+            # thread itself (e.g. at end-of-video) — joining the current thread
+            # raises RuntimeError("cannot join current thread").
+            caller_is_play_thread = (
+                self._play_thread is not None
+                and self._play_thread == threading.current_thread()
+            )
+            if self._play_thread and self._play_thread.is_alive() and not caller_is_play_thread:
                 self._play_thread.join(timeout=3.0)
             self._play_thread = None
 
@@ -388,9 +438,18 @@ async def lifespan(app: FastAPI):
             return True
 
         def process_current_frame(self) -> None:
-            """Process a single frame synchronously (preview / seek)."""
+            """Process a single frame synchronously (preview / seek).
+
+            When the play loop is already running, skip the capture read entirely —
+            the loop is already pushing frames and cv2.VideoCapture is not
+            thread-safe (concurrent reads trigger the FFmpeg async_lock assertion).
+            """
             import struct as _struct
             from app.helpers.miscellaneous import read_image_file, read_frame
+
+            # Don't touch the capture while the play loop thread is running.
+            if self.processing and self.file_type == "video":
+                return
 
             frame_rgb = None
 
@@ -407,19 +466,26 @@ async def lifespan(app: FastAPI):
                                            self.current_frame_number)
 
             elif self.file_type == "webcam" and self.media_capture:
-                ret, bgr = self.media_capture.read()
+                ret, bgr = read_frame(self.media_capture)
                 if ret:
                     frame_rgb = bgr[..., ::-1]
 
-            elif self.file_type == "webrtc" and self.webrtc_shm is not None:
-                from streamrelay.protocol import SHM_HEADER_BYTES
-                w = _struct.unpack_from("<I", self.webrtc_shm.buf, 4)[0]
-                h = _struct.unpack_from("<I", self.webrtc_shm.buf, 8)[0]
-                if w > 0 and h > 0:
-                    raw = bytes(self.webrtc_shm.buf[SHM_HEADER_BYTES:
-                                                    SHM_HEADER_BYTES + w * h * 3])
-                    frame_rgb = numpy.frombuffer(raw, dtype=numpy.uint8).reshape(
-                        (h, w, 3)).copy()[..., ::-1]
+            elif self.file_type == "webrtc":
+                if self.webrtc_shm is None:
+                    try:
+                        from multiprocessing.shared_memory import SharedMemory as _SHM
+                        self.webrtc_shm = _SHM(name="visomaster_webrtc_frame", create=False)
+                    except FileNotFoundError:
+                        pass
+                if self.webrtc_shm is not None:
+                    from streamrelay.protocol import SHM_HEADER_BYTES
+                    w = _struct.unpack_from("<I", self.webrtc_shm.buf, 4)[0]
+                    h = _struct.unpack_from("<I", self.webrtc_shm.buf, 8)[0]
+                    if w > 0 and h > 0:
+                        raw = bytes(self.webrtc_shm.buf[SHM_HEADER_BYTES:
+                                                        SHM_HEADER_BYTES + w * h * 3])
+                        frame_rgb = numpy.frombuffer(raw, dtype=numpy.uint8).reshape(
+                            (h, w, 3)).copy()[..., ::-1]
 
             if frame_rgb is None:
                 return
@@ -483,14 +549,23 @@ async def lifespan(app: FastAPI):
     def _headless_on_frame_done(frame_number: int, frame_bgr, is_single_frame: bool):
         if isinstance(frame_bgr, numpy.ndarray):
             vp.current_frame = frame_bgr
-            # Phase 3: push JPEG to all /ws/preview subscribers
+            vp.next_frame_to_display = frame_number + 1
+            # Push JPEG to all /ws/preview subscribers (latest-wins, no queue)
             bus.emit_frame_sync(frame_bgr)
-            # Phase 3: push JSON event to /ws/events subscribers
-            bus.emit_sync("frame_processed", {
-                "frame_number": frame_number,
-                "width":  int(frame_bgr.shape[1]),
-                "height": int(frame_bgr.shape[0]),
-            })
+            # Push position update — use latest-wins slot so the JSON channel
+            # is never flooded; only the most recent frame number is delivered
+            bus.emit_position_sync(frame_number, vp.max_frame_number)
+            # Feed the native Qt preview window if it is open
+            from app.ui.widgets.headless_preview import headless_preview
+            if headless_preview.is_open:
+                headless_preview.push_frame(frame_bgr)
+                headless_preview.sync_state(
+                    frame_number,
+                    vp.max_frame_number,
+                    vp.processing,
+                    state.loop_enabled,
+                    set(state.markers.keys()),
+                )
 
     vp.on_frame_done   = _headless_on_frame_done
     vp.on_state_change = lambda ev, **kw: bus.emit_sync(
@@ -503,18 +578,49 @@ async def lifespan(app: FastAPI):
     app.state.models_processor = mp
     app.state.video_processor = vp
     app.state.event_bus = bus
+    app.state.webrtc_process = None   # StreamRelay subprocess — shared by sources.py and ws.py
 
-    # ── Start event bus broadcast loop ────────────────────────────────────
+    # ── Start event bus broadcast loops ──────────────────────────────────
     loop = asyncio.get_event_loop()
     bus.set_loop(loop)
     broadcast_task = asyncio.create_task(bus._broadcast_loop())
+    position_task  = asyncio.create_task(bus._position_broadcast_loop())
+
+    async def _gpu_memory_broadcast_loop() -> None:
+        """Emit gpu_memory events to all /ws/events clients every 3 seconds."""
+        try:
+            while True:
+                await asyncio.sleep(3.0)
+                if not bus._clients:
+                    continue
+                try:
+                    used, total = mp.get_gpu_memory()
+                    bus.emit_sync("gpu_memory", {"used_mb": used, "total_mb": total})
+                except Exception:
+                    pass
+        except asyncio.CancelledError:
+            pass
+
+    gpu_memory_task = asyncio.create_task(_gpu_memory_broadcast_loop())
 
     print("[API] VisoMaster API server ready.")
     yield
 
     # ── Shutdown ──────────────────────────────────────────────────────────
     broadcast_task.cancel()
-    vp.stop_processing()
+    position_task.cancel()
+    gpu_memory_task.cancel()
+    for t in (broadcast_task, position_task, gpu_memory_task):
+        try:
+            await t
+        except asyncio.CancelledError:
+            pass
+
+    # stop_processing() may join a background thread — run it in an executor
+    # so it doesn't block the event loop and stall uvicorn's reload.
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(None, vp.stop_processing)
+
     try:
         with open("last_workspace.json", "w", encoding="utf-8") as f:
             json.dump(state.to_json(), f, indent=4)
@@ -587,4 +693,9 @@ if __name__ == "__main__":
         port=8000,
         reload=True,
         reload_excludes=["*.onnx", "*.trt", "*.dfm"],
+        # Disable WebSocket keepalive pings — the /ws/preview endpoint pushes
+        # high-frequency binary frames and the ping waiter assertion in the
+        # websockets library fires when the write buffer is under load.
+        ws_ping_interval=None,
+        ws_ping_timeout=None,
     )

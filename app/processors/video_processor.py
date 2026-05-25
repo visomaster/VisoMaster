@@ -34,6 +34,8 @@ class VideoProcessor(QObject):
     webcam_frame_processed_signal = Signal(QPixmap, numpy.ndarray)
     single_frame_processed_signal = Signal(int, QPixmap, numpy.ndarray)
     fps_update_signal = Signal(float)  # Emits current FPS for the streaming FPS label
+    # Delivers processed BGR frames to the preview window on the Qt thread
+    preview_frame_signal = Signal(numpy.ndarray)
     def __init__(self, main_window: 'MainWindow', num_threads=2,
                  on_frame_done=None,
                  on_state_change=None,
@@ -102,6 +104,10 @@ class VideoProcessor(QObject):
 
         self.single_frame_processed_signal.connect(self.display_current_frame)
 
+        # Wire preview_frame_signal → slot on the Qt thread so FrameWorker
+        # threads never touch the preview window directly
+        self.preview_frame_signal.connect(self._deliver_frame_to_preview_window)
+
     Slot(int, QPixmap, numpy.ndarray)
     def store_frame_to_display(self, frame_number, pixmap, frame):
         # print("Called store_frame_to_display()")
@@ -123,6 +129,7 @@ class VideoProcessor(QObject):
             graphics_view_actions.update_graphics_view(self.main_window, pixmap, frame_number,)
         self.current_frame = frame
         self._send_frame_to_output_window(frame)
+        self._sync_preview_window_state()
         torch.cuda.empty_cache()
         #Set GPU Memory Progressbar
         common_widget_actions.update_gpu_memory_progressbar(self.main_window)
@@ -139,6 +146,7 @@ class VideoProcessor(QObject):
             # Check and send the frame to virtualcam, if the option is selected
             self.send_frame_to_virtualcam(frame)
             self._send_frame_to_output_window(frame)
+            self._sync_preview_window_state()
 
             if self.recording:
                 self.recording_sp.stdin.write(frame.tobytes())
@@ -178,12 +186,46 @@ class VideoProcessor(QObject):
                 print(e)
 
     def _send_frame_to_output_window(self, frame: numpy.ndarray):
-        """Send the processed frame to the output window if it is open."""
-        if (self.main_window.control.get('OutputWindowEnableToggle', False)
-                and hasattr(self.main_window, '_output_window')
-                and self.main_window._output_window is not None
-                and self.main_window._output_window.isVisible()):
-            self.main_window._output_window.update_frame(frame)
+        """Send the processed frame to the output window and/or preview window if open."""
+        mw = self.main_window
+        if (mw.control.get('OutputWindowEnableToggle', False)
+                and hasattr(mw, '_output_window')
+                and mw._output_window is not None
+                and mw._output_window.isVisible()):
+            mw._output_window.update_frame(frame)
+
+        # Emit via signal so the Qt event loop delivers it on the main thread —
+        # FrameWorker threads must never call widget methods directly.
+        if (hasattr(mw, '_preview_window')
+                and mw._preview_window is not None
+                and mw._preview_window.isVisible()):
+            self.preview_frame_signal.emit(frame)
+
+    @Slot(numpy.ndarray)
+    def _deliver_frame_to_preview_window(self, frame: numpy.ndarray) -> None:
+        """Slot — always called on the Qt main thread via queued signal."""
+        mw = self.main_window
+        if (hasattr(mw, '_preview_window')
+                and mw._preview_window is not None
+                and mw._preview_window.isVisible()):
+            mw._preview_window.update_frame(frame)
+
+    def _sync_preview_window_state(self):
+        """Keep the preview window's controls in sync with current playback state.
+        Called from display_current_frame / display_next_frame — Qt main thread."""
+        mw = self.main_window
+        if not (hasattr(mw, '_preview_window')
+                and mw._preview_window is not None
+                and mw._preview_window.isVisible()):
+            return
+        loop = mw.control.get('LoopVideoToggle', False)
+        mw._preview_window.sync_playback_state(
+            self.current_frame_number,
+            self.max_frame_number,
+            self.processing,
+            bool(loop),
+        )
+        mw._preview_window.set_markers(set(mw.markers.keys()))
 
     def set_number_of_threads(self, value):
         self.stop_processing()

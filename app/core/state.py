@@ -216,6 +216,9 @@ class AppState:
     loaded_embedding_filename: str = ""
     output_media_folder: str = ""
 
+    # ── Playback options ───────────────────────────────────────────────────
+    loop_enabled: bool = False
+
     # ── Helpers ────────────────────────────────────────────────────────────
 
     def new_face_id(self) -> str:

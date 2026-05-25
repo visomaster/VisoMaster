@@ -62,6 +62,7 @@ def get_playback(
         is_recording=vp.recording,
         swap_enabled=state.control.get("_swap_enabled", False),
         edit_enabled=state.control.get("_edit_enabled", False),
+        loop_enabled=state.loop_enabled,
     )
 
 
@@ -93,10 +94,11 @@ def seek(
     state: AppState = Depends(get_app_state),
     vp=Depends(get_video_processor),
 ):
-    """Seek to a specific frame and render a preview."""
+    """Seek to a specific frame and render a preview. Resumes playback if it was playing."""
     if vp.file_type not in ("video", "image"):
         raise HTTPException(status_code=400, detail="Seek only supported for video/image sources")
     frame_number = max(0, min(body.frame, vp.max_frame_number))
+    was_playing = vp.processing
     vp.stop_processing()
     vp.current_frame_number = frame_number
     if vp.media_capture:
@@ -106,7 +108,10 @@ def seek(
         m = state.markers[frame_number]
         state.parameters.update(m.parameters)
         state.control.update(m.control)
-    vp.process_current_frame()
+    if was_playing and vp.file_type == "video":
+        vp.process_video()
+    else:
+        vp.process_current_frame()
     return OkResponse(message=f"Seeked to frame {frame_number}")
 
 
@@ -158,6 +163,20 @@ def disable_edit(state: AppState = Depends(get_app_state), vp=Depends(get_video_
     state.control["_edit_enabled"] = False
     vp.process_current_frame()
     return OkResponse(message="Edit disabled")
+
+
+# ── Loop ──────────────────────────────────────────────────────────────────────
+
+@router.post("/api/playback/loop/enable", response_model=OkResponse)
+def enable_loop(state: AppState = Depends(get_app_state)):
+    state.loop_enabled = True
+    return OkResponse(message="Loop enabled")
+
+
+@router.post("/api/playback/loop/disable", response_model=OkResponse)
+def disable_loop(state: AppState = Depends(get_app_state)):
+    state.loop_enabled = False
+    return OkResponse(message="Loop disabled")
 
 
 # ── Recording ─────────────────────────────────────────────────────────────────

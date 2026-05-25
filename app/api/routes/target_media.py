@@ -1,6 +1,7 @@
 """
 GET    /api/target-media
 POST   /api/target-media/scan-folder
+POST   /api/target-media/add-files
 POST   /api/target-media/{media_id}/select
 DELETE /api/target-media/{media_id}
 GET    /api/target-media/{media_id}/thumbnail
@@ -17,7 +18,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 
 from app.api.deps import get_app_state, get_video_processor
-from app.api.schemas import MediaCard, OkResponse, ScanFolderRequest, ScanFolderResponse
+from app.api.schemas import MediaCard, OkResponse, ScanFolderRequest, ScanFolderResponse, AddFilesRequest
 from app.core.state import AppState, MediaRef
 from app.helpers.miscellaneous import (
     get_image_files,
@@ -108,6 +109,33 @@ def scan_folder(
     return ScanFolderResponse(items=items)
 
 
+@router.post("/add-files", response_model=ScanFolderResponse)
+def add_files(
+    body: AddFilesRequest,
+    state: AppState = Depends(get_app_state),
+):
+    """Register one or more individual file paths as target media."""
+    items: List[MediaCard] = []
+    for file_path in body.paths:
+        p = Path(file_path)
+        if not p.is_file():
+            continue
+        file_type = get_file_type(str(p))
+        if not file_type:
+            continue
+        media_id = str(uuid.uuid1().int)
+        ref = MediaRef(media_id=media_id, media_path=str(p), file_type=file_type)
+        state.target_media[media_id] = ref
+        _ensure_thumbnail(str(p), file_type)
+        items.append(MediaCard(
+            media_id=media_id,
+            media_path=str(p),
+            file_type=file_type,
+            thumbnail_url=_thumbnail_url(media_id),
+        ))
+    return ScanFolderResponse(items=items)
+
+
 @router.post("/{media_id}/select", response_model=OkResponse)
 def select_media(
     media_id: str,
@@ -143,6 +171,10 @@ def select_media(
     vp.media_path = ref.media_path
     vp.file_type = ref.file_type
     state.selected_media_id = media_id
+
+    # For images, render immediately — there's no play loop, just a single frame.
+    if ref.file_type == "image":
+        vp.process_current_frame()
 
     return OkResponse(message=f"Selected media {media_id} ({ref.file_type})")
 

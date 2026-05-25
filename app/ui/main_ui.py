@@ -125,6 +125,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # Output window for OBS capture (initialized lazily)
         self._output_window = None
 
+        # Preview window with seeker + playback controls (initialized lazily)
+        self._preview_window = None
+
         self.gpu_memory_update_signal.connect(partial(common_widget_actions.set_gpu_memory_progressbar_value, self))
         self.placeholder_update_signal.connect(partial(common_widget_actions.update_placeholder_visibility, self))
         self.model_loading_signal.connect(partial(common_widget_actions.show_model_loading_dialog, self))
@@ -338,6 +341,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         if self._output_window is not None:
             self._output_window.close()
             self._output_window = None
+
+        # Close preview window if open
+        if self._preview_window is not None:
+            self._preview_window.close()
+            self._preview_window = None
 
         # Stop WebRTC server subprocess if running
         if self.webrtc_server_process and self.webrtc_server_process.is_alive():

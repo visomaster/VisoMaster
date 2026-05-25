@@ -62,6 +62,13 @@ class FrameWorker(threading.Thread):
             return tf.face_id
         return str(id(tf))
 
+    def _get_face_parameters(self, target_face) -> 'ParametersDict':
+        """Return a ParametersDict for target_face, falling back to defaults if the
+        face has no entry in self.parameters (e.g. newly detected faces in API mode)."""
+        face_id = self._face_id(target_face)
+        raw = self.parameters.get(face_id, {})
+        return ParametersDict(raw, self.main_window.default_parameters)
+
     def run(self):
 
         try:
@@ -91,8 +98,11 @@ class FrameWorker(threading.Thread):
             self.video_processor.on_frame_done(self.frame_number, self.frame, self.is_single_frame)
 
         except Exception as e: # pylint: disable=broad-exception-caught
-            print(f"Error in FrameWorker: {e}")
-            traceback.print_exc()
+            # Compact single-line traceback: "Error in FrameWorker [file:line in func]: message"
+            tb = traceback.extract_tb(e.__traceback__)
+            last = tb[-1] if tb else None
+            location = f"{last.filename}:{last.lineno} in {last.name}" if last else "unknown"
+            print(f"FrameWorker error [{location}]: {type(e).__name__}: {e}")
         finally:
             # Always drain the queue entry so the app never freezes on errors
             self.video_processor.frame_queue.get()
@@ -173,8 +183,7 @@ class FrameWorker(threading.Thread):
             # Loop through target faces to see if they match our found face embeddings
             for i, fface in enumerate(det_faces_data):
                     for _, target_face in self.main_window.target_faces.items():
-                        parameters = ParametersDict(self.parameters[self._face_id(target_face)], self.main_window.default_parameters) #Use the parameters of the target face
-
+                        parameters = self._get_face_parameters(target_face) #Use the parameters of the target face
                         swap_on = self.main_window.control.get('_swap_enabled', False)
                         edit_on = self.main_window.control.get('_edit_enabled', False)
                         if swap_on or edit_on:
@@ -256,7 +265,7 @@ class FrameWorker(threading.Thread):
         p = 2 #Point thickness
         for i, fface in enumerate(det_faces_data):
             for _, target_face in self.main_window.target_faces.items():
-                parameters = self.parameters[self._face_id(target_face)] #Use the parameters of the target face
+                parameters = self._get_face_parameters(target_face) #Use the parameters of the target face
                 sim = self.models_processor.findCosineDistance(fface['embedding'], self._get_embedding(target_face, control['RecognitionModelSelection']))
                 if sim>=parameters['SimilarityThresholdSlider']:
                     if parameters['LandmarksPositionAdjEnableToggle']:
@@ -307,7 +316,7 @@ class FrameWorker(threading.Thread):
         imgs_to_vstack = []  # Renamed for vertical stacking
         for _, fface in enumerate(det_faces_data):
             for _, target_face in self.main_window.target_faces.items():
-                parameters = self.parameters[self._face_id(target_face)]  # Use the parameters of the target face
+                parameters = self._get_face_parameters(target_face)  # Use the parameters of the target face
                 sim = self.models_processor.findCosineDistance(
                     fface['embedding'], 
                     self._get_embedding(target_face, control['RecognitionModelSelection'])
@@ -412,6 +421,10 @@ class FrameWorker(threading.Thread):
             elif parameters['SwapperResSelection'] == '512':
                 dim = 4
                 input_face_affined = original_face_512
+            else:
+                # Fallback to 128 for any unrecognised resolution value
+                dim = 1
+                input_face_affined = original_face_128
 
         elif swapper_model in ('InStyleSwapper256 Version A', 'InStyleSwapper256 Version B', 'InStyleSwapper256 Version C'):
             version = swapper_model[-1]
@@ -455,11 +468,24 @@ class FrameWorker(threading.Thread):
             dim = 2
             input_face_affined = original_face_256
 
-        elif swapper_model == 'DeepFaceLive (DFM)' and dfm_model:
-            dfm_model = self.models_processor.load_dfm_model(dfm_model)
+        elif swapper_model == 'DeepFaceLive (DFM)':
+            # Split from the compound `and dfm_model` condition — if dfm_model is
+            # falsy (no DFM file selected) we still need to assign the locals so
+            # the return statement doesn't raise UnboundLocalError.
+            if dfm_model:
+                dfm_model = self.models_processor.load_dfm_model(dfm_model)
             latent = []
             input_face_affined = original_face_512
             dim = 4
+
+        else:
+            # Unknown / unrecognised swapper model — return safe no-op defaults
+            # so the caller can continue without crashing.
+            print(f"[FrameWorker] Unknown swapper model '{swapper_model}' — skipping swap.")
+            input_face_affined = original_face_512
+            dim = 4
+            latent = []
+
         return input_face_affined, dfm_model, dim, latent
     
     def get_swapped_and_prev_face(self, output, input_face_affined, original_face_512, latent, itex, dim, swapper_model, dfm_model, parameters, ):
