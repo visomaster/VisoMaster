@@ -558,6 +558,7 @@ def create_app() -> FastAPI:
     from app.api.routes.playback import router as playback_router
     from app.api.routes.sources import router as sources_router
     from app.api.ws import router as ws_router
+    from app.api.routes.client_log import router as client_log_router
 
     app.include_router(system_router)
     app.include_router(schema_router)
@@ -569,7 +570,7 @@ def create_app() -> FastAPI:
     app.include_router(playback_router)
     app.include_router(sources_router)
     app.include_router(ws_router)
-
+    app.include_router(client_log_router)
     return app
 
 
