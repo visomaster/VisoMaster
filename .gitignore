@@ -17,7 +17,7 @@ merged_embeddings*.txt
 .vs
 *.sln
 *.pyproj
-*.json
+# *.json
 .vscode/
 tensorrt-engines/
 source_videos/
@@ -35,3 +35,11 @@ dependencies/TensorRT/
 *.jpg
 *.exe
 .thumbnails
+
+# disable temporary files
+/faces
+/sources
+group.png
+
+# config json
+myface.json

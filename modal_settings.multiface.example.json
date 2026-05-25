@@ -1,0 +1,23 @@
+{
+  "swap_model": "Inswapper128",
+  "detector_model": "RetinaFace",
+  "detector_score": 50,
+  "max_faces": 50,
+  "similarity_threshold": 60,
+
+  "face_restorer": { "enabled": true, "type": "GFPGAN-v1.4", "blend": 100 },
+
+  "swaps": [
+    {
+      "target_face": "faces/face_00.png",
+      "source_face": "sources/alice_new.jpg"
+    },
+    {
+      "target_face": "faces/face_03.png",
+      "source_face": ["sources/bob1.jpg", "sources/bob2.jpg"],
+      "swap_model": "SimSwap512",
+      "threshold": 55,
+      "parameters": { "FaceRestorerEnableToggle": true }
+    }
+  ]
+}

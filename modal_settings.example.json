@@ -1,0 +1,28 @@
+{
+  "swap_model": "Inswapper128",
+  "detector_model": "RetinaFace",
+  "detector_score": 50,
+  "max_faces": 20,
+  "similarity_threshold": 60,
+
+  "face_restorer": {
+    "enabled": true,
+    "type": "GFPGAN-v1.4",
+    "blend": 100,
+    "fidelity": 0.5
+  },
+
+  "control": {
+    "RecognitionModelSelection": "Inswapper128ArcFace",
+    "EmbMergeMethodSelection": "Mean"
+  },
+
+  "parameters": {
+    "SwapperResSelection": "128",
+    "BorderTopSlider": 10,
+    "BorderBottomSlider": 10,
+    "BorderLeftSlider": 10,
+    "BorderRightSlider": 10,
+    "OverallMaskBlendAmountSlider": 5
+  }
+}
