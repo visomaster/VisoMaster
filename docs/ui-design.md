@@ -5,17 +5,18 @@
 ## Top Bar (always visible)
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────────────┐
-│  [VM] VisoMaster                                                                    │
-│                                                                                     │
-│  CPU  ████████░░  34%     GPU  ████████████░░  67%     VRAM  ████████░░  4.4/24GB  │
-│                                                                                     │
-│                                                              [🗑 Clear VRAM]        │
-└─────────────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
+│  [VM] VisoMaster                                                                                 │
+│                                                                                                  │
+│  CPU  ████████░░  34%    GPU  ████████████░░  67%    VRAM  ████████░░  4.4/24GB                 │
+│                                                                                                  │
+│                              [CUDA]  [TensorRT]  [TRT-Engine]          [🗑 Clear VRAM]          │
+└──────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 - CPU % polled from system (browser: `navigator` API or server-sent).
 - GPU % + VRAM from `GET /api/system/gpu-memory` every 3s.
+- **Provider selector** — segmented control. Active segment highlighted sky-500. Clicking calls `POST /api/system/providers { provider }`. While reloading: active segment shows spinner, others disabled. Toast on completion.
 - **Clear VRAM** → confirmation popover → `POST /api/system/clear-memory`.
 - Bars color: green < 70%, amber 70–85%, red > 85%.
 
@@ -410,6 +411,10 @@ FACE EDITOR (LivePortrait)
 │                                      │
 │  ── Preview ───────────────────────  │
 │                                      │
+│  [👁 Compare] [🎭 Mask]              │
+│  [⬜ BBoxes]  [· Landmarks] [⛶ Win] │
+│  (toggle buttons — sky ring = active)│
+│                                      │
 │  ┌──────────────────────────────┐    │
 │  │                              │    │
 │  │   Processed output           │    │
@@ -417,9 +422,6 @@ FACE EDITOR (LivePortrait)
 │  │   (zoom + pan)               │    │
 │  │                              │    │
 │  └──────────────────────────────┘    │
-│                                      │
-│  [⛶ Open in Window]                  │
-│  (opens a detached preview window)   │
 │                                      │
 │  ─────────────────────────────────   │
 │                                      │
@@ -651,19 +653,29 @@ These exist in the original Qt app but are **not yet in the UI design**. Grouped
 
 ### 🟢 Add now — small effort, high value
 
-| Feature | Where in Qt | API support | Notes |
+| Feature | Where in Qt | API support | Decision |
 |---|---|---|---|
-| **View Face Compare** overlay | `faceCompareCheckBox` | WS `set_control { _view_face_compare: true }` | Toggle in col 4 output preview header |
-| **View Face Mask** overlay | `faceMaskCheckBox` | WS `set_control { _view_face_mask: true }` | Same |
-| **Show Bounding Boxes** | `ShowAllDetectedFacesBBoxToggle` | `set_control` | Checkbox in col 2 detection settings |
-| **Show Landmarks** | `ShowLandmarksEnableToggle` | `set_control` | Same |
-| **Auto Swap on load** | `AutoSwapToggle` | `set_control` | Toggle in col 4 settings → General |
-| **Recursive folder scan** | `TargetMediaFolderRecursiveToggle` | `scan-folder { recursive: true }` | Checkbox next to Browse in col 1 |
-| **Recursive input faces scan** | `InputFacesFolderRecursiveToggle` | `scan-folder { recursive: true }` | Same for source faces in col 2 |
-| **Embedding merge method** | `EmbMergeMethodSelection` | `set_control` | Dropdown in col 2 embeddings section |
-| **Similarity type** | `SimilarityTypeSelection` | `set_control` | Dropdown in col 2 model settings |
-| **Max DFM models** | `MaxDFMModelsSlider` | `set_control` | In col 4 settings → DFM |
-| **Custom video playback FPS** | `VideoPlaybackCustomFpsToggle` + slider | `set_control` | In col 4 settings → Video Playback |
+| **Provider selector** (CUDA/TRT/TRT-Engine) | `ProvidersPrioritySelection` | `POST /api/system/providers` | ✅ In top bar |
+| **View Face Compare** overlay | `faceCompareCheckBox` | WS `set_control { _view_face_compare }` | ✅ Button above output preview |
+| **View Face Mask** overlay | `faceMaskCheckBox` | WS `set_control { _view_face_mask }` | ✅ Button above output preview |
+| **Show Bounding Boxes** | `ShowAllDetectedFacesBBoxToggle` | WS `set_control` | ✅ Button above output preview + Detection block |
+| **Show Landmarks** | `ShowLandmarksEnableToggle` | WS `set_control` | ✅ Button above output preview + Detection block |
+| **Recursive folder scan** | `TargetMediaFolderRecursiveToggle` | `scan-folder { recursive: true }` | ✅ Checkbox next to Browse |
+| **Recursive input faces scan** | `InputFacesFolderRecursiveToggle` | `scan-folder { recursive: true }` | ✅ Checkbox next to source face Browse |
+| **Embedding merge method** | `EmbMergeMethodSelection` | WS `set_control` | ✅ Dropdown in embeddings section |
+| **Similarity type** | `SimilarityTypeSelection` | WS `set_control` | ✅ Dropdown in col 2 model settings |
+| **Auto Swap on load** | `AutoSwapToggle` | `set_control` | ❌ Skip for now |
+| **Custom video playback FPS** | `VideoPlaybackCustomFpsToggle` | `set_control` | ❌ Skip for now |
+| **Max DFM models** | `MaxDFMModelsSlider` | `set_control` | ❌ Skip for now |
+
+### Overlay button behaviour (col 4 preview header)
+
+The four overlay buttons above the output preview are **mutually exclusive in pairs**:
+- Compare and Mask cannot both be on — activating one turns off the other.
+- BBoxes and Landmarks are independent — both can be on simultaneously.
+- All four can be off (normal output).
+
+Each sends a WS `set_control` command and the server calls `process_current_frame()` immediately.
 
 ### 🟡 Add later — medium effort
 
