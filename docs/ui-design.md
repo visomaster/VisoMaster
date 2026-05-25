@@ -225,9 +225,23 @@ When user clicks the empty target face slot (👤):
 ```
 ┌──────────────────────────────────────┐
 │  FACE OPTIONS                        │
-│  (drag ⠿ to reorder blocks)          │
 │                                      │
-│  ⠿ ── FACE SIMILARITY ──────── [−]  │
+│  ── Pinned (always visible) ───────  │
+│                                      │
+│  📌 FACE RESTORER              [−]  │
+│    Enable 1:   [○]                   │
+│      Type:     [GFPGAN-v1.4 ▾]       │
+│      Alignment:[Original ▾]          │
+│      Fidelity: [0.9 ──●── ]          │
+│      Blend:    [100 ──●── ]          │
+│    Enable 2:   [○]                   │
+│      (same controls)                 │
+│                                      │
+│  ─────────────────────────────────   │
+│  ── Active blocks ─────────────────  │
+│  (drag ⠿ to reorder, [×] to remove) │
+│                                      │
+│  ⠿ FACE SIMILARITY          [−] [×] │
 │    Threshold:  [60 ──●── ]           │
 │    Strength:   [○]                   │
 │      Amount:   [100 ──●── ]          │
@@ -237,110 +251,100 @@ When user clicks the empty target face slot (👤):
 │      Amount:   [4 ──●── ]            │
 │      Blend:    [5 ──●── ]            │
 │                                      │
-│  ⠿ ── FACE MASK ────────────── [−]  │
-│    Border:                           │
-│      Top:    [10]  Bottom: [10]      │
-│      Left:   [10]  Right:  [10]      │
-│      Blur:   [10 ──●── ]             │
+│  ⠿ FACE MASK                [−] [×] │
+│    Border T/B/L/R + Blur             │
 │    Occlusion Mask:  [○]              │
-│      Size:   [0 ──●── ]              │
 │    DFL XSeg Mask:   [○]              │
-│      Size:   [0 ──●── ]              │
-│    Occluder/XSeg Blur: [0 ──●── ]    │
 │    Text Masking:    [○]              │
-│      Text:   [glasses, hat...]       │
-│      Amount: [50 ──●── ]             │
-│    Face Parser Mask: [○]             │
-│      Background / Face / Eyes /      │
-│      Nose / Mouth / Lips / Hair      │
-│      (sliders per region)            │
-│      Hair Makeup:  [○] R/G/B+Blend   │
-│      Lips Makeup:  [○] R/G/B+Blend   │
+│    Face Parser Mask:[○]              │
 │    Restore Eyes:    [○]              │
-│      Blend / Size / Feather          │
 │    Restore Mouth:   [○]              │
-│      Blend / Size / Feather          │
 │                                      │
-│  ⠿ ── LANDMARKS CORRECTION ─── [−]  │
-│    Face Adjustments: [○]             │
-│      X: [0]  Y: [0]  Scale: [0]      │
-│      Face Scale: [0]                 │
-│    5-Keypoints Adj: [○]              │
-│      Left Eye X/Y  Right Eye X/Y     │
-│      Nose X/Y                        │
-│      Left Mouth X/Y  Right Mouth X/Y │
+│  ─────────────────────────────────   │
 │                                      │
-│  ⠿ ── DETECTION ────────────── [−]  │
-│    Model:    [RetinaFace ▾]          │
-│    Score:    [50 ──●── ]             │
-│    Max Faces:[20 ──●── ]             │
-│    Auto Rotation: [○]                │
-│    Manual Rotation: [○]              │
-│      Angle:  [0 ▾]                   │
-│    Landmark Detect: [○]              │
-│      Model:  [203 ▾]                 │
-│      Score:  [50 ──●── ]             │
-│      From Points: [○]                │
-│    Show Landmarks: [○]               │
-│    Show Bboxes:    [○]               │
-│                                      │
-│  ⠿ ── SWAPPER ──────────────── [−]  │
-│    Model:      [Inswapper128 ▾]      │
-│    Resolution: [128 ▾]               │
-│    DFM Model:  [my_model.dfm ▾]      │
-│    AMP Morph:  [50 ──●── ]           │
-│    RCT Color:  [○]                   │
-│                                      │
-│  ⠿ ── FACE RESTORER ─────────── [−] │
-│    Enable 1:   [○]                   │
-│      Type:     [GFPGAN-v1.4 ▾]       │
-│      Alignment:[Original ▾]          │
-│      Fidelity: [0.9 ──●── ]          │
-│      Blend:    [100 ──●── ]          │
-│    Enable 2:   [○]                   │
-│      (same controls)                 │
-│                                      │
-│  ⠿ ── FRAME ENHANCER ─────────  [−] │
-│    Enable:     [○]                   │
-│      Type:     [RealEsrgan-x2 ▾]     │
-│      Blend:    [100 ──●── ]          │
-│                                      │
-│  ⠿ ── COLOR CORRECTION ───────  [−] │
-│    Enable:     [○]                   │
-│      Gamma / Brightness / Contrast   │
-│      Saturation / Sharpness / Hue    │
-│      Noise / R / G / B               │
-│    Auto Color: [○]                   │
-│    JPEG Compression: [○]             │
-│                                      │
-│  ⠿ ── EXPRESSION RESTORER ────  [−] │
-│    Enable:     [○]                   │
-│      Crop Scale:  [2.30 ──●── ]      │
-│      VY Ratio:    [-0.125 ──●── ]    │
-│      Friendly Factor: [1.0 ──●── ]   │
-│      Animation Region: [all ▾]       │
-│      Normalize Lips: [●]             │
-│      Retargeting Eyes: [○]           │
-│      Retargeting Lips: [○]           │
-│                                      │
-│  ⠿ ── FACE EDITOR ────────────  [−] │
-│    Enable:     [○]                   │
-│      Type:     [Human-Face ▾]        │
-│      Eyes Open:   [0.00 ──●── ]      │
-│      Lips Open:   [0.00 ──●── ]      │
-│      Head Pitch:  [0 ──●── ]         │
-│      Head Yaw:    [0 ──●── ]         │
-│      Head Roll:   [0 ──●── ]         │
-│      X/Y/Z Movement                  │
-│      Mouth: Pouting/Pursing/Grin     │
-│      Smile / Wink / Eyebrows         │
-│      Eye Gaze H / V                  │
-│    Face Makeup:   [○] R/G/B+Blend    │
-│    Hair Makeup:   [○] R/G/B+Blend    │
-│    Eyebrows Makeup:[○] R/G/B+Blend   │
-│    Lips Makeup:   [○] R/G/B+Blend    │
+│  [+ Add Block ▾]                     │
+│  ┌── dropdown ─────────────────┐     │
+│  │  ○ Landmarks Correction     │     │
+│  │  ○ Detection                │     │
+│  │  ○ Swapper                  │     │
+│  │  ○ Frame Enhancer           │     │
+│  │  ○ Color Correction         │     │
+│  │  ○ Expression Restorer      │     │
+│  │  ○ Face Editor              │     │
+│  └─────────────────────────────┘     │
+│  (already-active blocks are greyed   │
+│   out in the list)                   │
 │                                      │
 └──────────────────────────────────────┘
+```
+
+### Block catalogue (available to add)
+
+Each block below is **off by default** — user adds it when needed.
+
+```
+LANDMARKS CORRECTION
+  Face Adjustments: [○]
+    X: [0]  Y: [0]  Scale: [0]  Face Scale: [0]
+  5-Keypoints Adj: [○]
+    Left Eye X/Y  Right Eye X/Y  Nose X/Y
+    Left Mouth X/Y  Right Mouth X/Y
+
+DETECTION
+  Model:    [RetinaFace ▾]
+  Score:    [50 ──●── ]
+  Max Faces:[20 ──●── ]
+  Auto Rotation: [○]
+  Manual Rotation: [○]  Angle: [0 ▾]
+  Landmark Detect: [○]  Model: [203 ▾]  Score: [50 ──●── ]
+  From Points: [○]
+  Show Landmarks: [○]   Show Bboxes: [○]
+
+SWAPPER
+  Model:      [Inswapper128 ▾]
+  Resolution: [128 ▾]
+  DFM Model:  [my_model.dfm ▾]
+  AMP Morph:  [50 ──●── ]
+  RCT Color:  [○]
+
+FRAME ENHANCER
+  Enable: [○]
+    Type:  [RealEsrgan-x2-Plus ▾]
+    Blend: [100 ──●── ]
+
+COLOR CORRECTION
+  Enable: [○]
+    Gamma / Brightness / Contrast / Saturation
+    Sharpness / Hue / Noise / R / G / B
+  Auto Color: [○]  Type: [Test ▾]  Blend: [0 ──●── ]
+  JPEG Compression: [○]  Amount: [0 ──●── ]
+  Final Blend Adj: [○]   Amount: [0 ──●── ]
+  Overall Mask Blur: [0 ──●── ]
+
+EXPRESSION RESTORER
+  Enable: [○]
+    Crop Scale:  [2.30 ──●── ]
+    VY Ratio:    [-0.125 ──●── ]
+    Friendly Factor: [1.0 ──●── ]
+    Animation Region: [all ▾]
+    Normalize Lips: [●]  Threshold: [0.03 ──●── ]
+    Retargeting Eyes: [○]  Multiplier: [1.00 ──●── ]
+    Retargeting Lips: [○]  Multiplier: [1.00 ──●── ]
+
+FACE EDITOR (LivePortrait)
+  Enable: [○]
+    Type:     [Human-Face ▾]
+    Eyes Open:   [0.00 ──●── ]
+    Lips Open:   [0.00 ──●── ]
+    Head Pitch / Yaw / Roll
+    X / Y / Z Movement
+    Mouth: Pouting / Pursing / Grin / Smile
+    Eye Wink / Eyebrows Direction
+    Eye Gaze Horizontal / Vertical
+  Face Makeup:    [○]  R/G/B + Blend
+  Hair Makeup:    [○]  R/G/B + Blend
+  Eyebrows Makeup:[○]  R/G/B + Blend
+  Lips Makeup:    [○]  R/G/B + Blend
 ```
 
 ---
