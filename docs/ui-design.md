@@ -527,3 +527,168 @@ Only one source is active at a time. Switching hides the previous source's contr
 - react-use-websocket (/ws/events + /ws/preview)
 - qrcode.react (WebRTC QR code)
 - lucide-react (icons)
+
+---
+
+## API mapping — every UI action to its endpoint
+
+### Top bar
+
+| UI action | API call |
+|---|---|
+| CPU % display | Browser `performance` API (no server call needed) |
+| GPU % + VRAM bar | `GET /api/system/gpu-memory` every 3s → `{ used_mb, total_mb }` |
+| 🗑 Clear VRAM | `POST /api/system/clear-memory` |
+
+### Column 1 — Input Source
+
+| UI action | API call |
+|---|---|
+| Browse folder (Media) | `POST /api/target-media/scan-folder { path, recursive }` |
+| Click media card | `POST /api/target-media/{media_id}/select` |
+| Remove media card | `DELETE /api/target-media/{media_id}` |
+| Load thumbnail | `GET /api/target-media/{media_id}/thumbnail` |
+| Filter images/videos | Client-side filter on `file_type` field |
+| Search media | Client-side filter on `media_path` |
+| Play | `POST /api/playback/play` (or WS `play`) |
+| Stop | `POST /api/playback/stop` (or WS `stop`) |
+| Seek (drag slider) | WS `seek { frame: N }` on mouseup |
+| Step ±30 frames | WS `step { n: ±30 }` |
+| Add marker | `POST /api/playback/markers` |
+| Remove marker | `DELETE /api/playback/markers/{frame_number}` |
+| Prev/next marker | Client-side: find nearest marker in `GET /api/playback/markers`, then WS `seek` |
+| Record start | `POST /api/playback/record/start { output_folder }` |
+| Record stop | `POST /api/playback/record/stop` |
+| Enumerate webcams | `GET /api/sources/webcams` |
+| Select webcam | `POST /api/sources/webcams/{index}/select` |
+| Webcam backend/res/fps | `PUT /api/state/control { WebcamBackendSelection, WebcamMaxResSelection, WebCamMaxFPSSelection }` |
+| Start WebRTC server | `POST /api/sources/webrtc/start` → returns URLs |
+| Stop WebRTC server | `POST /api/sources/webrtc/stop` |
+| WebRTC status / FPS | `GET /api/sources/webrtc/status` every 2s + WS `fps_update` event |
+| WebRTC port settings | `PUT /api/state/control { WebRTCHttpPortText, WebRTCHttpsPortText, WebRTCBindAddressText }` |
+| Transform (rotate/flip) | `PUT /api/sources/transform { rotation, flip_h, flip_v }` |
+| Source preview | `/ws/preview` at quality 20 |
+
+### Column 2 — Face Swapping
+
+| UI action | API call |
+|---|---|
+| Activate Swap | `POST /api/playback/swap/enable` |
+| Deactivate Swap | `POST /api/playback/swap/disable` |
+| Activate Edit | `POST /api/playback/edit/enable` |
+| Deactivate Edit | `POST /api/playback/edit/disable` |
+| Change detector model | WS `set_control { name: "DetectorModelSelection", value }` |
+| Change swapper model | WS `set_control { name: "SwapModelSelection", value }` |
+| Change resolution | WS `set_control { name: "SwapperResSelection", value }` |
+| Change ArcFace model | WS `set_control { name: "RecognitionModelSelection", value }` |
+| Browse source faces | `POST /api/input-faces/scan-folder { path, recursive }` |
+| Load source face thumbnail | `GET /api/input-faces/{face_id}/thumbnail` |
+| Remove source face | `DELETE /api/input-faces/{face_id}` |
+| Assign source → target | `POST /api/target-faces/{face_id}/assign-input/{input_face_id}` |
+| Unassign source | `DELETE /api/target-faces/{face_id}/assign-input/{input_face_id}` |
+| Open target face picker | `GET /api/target-faces` (list existing) + `POST /api/target-faces/find` |
+| Find faces in frame | `POST /api/target-faces/find` |
+| Select target face | `POST /api/target-faces/{face_id}/select` |
+| Remove target face | `DELETE /api/target-faces/{face_id}` |
+| Clear all target faces | `POST /api/target-faces/clear` |
+| Load target face thumbnail | `GET /api/target-faces/{face_id}/thumbnail` |
+| Merge embeddings | `POST /api/embeddings/merge { name, input_face_ids }` |
+| Import embeddings | `POST /api/embeddings/import` (multipart) |
+| Export embeddings | `GET /api/embeddings/export` |
+| Assign embedding → target | `POST /api/target-faces/{face_id}/assign-embedding/{embedding_id}` |
+| Unassign embedding | `DELETE /api/target-faces/{face_id}/assign-embedding/{embedding_id}` |
+| Delete embedding | `DELETE /api/embeddings/{embedding_id}` |
+
+### Column 3 — Face Options
+
+| UI action | API call |
+|---|---|
+| Load face parameters (on select) | Already in `GET /api/state` → `target_faces[face_id].parameters` |
+| Change any slider/toggle | WS `set_parameter { face_id, name, value }` |
+| Copy parameters | `POST /api/state/copy/{face_id}` |
+| Paste parameters | `POST /api/state/paste/{face_id}` |
+| Reset parameters | `POST /api/state/reset/{face_id}` |
+| Load block schema | `GET /api/schema/parameters/swap` + `/common` + `/face-editor` |
+| Block order (drag) | `localStorage` only — no API call |
+| Add/remove block | `localStorage` only — no API call |
+
+### Column 4 — Output
+
+| UI action | API call |
+|---|---|
+| Output preview | `/ws/preview` at quality 75 |
+| Open in window | `PUT /api/state/control { OutputWindowEnableToggle: true }` |
+| Set output folder | `PUT /api/state/control { OutputMediaFolder: "..." }` |
+| Start recording | `POST /api/playback/record/start { output_folder }` |
+| Stop recording | `POST /api/playback/record/stop` |
+| Save current frame | `POST /api/playback/save-frame` |
+| Enable virtual cam | `PUT /api/state/control { SendVirtCamFramesEnableToggle: true }` |
+| Virtual cam backend | `PUT /api/state/control { VirtCamBackendSelection: "obs" }` |
+| WS stream quality | WS `preview_quality { quality: 75 }` |
+| VRAM bar | `GET /api/system/gpu-memory` every 5s |
+| Provider dropdown | `POST /api/system/providers { provider }` |
+| Settings (all fields) | `PUT /api/state/control { ... }` |
+| Save workspace | `POST /api/workspace/save { filename }` |
+| Load workspace | `POST /api/workspace/load { filename }` |
+| Reset workspace | `POST /api/workspace/reset` |
+
+### WebSocket events the UI listens to
+
+| Event | What the UI does |
+|---|---|
+| `frame_processed` | Triggers a frame counter update |
+| `playback_state` | Syncs play/stop button state, seek bar position, recording indicator |
+| `fps_update` | Updates FPS label in col 1 (streaming) and col 4 (output) |
+| `state_updated` | Refreshes the affected widget (slider, toggle, etc.) |
+| `recording_finished` | Shows a toast with the output file path |
+| `error` | Shows an error toast |
+
+---
+
+## Features left out — choose what to add
+
+These exist in the original Qt app but are **not yet in the UI design**. Grouped by priority.
+
+### 🟢 Add now — small effort, high value
+
+| Feature | Where in Qt | API support | Notes |
+|---|---|---|---|
+| **View Face Compare** overlay | `faceCompareCheckBox` | WS `set_control { _view_face_compare: true }` | Toggle in col 4 output preview header |
+| **View Face Mask** overlay | `faceMaskCheckBox` | WS `set_control { _view_face_mask: true }` | Same |
+| **Show Bounding Boxes** | `ShowAllDetectedFacesBBoxToggle` | `set_control` | Checkbox in col 2 detection settings |
+| **Show Landmarks** | `ShowLandmarksEnableToggle` | `set_control` | Same |
+| **Auto Swap on load** | `AutoSwapToggle` | `set_control` | Toggle in col 4 settings → General |
+| **Recursive folder scan** | `TargetMediaFolderRecursiveToggle` | `scan-folder { recursive: true }` | Checkbox next to Browse in col 1 |
+| **Recursive input faces scan** | `InputFacesFolderRecursiveToggle` | `scan-folder { recursive: true }` | Same for source faces in col 2 |
+| **Embedding merge method** | `EmbMergeMethodSelection` | `set_control` | Dropdown in col 2 embeddings section |
+| **Similarity type** | `SimilarityTypeSelection` | `set_control` | Dropdown in col 2 model settings |
+| **Max DFM models** | `MaxDFMModelsSlider` | `set_control` | In col 4 settings → DFM |
+| **Custom video playback FPS** | `VideoPlaybackCustomFpsToggle` + slider | `set_control` | In col 4 settings → Video Playback |
+
+### 🟡 Add later — medium effort
+
+| Feature | Where in Qt | API support | Notes |
+|---|---|---|---|
+| **Video markers** (full UI) | `videoSeekSlider` with painted markers | `GET/POST/DELETE /api/playback/markers` | Seek bar needs custom rendering for marker triangles |
+| **Workspace save/load dialog** | Menu bar | `POST /api/workspace/save` / `load` | File picker in Electron; path input in browser |
+| **Per-face parameters JSON export** | Right-click context menu on face card | `POST /api/state/copy/{face_id}` + download | Useful for sharing presets |
+| **Face card context menu** | Right-click on `TargetFaceCardButton` | copy/paste/reset endpoints | Copy, Paste, Reset, Remove |
+| **Fullscreen canvas** | `viewFullScreenButton` + F11 | No API needed | Browser fullscreen API |
+| **Keyboard shortcuts** | `keyPressEvent` in MainWindow | WS commands | Space=play, R=record, S=swap, F=marker, A/D=step, Q/W=marker nav |
+| **Output window** (Electron only) | `OutputWindowEnableToggle` | `set_control` | Only meaningful in Electron; show note in browser |
+| **TensorRT provider** | `ProvidersPrioritySelection` | `POST /api/system/providers` | Already in settings, just needs the TRT option exposed |
+| **Manual rotation** (detector) | `ManualRotationEnableToggle` + angle | `set_control` | In Detection block, col 3 |
+
+### 🔴 Leave for later — complex or niche
+
+| Feature | Where in Qt | Reason to defer |
+|---|---|---|
+| **Multi-GPU device routing** | Not in Qt yet (planned in doc 13) | Requires Phase A–H backend work first |
+| **Batch processing** | Mentioned in code comments but not implemented | Not in Qt either |
+| **Drag-and-drop files onto media list** | `ListWidgetEventFilter` | Electron-only; browser has security restrictions |
+| **Webcam virtual camera output** | `pyvirtualcam` | Requires native driver; Electron-only |
+| **Unity Capture backend** | `VirtCamBackendSelection: unitycapture` | Windows-only, niche |
+| **TensorRT engine build progress** | `model_loading_signal` | Long-running; needs a progress bar + cancel |
+| **DeOldify / DDColor colorization** | `FrameEnhancerTypeSelection` | Works via existing Frame Enhancer block; no extra UI needed |
+| **HTTPS WebRTC** | `WebRTCHttpsPortText` | Already in port settings popup; cert generation is automatic |
+| **RunPod / remote deployment UI** | `RUNPOD_SETUP.md` | Server-side concern, not a UI feature |
