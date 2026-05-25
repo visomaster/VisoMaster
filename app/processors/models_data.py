@@ -1,4 +1,5 @@
-models_dir = './model_assets'
+import os
+models_dir = os.environ.get("VISOMASTER_MODELS_DIR", "./model_assets")
 assets_repo = "https://github.com/visomaster/visomaster-assets/releases/download"
 
 try:
