@@ -222,6 +222,59 @@ When user clicks the empty target face slot (👤):
 
 ## Column 3 — Face Options
 
+### Face selection state
+
+Column 3 is **context-sensitive** — it shows parameters for whichever face is currently selected in column 2. When no face is selected it shows an empty state.
+
+**Empty state (no face selected):**
+
+```
+┌──────────────────────────────────────┐
+│  FACE OPTIONS                        │
+│                                      │
+│                                      │
+│                                      │
+│              👤                      │
+│                                      │
+│       Click on a face to tune        │
+│                                      │
+│   Select a face pair in the swap     │
+│   panel to edit its parameters.      │
+│                                      │
+│                                      │
+└──────────────────────────────────────┘
+```
+
+**Selected state** — clicking any face pair row in column 2 loads that face's saved parameters into column 3. The selected face is highlighted with a sky-500 ring in column 2, and the column 3 header shows which face is active:
+
+```
+┌──────────────────────────────────────┐
+│  FACE OPTIONS  ·  Face 1             │  ← face label / index
+│                                      │
+│  [📋 Copy]  [📌 Paste]  [↺ Reset]   │  ← per-face actions
+│  ─────────────────────────────────   │
+│  (blocks shown below)                │
+└──────────────────────────────────────┘
+```
+
+### Per-face actions
+
+| Button | Behaviour |
+|---|---|
+| **📋 Copy** | Snapshots this face's full parameter set into a clipboard (client-side). |
+| **📌 Paste** | Applies the clipboard parameters to the currently selected face. Calls `PUT /api/state/parameters/{face_id}` with the copied values. |
+| **↺ Reset** | Resets all parameters for this face to defaults. Calls `POST /api/state/reset/{face_id}`. |
+
+Paste is greyed out until a Copy has been performed. The clipboard survives face switches within the session but is cleared on page reload.
+
+### Parameter persistence
+
+Each face stores its own independent copy of every parameter. Switching between faces in column 2 instantly swaps the values shown in column 3 — sliders, toggles, and dropdowns all update to reflect the selected face's saved state. Changes are written back to that face's parameter set in real time via the `set_parameter` WebSocket command.
+
+---
+
+### Full column 3 layout (when a face is selected)
+
 ```
 ┌──────────────────────────────────────┐
 │  FACE OPTIONS                        │
