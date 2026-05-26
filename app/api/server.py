@@ -188,10 +188,77 @@ async def lifespan(app: FastAPI):
             self.play_start_time = 0.0
             self.play_end_time   = 0.0
 
+            # Virtual camera
+            self.virtcam = None  # pyvirtualcam.Camera | None
+
             # Callbacks — wired by lifespan after construction
             self.on_frame_done   = lambda fn, f, s: None
             self.on_state_change = lambda ev, **kw: None
             self.on_fps_update   = lambda fps: None
+
+        # ── Virtual camera ────────────────────────────────────────────────
+
+        def enable_virtualcam(self, backend: str | bool = False) -> None:
+            """Start (or restart) the pyvirtualcam output."""
+            import pyvirtualcam as _pvc
+
+            # Determine frame dimensions from the current frame or capture
+            if isinstance(self.current_frame, numpy.ndarray) and self.current_frame.size > 0:
+                frame_height, frame_width = self.current_frame.shape[:2]
+            elif self.media_capture:
+                frame_height = int(self.media_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                frame_width  = int(self.media_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+            else:
+                print("[VP] enable_virtualcam: no frame/capture available yet — deferring.")
+                return
+
+            self.disable_virtualcam()
+            if not backend:
+                backend = self._state.control.get("VirtCamBackendSelection", "obs")
+            try:
+                self.virtcam = _pvc.Camera(
+                    width=frame_width,
+                    height=frame_height,
+                    fps=int(max(self.fps, 1)),
+                    backend=backend,
+                    fmt=_pvc.PixelFormat.BGR,
+                )
+                print(f"[VP] Virtual camera started: {frame_width}x{frame_height} @ {int(self.fps)}fps backend={backend}")
+            except Exception as exc:
+                print(f"[VP] enable_virtualcam failed: {exc}")
+                self.virtcam = None
+
+        def disable_virtualcam(self) -> None:
+            """Stop and release the pyvirtualcam output."""
+            if self.virtcam is not None:
+                try:
+                    self.virtcam.close()
+                except Exception:
+                    pass
+                self.virtcam = None
+                print("[VP] Virtual camera stopped.")
+
+        def send_frame_to_virtualcam(self, frame_bgr: numpy.ndarray) -> None:
+            """Send a BGR frame to the virtual camera if enabled."""
+            if not self._state.control.get("SendVirtCamFramesEnableToggle", False):
+                return
+            # Auto-init on first frame if enable_virtualcam was called before
+            # a frame was available (e.g. toggled before media started).
+            if self.virtcam is None:
+                self.enable_virtualcam()
+                if self.virtcam is None:
+                    return
+            try:
+                h, w = frame_bgr.shape[:2]
+                # Reinitialise if dimensions changed (e.g. new video loaded)
+                if self.virtcam.height != h or self.virtcam.width != w:
+                    self.enable_virtualcam()
+                    if self.virtcam is None:
+                        return
+                self.virtcam.send(frame_bgr)
+                self.virtcam.sleep_until_next_frame()
+            except Exception as exc:
+                print(f"[VP] send_frame_to_virtualcam error: {exc}")
 
         # ── Internal helpers ──────────────────────────────────────────────
 
@@ -425,8 +492,8 @@ async def lifespan(app: FastAPI):
                 self.play_end_time = float(
                     self.media_capture.get(cv2.CAP_PROP_POS_FRAMES) / max(self.fps, 1)
                 ) if self.media_capture else 0.0
-                self._mux_audio()
-                self.on_state_change("recording_stopped")
+                final_path = self._mux_audio()
+                self.on_state_change("recording_stopped", output_path=final_path)
 
             self.recording    = False
             self.recording_sp = None
@@ -507,8 +574,9 @@ async def lifespan(app: FastAPI):
             if Path(self.temp_file).is_file():
                 os.remove(self.temp_file)
 
+            from app.helpers.miscellaneous import get_ffmpeg_path as _get_ffmpeg
             args = [
-                "ffmpeg", "-hide_banner", "-loglevel", "error",
+                _get_ffmpeg(), "-hide_banner", "-loglevel", "error",
                 "-f", "rawvideo", "-pix_fmt", "bgr24",
                 "-s", f"{w}x{h}", "-r", str(max(self.fps, 1)),
                 "-i", "pipe:",
@@ -518,15 +586,16 @@ async def lifespan(app: FastAPI):
             ]
             self.recording_sp = subprocess.Popen(args, stdin=subprocess.PIPE)
 
-        def _mux_audio(self) -> None:
-            """Mux audio from the original file into the recorded video."""
-            from app.helpers.miscellaneous import get_output_file_path
+        def _mux_audio(self) -> str:
+            """Mux audio from the original file into the recorded video.
+            Returns the final output path."""
+            from app.helpers.miscellaneous import get_output_file_path, get_ffmpeg_path as _get_ffmpeg
             output_folder = self._state.control.get("OutputMediaFolder", ".")
             final_path = get_output_file_path(self.media_path or "output.mp4", output_folder)
             if Path(final_path).is_file():
                 os.remove(final_path)
             args = [
-                "ffmpeg", "-hide_banner", "-loglevel", "error",
+                _get_ffmpeg(), "-hide_banner", "-loglevel", "error",
                 "-i", self.temp_file,
                 "-ss", str(self.play_start_time),
                 "-to", str(self.play_end_time),
@@ -541,6 +610,7 @@ async def lifespan(app: FastAPI):
             elapsed = time.perf_counter() - self.start_time
             print(f"[VP] Recording saved to {final_path} ({elapsed:.1f}s)")
             bus.emit_sync("recording_finished", {"output_path": final_path})
+            return final_path
 
     import cv2  # noqa: already imported at module level
     vp = _HeadlessVideoProcessor(mp, state)
@@ -566,7 +636,8 @@ async def lifespan(app: FastAPI):
                     state.loop_enabled,
                     set(state.markers.keys()),
                 )
-
+            # Send to virtual camera if enabled
+            vp.send_frame_to_virtualcam(frame_bgr)
     vp.on_frame_done   = _headless_on_frame_done
     vp.on_state_change = lambda ev, **kw: bus.emit_sync(
         "state_updated", {"section": "playback", "event": ev, **kw}
@@ -587,17 +658,22 @@ async def lifespan(app: FastAPI):
     position_task  = asyncio.create_task(bus._position_broadcast_loop())
 
     async def _gpu_memory_broadcast_loop() -> None:
-        """Emit gpu_memory events to all /ws/events clients every 3 seconds."""
+        """Emit gpu_memory events to all /ws/events clients every ~2 s."""
         try:
+            # First emit fires almost immediately so newly-connected clients
+            # see real values instead of zeros.
+            await asyncio.sleep(0.5)
             while True:
-                await asyncio.sleep(3.0)
-                if not bus._clients:
-                    continue
-                try:
-                    used, total = mp.get_gpu_memory()
-                    bus.emit_sync("gpu_memory", {"used_mb": used, "total_mb": total})
-                except Exception:
-                    pass
+                if bus._clients:
+                    try:
+                        used, total = mp.get_gpu_memory()
+                        bus.emit_sync(
+                            "gpu_memory",
+                            {"used_mb": int(used), "total_mb": int(total)},
+                        )
+                    except Exception as exc:
+                        print(f"[api] gpu_memory broadcast failed: {exc}", flush=True)
+                await asyncio.sleep(2.0)
         except asyncio.CancelledError:
             pass
 
@@ -620,6 +696,7 @@ async def lifespan(app: FastAPI):
     # so it doesn't block the event loop and stall uvicorn's reload.
     loop = asyncio.get_event_loop()
     await loop.run_in_executor(None, vp.stop_processing)
+    vp.disable_virtualcam()
 
     try:
         with open("last_workspace.json", "w", encoding="utf-8") as f:

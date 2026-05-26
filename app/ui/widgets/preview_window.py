@@ -1,15 +1,38 @@
 """
 Native Qt preview window with seeker and playback controls.
+
+The seeker is a native QSlider (custom-painted with markers).
+The button bar is rendered inside a QWebEngineView for a modern look —
+modern flat dark buttons with hover/active states, plus contextual
+transform buttons (rotate / flip) for webcam and webrtc sources.
+
+If QtWebEngine is unavailable at import time the widget falls back to
+the original native Qt button bar so legacy installations keep working.
 """
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
+# QtWebEngine is optional — fall back to native buttons if missing.
+try:
+    from PySide6.QtWebChannel import QWebChannel
+    from PySide6.QtWebEngineCore import QWebEngineSettings
+    from PySide6.QtWebEngineWidgets import QWebEngineView
+    _HAS_WEBENGINE = True
+except ImportError:  # pragma: no cover
+    _HAS_WEBENGINE = False
+
 if TYPE_CHECKING:
     from app.ui.main_ui import MainWindow
+
+# Bar height for the WebEngine button row (pixels)
+_BUTTON_BAR_HEIGHT = 64
+_CONTROLS_HTML = Path(__file__).with_name("preview_controls.html")
 
 # ── Palette ───────────────────────────────────────────────────────────────────
 _BG       = "#141414"
@@ -66,6 +89,19 @@ QPushButton.icon_btn:hover  {{ background: #2a2a2a; }}
 QPushButton.icon_btn:pressed {{ background: #1a1a1a; }}
 QPushButton.icon_btn:checked {{ background: {_ACTIVE}; }}
 QPushButton.icon_btn:disabled {{ opacity: 0.35; }}
+/* ── Text buttons ── */
+QPushButton.text_btn {{
+    background: transparent;
+    border: 1px solid {_BORDER};
+    border-radius: {_RADIUS};
+    color: {_TEXT};
+    padding: 4px 10px;
+    font-size: 11px;
+}}
+QPushButton.text_btn:hover    {{ background: #2a2a2a; }}
+QPushButton.text_btn:pressed  {{ background: #1a1a1a; }}
+QPushButton.text_btn:checked  {{ background: {_ACTIVE}; border-color: {_ACTIVE}; color: #ffffff; }}
+QPushButton.text_btn:disabled {{ opacity: 0.35; }}
 /* ── Play button (larger, pill) ── */
 QPushButton#play_btn {{
     background: {_ACCENT};
@@ -228,6 +264,7 @@ class PreviewWindow(QtWidgets.QWidget):
         self.main_window = main_window
         self._drag_pos: QtCore.QPoint | None = None
         self._slider_dragging = False
+        self._controls_hidden = False   # toggled via right-click context menu
 
         self.setWindowTitle("VisoMaster Preview")
         self.setWindowFlags(
@@ -247,6 +284,40 @@ class PreviewWindow(QtWidgets.QWidget):
         self.setStyleSheet(_QSS)
 
         self._build_ui()
+        self._restore_geometry()
+
+    # ── Geometry persistence ──────────────────────────────────────────────
+
+    _SETTINGS_ORG  = "VisoMaster"
+    _SETTINGS_APP  = "VisoMaster"
+    _GEO_KEY       = "PreviewWindow/geometry"
+    _SCREEN_KEY    = "PreviewWindow/screen"
+
+    def _settings(self) -> QtCore.QSettings:
+        return QtCore.QSettings(self._SETTINGS_ORG, self._SETTINGS_APP)
+
+    def _restore_geometry(self) -> None:
+        """Restore last saved size and position, clamping to a visible screen."""
+        s = self._settings()
+        geo: QtCore.QByteArray | None = s.value(self._GEO_KEY)  # type: ignore[assignment]
+        if geo and isinstance(geo, QtCore.QByteArray) and not geo.isEmpty():
+            # restoreGeometry handles multi-monitor positions correctly
+            self.restoreGeometry(geo)
+            # Sanity-check: if the restored position is off all screens
+            # (e.g. a monitor was disconnected), move to the primary screen.
+            screen = QtWidgets.QApplication.screenAt(self.frameGeometry().center())
+            if screen is None:
+                screen = QtWidgets.QApplication.primaryScreen()
+            if screen is not None:
+                available = screen.availableGeometry()
+                if not available.intersects(self.frameGeometry()):
+                    self.move(available.center() - self.rect().center())
+
+    def _save_geometry(self) -> None:
+        """Persist current size and position to QSettings."""
+        s = self._settings()
+        s.setValue(self._GEO_KEY, self.saveGeometry())
+        s.sync()
 
     # ── Build UI ──────────────────────────────────────────────────────────
 
@@ -276,12 +347,11 @@ class PreviewWindow(QtWidgets.QWidget):
         # ── Controls bar ──────────────────────────────────────────────────
         ctrl = QtWidgets.QWidget()
         ctrl.setObjectName("ctrl_bar")
-        ctrl.setFixedHeight(76)
         ctrl_layout = QtWidgets.QVBoxLayout(ctrl)
         ctrl_layout.setContentsMargins(12, 8, 12, 8)
         ctrl_layout.setSpacing(6)
 
-        # Seek slider
+        # Seek slider (always native — custom marker overlay + smooth tracking)
         self._slider = _MarkerSlider(QtCore.Qt.Orientation.Horizontal)
         self._slider.setRange(0, 0)
         self._slider.sliderPressed.connect(self._on_slider_pressed)
@@ -289,6 +359,69 @@ class PreviewWindow(QtWidgets.QWidget):
         self._slider.valueChanged.connect(self._on_slider_value_changed)
         ctrl_layout.addWidget(self._slider)
 
+        # Button row — try WebEngine first, fall back to native if it fails
+        self._web_controls: QWebEngineView | None = None
+        self._web_bridge: _PreviewControlsBridge | None = None
+        if _HAS_WEBENGINE and _CONTROLS_HTML.is_file():
+            try:
+                self._build_web_controls(ctrl_layout, ctrl)
+            except Exception as exc:  # pragma: no cover — defensive
+                print(f"[PreviewWindow] WebEngine controls failed ({exc}); using native fallback")
+                self._web_controls = None
+                self._web_bridge = None
+
+        if self._web_controls is None:
+            self._build_native_controls(ctrl_layout)
+            ctrl.setFixedHeight(76)
+        else:
+            ctrl.setFixedHeight(_BUTTON_BAR_HEIGHT + 28)  # slider + padding + bar
+
+        root.addWidget(ctrl)
+        self._ctrl_widget = ctrl   # kept so we can show/hide it
+
+    # ── Web button bar ────────────────────────────────────────────────────
+
+    def _build_web_controls(self, ctrl_layout: QtWidgets.QVBoxLayout,
+                             parent: QtWidgets.QWidget) -> None:
+        """Mount the WebEngine button row and wire it to the Python bridge."""
+        view = QWebEngineView(parent)
+        view.setFixedHeight(_BUTTON_BAR_HEIGHT)
+        view.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.NoContextMenu)
+
+        # Transparent background so our QSS color shows through during load
+        page = view.page()
+        page.setBackgroundColor(QtGui.QColor(_CTRL_BG))
+        settings = page.settings()
+        settings.setAttribute(QWebEngineSettings.WebAttribute.LocalContentCanAccessRemoteUrls, False)
+        settings.setAttribute(QWebEngineSettings.WebAttribute.JavascriptEnabled, True)
+        settings.setAttribute(QWebEngineSettings.WebAttribute.ShowScrollBars, False)
+
+        bridge = _PreviewControlsBridge(self)
+        channel = QWebChannel(page)
+        channel.registerObject("controls", bridge)
+        page.setWebChannel(channel)
+
+        view.load(QtCore.QUrl.fromLocalFile(str(_CONTROLS_HTML)))
+
+        ctrl_layout.addWidget(view)
+        self._web_controls = view
+        self._web_bridge = bridge
+
+        # State stash for the JS-side mirror — avoids round-tripping VP each push
+        self._js_state = {
+            "current_frame": 0,
+            "max_frame": 0,
+            "is_playing": False,
+            "loop_enabled": False,
+            "transforms_visible": False,
+            "rotation": 0,
+            "flip_h": False,
+            "flip_v": False,
+        }
+
+    # ── Native fallback button bar (legacy / no-WebEngine path) ───────────
+
+    def _build_native_controls(self, ctrl_layout: QtWidgets.QVBoxLayout) -> None:
         # Bottom row: frame counter left, buttons center, loop right
         bottom = QtWidgets.QHBoxLayout()
         bottom.setContentsMargins(0, 0, 0, 0)
@@ -312,8 +445,10 @@ class PreviewWindow(QtWidgets.QWidget):
                                          obj_name="play_btn")
         self._btn_fwd   = _make_icon_btn(_icon_step_fwd,   size=30, icon_size=16, tooltip="+30 frames")
         self._btn_end   = _make_icon_btn(_icon_skip_fwd,   size=30, icon_size=16, tooltip="Jump to end")
-        self._btn_loop  = _make_icon_btn(_icon_loop,       size=30, icon_size=16,
-                                         checkable=True, tooltip="Toggle loop")
+        self._btn_loop = QtWidgets.QPushButton("Loop")
+        self._btn_loop.setProperty("class", "text_btn")
+        self._btn_loop.setCheckable(True)
+        self._btn_loop.setToolTip("Toggle loop")
 
         for btn in (self._btn_start, self._btn_back, self._btn_play,
                     self._btn_fwd, self._btn_end):
@@ -329,7 +464,6 @@ class PreviewWindow(QtWidgets.QWidget):
         bottom.addWidget(self._lbl_max)
 
         ctrl_layout.addLayout(bottom)
-        root.addWidget(ctrl)
 
         # Wire buttons
         self._btn_start.clicked.connect(self._on_jump_start)
@@ -366,18 +500,34 @@ class PreviewWindow(QtWidgets.QWidget):
             self._slider.setValue(current_frame)
         self._slider.blockSignals(False)
 
-        self._lbl_cur.setText(str(current_frame))
-        self._lbl_max.setText(str(max_frame))
+        if self._web_controls is not None:
+            # Push consolidated state JSON to the JS bar.
+            # Transforms have moved to the React SourcePanel — always hide them here.
+            self._js_state.update({
+                "current_frame": int(current_frame),
+                "max_frame": int(max_frame),
+                "is_playing": bool(is_playing),
+                "loop_enabled": bool(loop_enabled),
+                "transforms_visible": False,
+                "rotation": 0,
+                "flip_h": False,
+                "flip_v": False,
+            })
+            if self._web_bridge is not None:
+                self._web_bridge.stateChanged.emit(json.dumps(self._js_state))
+        else:
+            self._lbl_cur.setText(str(current_frame))
+            self._lbl_max.setText(str(max_frame))
 
-        # Update play button icon and checked state without re-firing toggled
-        self._btn_play.blockSignals(True)
-        self._btn_play.setChecked(is_playing)
-        self._btn_play.setIcon(_make_icon(_icon_stop if is_playing else _icon_play, 18))
-        self._btn_play.blockSignals(False)
+            # Update play button icon and checked state without re-firing toggled
+            self._btn_play.blockSignals(True)
+            self._btn_play.setChecked(is_playing)
+            self._btn_play.setIcon(_make_icon(_icon_stop if is_playing else _icon_play, 18))
+            self._btn_play.blockSignals(False)
 
-        self._btn_loop.blockSignals(True)
-        self._btn_loop.setChecked(loop_enabled)
-        self._btn_loop.blockSignals(False)
+            self._btn_loop.blockSignals(True)
+            self._btn_loop.setChecked(loop_enabled)
+            self._btn_loop.blockSignals(False)
 
     def set_markers(self, markers: set):
         self._slider.markers = set(markers)
@@ -386,6 +536,12 @@ class PreviewWindow(QtWidgets.QWidget):
     # ── Internal ──────────────────────────────────────────────────────────
 
     def _set_pixmap(self, pixmap: QtGui.QPixmap):
+        # Always store the original full-resolution pixmap so resize events
+        # can rescale from the source rather than from an already-downscaled copy.
+        self._original_pixmap = pixmap
+        self._scale_and_show(pixmap)
+
+    def _scale_and_show(self, pixmap: QtGui.QPixmap):
         scaled = pixmap.scaled(
             self._frame_label.size(),
             QtCore.Qt.AspectRatioMode.KeepAspectRatio,
@@ -406,7 +562,12 @@ class PreviewWindow(QtWidgets.QWidget):
         self._seek_to(self._slider.value())
 
     def _on_slider_value_changed(self, value: int):
-        self._lbl_cur.setText(str(value))
+        if self._web_controls is None:
+            self._lbl_cur.setText(str(value))
+        else:
+            self._js_state["current_frame"] = int(value)
+            if self._web_bridge is not None:
+                self._web_bridge.stateChanged.emit(json.dumps(self._js_state))
 
     # ── Buttons ───────────────────────────────────────────────────────────
 
@@ -417,7 +578,14 @@ class PreviewWindow(QtWidgets.QWidget):
                 vp.process_video()
         else:
             vp.stop_processing()
-        self._btn_play.setIcon(_make_icon(_icon_stop if checked else _icon_play, 18))
+            # For live sources, grab the last frame so the window isn't blank
+            # while paused.
+            if vp.file_type in ("webcam", "webrtc"):
+                import numpy as _np
+                if isinstance(getattr(vp, "current_frame", None), _np.ndarray) and vp.current_frame.size > 0:
+                    self.update_frame(vp.current_frame)
+        if self._web_controls is None:
+            self._btn_play.setIcon(_make_icon(_icon_stop if checked else _icon_play, 18))
 
     def _on_jump_start(self):
         """Seek to frame 0. If video was playing, resume after seek."""
@@ -457,6 +625,65 @@ class PreviewWindow(QtWidgets.QWidget):
             mw.parameter_widgets['LoopVideoToggle'].set_value(checked)
             mw.parameter_widgets['LoopVideoToggle'].blockSignals(False)
 
+    # ── Transforms (webcam / webrtc) ─────────────────────────────────────
+
+    def _active_transform_attr(self) -> str | None:
+        """Return 'webcam' or 'webrtc' based on the active source, else None."""
+        vp = self.main_window.video_processor
+        if vp.file_type == "webcam":
+            return "webcam"
+        if vp.file_type == "webrtc":
+            return "webrtc"
+        return None
+
+    def _on_rotate(self, delta: int) -> None:
+        attr = self._active_transform_attr()
+        if not attr:
+            return
+        mw = self.main_window
+        cur = getattr(mw, f"{attr}_rotation", 0)
+        new_val = (cur + delta) % 360
+        setattr(mw, f"{attr}_rotation", new_val)
+        # Keep the legacy main_ui labels in sync if present
+        label = getattr(mw, f"{attr}RotationLabel", None)
+        if label is not None:
+            try:
+                label.setText(f"{new_val}°")
+            except RuntimeError:
+                pass
+        self._push_state()
+
+    def _on_flip(self, axis: str) -> None:
+        attr = self._active_transform_attr()
+        if not attr:
+            return
+        mw = self.main_window
+        key = f"{attr}_flip_{axis}"
+        setattr(mw, key, not bool(getattr(mw, key, False)))
+        # Mirror to the legacy hidden buttons (toggled state) if present
+        btn = getattr(mw, f"{attr}BtnFlip{axis.upper()}", None)
+        if btn is not None:
+            try:
+                btn.blockSignals(True)
+                btn.setChecked(getattr(mw, key))
+                btn.blockSignals(False)
+            except RuntimeError:
+                pass
+        self._push_state()
+
+    def _push_state(self) -> None:
+        """Re-emit current playback + transform state to the JS bar."""
+        if self._web_controls is None or self._web_bridge is None:
+            return
+        vp = self.main_window.video_processor
+        self.sync_playback_state(
+            vp.current_frame_number,
+            vp.max_frame_number,
+            bool(vp.processing),
+            bool(self.main_window.control.get("LoopVideoToggle", False))
+            if hasattr(self.main_window, "control") else False,
+        )
+
     def _seek_to(self, frame: int):
         mw = self.main_window
         vp = mw.video_processor
@@ -479,9 +706,14 @@ class PreviewWindow(QtWidgets.QWidget):
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        px = self._frame_label.pixmap()
-        if px and not px.isNull():
-            self._set_pixmap(px)
+        orig = getattr(self, '_original_pixmap', None)
+        if orig and not orig.isNull():
+            self._scale_and_show(orig)
+
+    def moveEvent(self, event):
+        super().moveEvent(event)
+        # Persist position incrementally so it's captured even on abnormal exit
+        self._save_geometry()
 
     # ── Window drag ───────────────────────────────────────────────────────
 
@@ -504,11 +736,22 @@ class PreviewWindow(QtWidgets.QWidget):
     def contextMenuEvent(self, event):
         menu = QtWidgets.QMenu(self)
         stay = bool(self.windowFlags() & QtCore.Qt.WindowType.WindowStaysOnTopHint)
+
+        # Hide / show controls
+        ctrl_label = "Show Controls" if self._controls_hidden else "Hide Controls"
+        menu.addAction(ctrl_label, self._toggle_controls)
+
+        menu.addSeparator()
+
         menu.addAction("Always on Top ✓" if stay else "Always on Top",
                        self._toggle_always_on_top)
         menu.addSeparator()
         menu.addAction("Close", self.close)
         menu.exec(event.globalPos())
+
+    def _toggle_controls(self):
+        self._controls_hidden = not self._controls_hidden
+        self._ctrl_widget.setVisible(not self._controls_hidden)
 
     def _toggle_always_on_top(self):
         pos, size = self.pos(), self.size()
@@ -524,10 +767,43 @@ class PreviewWindow(QtWidgets.QWidget):
 
     def closeEvent(self, event):
         mw = self.main_window
+
+        # Save size and position before any teardown
+        self._save_geometry()
+
+        # ── Notify the React frontend first, before any teardown ──────────
+        # Use QTimer.singleShot so the signal fires on the next event-loop
+        # tick — after the close event completes — guaranteeing the bridge
+        # is still alive when the signal is delivered.
+        bridge = getattr(mw, '_bridge', None)
+        if bridge is not None:
+            def _emit_closed():
+                try:
+                    bridge.stateUpdated.emit(json.dumps({
+                        "section": "control",
+                        "name": "PreviewWindowEnableToggle",
+                        "value": False,
+                    }))
+                    bridge.previewWindowClosed.emit()
+                except Exception:
+                    pass
+            QtCore.QTimer.singleShot(0, _emit_closed)
+
+        # ── Tear down the WebEngine page ──────────────────────────────────
+        if self._web_controls is not None:
+            try:
+                self._web_controls.setPage(None)
+                self._web_controls.deleteLater()
+            except RuntimeError:
+                pass
+            self._web_controls = None
+            self._web_bridge = None
+
         if hasattr(mw, '_preview_window') and mw._preview_window is self:
             mw._preview_window = None
         if hasattr(mw, 'control'):
             mw.control['PreviewWindowEnableToggle'] = False
+
         event.accept()
 
 
@@ -556,3 +832,97 @@ class _MarkerSlider(QtWidgets.QSlider):
             x = gx + int(m / self.maximum() * gw)
             p.drawLine(x, groove.top() - 3, x, groove.bottom() + 3)
         p.end()
+
+
+# ── Web button-bar bridge (QWebChannel) ──────────────────────────────────────
+
+class _PreviewControlsBridge(QtCore.QObject):
+    """
+    Tiny QWebChannel bridge used by the WebEngine button bar inside
+    ``PreviewWindow``. All slots are no-ops if the parent window has been
+    deleted (defensive — the JS side may fire one last click during teardown).
+    """
+
+    # JSON string carrying the full state snapshot for the JS bar.
+    stateChanged = QtCore.Signal(str)
+
+    def __init__(self, window: "PreviewWindow") -> None:
+        super().__init__(window)
+        self._win = window
+
+    def _alive(self) -> bool:
+        if self._win is None:
+            return False
+        try:
+            # Touching any QObject method on a deleted C++ object raises RuntimeError.
+            self._win.objectName()
+            return True
+        except RuntimeError:
+            return False
+
+    @QtCore.Slot()
+    def togglePlay(self) -> None:
+        if not self._alive():
+            return
+        vp = self._win.main_window.video_processor
+        self._win._on_play_toggled(not vp.processing)
+        self._win._push_state()
+
+    @QtCore.Slot()
+    def jumpStart(self) -> None:
+        if self._alive():
+            self._win._on_jump_start()
+            self._win._push_state()
+
+    @QtCore.Slot()
+    def jumpEnd(self) -> None:
+        if self._alive():
+            self._win._on_jump_end()
+            self._win._push_state()
+
+    @QtCore.Slot()
+    def stepBack(self) -> None:
+        if self._alive():
+            self._win._on_step_back()
+            self._win._push_state()
+
+    @QtCore.Slot()
+    def stepFwd(self) -> None:
+        if self._alive():
+            self._win._on_step_fwd()
+            self._win._push_state()
+
+    @QtCore.Slot()
+    def toggleLoop(self) -> None:
+        if not self._alive():
+            return
+        mw = self._win.main_window
+        cur = bool(mw.control.get("LoopVideoToggle", False)) if hasattr(mw, "control") else False
+        self._win._on_loop_toggled(not cur)
+        self._win._push_state()
+
+    @QtCore.Slot()
+    def rotateCcw(self) -> None:
+        if self._alive():
+            self._win._on_rotate(-90)
+
+    @QtCore.Slot()
+    def rotateCw(self) -> None:
+        if self._alive():
+            self._win._on_rotate(90)
+
+    @QtCore.Slot()
+    def toggleFlipH(self) -> None:
+        if self._alive():
+            self._win._on_flip("h")
+
+    @QtCore.Slot()
+    def toggleFlipV(self) -> None:
+        if self._alive():
+            self._win._on_flip("v")
+
+    @QtCore.Slot()
+    def requestState(self) -> None:
+        """Called by JS once the channel is ready — push current state."""
+        if self._alive():
+            self._win._push_state()

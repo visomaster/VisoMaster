@@ -189,22 +189,46 @@ class InputFacesLoaderWorker(qtc.QThread):
         self.pre_load_detection_recognition_models()
         
     def pre_load_detection_recognition_models(self):
+        """Pre-load the detection / landmark / recognition models the user has
+        currently selected. Models that aren't registered (commented out in
+        models_list) or that fail to load are skipped so missing optional
+        models never block the input-face scan.
+        """
         control = self.main_window.control.copy()
-        detect_model = detection_model_mapping[control['DetectorModelSelection']]
-        landmark_detect_model = landmark_model_mapping[control['LandmarkDetectModelSelection']]
+        detect_model = detection_model_mapping.get(control.get('DetectorModelSelection'))
+        landmark_detect_model = landmark_model_mapping.get(control.get('LandmarkDetectModelSelection'))
         models_processor = self.main_window.models_processor
         if self.main_window.video_processor.processing:
             was_playing = True
             self.main_window.buttonMediaPlay.click()
         else:
             was_playing = False
-        if not models_processor.models[detect_model]:
-            models_processor.models[detect_model] = models_processor.load_model(detect_model)
-        if not models_processor.models[landmark_detect_model] and control['LandmarkDetectToggle']:
-            models_processor.models[landmark_detect_model] = models_processor.load_model(landmark_detect_model)
-        for recognition_model in ['Inswapper128ArcFace', 'SimSwapArcFace', 'GhostArcFace', 'CSCSArcFace', 'CSCSIDArcFace']:
-            if not models_processor.models[recognition_model]:
-                models_processor.models[recognition_model] = models_processor.load_model(recognition_model)
+
+        def _try_preload(name: str) -> None:
+            """Load a model if it's registered and not yet loaded.
+            Silently skip unknown / unavailable models."""
+            if not name:
+                return
+            if name not in models_processor.models_path:
+                print(f"[ui_workers] Skipping preload of '{name}' — not registered in models_list")
+                return
+            if models_processor.models.get(name):
+                return
+            try:
+                models_processor.models[name] = models_processor.load_model(name)
+            except (KeyError, FileNotFoundError) as exc:
+                print(f"[ui_workers] Skipping preload of '{name}': {exc}")
+            except Exception as exc:
+                print(f"[ui_workers] Failed to preload '{name}': {exc}")
+
+        _try_preload(detect_model)
+        if control.get('LandmarkDetectToggle'):
+            _try_preload(landmark_detect_model)
+        # Recognition models — pre-load only the currently selected one. The
+        # others are loaded on demand when the user actually switches to them
+        # so a missing variant never blocks a scan.
+        recognition_model = control.get('RecognitionModelSelection', 'Inswapper128ArcFace')
+        _try_preload(recognition_model)
         if was_playing:
             self.main_window.buttonMediaPlay.click()
 
@@ -229,7 +253,7 @@ class InputFacesLoaderWorker(qtc.QThread):
             if not self._running:  # Check if the thread is still running
                 break
             if not misc_helpers.is_image_file(image_file_path):
-                return
+                    continue
             if folder_name:
                 image_file_path = os.path.join(folder_name, image_file_path)
             frame = misc_helpers.read_image_file(image_file_path)
@@ -258,14 +282,12 @@ class InputFacesLoaderWorker(qtc.QThread):
                 pixmap = common_widget_actions.get_pixmap_from_frame(self.main_window, face_img)
 
                 embedding_store: Dict[str, numpy.ndarray] = {}
-                # Ottenere i valori di 'options'
-                options = SETTINGS_LAYOUT_DATA['Face Recognition']['RecognitionModelSelection']['options']
-                for option in options:
-                    if option != control['RecognitionModelSelection']:
-                        target_emb, _ = self.main_window.models_processor.run_recognize_direct(img, face_kps, control['SimilarityTypeSelection'], option)
-                        embedding_store[option] = target_emb
-                    else:
-                        embedding_store[control['RecognitionModelSelection']] = face_emb
+                # Only embed for the currently selected recognition model.
+                # Other recognition models are loaded on demand when the
+                # user actually switches to them — pre-computing them all
+                # would crash on missing variants like GhostArcFace.
+                recognition_model = control['RecognitionModelSelection']
+                embedding_store[recognition_model] = face_emb
                 if not self.face_ids:
                     face_id = str(uuid.uuid1().int)
                 else:

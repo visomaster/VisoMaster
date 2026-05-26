@@ -18,6 +18,7 @@ from PySide6.QtCore import QObject, QTimer, Signal, Slot
 from PySide6.QtGui import QPixmap
 from app.processors.workers.frame_worker import FrameWorker
 from app.ui.widgets.actions import common_actions as common_widget_actions
+from app.ui.widgets.actions import graphics_view_actions
 import app.helpers.miscellaneous as misc_helpers
 
 from streamrelay.protocol import SHM_HEADER_BYTES
@@ -134,9 +135,45 @@ class VideoProcessor(QObject):
         #Set GPU Memory Progressbar
         common_widget_actions.update_gpu_memory_progressbar(self.main_window)
         
+    def _is_loop_enabled(self) -> bool:
+        """Read the loop flag from whichever key is set.
+        The legacy Qt preview window uses 'LoopVideoToggle'; the React UI
+        and the headless API use 'loop_enabled'. Both should be honoured."""
+        ctrl = getattr(self.main_window, 'control', {}) or {}
+        return bool(ctrl.get('LoopVideoToggle', False) or ctrl.get('loop_enabled', False))
+
+    def _restart_for_loop(self) -> bool:
+        """If looping is enabled, seek to frame 0 and keep playback alive.
+        Returns True when playback was restarted, False otherwise."""
+        if not self._is_loop_enabled():
+            return False
+        if self.file_type != 'video' or not self.media_capture:
+            return False
+        # Reset internal counters and seek the capture back to the start.
+        self.current_frame_number = 0
+        self.next_frame_to_display = 0
+        try:
+            self.media_capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
+        except Exception as exc:
+            print(f"[VP] Loop restart seek failed: {exc}")
+            return False
+        # Make sure the read timer is alive so new frames keep coming in.
+        if not self.frame_read_timer.isActive():
+            interval = int((1000 / self.fps) * 0.8) if self.fps > 0 else 30
+            self.frame_read_timer.start(interval)
+        return True
+
     def display_next_frame(self):
-        if not self.processing or (self.next_frame_to_display > self.max_frame_number):
+        if not self.processing:
             self.stop_processing()
+            return
+        if self.next_frame_to_display > self.max_frame_number:
+            # End of video reached on the display side. If the user has loop
+            # enabled, restart from the beginning instead of stopping.
+            if self._restart_for_loop():
+                return
+            self.stop_processing()
+            return
         if self.next_frame_to_display not in self.frames_to_display:
             return
         else:
@@ -155,7 +192,7 @@ class VideoProcessor(QObject):
                 from app.ui.widgets.actions import video_control_actions as _vca
                 _vca.update_widget_values_from_markers(self.main_window, self.next_frame_to_display)
             graphics_view_actions.update_graphics_view(self.main_window, pixmap, self.next_frame_to_display)
-            self.threads.pop(self.next_frame_to_display)
+            self.threads.pop(self.next_frame_to_display, None)  # may be absent for single-frame reprocessing
             self.next_frame_to_display += 1
 
     def display_next_webcam_frame(self):
@@ -170,6 +207,7 @@ class VideoProcessor(QObject):
             self.current_frame = frame
             self.send_frame_to_virtualcam(frame)
             self._send_frame_to_output_window(frame)
+            self._sync_preview_window_state()
             graphics_view_actions.update_graphics_view(self.main_window, pixmap, 0)
 
     def send_frame_to_virtualcam(self, frame: numpy.ndarray):
@@ -218,7 +256,7 @@ class VideoProcessor(QObject):
                 and mw._preview_window is not None
                 and mw._preview_window.isVisible()):
             return
-        loop = mw.control.get('LoopVideoToggle', False)
+        loop = self._is_loop_enabled()
         mw._preview_window.sync_playback_state(
             self.current_frame_number,
             self.max_frame_number,
@@ -239,10 +277,23 @@ class VideoProcessor(QObject):
         if self.processing:
             print("Processing already in progress. Ignoring start request.")
             return
-            
-        # Re-initialize the timers
-        self.frame_display_timer = QTimer()
-        self.frame_read_timer = QTimer()
+
+        # Stop timers and disconnect all previous connections before reconnecting.
+        # Do NOT re-create QTimer objects — they must stay on the main thread
+        # where they were created in __init__. Re-creating them here would give
+        # them no thread affinity and their start() calls would be no-ops.
+        self.frame_read_timer.stop()
+        self.frame_display_timer.stop()
+        try:
+            self.frame_read_timer.timeout.disconnect()
+        except RuntimeError:
+            pass
+        try:
+            self.frame_display_timer.timeout.disconnect()
+        except RuntimeError:
+            pass
+        print(f"[vp:process_video] file_type={self.file_type} media_path={self.media_path} "
+              f"capture_open={self.media_capture.isOpened() if self.media_capture else 'None'}", flush=True)
 
         if self.file_type == 'video':
             self.frame_display_timer.timeout.connect(self.display_next_frame)
@@ -280,7 +331,9 @@ class VideoProcessor(QObject):
                 else:
                     self.frame_read_timer.start(interval)
                     self.frame_display_timer.start()
-                self.gpu_memory_update_timer.start(5000) #Update GPU memory progressbar every 5 Seconds
+                self.gpu_memory_update_timer.start(5000)
+                print(f"[vp:process_video] video timers started — read_active={self.frame_read_timer.isActive()} "
+                      f"display_active={self.frame_display_timer.isActive()}", flush=True)
 
             else:
                 print("Error: Unable to open the video.")
@@ -314,7 +367,9 @@ class VideoProcessor(QObject):
             self.frame_read_timer.start(interval)
             self.frame_display_timer.timeout.connect(self.display_next_webcam_frame)
             self.frame_display_timer.start()
-            self.gpu_memory_update_timer.start(5000) #Update GPU memory progressbar every 5 Seconds
+            self.gpu_memory_update_timer.start(5000)
+            print(f"[vp:process_video] webcam timers started — read_active={self.frame_read_timer.isActive()} "
+                  f"display_active={self.frame_display_timer.isActive()} interval={interval}ms", flush=True)
 
         elif self.file_type == 'webrtc':
             print("Calling process_video() on WebRTC stream")
@@ -361,6 +416,10 @@ class VideoProcessor(QObject):
         """Read the next frame and add it to the queue for processing."""
 
         if self.current_frame_number > self.max_frame_number:
+            # End of video reached on the read side. If the user has loop
+            # enabled, seek back to frame 0 and keep streaming frames in.
+            if self._restart_for_loop():
+                return
             # print("Stopping frame_read_timer as all frames have been read!")
             self.frame_read_timer.stop()
             return
@@ -373,7 +432,7 @@ class VideoProcessor(QObject):
             ret, frame = misc_helpers.read_frame(self.media_capture, preview_mode = not self.recording)
             if ret:
                 frame = frame[..., ::-1]  # Convert BGR to RGB
-                # print(f"Enqueuing frame {self.current_frame_number}")
+                frame = self._apply_streaming_transforms(frame)
                 self.frame_queue.put(self.current_frame_number)
                 self.start_frame_worker(self.current_frame_number, frame)
                 self.current_frame_number += 1
@@ -392,51 +451,60 @@ class VideoProcessor(QObject):
             worker.start()
 
     def process_current_frame(self):
-
-        # print("\nCalled process_current_frame()",self.current_frame_number)
-        # self.main_window.processed_frames.clear()
-
         self.next_frame_to_display = self.current_frame_number
+
         if self.file_type == 'video' and self.media_capture:
-            ret, frame = misc_helpers.read_frame(self.media_capture, preview_mode=False)
-            if ret:
-                frame = frame[..., ::-1]  # Convert BGR to RGB
-                # print(f"Enqueuing frame {self.current_frame_number}")
+            # If the play loop is actively running, reading from media_capture
+            # here would race with process_next_frame on the main thread and
+            # trigger FFmpeg's async_lock assertion.  Use the last delivered
+            # frame instead — it's already the correct current frame.
+            if self.processing and isinstance(self.current_frame, numpy.ndarray) and self.current_frame.size > 0:
+                frame = self.current_frame[..., ::-1]  # BGR → RGB (current_frame is BGR)
+                frame = self._apply_streaming_transforms(frame)
                 self.frame_queue.put(self.current_frame_number)
                 self.start_frame_worker(self.current_frame_number, frame, is_single_frame=True)
-                
-                self.media_capture.set(cv2.CAP_PROP_POS_FRAMES, self.current_frame_number)
             else:
-                print("Cannot read frame!", self.current_frame_number)
-                self.on_state_change('error', message=f'Error Reading Frame {self.current_frame_number}')
+                ret, frame = misc_helpers.read_frame(self.media_capture, preview_mode=False)
+                if ret:
+                    frame = frame[..., ::-1]  # Convert BGR to RGB
+                    frame = self._apply_streaming_transforms(frame)
+                    self.frame_queue.put(self.current_frame_number)
+                    self.start_frame_worker(self.current_frame_number, frame, is_single_frame=True)
+                    self.media_capture.set(cv2.CAP_PROP_POS_FRAMES, self.current_frame_number)
+                else:
+                    print("Cannot read frame!", self.current_frame_number)
+                    self.on_state_change('error', message=f'Error Reading Frame {self.current_frame_number}')
 
-        # """Process a single image frame directly without queuing."""
         elif self.file_type == 'image':
             frame = misc_helpers.read_image_file(self.media_path)
             if frame is not None:
-
                 frame = frame[..., ::-1]  # Convert BGR to RGB
+                frame = self._apply_streaming_transforms(frame)
                 self.frame_queue.put(self.current_frame_number)
-                # print("Processing current frame as image.")
                 self.start_frame_worker(self.current_frame_number, frame, is_single_frame=True)
             else:
                 print("Error: Unable to read image file.")
 
-        # Handle webcam capture
         elif self.file_type == 'webcam':
             if not self.media_capture:
                 return
-            ret, frame = misc_helpers.read_frame(self.media_capture, preview_mode = False)
-            if ret:
-                frame = frame[..., ::-1]  # Convert BGR to RGB
+            # Same race condition as video — prefer the last delivered frame
+            # while the webcam loop is running.
+            if self.processing and isinstance(self.current_frame, numpy.ndarray) and self.current_frame.size > 0:
+                frame = self.current_frame[..., ::-1]
                 frame = self._apply_streaming_transforms(frame)
-                # print(f"Enqueuing frame {self.current_frame_number}")
                 self.frame_queue.put(self.current_frame_number)
                 self.start_frame_worker(self.current_frame_number, frame, is_single_frame=True)
             else:
-                print("Unable to read Webcam frame!")
+                ret, frame = misc_helpers.read_frame(self.media_capture, preview_mode=False)
+                if ret:
+                    frame = frame[..., ::-1]
+                    frame = self._apply_streaming_transforms(frame)
+                    self.frame_queue.put(self.current_frame_number)
+                    self.start_frame_worker(self.current_frame_number, frame, is_single_frame=True)
+                else:
+                    print("Unable to read Webcam frame!")
 
-        # Handle WebRTC — read latest frame from shared memory
         elif self.file_type == 'webrtc' and self.webrtc_shm is not None:
             try:
                 w = struct.unpack_from("<I", self.webrtc_shm.buf, 4)[0]
@@ -450,6 +518,7 @@ class VideoProcessor(QObject):
                     self.start_frame_worker(self.current_frame_number, frame, is_single_frame=True)
             except Exception as e:
                 print(f"[WebRTC] Error in process_current_frame: {e}")
+
         self.join_and_clear_threads()
 
     def process_next_webcam_frame(self):
@@ -519,18 +588,23 @@ class VideoProcessor(QObject):
             pass  # Keep polling silently
 
     def _apply_streaming_transforms(self, frame: numpy.ndarray) -> numpy.ndarray:
-        """Apply rotation, flip transforms and update FPS signal for streaming sources."""
+        """Apply rotation/flip transforms for any source type."""
         mw = self.main_window
 
         # Pick the right transform state based on active source
         if self.file_type == 'webcam':
             rotation = getattr(mw, 'webcam_rotation', 0)
-            flip_h = getattr(mw, 'webcam_flip_h', False)
-            flip_v = getattr(mw, 'webcam_flip_v', False)
-        else:  # webrtc
+            flip_h   = getattr(mw, 'webcam_flip_h', False)
+            flip_v   = getattr(mw, 'webcam_flip_v', False)
+        elif self.file_type == 'webrtc':
             rotation = getattr(mw, 'webrtc_rotation', 0)
-            flip_h = getattr(mw, 'webrtc_flip_h', False)
-            flip_v = getattr(mw, 'webrtc_flip_v', False)
+            flip_h   = getattr(mw, 'webrtc_flip_h', False)
+            flip_v   = getattr(mw, 'webrtc_flip_v', False)
+        else:
+            # video / image — use media_rotation attrs (set by bridge/API)
+            rotation = getattr(mw, 'media_rotation', 0)
+            flip_h   = getattr(mw, 'media_flip_h', False)
+            flip_v   = getattr(mw, 'media_flip_v', False)
 
         # ── Rotation ────────────────────────────────────────────────────────
         if rotation == 90:
@@ -615,7 +689,7 @@ class VideoProcessor(QObject):
                     if Path(final_file_path).is_file():
                         os.remove(final_file_path)
                     print("Adding audio...")
-                    args = ["ffmpeg",
+                    args = [misc_helpers.get_ffmpeg_path(),
                             '-hide_banner',
                             '-loglevel',    'error',
                             "-i", self.temp_file,
@@ -634,7 +708,7 @@ class VideoProcessor(QObject):
                 print(f'Average FPS: {avg_fps}\n')
 
                 if self.recording:
-                    self.on_state_change('recording_stopped')
+                    self.on_state_change('recording_stopped', output_path=final_file_path)
                     if hasattr(self.main_window, 'parameter_widgets'):
                         from app.ui.widgets.actions import layout_actions as _la
                         _la.enable_all_parameters_and_control_widget(self.main_window)
@@ -668,7 +742,7 @@ class VideoProcessor(QObject):
             os.remove(self.temp_file)
 
         args = [
-            "ffmpeg",
+            misc_helpers.get_ffmpeg_path(),
             "-hide_banner",
             "-loglevel", "error",
             "-f", "rawvideo",             # Specify raw video input

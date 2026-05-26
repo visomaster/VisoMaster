@@ -428,11 +428,27 @@ def update_placeholder_visibility(main_window: 'MainWindow', list_widget:QtWidge
 
 @QtCore.Slot()
 def show_model_loading_dialog(main_window: 'MainWindow'):
+    # If a previous load failed and left a dialog stuck open (or hidden),
+    # close it before showing a fresh one so we never leak modal dialogs.
+    existing = getattr(main_window, 'model_loading_dialog', None)
+    if existing is not None:
+        try:
+            existing.close()
+            existing.deleteLater()
+        except Exception:
+            pass
     main_window.model_loading_dialog = widget_components.LoadingDialog()
     main_window.model_loading_dialog.show()
     QtWidgets.QApplication.processEvents()
 
 @QtCore.Slot()
 def hide_model_loading_dialog(main_window: 'MainWindow'):
-    main_window.model_loading_dialog.hide()
+    dialog = getattr(main_window, 'model_loading_dialog', None)
+    if dialog is None:
+        return
+    try:
+        dialog.hide()
+    except Exception:
+        # Underlying C++ object may already be gone; safe to ignore.
+        pass
     QtWidgets.QApplication.processEvents()

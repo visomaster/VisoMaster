@@ -271,7 +271,7 @@ def set_transform(
     state: AppState = Depends(get_app_state),
     vp=Depends(get_video_processor),
 ):
-    """Set rotation/flip for the active streaming source (webcam or webrtc)."""
+    """Set rotation/flip for the active source (webcam, webrtc, video, or image)."""
     transform = StreamTransform(
         rotation=body.rotation,
         flip_h=body.flip_h,
@@ -282,5 +282,7 @@ def set_transform(
     elif vp.file_type == "webrtc":
         state.webrtc_transform = transform
     else:
-        raise HTTPException(status_code=400, detail="No active streaming source")
+        # video, image, or no source — store in media_transform
+        state.media_transform = transform
+    vp.process_current_frame()
     return OkResponse(message="Transform updated")

@@ -163,6 +163,27 @@ async def ws_events(websocket: WebSocket):
                     value = payload.get("value")
                     if name is not None:
                         state.set_control(name, value)
+                        # Virtual camera toggle
+                        if name == "SendVirtCamFramesEnableToggle":
+                            if value:
+                                vp.enable_virtualcam()
+                            else:
+                                vp.disable_virtualcam()
+                            # Emit actual state back so the UI reflects reality
+                            # (e.g. if enable_virtualcam failed, virtcam is None)
+                            actual = vp.virtcam is not None
+                            bus.emit_sync("virtcam_state", {"enabled": actual})
+                            if value and not actual:
+                                bus.emit_sync("error", {
+                                    "message": "Virtual camera failed to start. "
+                                               "Check that OBS Virtual Camera (or Unity Capture) is installed."
+                                })
+                        # Backend change while cam is active — restart with new backend
+                        elif name == "VirtCamBackendSelection":
+                            if state.control.get("SendVirtCamFramesEnableToggle", False):
+                                vp.enable_virtualcam(backend=value)
+                                actual = vp.virtcam is not None
+                                bus.emit_sync("virtcam_state", {"enabled": actual})
                         vp.process_current_frame()
                         bus.emit_sync("state_updated", {
                             "section": "control", "name": name, "value": value

@@ -849,7 +849,9 @@ class LoadingDialog(QtWidgets.QDialog):
         super().__init__()
         self.setWindowTitle("Loading Models")
         self.setWindowIcon(QtGui.QIcon(u":/media/media/visomaster_small.png"))
-        self.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)
+        # Allow the close button so users can dismiss the dialog if a model
+        # load failed and the matching loaded-signal never fires.
+        self.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, True)
         self.setModal(True)  # Block interaction with other windows
         self.setFixedSize(225, 125)  # Increased size for better layout
 
@@ -944,9 +946,15 @@ class SelectionBox(QtWidgets.QComboBox, ParametersWidget):
 
     def set_value(self, value):
         if callable(value):
-            self.setCurrentText(value())
-        else:
-            self.setCurrentText(value)
+            value = value()
+        # QComboBox.setCurrentText only accepts strings; coerce so that
+        # numeric / boolean values from saved workspaces or markers don't
+        # crash the parameter restore path.
+        if value is None:
+            value = ''
+        elif not isinstance(value, str):
+            value = str(value)
+        self.setCurrentText(value)
     
 class ToggleButton(QtWidgets.QPushButton, ParametersWidget):
     _circle_position = None

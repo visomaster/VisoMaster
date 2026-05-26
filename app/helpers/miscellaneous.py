@@ -235,11 +235,34 @@ def get_output_file_path(original_media_path, output_folder, media_type='video')
     output_file_path = os.path.join(output_folder, output_filename)
     return output_file_path
 
+def get_ffmpeg_path() -> str:
+    """Return the path to the ffmpeg executable.
+
+    Checks in order:
+    1. The bundled ``dependencies/ffmpeg.exe`` next to the project root
+       (used by the Windows portable build launched via Start.bat).
+    2. Whatever ``shutil.which('ffmpeg')`` finds on the system PATH.
+
+    Returns the bare string ``'ffmpeg'`` as a last resort so subprocess
+    calls still work when ffmpeg is on PATH but not yet detected.
+    """
+    # Project root is two levels up from this file (app/helpers/miscellaneous.py)
+    bundled = Path(__file__).parent.parent.parent / "dependencies" / "ffmpeg.exe"
+    if bundled.is_file():
+        return str(bundled)
+    found = shutil.which("ffmpeg")
+    if found:
+        return found
+    return "ffmpeg"
+
 def is_ffmpeg_in_path():
-    if not cmd_exist('ffmpeg'):
-        print("FFMPEG Not found in your system!")
-        return False
-    return True
+    bundled = Path(__file__).parent.parent.parent / "dependencies" / "ffmpeg.exe"
+    if bundled.is_file():
+        return True
+    if shutil.which("ffmpeg") is not None:
+        return True
+    print("FFMPEG Not found in your system!")
+    return False
 
 def cmd_exist(cmd):
     try:

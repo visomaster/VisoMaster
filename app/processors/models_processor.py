@@ -178,6 +178,14 @@ class ModelsProcessor(QtCore.QObject):
 
     def load_model(self, model_name, session_options=None):
         with self.model_lock:
+            # Validate the model is registered before showing the loading dialog —
+            # otherwise we'd flash a "Loading…" modal that never closes when the
+            # model path is missing.
+            if model_name not in self.models_path:
+                raise KeyError(
+                    f"Model '{model_name}' is not registered. "
+                    f"Make sure the model file is downloaded and listed in models_data."
+                )
             model_path = self.models_path[model_name]
             if not os.path.isfile(model_path):
                 raise FileNotFoundError(
@@ -185,38 +193,39 @@ class ModelsProcessor(QtCore.QObject):
                     "Please download the required model files before processing."
                 )
             self.main_window.model_loading_signal.emit()
-            # QApplication.processEvents()
-            # if not is_file_exists(self.models_path[model_name]):
-            #     download_file(model_name, self.models_path[model_name], self.models_data[model_name]['hash'], self.models_data[model_name]['url'])
-            if session_options is None:
-                model_instance = onnxruntime.InferenceSession(model_path, providers=self.providers)
-            else:
-                model_instance = onnxruntime.InferenceSession(model_path, sess_options=session_options, providers=self.providers)
+            try:
+                if session_options is None:
+                    model_instance = onnxruntime.InferenceSession(model_path, providers=self.providers)
+                else:
+                    model_instance = onnxruntime.InferenceSession(model_path, sess_options=session_options, providers=self.providers)
 
-            # Log which provider the model actually ended up using
-            active_providers = model_instance.get_providers()
-            print(f"[Models] {model_name} loaded with providers: {active_providers}")
-            
-            # Cache the actual device being used by this model
-            if any('CUDA' in p or 'Tensorrt' in p for p in active_providers):
-                self._model_devices[model_name] = 'cuda'
-            else:
-                self._model_devices[model_name] = 'cpu'
-            
-            # Warn if CUDA was expected but not available
-            if self.device == 'cuda' and self._model_devices[model_name] == 'cpu':
-                print(f"[Models] WARNING: CUDA requested but not available for {model_name}!")
-                print(f"[Models] Available providers: {active_providers}")
-                print(f"[Models] Fix: pip uninstall onnxruntime -y && pip install onnxruntime-gpu")
+                # Log which provider the model actually ended up using
+                active_providers = model_instance.get_providers()
+                print(f"[Models] {model_name} loaded with providers: {active_providers}")
 
-            # Check if another thread has already loaded an instance for this model, if yes then delete the current one and return that instead
-            if self.models[model_name]:
-                del model_instance
-                gc.collect()
-                return self.models[model_name]
-            self.main_window.model_loaded_signal.emit()
+                # Cache the actual device being used by this model
+                if any('CUDA' in p or 'Tensorrt' in p for p in active_providers):
+                    self._model_devices[model_name] = 'cuda'
+                else:
+                    self._model_devices[model_name] = 'cpu'
 
-            return model_instance
+                # Warn if CUDA was expected but not available
+                if self.device == 'cuda' and self._model_devices[model_name] == 'cpu':
+                    print(f"[Models] WARNING: CUDA requested but not available for {model_name}!")
+                    print(f"[Models] Available providers: {active_providers}")
+                    print(f"[Models] Fix: pip uninstall onnxruntime -y && pip install onnxruntime-gpu")
+
+                # Check if another thread has already loaded an instance for this model, if yes then delete the current one and return that instead
+                if self.models[model_name]:
+                    del model_instance
+                    gc.collect()
+                    return self.models[model_name]
+
+                return model_instance
+            finally:
+                # Always close the loading dialog — even when the load raised —
+                # so users aren't stuck with a modal blocking the entire UI.
+                self.main_window.model_loaded_signal.emit()
 
     def load_dfm_model(self, dfm_model):
         with self.model_lock:
@@ -244,17 +253,20 @@ class ModelsProcessor(QtCore.QObject):
         #time.sleep(0.5)
         self.main_window.model_loading_signal.emit()
 
-        if not os.path.exists(self.models_trt_path[model_name]):
-            onnx2trt(onnx_model_path=self.models_path[model_name],
-                     trt_model_path=self.models_trt_path[model_name],
-                     precision=precision,
-                     custom_plugin_path=custom_plugin_path,
-                     verbose=False
-                    )
-        model_instance = TensorRTPredictor(model_path=self.models_trt_path[model_name], custom_plugin_path=custom_plugin_path, pool_size=self.nThreads, device=self.device, debug=debug)
-
-        self.main_window.model_loaded_signal.emit()
-        return model_instance
+        try:
+            if not os.path.exists(self.models_trt_path[model_name]):
+                onnx2trt(onnx_model_path=self.models_path[model_name],
+                         trt_model_path=self.models_trt_path[model_name],
+                         precision=precision,
+                         custom_plugin_path=custom_plugin_path,
+                         verbose=False
+                        )
+            model_instance = TensorRTPredictor(model_path=self.models_trt_path[model_name], custom_plugin_path=custom_plugin_path, pool_size=self.nThreads, device=self.device, debug=debug)
+            return model_instance
+        finally:
+            # Always close the loading dialog so failures don't strand the
+            # modal on screen with no way to dismiss it.
+            self.main_window.model_loaded_signal.emit()
 
     def delete_models(self):
         for model_name, model_instance in self.models.items():
@@ -330,17 +342,47 @@ class ModelsProcessor(QtCore.QObject):
         self.delete_models_trt()
 
     def get_gpu_memory(self):
-        command = "nvidia-smi --query-gpu=memory.total --format=csv"
-        memory_total_info = sp.check_output(command.split()).decode('ascii').split('\n')[:-1][1:]
-        memory_total = [int(x.split()[0]) for i, x in enumerate(memory_total_info)]
+        """
+        Return ``(memory_used_mb, memory_total_mb)`` for the active CUDA device.
 
-        command = "nvidia-smi --query-gpu=memory.free --format=csv"
-        memory_free_info = sp.check_output(command.split()).decode('ascii').split('\n')[:-1][1:]
-        memory_free = [int(x.split()[0]) for i, x in enumerate(memory_free_info)]
+        Tries ``torch.cuda`` first (no subprocess, ~µs cost). Falls back to
+        ``nvidia-smi`` so non-CUDA torch builds still get a reading. Returns
+        ``(0, 0)`` if both paths fail — callers should treat 0 totals as
+        "unavailable" rather than divide-by-zero.
+        """
+        # ── 1. Fast path: torch.cuda.mem_get_info ─────────────────────────
+        try:
+            if torch.cuda.is_available():
+                free_bytes, total_bytes = torch.cuda.mem_get_info()
+                used_mb  = (total_bytes - free_bytes) // (1024 * 1024)
+                total_mb = total_bytes // (1024 * 1024)
+                return int(used_mb), int(total_mb)
+        except Exception as e:
+            print(f"[get_gpu_memory] torch path failed: {e}", flush=True)
 
-        memory_used = memory_total[0] - memory_free[0]
+        # ── 2. Fallback: nvidia-smi ───────────────────────────────────────
+        try:
+            kwargs = {}
+            if os.name == "nt":
+                # Suppress the console window flash on Windows
+                kwargs["creationflags"] = getattr(sp, "CREATE_NO_WINDOW", 0x08000000)
 
-        return memory_used, memory_total[0]
+            cmd_total = "nvidia-smi --query-gpu=memory.total --format=csv".split()
+            cmd_free  = "nvidia-smi --query-gpu=memory.free --format=csv".split()
+
+            total_lines = sp.check_output(cmd_total, **kwargs).decode("ascii").split("\n")[:-1][1:]
+            free_lines  = sp.check_output(cmd_free,  **kwargs).decode("ascii").split("\n")[:-1][1:]
+
+            memory_total = [int(x.split()[0]) for x in total_lines]
+            memory_free  = [int(x.split()[0]) for x in free_lines]
+
+            if not memory_total:
+                return 0, 0
+            memory_used = memory_total[0] - memory_free[0]
+            return int(memory_used), int(memory_total[0])
+        except Exception as e:
+            print(f"[get_gpu_memory] nvidia-smi path failed: {e}", flush=True)
+            return 0, 0
     
     def clear_gpu_memory(self):
         self.delete_models()

@@ -209,6 +209,7 @@ class AppState:
     # ── Streaming transforms ───────────────────────────────────────────────
     webcam_transform: StreamTransform = field(default_factory=StreamTransform)
     webrtc_transform: StreamTransform = field(default_factory=StreamTransform)
+    media_transform:  StreamTransform = field(default_factory=StreamTransform)
 
     # ── Folder memory ──────────────────────────────────────────────────────
     last_target_media_folder: str = ""
@@ -242,6 +243,12 @@ class AppState:
 
     def set_control(self, name: str, value: Any) -> None:
         self.control[name] = value
+        # Keep the dedicated dataclass field in sync with the matching
+        # control entry so both code paths (the Qt VP, which reads
+        # state.control, and the headless play loop, which reads
+        # state.loop_enabled) see the same value.
+        if name == "loop_enabled":
+            self.loop_enabled = bool(value)
 
     # ── Serialisation ──────────────────────────────────────────────────────
 

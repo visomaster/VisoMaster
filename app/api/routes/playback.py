@@ -41,7 +41,7 @@ from app.api.schemas import (
     StepRequest,
 )
 from app.core.state import AppState, Marker
-from app.helpers.miscellaneous import get_output_file_path, is_ffmpeg_in_path
+from app.helpers.miscellaneous import get_output_file_path, is_ffmpeg_in_path, get_ffmpeg_path
 
 router = APIRouter(tags=["playback"])
 
@@ -189,17 +189,25 @@ def record_start(
 ):
     """Start recording the processed video to disk."""
     if vp.file_type != "video":
-        raise HTTPException(status_code=400, detail="Recording only supported for video sources")
-    if vp.processing:
-        raise HTTPException(status_code=400, detail="Stop playback before starting a recording")
+        detail = (
+            "No video loaded. Please select a video file before recording."
+            if vp.file_type is None
+            else f"Recording is only supported for video files (current source: {vp.file_type})."
+        )
+        raise HTTPException(status_code=400, detail=detail)
     if not is_ffmpeg_in_path():
-        raise HTTPException(status_code=500, detail="FFmpeg not found in PATH")
+        raise HTTPException(status_code=500, detail=
+            f"FFmpeg not found. Expected at '{get_ffmpeg_path()}' or on system PATH.")
 
     output_folder = body.output_folder or state.control.get("OutputMediaFolder", "")
     if not output_folder:
         raise HTTPException(status_code=400, detail="No output folder configured")
     if not Path(output_folder).is_dir():
         raise HTTPException(status_code=400, detail=f"Output folder does not exist: {output_folder}")
+
+    # Auto-stop playback if running (mirrors Qt UI behaviour)
+    if vp.processing:
+        vp.stop_processing()
 
     state.control["OutputMediaFolder"] = output_folder
     vp.recording = True
@@ -224,7 +232,7 @@ def record_stop(
 
 # ── Save current frame ────────────────────────────────────────────────────────
 
-@router.post("/api/playback/save-frame", response_model=OkResponse)
+@router.post("/api/playback/save-frame", response_model=RecordStopResponse)
 def save_frame(
     state: AppState = Depends(get_app_state),
     vp=Depends(get_video_processor),
@@ -240,7 +248,7 @@ def save_frame(
         vp.media_path or "snapshot.png", output_folder, media_type="image"
     )
     cv2.imwrite(output_path, frame)
-    return OkResponse(message=f"Frame saved to {output_path}")
+    return RecordStopResponse(output_path=output_path)
 
 
 # ── Markers ───────────────────────────────────────────────────────────────────
@@ -282,7 +290,46 @@ def delete_marker(frame_number: int, state: AppState = Depends(get_app_state)):
     return OkResponse(message=f"Marker removed from frame {frame_number}")
 
 
-# ── Preview snapshot ──────────────────────────────────────────────────────────
+# ── Open / reveal saved files ─────────────────────────────────────────────────
+
+@router.post("/api/system/open-file", response_model=OkResponse)
+def open_file(body: dict, state: AppState = Depends(get_app_state)):
+    """Open a file with the default OS application (server-side)."""
+    import sys
+    import subprocess
+    path = body.get("path", "")
+    if not path or not Path(path).exists():
+        raise HTTPException(status_code=400, detail=f"File not found: {path}")
+    try:
+        if sys.platform == "win32":
+            os.startfile(path)  # type: ignore[attr-defined]
+        elif sys.platform == "darwin":
+            subprocess.Popen(["open", path])
+        else:
+            subprocess.Popen(["xdg-open", path])
+        return OkResponse(message="Opened")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/system/reveal-in-folder", response_model=OkResponse)
+def reveal_in_folder(body: dict, state: AppState = Depends(get_app_state)):
+    """Reveal a file in the OS file explorer (server-side)."""
+    import sys
+    import subprocess
+    path = body.get("path", "")
+    if not path or not Path(path).exists():
+        raise HTTPException(status_code=400, detail=f"File not found: {path}")
+    try:
+        if sys.platform == "win32":
+            subprocess.Popen(["explorer", "/select,", path])
+        elif sys.platform == "darwin":
+            subprocess.Popen(["open", "-R", path])
+        else:
+            subprocess.Popen(["xdg-open", str(Path(path).parent)])
+        return OkResponse(message="Revealed")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/api/preview/snapshot")
 def preview_snapshot(vp=Depends(get_video_processor)):
