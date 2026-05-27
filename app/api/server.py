@@ -625,12 +625,20 @@ async def lifespan(app: FastAPI):
             # Push position update — use latest-wins slot so the JSON channel
             # is never flooded; only the most recent frame number is delivered
             bus.emit_position_sync(frame_number, vp.max_frame_number)
+            # Push dedicated playback state to /ws/playback subscribers
+            bus.emit_playback_sync(
+                frame_number,
+                vp.max_frame_number,
+                vp.processing,
+                vp.fps,
+                vp.recording,
+            )
             # Feed the native Qt preview window if it is open
             from app.ui.widgets.headless_preview import headless_preview
             if headless_preview.is_open:
                 headless_preview.push_frame(frame_bgr)
                 headless_preview.sync_state(
-                    frame_number,
+                    frame_number,          # use the just-processed frame, not current_frame_number
                     vp.max_frame_number,
                     vp.processing,
                     state.loop_enabled,
@@ -639,9 +647,31 @@ async def lifespan(app: FastAPI):
             # Send to virtual camera if enabled
             vp.send_frame_to_virtualcam(frame_bgr)
     vp.on_frame_done   = _headless_on_frame_done
-    vp.on_state_change = lambda ev, **kw: bus.emit_sync(
-        "state_updated", {"section": "playback", "event": ev, **kw}
-    )
+    vp.on_state_change = lambda ev, **kw: _headless_on_state_change(ev, **kw)
+
+    def _headless_on_state_change(ev: str, **kw):
+        bus.emit_sync("state_updated", {"section": "playback", "event": ev, **kw})
+        # When playback stops, push a final is_playing=False to /ws/playback so
+        # the play button flips back immediately — on_frame_done stops firing
+        # when the video ends so the client would otherwise never see is_playing=False.
+        if ev in ("stopped", "error"):
+            bus.emit_playback_sync(
+                vp.current_frame_number,
+                vp.max_frame_number,
+                False,   # is_playing
+                vp.fps,
+                vp.recording,
+            )
+            # Also sync the native preview window play button
+            from app.ui.widgets.headless_preview import headless_preview
+            if headless_preview.is_open:
+                headless_preview.sync_state(
+                    vp.current_frame_number,
+                    vp.max_frame_number,
+                    False,   # is_playing
+                    state.loop_enabled,
+                    set(state.markers.keys()),
+                )
     vp.on_fps_update   = lambda fps: bus.emit_sync("fps_update", {"fps": round(fps, 1)})
 
     # ── Store on app.state ────────────────────────────────────────────────
@@ -742,6 +772,7 @@ def create_app() -> FastAPI:
     from app.api.routes.sources import router as sources_router
     from app.api.ws import router as ws_router
     from app.api.routes.client_log import router as client_log_router
+    from app.api.routes.models import router as models_router
 
     app.include_router(system_router)
     app.include_router(schema_router)
@@ -754,6 +785,7 @@ def create_app() -> FastAPI:
     app.include_router(sources_router)
     app.include_router(ws_router)
     app.include_router(client_log_router)
+    app.include_router(models_router)
     return app
 
 

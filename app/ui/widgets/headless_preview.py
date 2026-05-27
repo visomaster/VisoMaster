@@ -72,10 +72,18 @@ class _HeadlessPreviewManager:
         """Open the preview window, starting the Qt thread if needed."""
         with self._lock:
             if self._thread is not None and self._thread.is_alive():
-                # Qt thread already running — just show the window
-                if self._relay is not None:
+                # Qt thread already running and window is visible — just raise it.
+                # (This handles a double-click / rapid re-open while the window
+                # is still open.  If the window was closed, app.quit() will have
+                # been called and the thread will be exiting — fall through to
+                # start a fresh thread instead.)
+                if self._window is not None and self._relay is not None:
                     self._relay.emit_show()
-                return
+                    return
+            # Thread is dead, exiting, or window is gone — start fresh.
+            self._window = None
+            self._relay = None
+            self._thread = None
             self._ready.clear()
             self._thread = threading.Thread(
                 target=self._qt_main,
@@ -122,31 +130,49 @@ class _HeadlessPreviewManager:
     def _qt_main(self) -> None:
         import sys
         from PySide6.QtWidgets import QApplication
+        from PySide6.QtCore import QEventLoop
 
-        app = QApplication.instance()
-        if app is None:
-            app = QApplication(sys.argv[:1])
-        self._app = app
+        try:
+            app = QApplication.instance()
+            if app is None:
+                app = QApplication(sys.argv[:1])
+            self._app = app
 
-        # Create relay on the Qt thread so its signals are delivered here
-        relay = _FrameRelay()
-        self._relay = relay
+            # Flush any pending deleteLater() objects from a previous run
+            # (e.g. QWebEngineView scheduled for deletion when the last window closed).
+            app.processEvents(QEventLoop.ProcessEventsFlag.AllEvents)
 
-        # Create the window
-        self._create_window()
+            # Create relay on the Qt thread so its signals are delivered here
+            relay = _FrameRelay()
+            self._relay = relay
 
-        # Wire relay signals → window slots (all on Qt thread)
-        relay.frame_ready.connect(self._on_frame_ready,
-                                  QtCore.Qt.ConnectionType.QueuedConnection)
-        relay.state_changed.connect(self._on_state_changed,
-                                    QtCore.Qt.ConnectionType.QueuedConnection)
-        relay.show_requested.connect(self._on_show,
-                                     QtCore.Qt.ConnectionType.QueuedConnection)
-        relay.close_requested.connect(self._on_close,
+            # Create the window
+            self._create_window()
+
+            # Wire relay signals → window slots (all on Qt thread)
+            relay.frame_ready.connect(self._on_frame_ready,
                                       QtCore.Qt.ConnectionType.QueuedConnection)
+            relay.state_changed.connect(self._on_state_changed,
+                                        QtCore.Qt.ConnectionType.QueuedConnection)
+            relay.show_requested.connect(self._on_show,
+                                         QtCore.Qt.ConnectionType.QueuedConnection)
+            relay.close_requested.connect(self._on_close,
+                                          QtCore.Qt.ConnectionType.QueuedConnection)
 
-        self._ready.set()
-        app.exec()
+            self._ready.set()
+            app.exec()
+        except Exception as _qt_err:
+            import traceback
+            print(f"[HeadlessPreview] Qt thread crashed: {_qt_err}")
+            traceback.print_exc()
+        finally:
+            # Always unblock any caller waiting on _ready, and reset state so
+            # the next open() call can start a fresh Qt thread.
+            self._ready.set()
+            with self._lock:
+                self._window = None
+                self._relay = None
+                self._thread = None
 
     # ── Qt-thread slots ───────────────────────────────────────────────────
 
@@ -165,9 +191,13 @@ class _HeadlessPreviewManager:
     @QtCore.Slot()
     def _on_show(self) -> None:
         if self._window is None:
+            # Window was closed — create a fresh one
             self._create_window()
-        else:
+        elif not self._window.isVisible():
             self._window.show()
+            self._window.raise_()
+            self._window.activateWindow()
+        else:
             self._window.raise_()
             self._window.activateWindow()
 
@@ -175,7 +205,8 @@ class _HeadlessPreviewManager:
     def _on_close(self) -> None:
         if self._window is not None:
             self._window.close()
-            self._window = None
+            # closeEvent sets _window = None and calls app.quit()
+            # Nothing more to do here.
 
     def _create_window(self) -> None:
         from app.ui.widgets.preview_window import PreviewWindow
@@ -187,13 +218,38 @@ class _HeadlessPreviewManager:
                 super().__init__(_HeadlessProxy())
 
             def closeEvent(self_w, event):
+                # Null out the manager reference first so is_open returns False
+                # immediately — prevents a re-entrant open() from seeing a
+                # stale window reference.
                 mgr._window = None
-                from app.api.events import bus
-                bus.emit_sync("preview_window_closed", {})
-                event.accept()
+                # Let PreviewWindow.closeEvent run its teardown (WebEngine
+                # cleanup, geometry save, bus emit, etc.) then accept.
+                try:
+                    super().closeEvent(event)
+                except Exception as _ce_err:
+                    import traceback
+                    print(f"[HeadlessPreview] closeEvent error: {_ce_err}")
+                    traceback.print_exc()
+                    event.accept()
+                # Quit the Qt event loop so app.exec() returns and the thread
+                # exits cleanly.  The next open() call will start a fresh thread.
+                from PySide6.QtWidgets import QApplication
+                app = QApplication.instance()
+                if app is not None:
+                    app.quit()
 
-        self._window = _StandaloneWindow()
-        self._window.show()
+        try:
+            self._window = _StandaloneWindow()
+            self._window.show()
+            # Notify the frontend that the window is now open.
+            from app.api.events import bus
+            bus.emit_sync("preview_window_opened", {})
+        except Exception as _cw_err:
+            import traceback
+            print(f"[HeadlessPreview] _create_window error: {_cw_err}")
+            traceback.print_exc()
+            self._window = None
+            raise
 
 
 # ── Headless proxy ────────────────────────────────────────────────────────────

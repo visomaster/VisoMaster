@@ -57,6 +57,12 @@ class EventBus:
         self._latest_position: Optional[tuple[int, int]] = None
         self._position_event: Optional[asyncio.Event] = None  # created after loop is set
 
+        # ── Dedicated playback channel — latest-wins binary JSON ──────────
+        # Carries only { current_frame, max_frame, is_playing, fps } at up
+        # to 30 fps without ever blocking the main /ws/events queue.
+        self._latest_playback_msg: Optional[bytes] = None
+        self._playback_clients: List[asyncio.Event] = []
+
     def set_loop(self, loop: asyncio.AbstractEventLoop) -> None:
         self._loop = loop
         self._position_event = asyncio.Event()
@@ -130,6 +136,57 @@ class EventBus:
         try:
             self._loop.call_soon_threadsafe(_store_and_notify)
         except Exception:
+            pass
+
+    def emit_playback_sync(
+        self,
+        current_frame: int,
+        max_frame: int,
+        is_playing: bool,
+        fps: float,
+        is_recording: bool = False,
+    ) -> None:
+        """
+        Thread-safe playback-state update for the dedicated /ws/playback channel.
+
+        Latest-wins: if multiple frames complete before the sender wakes, only
+        the most recent state is delivered — no pile-up at 30 fps.
+        """
+        if self._loop is None or self._loop.is_closed():
+            return
+        if not self._playback_clients:
+            return
+
+        data = json.dumps({
+            "current_frame": current_frame,
+            "max_frame": max_frame,
+            "is_playing": is_playing,
+            "fps": fps,
+            "is_recording": is_recording,
+        }).encode()
+
+        def _store_and_notify():
+            self._latest_playback_msg = data
+            for ev in self._playback_clients:
+                ev.set()
+
+        try:
+            self._loop.call_soon_threadsafe(_store_and_notify)
+        except Exception:
+            pass
+
+    # ── Dedicated playback channel consumers ──────────────────────────────
+
+    def subscribe_playback(self) -> asyncio.Event:
+        """Register a new /ws/playback client; returns a per-client asyncio.Event."""
+        ev = asyncio.Event()
+        self._playback_clients.append(ev)
+        return ev
+
+    def unsubscribe_playback(self, ev: asyncio.Event) -> None:
+        try:
+            self._playback_clients.remove(ev)
+        except ValueError:
             pass
 
     # ── JSON event consumers ──────────────────────────────────────────────

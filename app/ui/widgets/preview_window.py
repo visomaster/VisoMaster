@@ -771,7 +771,17 @@ class PreviewWindow(QtWidgets.QWidget):
         # Save size and position before any teardown
         self._save_geometry()
 
-        # ── Notify the React frontend first, before any teardown ──────────
+        # ── Notify the React frontend via the FastAPI event bus ───────────
+        # This covers both Qt desktop mode and headless API mode — any
+        # WebSocket client (React UI) will receive preview_window_closed
+        # regardless of how the window was closed (X button, crash, toggle).
+        try:
+            from app.api.events import bus as _bus
+            _bus.emit_sync("preview_window_closed", {})
+        except Exception:
+            pass
+
+        # ── Also notify via the Qt bridge if present (Qt desktop mode) ────
         # Use QTimer.singleShot so the signal fires on the next event-loop
         # tick — after the close event completes — guaranteeing the bridge
         # is still alive when the signal is delivered.

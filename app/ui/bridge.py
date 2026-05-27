@@ -973,6 +973,30 @@ class BackendBridge(QObject):
             _log_err("clearMemory", str(e))
             return json.dumps({"ok": False, "error": str(e)})
 
+    @Slot(result=str)
+    def getLoadedModels(self) -> str:
+        """Return all currently loaded models as JSON — mirrors GET /api/models."""
+        _log("getLoadedModels", "called")
+        try:
+            models = self._mw.models_processor.get_loaded_models()
+            return json.dumps({"models": models})
+        except Exception as e:
+            _log_err("getLoadedModels", str(e))
+            return json.dumps({"models": [], "error": str(e)})
+
+    @Slot(str, result=str)
+    def unloadModel(self, model_name: str) -> str:
+        """Unload a single model by name — mirrors DELETE /api/models/{name}."""
+        _log("unloadModel", f"model_name='{model_name}'")
+        try:
+            unloaded = self._mw.models_processor.unload_model(model_name)
+            if not unloaded:
+                return json.dumps({"ok": False, "error": f"Model '{model_name}' is not currently loaded."})
+            return json.dumps({"ok": True, "message": f"Model '{model_name}' unloaded."})
+        except Exception as e:
+            _log_err("unloadModel", str(e))
+            return json.dumps({"ok": False, "error": str(e)})
+
     # ── Workspace slots ───────────────────────────────────────────────────
 
     @Slot(result=str)

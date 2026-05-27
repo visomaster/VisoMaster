@@ -47,6 +47,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import traceback
 
 import cv2
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
@@ -69,7 +70,8 @@ async def ws_events(websocket: WebSocket):
             msg = await client_q.get()
             try:
                 await websocket.send_text(msg)
-            except Exception:
+            except Exception as _send_err:
+                print(f"[WS/events] sender error: {_send_err}")
                 break
 
     sender_task = asyncio.create_task(_sender())
@@ -222,9 +224,9 @@ async def ws_events(websocket: WebSocket):
                                 mw = main_windows[0]
                                 from app.ui.widgets.preview_window import PreviewWindow
                                 if mw._preview_window is not None and mw._preview_window.isVisible():
-                                    # Window is open — close it
+                                    # Window is open — close it.
+                                    # closeEvent will emit preview_window_closed via the bus.
                                     mw._preview_window.close()
-                                    bus.emit_sync("preview_window_closed", {})
                                 else:
                                     # Window is closed or crashed — (re)open it
                                     mw._preview_window = PreviewWindow(mw)
@@ -232,17 +234,24 @@ async def ws_events(websocket: WebSocket):
                                     bus.emit_sync("preview_window_opened", {})
                         else:
                             # ── Headless API mode: spin up Qt on a bg thread ──
+                            # Run in a thread-pool executor so we never block the
+                            # asyncio event loop (headless_preview.open() can block
+                            # up to 5 s waiting for the Qt thread to start).
                             from app.ui.widgets.headless_preview import headless_preview
+                            import asyncio as _asyncio
+                            loop = _asyncio.get_event_loop()
                             if headless_preview.is_open:
-                                # Window is open — close it
-                                headless_preview.close()
-                                bus.emit_sync("preview_window_closed", {})
+                                # Window is open — close it.
+                                # _StandaloneWindow.closeEvent emits preview_window_closed.
+                                await loop.run_in_executor(None, headless_preview.close)
                             else:
-                                # Window is closed or crashed — (re)open it
-                                headless_preview.open()
-                                bus.emit_sync("preview_window_opened", {})
+                                # Window is closed or crashed — (re)open it.
+                                # _create_window() emits preview_window_opened once shown.
+                                await loop.run_in_executor(None, headless_preview.open)
                     except Exception as _pw_err:
+                        import traceback as _tb
                         print(f"[WS] open_preview_window error: {_pw_err}")
+                        _tb.print_exc()
 
                 # ── Utility ───────────────────────────────────────────────
                 case "ping":
@@ -286,9 +295,106 @@ async def ws_events(websocket: WebSocket):
 
     except WebSocketDisconnect:
         pass
+    except Exception as _ws_err:
+        print(f"[WS/events] unexpected error: {_ws_err}")
+        traceback.print_exc()
     finally:
         sender_task.cancel()
+        try:
+            await sender_task
+        except (asyncio.CancelledError, Exception):
+            pass
         bus.unsubscribe(client_q)
+
+
+# ── /ws/playback ──────────────────────────────────────────────────────────────
+
+@router.websocket("/ws/playback")
+async def ws_playback(websocket: WebSocket):
+    """
+    Dedicated push-only playback-state stream.
+
+    Each message is a UTF-8 JSON text frame:
+        { "current_frame": N, "max_frame": N, "is_playing": bool, "fps": F, "is_recording": bool }
+
+    Uses the same latest-frame-wins asyncio.Event pattern as /ws/preview so
+    30 fps position updates never pile up in the write buffer.  The /ws/events
+    channel is left free for control messages and infrequent state events.
+
+    The client can send a single text message to request an immediate snapshot:
+        "sync"
+    The server responds with the current playback state right away.
+    """
+    await websocket.accept()
+    frame_event = bus.subscribe_playback()
+
+    app   = websocket.app
+    vp    = app.state.video_processor
+    state = app.state.app_state
+
+    async def _receiver():
+        """Accept optional 'sync' requests from the client."""
+        try:
+            while True:
+                raw = await websocket.receive_text()
+                if raw.strip() == "sync":
+                    import json as _json
+                    msg = _json.dumps({
+                        "current_frame": vp.current_frame_number,
+                        "max_frame":     vp.max_frame_number,
+                        "is_playing":    vp.processing,
+                        "fps":           vp.fps,
+                        "is_recording":  vp.recording,
+                    })
+                    try:
+                        await websocket.send_text(msg)
+                    except Exception:
+                        break
+        except Exception:
+            pass
+
+    receiver_task = asyncio.create_task(_receiver())
+
+    # Send an immediate snapshot so the client doesn't wait for the first frame
+    try:
+        import json as _json
+        snapshot = _json.dumps({
+            "current_frame": vp.current_frame_number,
+            "max_frame":     vp.max_frame_number,
+            "is_playing":    vp.processing,
+            "fps":           vp.fps,
+            "is_recording":  vp.recording,
+        })
+        await websocket.send_text(snapshot)
+    except Exception:
+        pass
+
+    try:
+        while True:
+            await frame_event.wait()
+            frame_event.clear()
+
+            msg_bytes = bus._latest_playback_msg
+            if msg_bytes is None:
+                continue
+
+            try:
+                await websocket.send_text(msg_bytes.decode())
+            except Exception as _send_err:
+                print(f"[WS/playback] send error: {_send_err}")
+                break
+    except WebSocketDisconnect:
+        pass
+    except Exception as _ws_err:
+        print(f"[WS/playback] unexpected error: {_ws_err}")
+        traceback.print_exc()
+    finally:
+        receiver_task.cancel()
+        try:
+            await receiver_task
+        except (asyncio.CancelledError, Exception):
+            pass
+        bus.unsubscribe_playback(frame_event)
 
 
 # ── /ws/preview ───────────────────────────────────────────────────────────────
@@ -320,8 +426,8 @@ async def ws_preview(websocket: WebSocket):
                     msg = json.loads(raw)
                     if "quality" in msg:
                         bus._preview_quality = max(1, min(100, int(msg["quality"])))
-                except Exception:
-                    pass
+                except Exception as _parse_err:
+                    print(f"[WS/preview] quality parse error: {_parse_err}")
         except Exception:
             pass
 
@@ -340,15 +446,21 @@ async def ws_preview(websocket: WebSocket):
 
             try:
                 await websocket.send_bytes(frame_bytes)
-            except Exception:
+            except Exception as _send_err:
                 # Connection closed or write buffer error — stop cleanly
+                print(f"[WS/preview] send error: {_send_err}")
                 break
     except WebSocketDisconnect:
         pass
-    except Exception:
-        pass
+    except Exception as _ws_err:
+        print(f"[WS/preview] unexpected error: {_ws_err}")
+        traceback.print_exc()
     finally:
         receiver_task.cancel()
+        try:
+            await receiver_task
+        except (asyncio.CancelledError, Exception):
+            pass
         bus.unsubscribe_preview(frame_event)
 
 

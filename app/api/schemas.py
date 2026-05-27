@@ -275,6 +275,29 @@ class WsEvent(BaseModel):
     payload: Dict[str, Any] = {}
 
 
+# ── Folder browser ───────────────────────────────────────────────────────────
+
+class FolderEntry(BaseModel):
+    name: str
+    path: str
+    is_dir: bool
+
+
+class BrowseFolderResponse(BaseModel):
+    path: str          # resolved absolute path that was listed
+    parent: Optional[str]  # parent directory, or None if at root
+    entries: List[FolderEntry]
+
+
+class QuickFolder(BaseModel):
+    label: str
+    path: str
+
+
+class QuickFoldersResponse(BaseModel):
+    folders: List[QuickFolder]
+
+
 # ── Preview ───────────────────────────────────────────────────────────────────
 
 class PreviewSnapshotResponse(BaseModel):
@@ -283,3 +306,16 @@ class PreviewSnapshotResponse(BaseModel):
     frame_number: int
     width: int
     height: int
+
+
+# ── Models ────────────────────────────────────────────────────────────────────
+
+class LoadedModelInfo(BaseModel):
+    name: str
+    store: Literal["onnx", "trt", "dfm"]
+    device: str
+    vram_mb: int = 0
+
+
+class LoadedModelsResponse(BaseModel):
+    models: List[LoadedModelInfo]

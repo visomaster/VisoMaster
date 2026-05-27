@@ -105,6 +105,7 @@ class ModelsProcessor(QtCore.QObject):
         self.models_path = {}
         self.models_data = {}
         self._model_devices = {}  # Cache for actual device used by each model
+        self._model_vram_mb: Dict[str, int] = {}  # Approximate VRAM consumed per model (MB)
         for model_data in models_list:
             model_name, model_path = model_data['model_name'], model_data['local_path']
             self.models[model_name] = None #Model Instance
@@ -194,10 +195,29 @@ class ModelsProcessor(QtCore.QObject):
                 )
             self.main_window.model_loading_signal.emit()
             try:
+                # Snapshot free VRAM before loading so we can estimate consumption
+                _vram_before = 0
+                if self.device == 'cuda' and torch.cuda.is_available():
+                    try:
+                        _vram_before = torch.cuda.mem_get_info()[0]  # free bytes
+                    except Exception:
+                        pass
+
                 if session_options is None:
                     model_instance = onnxruntime.InferenceSession(model_path, providers=self.providers)
                 else:
                     model_instance = onnxruntime.InferenceSession(model_path, sess_options=session_options, providers=self.providers)
+
+                # Estimate VRAM consumed by this model
+                if self.device == 'cuda' and torch.cuda.is_available() and _vram_before > 0:
+                    try:
+                        _vram_after = torch.cuda.mem_get_info()[0]
+                        _delta_mb = max(0, (_vram_before - _vram_after) // (1024 * 1024))
+                        self._model_vram_mb[model_name] = _delta_mb
+                    except Exception:
+                        self._model_vram_mb[model_name] = 0
+                else:
+                    self._model_vram_mb[model_name] = 0
 
                 # Log which provider the model actually ended up using
                 active_providers = model_instance.get_providers()
@@ -267,6 +287,83 @@ class ModelsProcessor(QtCore.QObject):
             # Always close the loading dialog so failures don't strand the
             # modal on screen with no way to dismiss it.
             self.main_window.model_loaded_signal.emit()
+
+    def get_loaded_models(self) -> list[dict]:
+        """Return a list of all currently loaded models across all stores.
+
+        Each entry has:
+          - name    : str  — model identifier
+          - store   : str  — one of "onnx", "trt", "dfm"
+          - device  : str  — "cuda" or "cpu" (best-effort)
+          - vram_mb : int  — approximate VRAM consumed by this model (MB),
+                             or 0 if not measurable
+        """
+        result = []
+        with self.model_lock:
+            for name, instance in self.models.items():
+                if instance is not None:
+                    result.append({
+                        "name":    name,
+                        "store":   "onnx",
+                        "device":  self._model_devices.get(name, self.device),
+                        "vram_mb": self._model_vram_mb.get(name, 0),
+                    })
+            if TENSORRT_AVAILABLE:
+                for name, instance in self.models_trt.items():
+                    if instance is not None:
+                        result.append({
+                            "name":    name,
+                            "store":   "trt",
+                            "device":  "cuda",
+                            "vram_mb": self._model_vram_mb.get(name, 0),
+                        })
+            for name, instance in self.dfm_models.items():
+                if instance is not None:
+                    result.append({
+                        "name":    name,
+                        "store":   "dfm",
+                        "device":  self.device,
+                        "vram_mb": self._model_vram_mb.get(name, 0),
+                    })
+        return result
+
+    def unload_model(self, model_name: str) -> bool:
+        """Unload a single model by name from whichever store it lives in.
+
+        Returns True if the model was found and unloaded, False if it was
+        not loaded (or not recognised).
+        """
+        with self.model_lock:
+            # ONNX store
+            if model_name in self.models and self.models[model_name] is not None:
+                del self.models[model_name]
+                self.models[model_name] = None
+                self._model_devices.pop(model_name, None)
+                self._model_vram_mb.pop(model_name, None)
+                gc.collect()
+                return True
+
+            # TensorRT store
+            if TENSORRT_AVAILABLE and model_name in self.models_trt:
+                instance = self.models_trt[model_name]
+                if instance is not None:
+                    if isinstance(instance, TensorRTPredictor):
+                        instance.cleanup()
+                    del instance
+                    self.models_trt[model_name] = None
+                    self._model_vram_mb.pop(model_name, None)
+                    gc.collect()
+                    return True
+
+            # DFM store
+            if model_name in self.dfm_models and self.dfm_models[model_name] is not None:
+                del self.dfm_models[model_name]
+                self.dfm_models.pop(model_name)
+                self._model_vram_mb.pop(model_name, None)
+                gc.collect()
+                return True
+
+        return False
 
     def delete_models(self):
         for model_name, model_instance in self.models.items():
