@@ -1,0 +1,59 @@
+# Git
+.git
+.gitmodules
+
+# Python cache
+**/__pycache__
+**/*.pyc
+**/*.pyo
+*.egg-info
+
+# Large binary assets (downloaded at runtime or mounted via volume)
+model_assets/
+tensorrt-engines/
+dependencies/CUDA/
+dependencies/Python/
+dependencies/git-portable/
+dependencies/TensorRT/
+
+# Media / output
+*.mp4
+*.avi
+*.mkv
+output/
+source_videos/
+source_images/
+test_frames*/
+test_videos*/
+
+# Thumbnails
+.thumbnails/
+
+# Workspace state
+last_workspace.json
+saved_parameters*.json
+startup_parameters*.json
+merged_embeddings*.txt
+
+# Secrets / env
+.env
+*.pem
+certificates/
+
+# IDE / OS
+.vscode/
+.vs/
+*.sln
+*.pyproj
+.DS_Store
+Thumbs.db
+
+# Node / frontend build artifacts
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Docker itself
+docker/Dockerfile*
+docker/docker-compose*.yml
+docker/README.md

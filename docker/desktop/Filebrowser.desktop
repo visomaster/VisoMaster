@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=File Browser
+Comment=Manage workspace files via web UI
+Exec=xdg-open http://localhost:8585
+Icon=system-file-manager
+Terminal=false
+Categories=Utility;FileManager;
+StartupNotify=false

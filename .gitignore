@@ -38,3 +38,4 @@ dependencies/TensorRT/
 .thumbnails
 certificates/
 *.pem
+logs/

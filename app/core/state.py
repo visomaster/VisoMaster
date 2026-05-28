@@ -10,6 +10,7 @@ from __future__ import annotations
 import copy
 import uuid
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import numpy as np
@@ -212,8 +213,12 @@ class AppState:
     media_transform:  StreamTransform = field(default_factory=StreamTransform)
 
     # ── Folder memory ──────────────────────────────────────────────────────
-    last_target_media_folder: str = ""
-    last_input_media_folder: str = ""
+    last_target_media_folder: str = field(
+        default_factory=lambda: str(Path(__file__).parent.parent.parent / "assets")
+    )
+    last_input_media_folder: str = field(
+        default_factory=lambda: str(Path(__file__).parent.parent.parent / "assets" / "Photos")
+    )
     loaded_embedding_filename: str = ""
     output_media_folder: str = ""
 
@@ -296,12 +301,13 @@ class AppState:
     @classmethod
     def from_json(cls, d: dict, default_parameters: dict) -> "AppState":
         """Reconstruct from a last_workspace.json dict."""
+        _default = cls()
         state = cls(
             control=d.get("control", {}),
             default_parameters=default_parameters,
             selected_media_id=d.get("selected_media_id"),
-            last_target_media_folder=d.get("last_target_media_folder_path", ""),
-            last_input_media_folder=d.get("last_input_media_folder_path", ""),
+            last_target_media_folder=d.get("last_target_media_folder_path", "") or _default.last_target_media_folder,
+            last_input_media_folder=d.get("last_input_media_folder_path", "") or _default.last_input_media_folder,
             loaded_embedding_filename=d.get("loaded_embedding_filename", ""),
         )
 

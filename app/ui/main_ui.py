@@ -106,8 +106,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.parameter_widgets: ParametersWidgetTypes = {}
         self.loaded_embedding_filename: str = ''
         
-        self.last_target_media_folder_path = ''
-        self.last_input_media_folder_path = ''
+        self.last_target_media_folder_path = str(Path(__file__).parent.parent.parent / "assets")
+        self.last_input_media_folder_path = str(Path(__file__).parent.parent.parent / "assets" / "Photos")
 
         self.is_full_screen = False
         self.dfm_models_data = DFM_MODELS_DATA
@@ -242,8 +242,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.saveEmbeddingButton.clicked.connect(partial(save_load_actions.save_embeddings_to_file, self))
         self.saveEmbeddingAsButton.clicked.connect(partial(save_load_actions.save_embeddings_to_file, self, True))
 
-        self.swapfacesButton.clicked.connect(partial(video_control_actions.process_swap_faces, self))
-        self.editFacesButton.clicked.connect(partial(video_control_actions.process_edit_faces, self))
+        self.swapfacesButton.toggled.connect(partial(video_control_actions.process_swap_faces, self))
+        self.editFacesButton.toggled.connect(partial(video_control_actions.process_edit_faces, self))
 
         self.saveImageButton.clicked.connect(partial(video_control_actions.save_current_frame_to_file, self))
         self.clearMemoryButton.clicked.connect(partial(common_widget_actions.clear_gpu_memory, self))

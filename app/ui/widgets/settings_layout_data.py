@@ -124,7 +124,7 @@ SETTINGS_LAYOUT_DATA: LayoutDictTypes = {
             'level': 2,
             'label': 'Landmark Detect Model',
             'options': ['5', '68', '3d68', '98', '106', '203', '478'],
-            'default': '203',
+            'default': '5',
             'parentToggle': 'LandmarkDetectToggle',
             'requiredToggleValue': True,
             'help': 'Select the landmark detection model, where different models detect varying numbers of facial landmarks.'

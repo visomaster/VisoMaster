@@ -16,13 +16,25 @@ class FaceLandmarkDetectors:
     def __init__(self, models_processor: 'ModelsProcessor'):
         self.models_processor = models_processor
 
-    def run_detect_landmark(self, img, bbox, det_kpss, detect_mode='203', score=0.5, from_points=False):
+    # Models that are currently registered (downloaded) in models_data.py.
+    # If a mode is requested but its model isn't registered, we fall back to '5'.
+    _REGISTERED_LANDMARK_MODES = {'5', '68', '3d68', '98', '106', '203', '478'}
+
+    def run_detect_landmark(self, img, bbox, det_kpss, detect_mode='5', score=0.5, from_points=False):
+        # Fall back to '5' if the requested model isn't in the registry
+        from app.processors.models_data import landmark_model_mapping
+        model_key = landmark_model_mapping.get(detect_mode)
+        if model_key and model_key not in self.models_processor.models_path:
+            print(f"[LandmarkDetector] Model '{model_key}' (mode '{detect_mode}') is not registered. "
+                  f"Falling back to mode '5'.")
+            detect_mode = '5'
+
         kpss_5 = []
         kpss = []
         scores = []
 
         if detect_mode=='5':
-            if not self.models_processor.models['FaceLandmark5']:
+            if not self.models_processor.models.get('FaceLandmark5'):
                 self.models_processor.models['FaceLandmark5'] = self.models_processor.load_model('FaceLandmark5')
 
                 feature_maps = [[64, 64], [32, 32], [16, 16]]
@@ -46,13 +58,13 @@ class FaceLandmarkDetectors:
             kpss_5, kpss, scores = self.detect_face_landmark_5(img, bbox=bbox, det_kpss=det_kpss, from_points=from_points)
 
         elif detect_mode=='68':
-            if not self.models_processor.models['FaceLandmark68']:
+            if not self.models_processor.models.get('FaceLandmark68'):
                 self.models_processor.models['FaceLandmark68'] = self.models_processor.load_model('FaceLandmark68')
 
             kpss_5, kpss, scores = self.detect_face_landmark_68(img, bbox=bbox, det_kpss=det_kpss, from_points=from_points)
 
         elif detect_mode=='3d68':
-            if not self.models_processor.models['FaceLandmark3d68']:
+            if not self.models_processor.models.get('FaceLandmark3d68'):
                 self.models_processor.models['FaceLandmark3d68'] = self.models_processor.load_model('FaceLandmark3d68')
                 with open(f'{models_dir}/meanshape_68.pkl', 'rb') as f:
                     self.models_processor.mean_lmk = pickle.load(f)
@@ -62,13 +74,13 @@ class FaceLandmarkDetectors:
             return kpss_5, kpss, scores
 
         elif detect_mode=='98':
-            if not self.models_processor.models['FaceLandmark98']:
+            if not self.models_processor.models.get('FaceLandmark98'):
                 self.models_processor.models['FaceLandmark98'] = self.models_processor.load_model('FaceLandmark98')
 
             kpss_5, kpss, scores = self.detect_face_landmark_98(img, bbox=bbox, det_kpss=det_kpss, from_points=from_points)
 
         elif detect_mode=='106':
-            if not self.models_processor.models['FaceLandmark106']:
+            if not self.models_processor.models.get('FaceLandmark106'):
                 self.models_processor.models['FaceLandmark106'] = self.models_processor.load_model('FaceLandmark106')
 
             kpss_5, kpss, scores = self.detect_face_landmark_106(img, bbox=bbox, det_kpss=det_kpss, from_points=from_points)
@@ -76,7 +88,7 @@ class FaceLandmarkDetectors:
             return kpss_5, kpss, scores
 
         elif detect_mode=='203':
-            if not self.models_processor.models['FaceLandmark203']:
+            if not self.models_processor.models.get('FaceLandmark203'):
                 self.models_processor.models['FaceLandmark203'] = self.models_processor.load_model('FaceLandmark203')
 
             kpss_5, kpss, scores = self.detect_face_landmark_203(img, bbox=bbox, det_kpss=det_kpss, from_points=from_points)
@@ -84,10 +96,10 @@ class FaceLandmarkDetectors:
             return kpss_5, kpss, scores
 
         elif detect_mode=='478':
-            if not self.models_processor.models['FaceLandmark478']:
+            if not self.models_processor.models.get('FaceLandmark478'):
                 self.models_processor.models['FaceLandmark478'] = self.models_processor.load_model('FaceLandmark478')
 
-            if not self.models_processor.models['FaceBlendShapes']:
+            if not self.models_processor.models.get('FaceBlendShapes'):
                 self.models_processor.models['FaceBlendShapes'] = self.models_processor.load_model('FaceBlendShapes')
 
             kpss_5, kpss, scores = self.detect_face_landmark_478(img, bbox=bbox, det_kpss=det_kpss, from_points=from_points)

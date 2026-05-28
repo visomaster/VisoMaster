@@ -37,7 +37,7 @@ Emitted after every frame is processed. Use this to know a new frame is availabl
 
 #### `playback_state`
 
-Emitted after play, stop, seek, and step commands. Sync your UI controls to this.
+Emitted after play, stop, seek, step, and source-tab-changed commands. Sync your UI controls to this.
 
 ```json
 {
@@ -48,8 +48,20 @@ Emitted after play, stop, seek, and step commands. Sync your UI controls to this
     "current_frame": 142,
     "max_frame": 3600,
     "fps": 29.97,
-    "file_type": "video"
+    "file_type": "video",
+    "loop_enabled": false
   }
+}
+```
+
+#### `frame_position`
+
+High-frequency position update emitted after every processed frame via the latest-wins position channel. Delivered separately from `playback_state` to avoid flooding the main event queue at 30 fps.
+
+```json
+{
+  "type": "frame_position",
+  "payload": { "current_frame": 143, "max_frame": 3600 }
 }
 ```
 
@@ -83,6 +95,14 @@ Emitted when a recording is finalised and the output file is ready.
   "type": "recording_finished",
   "payload": { "output_path": "C:/Videos/output/sample_2026_05_24_14_30_00.mp4" }
 }
+```
+
+#### `virtcam_state`
+
+Emitted after a virtual camera enable/disable attempt to report the actual state (may differ from the requested state if the camera failed to start).
+
+```json
+{ "type": "virtcam_state", "payload": { "enabled": true } }
 ```
 
 #### `error`
@@ -148,6 +168,36 @@ Use `set_control` and `set_parameter` for low-latency slider updates (e.g. while
 | Command | Payload | Description |
 |---|---|---|
 | `ping` | — | Server responds with `pong`. |
+| `open_preview_window` | — | Toggle the native Qt preview window (Qt modes only). |
+| `source_tab_changed` | `{ "source": "media"\|"webcam"\|"streaming" }` | Tear down the current source and switch to the new one. |
+
+---
+
+## /ws/playback — Dedicated playback-state stream
+
+Push-only high-frequency channel for playback position and state. Delivers the same data as `playback_state` events on `/ws/events` but via a dedicated latest-wins slot so 30 fps position updates never flood the main event queue.
+
+Each message is a UTF-8 JSON text frame:
+
+```json
+{ "current_frame": 143, "max_frame": 3600, "is_playing": true, "fps": 29.97, "is_recording": false }
+```
+
+**Optional client → server:** send the text `"sync"` to request an immediate snapshot of the current state.
+
+```js
+const ws = new WebSocket('ws://localhost:8000/ws/playback');
+ws.onmessage = (e) => {
+  const state = JSON.parse(e.data);
+  updateSeekBar(state.current_frame, state.max_frame);
+  updatePlayButton(state.is_playing);
+};
+
+// Request immediate sync on connect
+ws.onopen = () => ws.send('sync');
+```
+
+**Backpressure:** uses the same latest-frame-wins `asyncio.Event` pattern as `/ws/preview` — if the client is slower than the frame rate, intermediate positions are silently dropped and only the most recent state is delivered.
 
 ---
 

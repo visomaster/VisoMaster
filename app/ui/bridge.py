@@ -35,6 +35,36 @@ def _log_err(tag: str, msg: str, exc: Exception | None = None) -> None:
         print(_tb.format_exc(), flush=True)
 
 
+# ── Swapper model name → ONNX model key(s) in ModelsProcessor.models ─────────
+# Used to unload the old swapper when the user switches models so the new one
+# is loaded fresh with the correct emap on the next frame.
+_SWAPPER_MODEL_KEYS: dict[str, list[str]] = {
+    'Inswapper128':                ['Inswapper128'],
+    'InStyleSwapper256 Version A': ['InStyleSwapper256 Version A'],
+    'InStyleSwapper256 Version B': ['InStyleSwapper256 Version B'],
+    'InStyleSwapper256 Version C': ['InStyleSwapper256 Version C'],
+    'SimSwap512':                  ['SimSwap512'],
+    'GhostFace-v1':                ['GhostFacev1'],
+    'GhostFace-v2':                ['GhostFacev2'],
+    'GhostFace-v3':                ['GhostFacev3'],
+    'CSCS':                        ['CSCS'],
+    # DFM models are managed separately via dfm_models dict — no unload needed here
+}
+
+
+def _unload_swapper_model(mp, model_selection: str) -> None:
+    """Unload the ONNX session(s) for the given SwapModelSelection value.
+
+    This forces the new model to be loaded fresh on the next frame, which
+    also ensures load_inswapper_iss_emap() runs and sets the correct emap.
+    """
+    keys = _SWAPPER_MODEL_KEYS.get(model_selection, [])
+    for key in keys:
+        if mp.models.get(key) is not None:
+            print(f"[bridge] Unloading swapper model '{key}' for model switch", flush=True)
+            mp.unload_model(key)
+
+
 class BackendBridge(QObject):
     # ── Signals → WebUI ───────────────────────────────────────────────────
     # All carry JSON strings; JS side does JSON.parse()
@@ -228,21 +258,25 @@ class BackendBridge(QObject):
         self._gpu_timer.setInterval(2000)  # 2 s — feels live without thrashing
         self._gpu_timer.timeout.connect(self._emit_gpu_memory)
         self._gpu_timer.start()
+        self._gpu_last_error_time: float = 0.0
         # Fire once right away so the TopBar shows a value within the first
         # render frame instead of "—" for 2-3 s.
         QTimer.singleShot(0, self._emit_gpu_memory)
         # And again once models start being loaded — first call may report
         # zero before CUDA is initialised.
         QTimer.singleShot(1500, self._emit_gpu_memory)
-        self._gpu_emit_warned = False
 
     def _emit_gpu_memory(self) -> None:
+        import time
         try:
             used, total = self._mw.models_processor.get_gpu_memory()
         except Exception as e:
-            if not getattr(self, "_gpu_emit_warned", False):
+            # Log at most once every 60 s so the console isn't spammed,
+            # but keep retrying — CUDA may not be ready on the first few calls.
+            now = time.monotonic()
+            if now - self._gpu_last_error_time > 60.0:
                 _log_err("gpu_memory", "get_gpu_memory() raised", e)
-                self._gpu_emit_warned = True
+                self._gpu_last_error_time = now
             return
 
         # Always emit, even when total is 0 — frontend should show "—" but
@@ -391,7 +425,6 @@ class BackendBridge(QObject):
         })
 
     @Slot(str, str)
-    @Slot(str, str)
     def setControl(self, name: str, value_json: str) -> None:
         value = json.loads(value_json)
         self._mw.control[name] = value
@@ -438,6 +471,15 @@ class BackendBridge(QObject):
                 copy.deepcopy(self._mw.default_parameters),
                 self._mw.default_parameters,
             )
+
+        # ── Swapper model switch: unload the old model so the new one is
+        # loaded fresh with the correct emap on the next frame. ──────────
+        if name == 'SwapModelSelection':
+            old_model = self._mw.parameters[face_id].get('SwapModelSelection', 'Inswapper128')
+            _log("setParameter", f"SwapModelSelection: '{old_model}' → '{value}' (face {face_id})")
+            if old_model != value:
+                _unload_swapper_model(self._mw.models_processor, old_model)
+
         self._mw.parameters[face_id][name] = value
         # Re-render the current frame off the main thread so the UI stays responsive.
         self._process_frame_async()
@@ -925,6 +967,16 @@ class BackendBridge(QObject):
             return json.dumps({"ok": False, "error": str(e)})
 
     # ── System slots ──────────────────────────────────────────────────────
+
+    @Slot(result=str)
+    def getGpuMemory(self) -> str:
+        """Return current GPU memory usage as JSON — used by the frontend for polling."""
+        try:
+            used, total = self._mw.models_processor.get_gpu_memory()
+            return json.dumps({"used_mb": int(used), "total_mb": int(total)})
+        except Exception as e:
+            _log_err("getGpuMemory", str(e), e)
+            return json.dumps({"used_mb": 0, "total_mb": 0})
 
     @Slot(str, result=str)
     def setProvider(self, provider: str) -> str:

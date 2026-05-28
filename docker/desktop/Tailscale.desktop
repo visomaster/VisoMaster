@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Tailscale Status
+Comment=Check Tailscale connection status
+Exec=xfce4-terminal --hold -e "tailscale --socket=/tmp/tailscale.sock status"
+Icon=network-vpn
+Terminal=false
+Categories=Network;
+StartupNotify=false

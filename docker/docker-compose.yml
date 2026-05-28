@@ -1,0 +1,79 @@
+version: "3.9"
+
+# VisoMaster — Docker Compose
+# Run from the repo root:
+#   docker compose -f docker/docker-compose.yml up -d
+#   docker compose -f docker/docker-compose.yml logs -f visomaster
+#
+# Tailscale / WebRTC UDP notes:
+#   Tailscale has two modes:
+#     kernel mode    — uses /dev/net/tun, full UDP forwarding, WebRTC works.
+#                      Requires: privileged: true  OR  cap_add: [NET_ADMIN]
+#                                + devices: [/dev/net/tun]
+#     userspace mode — no TUN device needed, but all traffic goes over TCP/DERP.
+#                      WebRTC UDP media will NOT work in this mode.
+#
+#   This compose file runs --privileged which covers both v4l2loopback (virtual
+#   camera) and /dev/net/tun (Tailscale kernel mode) in one flag.
+#   Set TAILSCALE_AUTHKEY to enable Tailscale on startup.
+
+services:
+  visomaster:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: visomaster:latest
+    container_name: visomaster
+
+    # GPU access
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+    # Port mapping
+    ports:
+      - "5901:5901"       # TigerVNC
+      - "6901:6901"       # noVNC (browser)
+      - "8000:8000"       # VisoMaster FastAPI server
+      - "5173:5173"       # Vite dev server (React web UI)
+      - "8585:8585"       # filebrowser
+      - "9091:9091"       # streamrelay WebRTC signaling
+      - "10000:10000"     # WebRTC media (TCP)
+      - "10000:10000/udp" # WebRTC media (UDP)
+
+    # Persistent volume — models, outputs, workspace state survive restarts
+    volumes:
+      - visomaster_data:/workspace/data
+
+    environment:
+      # VNC
+      - VNC_PW=${VNC_PW:-visomaster}
+      - VNC_PASSWORDLESS=${VNC_PASSWORDLESS:-false}
+      - VNC_RESOLUTION=${VNC_RESOLUTION:-1280x800}
+
+      # Tailscale — set TAILSCALE_AUTHKEY to enable.
+      # Get a reusable ephemeral key at: https://login.tailscale.com/admin/settings/keys
+      # With --privileged below, kernel mode (full UDP/WebRTC) is used automatically.
+      - TAILSCALE_AUTHKEY=${TAILSCALE_AUTHKEY:-}
+
+      # Skip model download on startup if models already present
+      - SKIP_MODEL_DOWNLOAD=${SKIP_MODEL_DOWNLOAD:-0}
+
+    # --privileged covers both:
+    #   - v4l2loopback for virtual camera / OBS
+    #   - /dev/net/tun for Tailscale kernel mode (full UDP)
+    # If you want to avoid --privileged, replace with:
+    #   cap_add: [NET_ADMIN, SYS_MODULE]
+    #   devices: [/dev/net/tun, /dev/video10]
+    privileged: true
+
+    restart: unless-stopped
+    shm_size: "2gb"
+
+volumes:
+  visomaster_data:
+    driver: local

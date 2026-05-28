@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=VisoMaster
+Comment=Open VisoMaster Web UI in browser
+Exec=xdg-open http://localhost:8000
+Icon=applications-multimedia
+Terminal=false
+Categories=AudioVideo;Video;
+StartupNotify=false

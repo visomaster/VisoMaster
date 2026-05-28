@@ -454,13 +454,29 @@ def on_slider_released(main_window: 'MainWindow'):
     if video_processor.media_capture:
         video_processor.process_current_frame()  # Process the current frame
 
-def process_swap_faces(main_window: 'MainWindow'):
-    video_processor = main_window.video_processor
-    video_processor.process_current_frame()
+def process_swap_faces(main_window: 'MainWindow', checked: bool = None):
+    # If called from a checkable button, `checked` is the new toggle state.
+    # If called without an argument (e.g. from a marker update), just re-process.
+    if checked is not None:
+        main_window.control['_swap_enabled'] = checked
+        if checked:
+            # Disable edit mode when swap is enabled
+            main_window.control['_edit_enabled'] = False
+            main_window.editFacesButton.blockSignals(True)
+            main_window.editFacesButton.setChecked(False)
+            main_window.editFacesButton.blockSignals(False)
+    main_window.video_processor.process_current_frame()
 
-def process_edit_faces(main_window: 'MainWindow'):
-    video_processor = main_window.video_processor
-    video_processor.process_current_frame()
+def process_edit_faces(main_window: 'MainWindow', checked: bool = None):
+    if checked is not None:
+        main_window.control['_edit_enabled'] = checked
+        if checked:
+            # Disable swap mode when edit is enabled
+            main_window.control['_swap_enabled'] = False
+            main_window.swapfacesButton.blockSignals(True)
+            main_window.swapfacesButton.setChecked(False)
+            main_window.swapfacesButton.blockSignals(False)
+    main_window.video_processor.process_current_frame()
 
 def process_compare_checkboxes(main_window: 'MainWindow'):
     main_window.video_processor.process_current_frame()

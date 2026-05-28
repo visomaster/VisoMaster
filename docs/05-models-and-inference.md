@@ -155,6 +155,126 @@ When `FaceExpressionEnableToggle` is on, `FrameWorker.apply_face_expression_rest
 
 The face is then alpha-blended over the swap result with `FaceExpressionFriendlyFactorDecimalSlider` controlling intensity.
 
+## Model dependency graph
+
+Models are loaded lazily on first use. The table below shows which models depend on which others at runtime.
+
+### Pipeline order (per frame)
+
+```
+Frame input
+  │
+  ▼
+[1] Face Detector  (one of)
+      RetinaFace · SCRFD2.5g · YoloFace8n · YunetN
+  │
+  ▼  optional — LandmarkDetectToggle or Face Editor active
+[2] Landmark Detector  (one of)
+      FaceLandmark5 (default/fallback)
+      FaceLandmark68 · FaceLandmark3d68 · FaceLandmark98
+      FaceLandmark106 · FaceLandmark203 (forced when Face Editor on)
+      FaceLandmark478
+  │
+  ▼  always — identity matching
+[3] ArcFace Backbone  (determined by chosen swapper)
+      Inswapper128ArcFace  ← Inswapper128, InStyleSwapper256 A/B/C, DFM
+      SimSwapArcFace       ← SimSwap512
+      GhostArcFace         ← GhostFace-v1/v2/v3
+      CSCSArcFace          ← CSCS
+  │
+  ▼  optional — swap enabled
+[4] Face Swapper  (one of)
+      Inswapper128 · InStyleSwapper256 A/B/C
+      SimSwap512 · GhostFace-v1/v2/v3 · CSCS
+      DeepFaceLive (DFM)  ← user-supplied .dfm file
+  │
+  ▼  optional — post-swap, up to two slots
+[5] Face Restorer  (one of per slot)
+      GFPGANv1.4 · CodeFormer · GPENBFR256/512/1024/2048
+      VQFRv2 · RestoreFormerPlusPlus
+      (restorer "Reference" alignment also calls FaceLandmark5 internally)
+  │
+  ▼  optional — masking
+[6] Face Masks  (any combination)
+      Occluder · XSeg · FaceParser
+      CLIPSeg (RD64ClipText — PyTorch .pth, not ONNX)
+  │
+  ▼  optional — edit mode (replaces swap step)
+[7] Face Editor — LivePortrait  (all load together)
+      LivePortraitMotionExtractor
+      LivePortraitAppearanceFeatureExtractor
+      LivePortraitWarpingSpade (ONNX) / LivePortraitWarpingSpadeFix (TRT)
+      LivePortraitStitching
+      LivePortraitStitchingEye   ← only when eye retargeting enabled
+      LivePortraitStitchingLip   ← only when lip retargeting enabled
+      (makeup sub-feature also requires FaceParser)
+  │
+  ▼  optional — full-frame post-processing
+[8] Frame Enhancer  (one of)
+      RealEsrganx2Plus · RealEsrganx4Plus · RealEsrx4v3
+      BSRGANx2 · BSRGANx4 · UltraSharpx4 · UltraMixx4
+      DeoldifyArt · DeoldifyStable · DeoldifyVideo
+      DDColorArt · DDcolor
+```
+
+### Hard dependencies
+
+| Model / feature | Requires |
+|---|---|
+| Any face swapper | Matching ArcFace backbone (see `arcface_mapping_model_dict`) |
+| Any face swapper | A face detector (step 1) |
+| Face Editor (LivePortrait) | `FaceLandmark203` — forced on when edit mode activates |
+| Face Editor (LivePortrait) | MotionExtractor + AppearanceFeatureExtractor + WarpingSpade + Stitching (all 4 always load together) |
+| Face Restorer with "Reference" alignment | `FaceLandmark5` (called internally to re-align) |
+| Face Editor makeup | `FaceParser` |
+| CLIPSeg mask | `RD64ClipText` (.pth) |
+
+### Independent models
+
+All restorers, all frame enhancers, `Occluder`, and `XSeg` are fully self-contained — they load on demand and do not trigger any other model.
+
+---
+
+## Auto-offload
+
+`ModelsProcessor.offload_models_for_parameter_change(param_name, old_value, new_value, all_parameters)` is called by the UI layer every time a parameter or control value changes. It unloads models that are no longer needed, freeing VRAM immediately rather than waiting for a manual "Clear GPU Memory" action.
+
+### How it is triggered
+
+- **`update_parameter`** (`common_actions.py`) — covers all per-face parameter changes, including reset-to-default (which flows through the same `set_value` → signal → `update_parameter` path).
+- **`update_control`** (`common_actions.py`) — covers control-level parameters: detector model, landmark model, frame enhancer, recognition model.
+
+### Offload rules
+
+| Parameter changed | Models offloaded |
+|---|---|
+| `SwapModelSelection` | Old swapper model + old ArcFace backbone (if the new swapper uses a different one) |
+| `FaceRestorerTypeSelection` | Old restorer model (only if neither slot 1 nor slot 2 still references it) |
+| `FaceRestorerEnableToggle` → off | Slot 1 restorer model (if slot 2 doesn't also use it) |
+| `FaceRestorerEnable2Toggle` → off | Slot 2 restorer model (if slot 1 doesn't also use it) |
+| `OccluderEnableToggle` → off | `Occluder` |
+| `DFLXSegEnableToggle` → off | `XSeg` |
+| `FaceParserEnableToggle` → off | `FaceParser` (only if all makeup toggles are also off) |
+| Any makeup toggle → off | `FaceParser` (only if parser toggle and all other makeup toggles are also off) |
+| `ClipEnableToggle` → off | CLIPSeg session |
+| `FaceEditorEnableToggle` → off | All 7 LivePortrait models (if `FaceExpressionEnableToggle` is also off) |
+| `FaceExpressionEnableToggle` → off | All 7 LivePortrait models (if `FaceEditorEnableToggle` is also off) |
+| `FrameEnhancerEnableToggle` → off | Current frame enhancer model |
+| `FrameEnhancerTypeSelection` changes | Old frame enhancer model |
+| `DetectorModelSelection` changes | Old detector model |
+| `LandmarkDetectToggle` → off | Current landmark model |
+| `LandmarkDetectModelSelection` changes | Old landmark model |
+| `RecognitionModelSelection` changes | Old ArcFace recognition model |
+
+### Safety rules
+
+- `unload_model` is a no-op if the model is not currently loaded — no guard needed at call sites.
+- Restorer offload checks both slots before unloading, so switching slot 1 from GFPGAN to CodeFormer while slot 2 is also using GFPGAN will not unload GFPGAN.
+- `FaceParser` is shared by the parser mask and all makeup features; it is only unloaded when every consumer is off.
+- LivePortrait models are shared by Face Editor and Face Expression Restorer; they are only unloaded when both are off.
+
+---
+
 ## Notable global state
 
 `ModelsProcessor` keeps:

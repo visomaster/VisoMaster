@@ -214,8 +214,8 @@ def load_saved_workspace(main_window: 'MainWindow', data_filename: str|bool = Fa
             # video_control_actions.update_widget_values_from_markers(main_window, 0)
 
             # Set target media and input faces folder names
-            main_window.last_target_media_folder_path = data.get('last_target_media_folder_path','')
-            main_window.last_input_media_folder_path = data.get('last_input_media_folder_path','')
+            main_window.last_target_media_folder_path = data.get('last_target_media_folder_path','') or main_window.last_target_media_folder_path
+            main_window.last_input_media_folder_path = data.get('last_input_media_folder_path','') or main_window.last_input_media_folder_path
             main_window.loaded_embedding_filename = data.get('loaded_embedding_filename', '')
             common_widget_actions.set_control_widgets_values(main_window)
             # Set output folder

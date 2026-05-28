@@ -3,6 +3,7 @@ import os
 import subprocess as sp
 import gc
 import traceback
+from collections import defaultdict
 from typing import Dict, TYPE_CHECKING
 
 from packaging import version
@@ -101,7 +102,10 @@ class ModelsProcessor(QtCore.QObject):
         self.syncvec = torch.empty((1, 1), dtype=torch.float32, device=self.device)
 
         # Initialize models and models_path
-        self.models: Dict[str, onnxruntime.InferenceSession] = {}
+        # Use defaultdict so accessing an unregistered model key returns None
+        # instead of raising KeyError — processors check `if not models['X']`
+        # before loading, and missing keys should be treated as "not loaded".
+        self.models: Dict[str, onnxruntime.InferenceSession] = defaultdict(lambda: None)
         self.models_path = {}
         self.models_data = {}
         self._model_devices = {}  # Cache for actual device used by each model
@@ -490,11 +494,31 @@ class ModelsProcessor(QtCore.QObject):
 
     def load_inswapper_iss_emap(self, model_name):
         with self.model_lock:
-            if not self.models[model_name]:
+            # Always reload the emap from the ONNX graph when the model hasn't
+            # been loaded yet (first use).  Once the model IS loaded we still
+            # need to make sure self.emap matches the *active* model, because
+            # self.emap is a single shared slot and switching between
+            # Inswapper128 / ISS-A / ISS-B / ISS-C would otherwise leave a
+            # stale emap from the previously-used model.
+            #
+            # Solution: cache emaps per model name in self._emaps and always
+            # assign self.emap from the correct cache entry.
+            if not hasattr(self, '_emaps'):
+                self._emaps: dict = {}
+
+            if model_name not in self._emaps:
+                # First time this model's emap is needed — load from ONNX graph.
                 self.main_window.model_loading_signal.emit()
-                graph = onnx.load(self.models_path[model_name]).graph
-                self.emap = onnx.numpy_helper.to_array(graph.initializer[-1])
-                self.main_window.model_loaded_signal.emit()
+                try:
+                    graph = onnx.load(self.models_path[model_name]).graph
+                    self._emaps[model_name] = onnx.numpy_helper.to_array(graph.initializer[-1])
+                    print(f"[Models] emap loaded for '{model_name}'", flush=True)
+                finally:
+                    self.main_window.model_loaded_signal.emit()
+
+            # Always point self.emap at the correct per-model matrix so that
+            # calc_inswapper_latent / calc_swapper_latent_iss use the right one.
+            self.emap = self._emaps[model_name]
 
     def run_detect(self, img, detect_mode='RetinaFace', max_num=1, score=0.5, input_size=(512, 512), use_landmark_detection=False, landmark_detect_mode='203', landmark_score=0.5, from_points=False, rotation_angles=None):
         rotation_angles = rotation_angles or [0]
@@ -622,3 +646,260 @@ class ModelsProcessor(QtCore.QObject):
 
     def apply_fake_diff(self, swapped_face, original_face, DiffAmount):
         return self.face_masks.apply_fake_diff(swapped_face, original_face, DiffAmount)
+
+    # ── Auto-offload ─────────────────────────────────────────────────────────
+
+    # Maps each UI selection value to the ONNX model name it uses.
+    _SWAPPER_TO_MODEL = {
+        'Inswapper128':               'Inswapper128',
+        'InStyleSwapper256 Version A':'InStyleSwapper256 Version A',
+        'InStyleSwapper256 Version B':'InStyleSwapper256 Version B',
+        'InStyleSwapper256 Version C':'InStyleSwapper256 Version C',
+        'SimSwap512':                 'SimSwap512',
+        'GhostFace-v1':               'GhostFacev1',
+        'GhostFace-v2':               'GhostFacev2',
+        'GhostFace-v3':               'GhostFacev3',
+        'CSCS':                       'CSCS',
+        # DFM uses user-supplied files managed separately via dfm_models
+    }
+
+    _RESTORER_TYPE_TO_MODEL = {
+        'GFPGAN-v1.4':      'GFPGANv1.4',
+        'CodeFormer':       'CodeFormer',
+        'GPEN-256':         'GPENBFR256',
+        'GPEN-512':         'GPENBFR512',
+        'GPEN-1024':        'GPENBFR1024',
+        'GPEN-2048':        'GPENBFR2048',
+        'RestoreFormer++':  'RestoreFormerPlusPlus',
+        'VQFR-v2':          'VQFRv2',
+    }
+
+    _FRAME_ENHANCER_TYPE_TO_MODEL = {
+        'RealEsrgan-x2-Plus':     'RealEsrganx2Plus',
+        'RealEsrgan-x4-Plus':     'RealEsrganx4Plus',
+        'RealEsr-General-x4v3':   'RealEsrx4v3',
+        'BSRGan-x2':              'BSRGANx2',
+        'BSRGan-x4':              'BSRGANx4',
+        'UltraSharp-x4':          'UltraSharpx4',
+        'UltraMix-x4':            'UltraMixx4',
+        'DDColor-Artistic':       'DDColorArt',
+        'DDColor':                'DDcolor',
+        'DeOldify-Artistic':      'DeoldifyArt',
+        'DeOldify-Stable':        'DeoldifyStable',
+        'DeOldify-Video':         'DeoldifyVideo',
+    }
+
+    _DETECTOR_SELECTION_TO_MODEL = {
+        'RetinaFace': 'RetinaFace',
+        'Yolov8':     'YoloFace8n',
+        'SCRFD':      'SCRFD2.5g',
+        'Yunet':      'YunetN',
+    }
+
+    _LANDMARK_SELECTION_TO_MODEL = {
+        '5':    'FaceLandmark5',
+        '68':   'FaceLandmark68',
+        '3d68': 'FaceLandmark3d68',
+        '98':   'FaceLandmark98',
+        '106':  'FaceLandmark106',
+        '203':  'FaceLandmark203',
+        '478':  'FaceLandmark478',
+    }
+
+    _LIVEPORTRAIT_MODELS = [
+        'LivePortraitMotionExtractor',
+        'LivePortraitAppearanceFeatureExtractor',
+        'LivePortraitWarpingSpade',
+        'LivePortraitWarpingSpadeFix',
+        'LivePortraitStitching',
+        'LivePortraitStitchingEye',
+        'LivePortraitStitchingLip',
+    ]
+
+    def offload_models_for_parameter_change(
+        self,
+        param_name: str,
+        old_value,
+        new_value,
+        all_parameters: dict,
+    ) -> None:
+        """Unload models that are no longer needed after a parameter change.
+
+        Called by the UI layer whenever a parameter or control value changes.
+        Only unloads when the value actually differs and the model is no longer
+        referenced by any active face's parameters.
+
+        Args:
+            param_name:     The parameter/control key that changed.
+            old_value:      The previous value.
+            new_value:      The new value.
+            all_parameters: A flat dict of the *current* (already updated)
+                            parameters for the active face, used to check
+                            whether a model is still needed by another slot.
+        """
+        if old_value == new_value:
+            return
+
+        # ── Swapper model changed ─────────────────────────────────────────
+        if param_name == 'SwapModelSelection':
+            old_model = self._SWAPPER_TO_MODEL.get(old_value)
+            new_model = self._SWAPPER_TO_MODEL.get(new_value)
+            if old_model and old_model != new_model:
+                self.unload_model(old_model)
+                print(f"[AutoOffload] Unloaded swapper: {old_model}")
+
+            # Unload the old ArcFace backbone if the new swapper uses a
+            # different one and no other slot still needs the old one.
+            old_arc = arcface_mapping_model_dict.get(old_value)
+            new_arc = arcface_mapping_model_dict.get(new_value)
+            if old_arc and old_arc != new_arc:
+                self.unload_model(old_arc)
+                print(f"[AutoOffload] Unloaded arcface: {old_arc}")
+
+        # ── Restorer slot 1 type changed ─────────────────────────────────
+        elif param_name == 'FaceRestorerTypeSelection':
+            self._offload_restorer_if_unused(old_value, all_parameters)
+
+        # ── Restorer slot 1 toggled off ───────────────────────────────────
+        elif param_name == 'FaceRestorerEnableToggle' and not new_value:
+            restorer_type = all_parameters.get('FaceRestorerTypeSelection', '')
+            self._offload_restorer_if_unused(restorer_type, all_parameters,
+                                             ignore_slot1=True)
+
+        # ── Restorer slot 2 type changed ─────────────────────────────────
+        elif param_name == 'FaceRestorerType2Selection':
+            self._offload_restorer_if_unused(old_value, all_parameters)
+
+        # ── Restorer slot 2 toggled off ───────────────────────────────────
+        elif param_name == 'FaceRestorerEnable2Toggle' and not new_value:
+            restorer_type = all_parameters.get('FaceRestorerType2Selection', '')
+            self._offload_restorer_if_unused(restorer_type, all_parameters,
+                                             ignore_slot2=True)
+
+        # ── Occluder toggled off ──────────────────────────────────────────
+        elif param_name == 'OccluderEnableToggle' and not new_value:
+            self.unload_model('Occluder')
+            print("[AutoOffload] Unloaded: Occluder")
+
+        # ── DFL XSeg toggled off ──────────────────────────────────────────
+        elif param_name == 'DFLXSegEnableToggle' and not new_value:
+            self.unload_model('XSeg')
+            print("[AutoOffload] Unloaded: XSeg")
+
+        # ── FaceParser toggled off ────────────────────────────────────────
+        elif param_name == 'FaceParserEnableToggle' and not new_value:
+            # Only unload if makeup (which also uses FaceParser) is also off
+            makeup_on = any(all_parameters.get(k, False) for k in (
+                'FaceMakeupEnableToggle', 'HairMakeupEnableToggle',
+                'EyeBrowsMakeupEnableToggle', 'LipsMakeupEnableToggle',
+            ))
+            if not makeup_on:
+                self.unload_model('FaceParser')
+                print("[AutoOffload] Unloaded: FaceParser")
+
+        # ── All makeup toggles off → FaceParser no longer needed ─────────
+        elif param_name in ('FaceMakeupEnableToggle', 'HairMakeupEnableToggle',
+                            'EyeBrowsMakeupEnableToggle', 'LipsMakeupEnableToggle') \
+                and not new_value:
+            parser_on = all_parameters.get('FaceParserEnableToggle', False)
+            makeup_on = any(all_parameters.get(k, False) for k in (
+                'FaceMakeupEnableToggle', 'HairMakeupEnableToggle',
+                'EyeBrowsMakeupEnableToggle', 'LipsMakeupEnableToggle',
+            ))
+            if not parser_on and not makeup_on:
+                self.unload_model('FaceParser')
+                print("[AutoOffload] Unloaded: FaceParser")
+
+        # ── CLIPSeg toggled off ───────────────────────────────────────────
+        elif param_name == 'ClipEnableToggle' and not new_value:
+            if self.clip_session:
+                self.clip_session = []
+                gc.collect()
+                print("[AutoOffload] Unloaded: CLIPSeg (RD64ClipText)")
+
+        # ── Face Editor (LivePortrait) toggled off ────────────────────────
+        elif param_name == 'FaceEditorEnableToggle' and not new_value:
+            # Only unload if FaceExpressionEnableToggle is also off
+            if not all_parameters.get('FaceExpressionEnableToggle', False):
+                for m in self._LIVEPORTRAIT_MODELS:
+                    self.unload_model(m)
+                print("[AutoOffload] Unloaded: LivePortrait models")
+
+        # ── Face Expression Restorer toggled off ──────────────────────────
+        elif param_name == 'FaceExpressionEnableToggle' and not new_value:
+            if not all_parameters.get('FaceEditorEnableToggle', False):
+                for m in self._LIVEPORTRAIT_MODELS:
+                    self.unload_model(m)
+                print("[AutoOffload] Unloaded: LivePortrait models")
+
+        # ── Frame enhancer toggled off (control-level) ────────────────────
+        elif param_name == 'FrameEnhancerEnableToggle' and not new_value:
+            enhancer_type = all_parameters.get('FrameEnhancerTypeSelection', '')
+            model_name = self._FRAME_ENHANCER_TYPE_TO_MODEL.get(enhancer_type)
+            if model_name:
+                self.unload_model(model_name)
+                print(f"[AutoOffload] Unloaded frame enhancer: {model_name}")
+
+        # ── Frame enhancer type changed (control-level) ───────────────────
+        elif param_name == 'FrameEnhancerTypeSelection':
+            old_model = self._FRAME_ENHANCER_TYPE_TO_MODEL.get(old_value)
+            if old_model:
+                self.unload_model(old_model)
+                print(f"[AutoOffload] Unloaded frame enhancer: {old_model}")
+
+        # ── Face detector model changed (control-level) ───────────────────
+        elif param_name == 'DetectorModelSelection':
+            old_model = self._DETECTOR_SELECTION_TO_MODEL.get(old_value)
+            if old_model:
+                self.unload_model(old_model)
+                print(f"[AutoOffload] Unloaded detector: {old_model}")
+
+        # ── Landmark detector toggled off (control-level) ─────────────────
+        elif param_name == 'LandmarkDetectToggle' and not new_value:
+            lm_mode = all_parameters.get('LandmarkDetectModelSelection', '5')
+            lm_model = self._LANDMARK_SELECTION_TO_MODEL.get(lm_mode)
+            if lm_model:
+                self.unload_model(lm_model)
+                print(f"[AutoOffload] Unloaded landmark: {lm_model}")
+
+        # ── Landmark model changed (control-level) ────────────────────────
+        elif param_name == 'LandmarkDetectModelSelection':
+            old_model = self._LANDMARK_SELECTION_TO_MODEL.get(old_value)
+            if old_model:
+                self.unload_model(old_model)
+                print(f"[AutoOffload] Unloaded landmark: {old_model}")
+
+        # ── Recognition (ArcFace) model changed (control-level) ───────────
+        elif param_name == 'RecognitionModelSelection':
+            if old_value and old_value != new_value:
+                self.unload_model(old_value)
+                print(f"[AutoOffload] Unloaded recognition model: {old_value}")
+
+    def _offload_restorer_if_unused(
+        self,
+        restorer_type: str,
+        all_parameters: dict,
+        ignore_slot1: bool = False,
+        ignore_slot2: bool = False,
+    ) -> None:
+        """Unload a restorer model if neither active slot still references it."""
+        model_name = self._RESTORER_TYPE_TO_MODEL.get(restorer_type)
+        if not model_name:
+            return
+
+        slot1_active = (
+            not ignore_slot1
+            and all_parameters.get('FaceRestorerEnableToggle', False)
+            and self._RESTORER_TYPE_TO_MODEL.get(
+                all_parameters.get('FaceRestorerTypeSelection', '')) == model_name
+        )
+        slot2_active = (
+            not ignore_slot2
+            and all_parameters.get('FaceRestorerEnable2Toggle', False)
+            and self._RESTORER_TYPE_TO_MODEL.get(
+                all_parameters.get('FaceRestorerType2Selection', '')) == model_name
+        )
+
+        if not slot1_active and not slot2_active:
+            self.unload_model(model_name)
+            print(f"[AutoOffload] Unloaded restorer: {model_name}")

@@ -131,8 +131,8 @@ class WebMainWindow(QtWidgets.QMainWindow):
         self.parameter_widgets                              = {}
         self.loaded_embedding_filename: str                 = ""
 
-        self.last_target_media_folder_path = ""
-        self.last_input_media_folder_path  = ""
+        self.last_target_media_folder_path = str(Path(__file__).parent.parent.parent / "assets")
+        self.last_input_media_folder_path  = str(Path(__file__).parent.parent.parent / "assets" / "Photos")
         self.is_full_screen                = False
         self.dfm_models_data               = DFM_MODELS_DATA
         self.loading_new_media             = False

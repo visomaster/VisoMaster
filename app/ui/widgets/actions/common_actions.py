@@ -60,6 +60,20 @@ def update_control(main_window: 'MainWindow', control_name, control_value, exec_
             # By default an exec function definition should have atleast one parameter : MainWindow
             exec_function_args = [main_window, control_value] + exec_function_args
             exec_function(*exec_function_args)
+
+    # Auto-offload models that are no longer needed due to this control change.
+    # Pass the control dict as the parameter context so the offload logic can
+    # inspect related toggles/selections (e.g. LandmarkDetectModelSelection
+    # when LandmarkDetectToggle is turned off).
+    old_control_value = main_window.control[control_name]
+    if old_control_value != control_value:
+        main_window.models_processor.offload_models_for_parameter_change(
+            control_name,
+            old_control_value,
+            control_value,
+            main_window.control,
+        )
+
     main_window.control[control_name] = control_value
     refresh_frame(main_window)
 
@@ -87,6 +101,15 @@ def update_parameter(main_window: 'MainWindow', parameter_name, parameter_value,
         # Store old value and update the parameters with new value
         old_parameter_value = main_window.parameters[face_id][parameter_name]
         main_window.parameters[face_id][parameter_name] = parameter_value
+
+        # Auto-offload models that are no longer needed
+        if old_parameter_value != parameter_value:
+            main_window.models_processor.offload_models_for_parameter_change(
+                parameter_name,
+                old_parameter_value,
+                parameter_value,
+                dict(main_window.parameters[face_id]),
+            )
 
         if enable_refresh_frame:
             refresh_frame(main_window)

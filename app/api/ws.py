@@ -196,6 +196,13 @@ async def ws_events(websocket: WebSocket):
                     name    = payload.get("name")
                     value   = payload.get("value")
                     if face_id and name is not None:
+                        # When the swapper model changes, unload the old ONNX session
+                        # so the new model is loaded fresh with the correct emap.
+                        if name == "SwapModelSelection":
+                            old_model = state.get_parameter(face_id, "SwapModelSelection") if hasattr(state, "get_parameter") else state.parameters.get(face_id, {}).get("SwapModelSelection", "Inswapper128")
+                            if old_model != value:
+                                print(f"[ws] SwapModelSelection: '{old_model}' → '{value}' (face {face_id})", flush=True)
+                                _unload_swapper_model_ws(app.state.models_processor, old_model)
                         state.set_parameter(face_id, name, value)
                         vp.process_current_frame()
                         bus.emit_sync("state_updated", {
@@ -465,6 +472,33 @@ async def ws_preview(websocket: WebSocket):
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
+# Maps SwapModelSelection values → ONNX model key(s) in ModelsProcessor.models
+_SWAPPER_MODEL_KEYS: dict[str, list[str]] = {
+    'Inswapper128':                ['Inswapper128'],
+    'InStyleSwapper256 Version A': ['InStyleSwapper256 Version A'],
+    'InStyleSwapper256 Version B': ['InStyleSwapper256 Version B'],
+    'InStyleSwapper256 Version C': ['InStyleSwapper256 Version C'],
+    'SimSwap512':                  ['SimSwap512'],
+    'GhostFace-v1':                ['GhostFacev1'],
+    'GhostFace-v2':                ['GhostFacev2'],
+    'GhostFace-v3':                ['GhostFacev3'],
+    'CSCS':                        ['CSCS'],
+}
+
+
+def _unload_swapper_model_ws(mp, model_selection: str) -> None:
+    """Unload the ONNX session(s) for the given SwapModelSelection value.
+
+    Forces the new model to be loaded fresh on the next frame, which also
+    ensures load_inswapper_iss_emap() runs and sets the correct emap.
+    """
+    keys = _SWAPPER_MODEL_KEYS.get(model_selection, [])
+    for key in keys:
+        if mp.models.get(key) is not None:
+            print(f"[ws] Unloading swapper model '{key}' for model switch", flush=True)
+            mp.unload_model(key)
+
 
 def _emit_playback_state(vp, state=None) -> None:
     """Push a playback_state event so the client can sync its UI."""

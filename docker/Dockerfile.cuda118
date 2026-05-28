@@ -1,0 +1,122 @@
+FROM nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
+
+LABEL maintainer="VisoMaster" \
+      description="VisoMaster headless VNC container — CUDA 11.8 variant"
+
+# ── Ports ─────────────────────────────────────────────────────────────────────
+# 5901  TigerVNC
+# 6901  noVNC (browser VNC)
+# 8000  VisoMaster FastAPI server
+# 5173  Vite dev server (React web UI)
+# 8585  filebrowser
+# 9091  streamrelay WebRTC signaling + web client
+# 10000 WebRTC media channel (TCP + UDP)
+EXPOSE 5901 6901 8000 5173 8585 9091 10000/tcp 10000/udp
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    TZ=UTC \
+    DISPLAY=:1 \
+    VNC_PORT=5901 \
+    NO_VNC_PORT=6901 \
+    NO_VNC_HOME=/opt/noVNC \
+    VNC_COL_DEPTH=24 \
+    VNC_RESOLUTION=1280x800 \
+    VNC_PW=visomaster \
+    VNC_PASSWORDLESS=false \
+    HOME=/workspace \
+    STARTUPDIR=/dockerstartup \
+    CONDA_DIR=/opt/conda \
+    CONDA_ENV=visomaster \
+    VISOMASTER_HOME=/workspace/VisoMaster \
+    FILEBROWSER_PORT=8585 \
+    API_PORT=8000 \
+    VITE_PORT=5173 \
+    STREAMRELAY_PORT=9091 \
+    LANG=en_US.UTF-8 \
+    LANGUAGE=en_US:en \
+    LC_ALL=en_US.UTF-8
+
+WORKDIR /workspace
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    wget curl git unzip bzip2 ca-certificates gnupg2 software-properties-common \
+    apt-transport-https locales tzdata build-essential cmake pkg-config \
+    tigervnc-standalone-server tigervnc-common \
+    xfce4 xfce4-terminal xfce4-taskmanager dbus-x11 x11-utils x11-xserver-utils xdg-utils \
+    python3-pip python3-dev \
+    libgl1-mesa-glx libglib2.0-0 libsm6 libxext6 libxrender-dev \
+    libxkbcommon0 libdbus-1-3 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
+    libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xfixes0 \
+    libpulse0 pulseaudio v4l2loopback-dkms v4l2loopback-utils ffmpeg jq nano vim htop procps net-tools curl \
+    && locale-gen en_US.UTF-8 \
+    && ln -fs /usr/share/zoneinfo/$TZ /etc/localtime \
+    && dpkg-reconfigure -f noninteractive tzdata \
+    && rm -rf /var/lib/apt/lists/*
+
+# ── OBS Studio ────────────────────────────────────────────────────────────────
+RUN apt-get update \
+    && add-apt-repository -y ppa:obsproject/obs-studio \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends obs-studio \
+    && rm -rf /var/lib/apt/lists/*
+
+# ── Tailscale ─────────────────────────────────────────────────────────────────
+RUN curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/jammy.noarmor.gpg \
+        | tee /usr/share/keyrings/tailscale-archive-keyring.gpg > /dev/null \
+    && curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/jammy.tailscale-keyring.list \
+        | tee /etc/apt/sources.list.d/tailscale.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends tailscale \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN git clone --depth 1 --branch v1.5.0 \
+        https://github.com/novnc/noVNC.git $NO_VNC_HOME \
+    && git clone --depth 1 \
+        https://github.com/novnc/websockify.git $NO_VNC_HOME/utils/websockify \
+    && ln -s $NO_VNC_HOME/vnc.html $NO_VNC_HOME/index.html
+
+RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+        -O /tmp/miniconda.sh \
+    && bash /tmp/miniconda.sh -b -p $CONDA_DIR \
+    && rm /tmp/miniconda.sh \
+    && $CONDA_DIR/bin/conda clean --all -y
+
+ENV PATH=$CONDA_DIR/bin:$PATH
+
+RUN conda tos accept --override-channels \
+        --channel https://repo.anaconda.com/pkgs/main 2>/dev/null || true \
+    && conda tos accept --override-channels \
+        --channel https://repo.anaconda.com/pkgs/r 2>/dev/null || true \
+    && conda create -n $CONDA_ENV python=3.10.13 -y \
+    && conda clean --all -y
+
+ENV PATH=$CONDA_DIR/envs/$CONDA_ENV/bin:$PATH \
+    CONDA_DEFAULT_ENV=$CONDA_ENV
+
+COPY requirements_cu118.txt /tmp/requirements_cu118.txt
+
+RUN pip install --upgrade pip \
+    && pip install --no-cache-dir -r /tmp/requirements_cu118.txt \
+    && rm /tmp/requirements_cu118.txt
+
+RUN wget -q -O - https://raw.githubusercontent.com/filebrowser/get/master/get.sh | bash
+
+COPY . $VISOMASTER_HOME/
+WORKDIR $VISOMASTER_HOME
+
+RUN git submodule update --init --recursive 2>/dev/null || true
+
+RUN mkdir -p $STARTUPDIR /workspace/logs
+
+COPY docker/scripts/vnc_startup.sh    $STARTUPDIR/vnc_startup.sh
+COPY docker/scripts/start_services.sh $STARTUPDIR/start_services.sh
+COPY docker/config/xfce4/             /root/.config/xfce4/
+COPY docker/desktop/                  /root/Desktop/
+
+RUN chmod +x $STARTUPDIR/vnc_startup.sh $STARTUPDIR/start_services.sh \
+    && chmod +x /root/Desktop/*.desktop 2>/dev/null || true
+
+VOLUME ["/workspace/data"]
+
+ENTRYPOINT ["/dockerstartup/vnc_startup.sh"]
+CMD ["--wait"]
